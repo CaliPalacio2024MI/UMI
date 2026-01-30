@@ -253,6 +253,41 @@
                     </ul>
                 </li>
             @endif
+            <!--CRM-- sidebar-->
+            {{-- 4.5 CRM --}}
+            @if($isMaster || $isControlGroup)
+                <li class="has-submenu {{ request()->routeIs('crm.*') ? 'active' : '' }}">
+                    <a href="#">
+                        <span class="icon" aria-hidden="true">
+                            <img src="{{ asset('images/icons/crm.svg') }}"
+                            alt="CRM Icon"
+                            style="width:24px;height:24px"
+                            loading="lazy">
+                        </span>
+                        <span class="text">CRM</span>
+                             <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </a>
+
+                    <ul class="submenu">
+                        <li class="{{ request()->routeIs('CRM.index') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.index') }}">Leads</a>
+                        </li>
+
+                        <li class="{{ request()->routeIs('CRM.clientes') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.clientes') }}">Clientes</a>
+                        </li>
+
+                        <li class="{{ request()->routeIs('CRM.seguimiento') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.seguimiento') }}">Seguimiento</a>
+                        </li>
+
+                        <li class="{{ request()->routeIs('CRM.reportes') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.reportes') }}">Reportes</a>
+                        </li>
+                    </ul>
+                </li>
+            @endif
+            <!--termina CRM-->
 
             {{-- 5. AJUSTES --}}
             @if($showSettings)
