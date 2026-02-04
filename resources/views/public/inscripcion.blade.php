@@ -30,30 +30,30 @@
                     <div class="form-group">
                         <label class="form-label">Nombre(s):</label>
                         <div class="form-input-container">
-                            <input type="text" name="tutor_nombre" class="form-control">
+                            <input type="text" name="tutor_nombre" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Apellido paterno:</label>
                         <div class="form-input-container">
-                            <input type="text" name="tutor_paterno" class="form-control">
+                            <input type="text" name="tutor_paterno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Apellido materno:</label>
                         <div class="form-input-container">
-                            <input type="text" name="tutor_materno" class="form-control">
+                            <input type="text" name="tutor_materno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Telefono 1:</label>
                         <div class="form-input-container split-inputs">
-                            <input type="text" name="telefono1" class="form-control">
+                            <input type="text" name="telefono1" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric" maxlength="10">
                             <label class="split-label">Telefono 2:</label>
-                            <input type="text" name="telefono2" class="form-control">
+                            <input type="text" name="telefono2" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric" maxlength="10">
                         </div>
                     </div>
                 </div>
@@ -65,35 +65,35 @@
                     <div class="form-group">
                         <label class="form-label">Nombre(s):</label>
                         <div class="form-input-container">
-                            <input type="text" name="alumno_nombre" class="form-control">
+                            <input type="text" name="alumno_nombre" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Apellido paterno:</label>
                         <div class="form-input-container">
-                            <input type="text" name="alumno_paterno" class="form-control">
+                            <input type="text" name="alumno_paterno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Apellido materno:</label>
                         <div class="form-input-container">
-                            <input type="text" name="alumno_materno" class="form-control">
+                            <input type="text" name="alumno_materno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
                         </div>
                     </div>
 
                      <div class="form-group">
                         <label class="form-label">RFC:</label>
                         <div class="form-input-container">
-                            <input type="text" name="rfc" class="form-control">
+                            <input type="text" name="rfc" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="13">
                         </div>
                     </div>
 
                      <div class="form-group">
                         <label class="form-label">CURP:</label>
                         <div class="form-input-container">
-                            <input type="text" name="curp" class="form-control">
+                            <input type="text" name="curp" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="18">
                         </div>
                     </div>
                 </div>

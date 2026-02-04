@@ -9,7 +9,8 @@ class CRMController extends Controller
 {
     public function leads()
     {
-        return view('crm.leads');
+        $leads = \App\Models\Lead::orderBy('created_at', 'desc')->get();
+        return view('crm.leads', compact('leads'));
     }
 
     public function prospectos()

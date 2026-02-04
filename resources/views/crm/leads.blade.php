@@ -24,23 +24,21 @@
             <div class="card card-leads">
                 <div class="card-header encabezado-tabla">
                 <div class="row encabezado-fila text-center">
-                        <div class="col">Nombre</div>
-                        <div class="col">Apellido Paterno</div>
-                        <div class="col">Apellido Materno</div>
+                        <div class="col">Tutor</div>
+                        <div class="col">Alumno</div>
                         <div class="col">Teléfono 1</div>
-                        <div class="col">Teléfono 2</div>
+                        <div class="col">RFC</div>
                         <div class="col">Acciones</div>
                     </div>
                 </div>
 
                 <div class="card-body cuerpo-tabla">
     @forelse($leads ?? [] as $lead)
-        <div class="row fila-lead align-items-center">
-            <div class="col">{{ $lead->nombre }}</div>
-            <div class="col">{{ $lead->apellido_paterno }}</div>
-            <div class="col">{{ $lead->apellido_materno }}</div>
-            <div class="col">{{ $lead->telefono_1 }}</div>
-            <div class="col">{{ $lead->telefono_2 }}</div>
+        <div class="row fila-lead align-items-center text-center">
+            <div class="col">{{ $lead->tutor_nombre }} {{ $lead->tutor_paterno }}</div>
+            <div class="col">{{ $lead->alumno_nombre }} {{ $lead->alumno_paterno }}</div>
+            <div class="col">{{ $lead->telefono1 }}</div>
+            <div class="col">{{ $lead->rfc ?? 'N/A' }}</div>
             <div class="col acciones">
                 <button class="btn btn-icon">📄</button>
                 <button class="btn btn-icon">👁</button>
