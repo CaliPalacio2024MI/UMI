@@ -34,6 +34,9 @@ use App\Http\Controllers\SchoolarCont\MatriculaController;
 // --- Controladores CRM ---
 use App\Http\Controllers\CRM\CRMController;
 
+// --- Formulario CRM ---
+use App\Http\Controllers\Public\LeadPublicController;
+
 // ==========================================================================
 // 1. ACCESO PÚBLICO
 // ==========================================================================
@@ -228,6 +231,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             });
         });
         
+            // FORMULARIO PÚBLICO
+            Route::get('/inscripcion', [LeadPublicController::class, 'create']);
+            Route::post('/inscripcion', [LeadPublicController::class, 'store']);
 
         // ------------------------------------------------------------
         // C. AJUSTES DEL SISTEMA
