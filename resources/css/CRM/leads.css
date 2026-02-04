@@ -1,0 +1,60 @@
+.crm-leads {
+    background-color: #eef2f3;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.buscador {
+    border-radius: 30px;
+    padding-left: 20px;
+}
+
+/* TARJETAS */
+.card-leads,
+.card-detalle {
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border: none;
+}
+
+/* ENCABEZADOS */
+.encabezado-tabla,
+.encabezado-detalle {
+    background-color: #203864;
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.encabezado-fila {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+
+.encabezado-fila .col {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+
+/* FILAS */
+.fila-lead {
+    background: white;
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+/* ACCIONES */
+.acciones .btn-icon {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    color: red;
+}
