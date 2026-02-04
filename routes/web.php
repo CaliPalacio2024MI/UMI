@@ -31,6 +31,8 @@ use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController; 
 
+// --- Controladores CRM ---
+use App\Http\Controllers\CRM\CRMController;
 
 // ==========================================================================
 // 1. ACCESO PÚBLICO
@@ -214,6 +216,18 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::delete('/lista-estudiantes/{id}', [studentController::class, 'destroy'])->name('students.destroy');
         });
 
+
+            // --- Módulo: CRM back---
+            Route::prefix('crm')->name('CRM.')->group(function () {
+        
+            Route::get('/', [CRMController::class, 'leads'])->name('leads');
+        
+            Route::middleware(['role:master,administrador'])->group(function () {
+                Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
+                Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
+            });
+        });
+        
 
         // ------------------------------------------------------------
         // C. AJUSTES DEL SISTEMA
