@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="container">
-    <h1>Módulo CRM</h1>
+    <h1>LEADS </h1>
     <p>Desde aquí se gestiona el CRM</p>
 </div>
 @endsection

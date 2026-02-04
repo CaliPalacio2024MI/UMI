@@ -7,23 +7,18 @@ use Illuminate\Http\Request;
 
 class CRMController extends Controller
 {
-    public function index()
+    public function leads()
     {
-        return view('crm.index');
+        return view('crm.leads');
     }
 
-    public function clientes()
+    public function prospectos()
     {
-        return view('crm.clientes');
+        return view('crm.prospectos');
     }
 
-    public function seguimiento()
+    public function estadisticas()
     {
-        return view('crm.seguimiento');
-    }
-
-    public function reportes()
-    {
-        return view('crm.reportes');
+        return view('crm.estadisticas');
     }
 }

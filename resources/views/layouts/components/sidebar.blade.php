@@ -269,20 +269,16 @@
                     </a>
 
                     <ul class="submenu">
-                        <li class="{{ request()->routeIs('CRM.index') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.index') }}">Leads</a>
+                        <li class="{{ request()->routeIs('CRM.leads') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.leads') }}">Leads</a>
                         </li>
 
-                        <li class="{{ request()->routeIs('CRM.clientes') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.clientes') }}">Clientes</a>
+                        <li class="{{ request()->routeIs('CRM.prospectos') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.prospectos') }}">Prospectos</a>
                         </li>
 
-                        <li class="{{ request()->routeIs('CRM.seguimiento') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.seguimiento') }}">Seguimiento</a>
-                        </li>
-
-                        <li class="{{ request()->routeIs('CRM.reportes') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.reportes') }}">Reportes</a>
+                        <li class="{{ request()->routeIs('CRM.estadisticas') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('CRM.estadisticas') }}">Estadisticas</a>
                         </li>
                     </ul>
                 </li>

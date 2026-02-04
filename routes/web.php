@@ -220,12 +220,11 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             // --- Módulo: CRM back---
             Route::prefix('crm')->name('CRM.')->group(function () {
         
-            Route::get('/', [CRMController::class, 'index'])->name('index');
+            Route::get('/', [CRMController::class, 'leads'])->name('leads');
         
             Route::middleware(['role:master,administrador'])->group(function () {
-                Route::get('/clientes', [CRMController::class, 'clientes'])->name('clientes');
-                Route::get('/seguimiento', [CRMController::class, 'seguimiento'])->name('seguimiento');
-                Route::get('/reportes', [CRMController::class, 'reportes'])->name('reportes');
+                Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
+                Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
             });
         });
         
