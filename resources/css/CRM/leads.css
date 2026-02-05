@@ -1,60 +1,295 @@
+:root {
+    --crm-primary: #2c4770;
+    --crm-bg-light: #f8f9fa;
+    --crm-bg-gray: #d4dce3;
+
+    --crm-doc: #c8955d;
+    --crm-doc-hover: #a67a47;
+
+    --crm-danger: #dc3545;
+    --crm-danger-hover: #bd2130;
+}
+
+/* Resetear todo el body y main-content */
+body:has(.crm-leads),
+body:has(.crm-leads) .main-content {
+    overflow: hidden !important;
+    height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Fondo BLANCO general */
 .crm-leads {
-    background-color: #eef2f3;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-.buscador {
-    border-radius: 30px;
-    padding-left: 20px;
-}
-
-/* TARJETAS */
-.card-leads,
-.card-detalle {
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    border: none;
-}
-
-/* ENCABEZADOS */
-.encabezado-tabla,
-.encabezado-detalle {
-    background-color: #203864;
-    color: white;
-    border-radius: 15px 15px 0 0;
-}
-
-.encabezado-fila {
+    background-color: #ffffff;   /* 👈 clave */
+    height: 100vh;
+    padding: 30px;
+    box-sizing: border-box;
     display: flex;
-    flex-wrap: nowrap;
-    gap: 10px;
+    flex-direction: column;
 }
 
-.encabezado-fila .col {
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
+/* El gris SOLO donde van las cards */
+.contenido-principal { 
+    border-radius: 30px;
+    padding: 0px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    min-height: 0;
 }
 
 
-/* FILAS */
-.fila-lead {
-    background: white;
-    border-radius: 15px;
-    padding: 10px;
+.header-section {
+    flex-shrink: 0;
     margin-bottom: 10px;
 }
 
-/* ACCIONES */
-.acciones .btn-icon {
-    border: none;
-    background: transparent;
-    font-size: 18px;
-    margin-right: 5px;
-    cursor: pointer;
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
-.btn-danger {
-    color: red;
+.btn-settings {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #333;
+}
+
+.btn-settings:hover {
+    color: #1f3a63;
+}
+
+.search-wrapper {
+    position: relative;
+    width: 775px;          /* 👈 tamaño tipo maqueta */
+    max-width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+
+.buscador {
+    width: 100%;
+    border-radius: 30px;
+    padding-left: 45px;    /* espacio para el icono */
+    height: 42px;
+    font-size: 15px;
+    border: 1px solid #dee2e6;
+    background: white;
+}
+
+.buscador:focus {
+    border-color: #1f3a63;
+    outline: none;
+}
+
+
+/* CONTENEDORES CON FONDO GRIS */
+.card-container {
+    background-color: var(--crm-bg-gray);
+    border-radius: 25px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* CARDS */
+.card-leads,
+.card-detalle {
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    background: white;
+    flex: 1;
+    min-height: 0;
+}
+
+/* HEADERS */
+.card-header {
+    background-color: var(--crm-primary);
+    padding: 0 !important;
+    border: none !important;
+    flex-shrink: 0;
+}
+
+.encabezado-fila,
+.encabezado-fila-detalle {
+    display: grid;
+    text-align: center;
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+}
+
+.encabezado-fila {
+    grid-template-columns: 1.2fr 1.2fr 1.2fr 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+.encabezado-fila-detalle {
+    grid-template-columns: 1fr 1fr;
+}
+
+/* BODY CON SCROLL */
+.card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 0 !important;
+}
+
+.cuerpo-tabla {
+    height: 100%;
+    overflow-y: scroll !important;
+    overflow-x: hidden;
+    background-color: var(--crm-bg-light);
+    padding: 15px 10px;
+}
+
+.cuerpo-detalle {
+    height: 100%;
+    overflow: hidden;
+    padding: 20px;
+}
+
+/* SCROLLBAR */
+.cuerpo-tabla::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cuerpo-tabla::-webkit-scrollbar-track {
+    background: #e8ecef;
+    border-radius: 10px;
+}
+
+.cuerpo-tabla::-webkit-scrollbar-thumb {
+    background: #2c4770;
+    border-radius: 10px;
+}
+
+/* FILAS */
+.fila-lead {
+    display: grid;
+    grid-template-columns: 1.2fr 1.2fr 1.2fr 1fr 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+    text-align: center;
+    background: white;
+    margin: 0 10px 12px 10px;
+    padding: 14px 20px;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    font-size: 14px;
+}
+
+.fila-lead > div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ACCIONES */
+.acciones {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.acciones .btn-icon {
+    background: none;
+    border: none;
+    font-size: 20px;
+    padding: 4px 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.acciones .btn-documento,
+.acciones .btn-ver  {
+    color: var(--crm-doc);
+}
+
+
+.acciones .btn-eliminar {
+    color: var(--crm-danger);
+}
+
+.acciones .btn-documento:hover,
+.acciones .btn-ver:hover {
+   color: var(--crm-doc-hover);
+}
+
+
+.acciones .btn-eliminar:hover {
+    color: var(--crm-danger-hover);
+}
+
+/* Responsivo */
+@media (max-width: 1399px) {
+    .encabezado-fila,
+    .fila-lead {
+        grid-template-columns: 1fr 1fr 1fr 0.9fr 0.9fr 0.9fr;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 1199px) {
+    body:has(.crm-leads) .main-content {
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+    
+    .crm-leads {
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .contenido-principal {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-container {
+        min-height: 500px;
+    }
+}
+
+@media (max-width: 991px) {
+    .encabezado-fila,
+    .fila-lead {
+        grid-template-columns: 1fr 1fr 1fr 0.8fr 0.8fr 0.8fr;
+        font-size: 12px;
+        padding: 12px 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .encabezado-fila,
+    .fila-lead {
+        grid-template-columns: 1fr;
+        text-align: left;
+        gap: 5px;
+    }
+    
+    .acciones {
+        justify-content: flex-start;
+        margin-top: 10px;
+    }
 }

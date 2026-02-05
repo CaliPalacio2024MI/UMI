@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Lead;
 
 class CRMController extends Controller
 {
@@ -22,4 +23,9 @@ class CRMController extends Controller
     {
         return view('crm.estadisticas');
     }
+    public function destroy(Lead $lead)
+{
+    $lead->delete();
+    return response()->json(['success' => true]);
+}
 }

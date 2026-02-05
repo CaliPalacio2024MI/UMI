@@ -224,14 +224,15 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::prefix('crm')->name('CRM.')->group(function () {
         
             Route::get('/', [CRMController::class, 'leads'])->name('leads');
-        
+            Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])->name('leads.destroy');
+    
             Route::middleware(['role:master,administrador'])->group(function () {
                 Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
                 Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
             });
         });
         
-            // FORMULARIO PÚBLICO
+        // FORMULARIO PÚBLICO
             Route::get('/inscripcion', [LeadPublicController::class, 'create']);
             Route::post('/inscripcion', [LeadPublicController::class, 'store']);
 
