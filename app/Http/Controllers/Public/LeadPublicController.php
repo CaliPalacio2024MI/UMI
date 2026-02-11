@@ -25,8 +25,9 @@ class LeadPublicController extends Controller
             'alumno_nombre' => 'required|string',
             'alumno_paterno' => 'required|string'
         ]);
+            // Crear el LEAD
 
-        Lead::create([
+        $lead = Lead::create([
             'tutor_nombre' => $request->tutor_nombre,
             'tutor_paterno' => $request->tutor_paterno,
             'tutor_materno' => $request->tutor_materno,
@@ -40,6 +41,14 @@ class LeadPublicController extends Controller
             'origen' => 'formulario_publico',
             'clasificacion' => 'nuevo'
         ]);
+            // Crear el PRIMER SEGUIMIENTO
+        $lead->seguimientos()->create([
+            'estado' => 'Prospecto',
+            'fecha' => now()->toDateString(),
+            'hora' => now()->toTimeString(),
+        ]);
+        
+        
 
         return redirect()->back()->with('success', 'Registro enviado correctamente');
     }

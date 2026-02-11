@@ -22,4 +22,9 @@ class Lead extends Model
         'origen',
         'clasificacion'
     ];
+    public function seguimientos()
+{
+    return $this->hasMany(LeadSeguimiento::class);
+}
+
 }

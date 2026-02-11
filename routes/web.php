@@ -228,6 +228,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     
             Route::middleware(['role:master,administrador'])->group(function () {
                 Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
+                Route::post('/crm/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
                 Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
             });
         });

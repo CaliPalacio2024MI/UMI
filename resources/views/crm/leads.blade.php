@@ -44,12 +44,27 @@
 <div class="leads-body">
     <div class="cuerpo-tabla">
         @forelse($leads ?? [] as $lead)
-            <div class="fila-lead">
-                <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
-                <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
-                <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
-                <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
-                <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
+                <div class="fila-lead"
+                    data-id="{{ $lead->id }}"
+                    data-clasificacion="{{ $lead->clasificacion }}"
+                    data-tutor-nombre="{{ $lead->tutor_nombre }}"
+                    data-tutor-paterno="{{ $lead->tutor_paterno }}"
+                    data-tutor-materno="{{ $lead->tutor_materno }}"
+                    data-telefono1="{{ $lead->telefono1 }}"
+                    data-telefono2="{{ $lead->telefono2 }}"
+                    data-alumno-nombre="{{ $lead->alumno_nombre }}"
+                    data-alumno-paterno="{{ $lead->alumno_paterno }}"
+                    data-alumno-materno="{{ $lead->alumno_materno }}"
+                    data-rfc="{{ $lead->rfc }}"
+                    data-curp="{{ $lead->curp }}"
+                    data-seguimientos='@json($lead->seguimientos)'
+
+                >
+                    <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
+                    <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
+                    <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
+                    <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
+                    <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
 
                 <div class="acciones">
                     <button class="btn btn-icon btn-documento">
@@ -75,23 +90,45 @@
 
 
         <!-- COLUMNA DERECHA: RFC Y CLASIFICACIÓN -->
-<div class="card-container">
+        <div class="card-container">
 
-<!-- HEADER AZUL -->
-<div class="rfc-header">
-    <span>RFC</span>
-    <span>CLASIFICACIÓN</span>
-</div>
-
-<!-- PANEL BLANCO -->
-<div class="rfc-panel">
-    {{-- Aquí irá el detalle del lead seleccionado --}}
-</div>
-
-</div>
-
-
+    <!-- SEGUIMIENTO -->
+    <div class="leads-header">
+        <span class="text-center text-white fw-bold d-block py-2">
+            SEGUIMIENTO
+        </span>
     </div>
+
+    <div class="rfc-panel" id="seguimiento-panel">
+        <div class="seguimiento-header">
+            <span>Estado</span>
+            <span>Fecha</span>
+            <span>Hora</span>
+            <span>Acciones</span>
+        </div>
+
+        <div class="seguimiento-body">
+            <!-- JS inyecta filas -->
+        </div>
+    </div>
+
+    <!-- DATOS GENERALES -->
+    <div class="leads-header mt-3">
+        <span class="text-center text-white fw-bold d-block py-2">
+            DATOS GENERALES
+        </span>
+    </div>
+
+    <div class="rfc-panel" id="datos-panel">
+        <!-- JS inyecta datos -->
+    </div>
+
+</div>
+
+
+
+</div>
+
 
 </div>
 
@@ -149,6 +186,112 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+<script>
+const ESTADOS = [
+    'Prospecto',
+    'Prospecto frío',
+    'Prospecto caliente',
+    'Alumno'
+];
+
+document.querySelectorAll('.fila-lead').forEach(fila => {
+
+    fila.addEventListener('click', () => {
+
+        // activar fila
+        document.querySelectorAll('.fila-lead')
+            .forEach(f => f.classList.remove('activo'));
+        fila.classList.add('activo');
+
+        const d = fila.dataset;
+
+        /* =======================
+           SEGUIMIENTO (DESDE BD)
+        ======================= */
+        const seguimientoBody = document.querySelector('.seguimiento-body');
+        seguimientoBody.innerHTML = '';
+
+        const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
+
+        let estadoActual = null;
+        if (seguimientos.length > 0) {
+            estadoActual = seguimientos[seguimientos.length - 1].estado;
+        }
+
+        ESTADOS.forEach(estado => {
+
+            const registro = seguimientos.find(s => s.estado === estado);
+
+            const fecha = registro?.fecha ?? '----------';
+            const hora = registro?.hora ?? '----------';
+            const accion = registro ? '✔' : '○';
+
+            seguimientoBody.innerHTML += `
+                <div class="seguimiento-row ${registro ? '' : 'muted'}"
+                     data-estado="${estado}">
+                    <span>${estado}</span>
+                    <span>${fecha}</span>
+                    <span>${hora}</span>
+                    <span class="accion">${accion}</span>
+                </div>
+            `;
+        });
+
+        /* =======================
+           DATOS GENERALES
+        ======================= */
+        document.getElementById('datos-panel').innerHTML = `
+            <div class="datos-card">
+                <h6>Datos del tutor</h6>
+                <div class="datos-grid">
+                    <p><strong>Nombre:</strong><br>${d.tutorNombre}</p>
+                    <p><strong>Apellido Paterno:</strong><br>${d.tutorPaterno}</p>
+                    <p><strong>Apellido Materno:</strong><br>${d.tutorMaterno}</p>
+                    <p><strong>Teléfono 1:</strong><br>${d.telefono1}</p>
+                    <p><strong>Teléfono 2:</strong><br>${d.telefono2 ?? 'N/A'}</p>
+                </div>
+            </div>
+
+            <div class="datos-card">
+                <h6>Datos del Aspirante a Alumno</h6>
+                <div class="datos-grid">
+                    <p><strong>Nombre:</strong><br>${d.alumnoNombre}</p>
+                    <p><strong>Apellido Paterno:</strong><br>${d.alumnoPaterno}</p>
+                    <p><strong>Apellido Materno:</strong><br>${d.alumnoMaterno}</p>
+                    <p><strong>RFC:</strong><br>${d.rfc ?? 'N/A'}</p>
+                    <p><strong>CURP:</strong><br>${d.curp ?? 'N/A'}</p>
+                </div>
+            </div>
+        `;
+    });
+});
+
+/* =======================
+   GUARDAR NUEVO ESTADO
+======================= */
+document.addEventListener('click', function (e) {
+
+    const row = e.target.closest('.seguimiento-row');
+    if (!row) return;
+
+    if (row.classList.contains('muted')) return;
+
+    const nuevoEstado = row.dataset.estado;
+    const leadId = document.querySelector('.fila-lead.activo')?.dataset.id;
+
+    if (!leadId) return;
+
+    fetch(`/crm/leads/${leadId}/seguimiento`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+    })
+    .then(() => location.reload());
+});
+</script>
 
 
 

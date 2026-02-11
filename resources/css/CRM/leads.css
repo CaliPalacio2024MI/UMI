@@ -319,3 +319,58 @@ body:has(.crm-leads) .main-content {
         margin-top: 10px;
     }
 }
+
+.fila-lead.activo {
+    outline: 2px solid var(--crm-primary);
+    background: #eef3f8;
+}
+
+/* SEGUIMIENTO */
+.seguimiento-header,
+.seguimiento-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 0.6fr;
+    text-align: center;
+    font-size: 14px;
+}
+
+.seguimiento-header {
+    font-weight: 600;
+    padding: 14px 0;
+    border-bottom: 1px solid #dcdfe3;
+}
+
+.seguimiento-row {
+    padding: 12px 0;
+    border-bottom: 1px solid #e6e9ed;
+    cursor: pointer;
+}
+
+.seguimiento-row.muted {
+    color: #999;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* DATOS GENERALES */
+.datos-card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    margin: 16px;
+}
+
+.datos-card h6 {
+    text-align: center;
+    color: #c18b54; /* dorado maqueta */
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.datos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    font-size: 14px;
+}
+
