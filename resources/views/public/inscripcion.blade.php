@@ -36,7 +36,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="/inscripcion">
+            <form method="POST" action="/registro-publico">
                 @csrf
 
                 <!-- Section: Datos del responsable o tutor -->
