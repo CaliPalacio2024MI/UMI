@@ -270,15 +270,15 @@
 
                     <ul class="submenu">
                         <li class="{{ request()->routeIs('CRM.leads') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.leads') }}">Leads</a>
+                            <a href="{{ route('crm.leads') }}">Leads</a>
                         </li>
 
                         <li class="{{ request()->routeIs('CRM.prospectos') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.prospectos') }}">Prospectos</a>
+                            <a href="{{ route('crm.prospectos') }}">Prospectos</a>
                         </li>
 
                         <li class="{{ request()->routeIs('CRM.estadisticas') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('CRM.estadisticas') }}">Estadisticas</a>
+                            <a href="{{ route('crm.estadisticas') }}">Estadisticas</a>
                         </li>
                     </ul>
                 </li>

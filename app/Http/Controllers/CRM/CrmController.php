@@ -18,11 +18,6 @@ class CRMController extends Controller
         return view('crm.leads', compact('leads'));
     }
 
-    public function prospectos()
-    {
-        return view('crm.prospectos');
-    }
-
     public function estadisticas()
     {
         return view('crm.estadisticas');
@@ -43,5 +38,26 @@ public function guardarSeguimiento(Request $request, Lead $lead)
 
     return response()->json(['success' => true]);
 }
+    public function prospectos(Request $request)
+    {
+        $query = Lead::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('rfc', 'like', "%$search%")
+                  ->orWhere('alumno_nombre', 'like', "%$search%")
+                  ->orWhere('alumno_paterno', 'like', "%$search%")
+                  ->orWhere('alumno_materno', 'like', "%$search%")
+                  ->orWhere('curp', 'like', "%$search%")
+                  ->orWhere('clasificacion', 'like', "%$search%");
+            });
+        }
+
+        $leads = $query->orderBy('created_at', 'desc')->get();
+
+        return view('crm.prospectos', compact('leads'));
+    }
+
 
 }
