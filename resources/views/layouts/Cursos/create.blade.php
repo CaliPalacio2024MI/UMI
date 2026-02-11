@@ -20,9 +20,11 @@
         </div>
     @endif
 
-    <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        <input type="hidden" name="institution_id" value="{{ $currentInstitution->id }}">
+    <form action="{{ route('topics.store') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+
+
+
 
         {{-- Título --}}
         <div class="form-group">
@@ -127,6 +129,16 @@
                 <p id="image-name-sig2" class="file-name"></p>
             </div>
         </div>
+
+<div class="form-group">
+    <label>Archivo del Tema (Video, PDF, PPT)</label>
+    <input 
+        type="file" 
+        name="file_path" 
+        accept="video/*,.pdf,.doc,.docx,.ppt,.pptx"
+    >
+</div>
+
 
         <button type="submit" class="btn-submit">
             Guardar Curso

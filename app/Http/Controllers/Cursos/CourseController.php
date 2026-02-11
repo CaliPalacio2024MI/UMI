@@ -148,79 +148,71 @@ class CourseController extends Controller
     /**
      * Mostrar detalles de un curso
      */
-    public function show(Course $course)
-    {
-        // 1. Cargar toda la data del curso
-        $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
-        
-        $user = Auth::user();
-        
-        // 2. Calcular Total de Items (CRUCIAL para el JS)
-        $totalItems = 0;
-        foreach ($course->topics as $topic) {
-            if ($topic->file_path) $totalItems++;
-            $totalItems += $topic->activities->where('is_final_exam', false)->count();
-            foreach ($topic->subtopics as $sub) {
-                if ($sub->file_path) $totalItems++;
-                $totalItems += $sub->activities->count();
-            }
+public function show(Course $course)
+{
+    $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
+
+    $user = Auth::user();
+
+    $totalItems = 0;
+    foreach ($course->topics as $topic) {
+        if ($topic->file_path) $totalItems++;
+        $totalItems += $topic->activities->where('is_final_exam', false)->count();
+        foreach ($topic->subtopics as $sub) {
+            if ($sub->file_path) $totalItems++;
+            $totalItems += $sub->activities->count();
         }
-
-        // 3. Lógica de Usuario (Inscripción y Progreso)
-        $progress = 0;
-        $isEnrolled = false;
-        $finalExamData = null;
-        $userCompletions = collect();
-
-        if ($user) {
-            // Verificar inscripción
-            $isEnrolled = $user->courses->contains($course->id);
-
-            if (!$isEnrolled) {
-                // Auto-inscribir (si deseas mantener esta lógica)
-                $user->courses()->attach($course->id, ['progress' => 0]);
-                $isEnrolled = true;
-                $progress = 0; // Acaba de entrar, es 0
-            } else {
-                // Si ya estaba inscrito, obtenemos el progreso de la BD
-                // Usamos la relación directa para evitar consultas extra
-                $pivotRow = $user->courses()->where('course_id', $course->id)->first();
-                if ($pivotRow && $pivotRow->pivot) {
-                    $progress = $pivotRow->pivot->progress;
-                }
-            }
-
-            $userCompletions = $user->completions->map(function ($item) {
-                return [
-                    'type' => class_basename($item->completable_type), // Ej: "Topics", "Activities"
-                    'id'   => $item->completable_id
-                ];
-            });
-
-            // 4. Datos del Examen Final
-            $finalExamActivity = $course->finalExam;
-            if ($finalExamActivity) {
-                $finalExamData = $user->completions()
-                    ->where('completable_type', Activities::class)
-                    ->where('completable_id', $finalExamActivity->id)
-                    ->first();
-            }
-        } else {
-            // Si no hay usuario, el examen final es null (para visualización pública)
-            $finalExamActivity = $course->finalExam;
-        }
-
-        // 5. Retornar vista con TODAS las variables
-        return view('layouts.Cursos.show', compact(
-            'course', 
-            'progress',       
-            'totalItems',     
-            'isEnrolled', 
-            'finalExamActivity', 
-            'finalExamData',
-            'userCompletions'
-        ));
     }
+
+    $progress = 0;
+    $isEnrolled = false;
+    $finalExamData = null;
+    $userCompletions = collect();
+
+    if ($user) {
+        $isEnrolled = $user->courses->contains($course->id);
+
+        if (!$isEnrolled) {
+            $user->courses()->attach($course->id, ['progress' => 0]);
+        } else {
+            $pivotRow = $user->courses()->where('course_id', $course->id)->first();
+            if ($pivotRow && $pivotRow->pivot) {
+                $progress = $pivotRow->pivot->progress;
+            }
+        }
+
+        $userCompletions = $user->completions->map(function ($item) {
+            return [
+                'type' => class_basename($item->completable_type),
+                'id'   => $item->completable_id
+            ];
+        });
+
+        $finalExamActivity = $course->finalExam;
+        if ($finalExamActivity) {
+            $finalExamData = $user->completions()
+                ->where('completable_type', Activities::class)
+                ->where('completable_id', $finalExamActivity->id)
+                ->first();
+        }
+    } else {
+        $finalExamActivity = $course->finalExam;
+    }
+
+    $topics = $course->topics; // ✅ CLAVE
+
+    return view('layouts.Cursos.show', compact(
+        'course',
+        'topics',        // ✅ CLAVE
+        'progress',
+        'totalItems',
+        'isEnrolled',
+        'finalExamActivity',
+        'finalExamData',
+        'userCompletions'
+    ));
+}
+
 
     /**
      * Mostrar formulario de edición

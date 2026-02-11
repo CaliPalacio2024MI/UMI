@@ -30,25 +30,32 @@ class TopicsController extends Controller
     /**
      * Guardar un nuevo tema
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $validatedData = $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'file_path' => 'nullable|file|mimes:pdf,doc,docx,pptx,mp4,mov,avi,wmv|max:163840', // max 160MB
-        ]);
+public function store(Request $request): RedirectResponse
+{
+    $validatedData = $request->validate([
+        'course_id'   => 'required|exists:courses,id',
+        'title'       => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
+    ]);
 
-        if ($request->hasFile('file')){
-            $path = $request->file('file')->store('topic_files', 'public');
-
-            $validatedData['file_path']=$path;
-        }
-
-        Topics::create($validatedData);
-
-        return back()->with('success', 'Tema creado exitosamente.');
+    if ($request->hasFile('file')) {
+        $path = $request->file('file')->store('topic_files', 'public');
+        $validatedData['file_path'] = $path;
     }
+
+    unset($validatedData['file']);
+
+    Topics::create($validatedData);
+
+    return back()->with('success', 'Tema creado exitosamente.');
+}
+
+
+
+
+
+
 
     /**
      * Muestra el formulario para editar un tema existente.
@@ -70,23 +77,38 @@ class TopicsController extends Controller
     public function update(Request $request, Topics $topic)
     {
         $validatedData = $request->validate([
-            'title' => 'required|string|max:255', 
-            'description' => 'nullable|string',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi|max:163840', // max 160MB
-        ]);
+    'title' => 'required|string|max:255',
+    'description' => 'nullable|string',
+    'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
+]);
+
+if ($request->hasFile('file_path')) {
+
+    if ($topic->file_path) {
+        Storage::disk('public')->delete($topic->file_path);
+    }
+
+    $topic->file_path = $request->file('file_path')->store('topic_files', 'public');
+}
+
+$topic->title = $request->title;
+$topic->description = $request->description;
+$topic->save();
 
         // Actualizar tema
         $topic->title = $request->title;
         $topic->description = $request->description;
 
         // Manejar archivo si se subió uno nuevo
-        if ($request->hasFile('file')) {
+        if ($request->hasFile('file_path')) {
+
             // Eliminar archivo anterior si existe
             if ($topic->file_path) {
                 Storage::disk('public')->delete($topic->file_path);
 
             }
-            $topic->file_path = $request->file('file')->store('topics', 'public');
+            $topic->file_path = $request->file('file_path')->store('topics', 'public');
+
         }
 
         $topic->save();
