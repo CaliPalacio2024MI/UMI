@@ -223,7 +223,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
 
             // --- Módulo: CRM back---
-            Route::prefix('crm')->name('CRM.')->group(function () {
+            Route::prefix('crm')->name('crm.')->group(function () {
         
             Route::get('/', [CRMController::class, 'leads'])->name('leads');
             Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])->name('leads.destroy');

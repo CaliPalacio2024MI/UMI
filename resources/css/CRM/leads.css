@@ -16,7 +16,8 @@ body:has(.crm-leads) .main-content {
 
 /* Fondo BLANCO general */
 .crm-leads {
-    background-color: #ffffff;   /* 👈 clave */
+    background-color: #ffffff;
+    /* 👈 clave */
     height: 100vh;
     padding: 30px;
     box-sizing: border-box;
@@ -25,7 +26,7 @@ body:has(.crm-leads) .main-content {
 }
 
 /* El gris SOLO donde van las cards */
-.contenido-principal { 
+.contenido-principal {
     border-radius: 30px;
     padding: 0px;
     display: grid;
@@ -61,7 +62,8 @@ body:has(.crm-leads) .main-content {
 
 .search-wrapper {
     position: relative;
-    width: 775px;          /* 👈 tamaño tipo maqueta */
+    width: 775px;
+    /* 👈 tamaño tipo maqueta */
     max-width: 100%;
 }
 
@@ -80,7 +82,8 @@ body:has(.crm-leads) .main-content {
 .buscador {
     width: 100%;
     border-radius: 30px;
-    padding-left: 45px;    /* espacio para el icono */
+    padding-left: 45px;
+    /* espacio para el icono */
     height: 42px;
     font-size: 15px;
     border: 1px solid #dee2e6;
@@ -103,6 +106,14 @@ body:has(.crm-leads) .main-content {
     min-height: 0;
 }
 
+/* Columna derecha con scroll propio si es necesario */
+#right-column {
+    overflow-y: auto;
+    /* 👈 permite hacer scroll vertical */
+    max-height: 100%;
+    /* se asegura que no rompa el layout padre */
+}
+
 /* CARDS */
 .card-leads,
 .card-detalle {
@@ -114,14 +125,17 @@ body:has(.crm-leads) .main-content {
 }
 
 .card-leads {
-    background: transparent;   /* 👈 importante */
-    box-shadow: none;          /* como en el maquetado */
+    background: transparent;
+    /* 👈 importante */
+    box-shadow: none;
+    /* como en el maquetado */
 }
 
 .card-detalle {
     background: transparent;
     box-shadow: none;
-    background: white;              /* 👈 AQUÍ va el blanco */
+    background: white;
+    /* 👈 AQUÍ va el blanco */
     border-radius: 18px;
     margin: 30px;
     padding: 0px;
@@ -151,7 +165,7 @@ body:has(.crm-leads) .main-content {
     /* 👇 clave */
     padding: 16px 0 12px;
     gap: 0;
-    
+
 }
 
 .encabezado-fila-detalle {
@@ -171,7 +185,7 @@ body:has(.crm-leads) .main-content {
     overflow-x: hidden;
     background: transparent;
     padding: 4px 10px 15px 10px;
-    max-height: 420px; 
+    max-height: 420px;
     padding-top: 4px;
 }
 
@@ -179,7 +193,8 @@ body:has(.crm-leads) .main-content {
     background: white;
     border-radius: 16px;
     padding: 20px;
-    margin: 12px;              /* 👈 MUY IMPORTANTE: pequeño */
+    margin: 12px;
+    /* 👈 MUY IMPORTANTE: pequeño */
     flex: 1;
 }
 
@@ -205,18 +220,18 @@ body:has(.crm-leads) .main-content {
     align-items: center;
     text-align: center;
     background: white;
-    margin: 1px -8px 10px -8px ;
+    margin: 1px -8px 10px -8px;
     border-radius: 18px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     font-size: 14px;
     margin-bottom: 12px;
 }
 
-.fila-lead > div {
+.fila-lead>div {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding:  12px
+    padding: 12px
 }
 
 /* ACCIONES */
@@ -247,7 +262,7 @@ body:has(.crm-leads) .main-content {
     text-align: center;
     padding: 16px;
     border-radius: 16px;
-    margin: 1px -6px 10px -6px; 
+    margin: 1px -6px 10px -6px;
     font-weight: 600;
     margin-top: -6px;
 }
@@ -263,13 +278,26 @@ body:has(.crm-leads) .main-content {
 .leads-header {
     background-color: var(--crm-primary);
     border-radius: 18px;
-    margin: 1px -6px 10px -6px; 
-    margin-top: -6px;/* 👈 flota arriba */
+    margin: 1px -6px 10px -6px;
+    margin-top: -6px;
+    /* 👈 flota arriba */
+}
+
+/* Titulo lateral idéntico al de la izquierda */
+.titulo-lateral {
+    text-align: center;
+    padding: 16px 0 12px;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+    display: block;
+    margin: 0;
 }
 
 
 /* Responsivo */
 @media (max-width: 1399px) {
+
     .encabezado-fila,
     .fila-lead {
         grid-template-columns: 1fr 1fr 1fr 0.9fr 0.9fr 0.9fr;
@@ -282,22 +310,23 @@ body:has(.crm-leads) .main-content {
         overflow-y: auto !important;
         height: auto !important;
     }
-    
+
     .crm-leads {
         height: auto;
         min-height: 100vh;
     }
-    
+
     .contenido-principal {
         grid-template-columns: 1fr;
     }
-    
+
     .card-container {
         min-height: 500px;
     }
 }
 
 @media (max-width: 991px) {
+
     .encabezado-fila,
     .fila-lead {
         grid-template-columns: 1fr 1fr 1fr 0.8fr 0.8fr 0.8fr;
@@ -307,13 +336,14 @@ body:has(.crm-leads) .main-content {
 }
 
 @media (max-width: 768px) {
+
     .encabezado-fila,
     .fila-lead {
         grid-template-columns: 1fr;
         text-align: left;
         gap: 5px;
     }
-    
+
     .acciones {
         justify-content: flex-start;
         margin-top: 10px;
@@ -335,7 +365,10 @@ body:has(.crm-leads) .main-content {
 }
 
 .seguimiento-header {
-    font-weight: 600;
+    font-weight: 700;
+    /* Bold como en la imagen */
+    color: #000;
+    /* Negro solido */
     padding: 14px 0;
     border-bottom: 1px solid #dcdfe3;
 }
@@ -353,24 +386,65 @@ body:has(.crm-leads) .main-content {
 }
 
 /* DATOS GENERALES */
+/* DATOS GENERALES */
 .datos-card {
     background: white;
     border-radius: 18px;
     padding: 20px;
-    margin: 16px;
+    /* Compactado: de 25px a 20px */
+    margin: 10px;
+    /* Compactado: de 16px a 10px */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.datos-card h6 {
+.titulo-seccion {
     text-align: center;
-    color: #c18b54; /* dorado maqueta */
-    font-weight: 600;
-    margin-bottom: 16px;
+    color: #c18b54;
+    font-weight: 700;
+    margin-bottom: 15px;
+    /* Compactado: de 20px a 15px */
+    font-size: 15px;
+    /* Compactado: de 16px a 15px */
 }
 
-.datos-grid {
+/* Grid de 3 columnas para Nombres */
+.datos-grid-3 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    font-size: 14px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    /* Compactado: de 10px a 8px */
+    text-align: center;
 }
 
+/* Flex centrado para Telefonos y RFC/CURP */
+.datos-flex-center {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    /* Compactado: de 60px a 40px */
+    text-align: center;
+}
+
+.dato-item label {
+    display: block;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 2px;
+    /* Compactado */
+    font-size: 13px;
+    /* Compactado: de 14px a 13px */
+}
+
+.dato-item p {
+    margin: 0;
+    color: #555;
+    font-size: 13px;
+    /* Compactado: de 14px a 13px */
+}
+
+.separador-datos {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
+    /* Compactado: de 25px a 15px */
+}

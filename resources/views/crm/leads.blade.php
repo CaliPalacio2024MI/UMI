@@ -67,13 +67,10 @@
                     <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
 
                 <div class="acciones">
-                    <button class="btn btn-icon btn-documento">
-                        <img src="{{ asset('images/icons/document.svg') }}" class="icon">
+                    <button class="btn btn-icon btn-flecha">
+                        <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
                     </button>
 
-                    <button class="btn btn-icon btn-ver">
-                        <img src="{{ asset('images/icons/view.svg') }}" class="icon">
-                    </button>
 
                     <button class="btn btn-icon btn-eliminar" data-id="{{ $lead->id }}">
                         <img src="{{ asset('images/icons/delete.svg') }}" class="icon">
@@ -90,11 +87,11 @@
 
 
         <!-- COLUMNA DERECHA: RFC Y CLASIFICACIÓN -->
-        <div class="card-container">
+        <div class="card-container" id="right-column">
 
     <!-- SEGUIMIENTO -->
     <div class="leads-header">
-        <span class="text-center text-white fw-bold d-block py-2">
+        <span class="titulo-lateral">
             SEGUIMIENTO
         </span>
     </div>
@@ -114,7 +111,7 @@
 
     <!-- DATOS GENERALES -->
     <div class="leads-header mt-3">
-        <span class="text-center text-white fw-bold d-block py-2">
+        <span class="titulo-lateral">
             DATOS GENERALES
         </span>
     </div>
@@ -196,7 +193,12 @@ const ESTADOS = [
 
 document.querySelectorAll('.fila-lead').forEach(fila => {
 
-    fila.addEventListener('click', () => {
+    const btnFlecha = fila.querySelector('.btn-flecha');
+    if (!btnFlecha) return;
+
+    btnFlecha.addEventListener('click', (e) => {
+        
+        e.stopPropagation(); // Evita otros eventos si los hubiera
 
         // activar fila
         document.querySelectorAll('.fila-lead')
@@ -240,27 +242,72 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
         /* =======================
            DATOS GENERALES
         ======================= */
+        /* =======================
+           DATOS GENERALES
+        ======================= */
         document.getElementById('datos-panel').innerHTML = `
             <div class="datos-card">
-                <h6>Datos del tutor</h6>
-                <div class="datos-grid">
-                    <p><strong>Nombre:</strong><br>${d.tutorNombre}</p>
-                    <p><strong>Apellido Paterno:</strong><br>${d.tutorPaterno}</p>
-                    <p><strong>Apellido Materno:</strong><br>${d.tutorMaterno}</p>
-                    <p><strong>Teléfono 1:</strong><br>${d.telefono1}</p>
-                    <p><strong>Teléfono 2:</strong><br>${d.telefono2 ?? 'N/A'}</p>
+                
+                <!-- TUTOR -->
+                <h6 class="titulo-seccion">Datos del Tutor</h6>
+                
+                <div class="datos-grid-3">
+                    <div class="dato-item">
+                        <label>Nombre:</label>
+                        <p>${d.tutorNombre}</p>
+                    </div>
+                    <div class="dato-item">
+                        <label>Apellido Paterno:</label>
+                        <p>${d.tutorPaterno}</p>
+                    </div>
+                    <div class="dato-item">
+                        <label>Apellido Materno:</label>
+                        <p>${d.tutorMaterno}</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="datos-card">
-                <h6>Datos del Aspirante a Alumno</h6>
-                <div class="datos-grid">
-                    <p><strong>Nombre:</strong><br>${d.alumnoNombre}</p>
-                    <p><strong>Apellido Paterno:</strong><br>${d.alumnoPaterno}</p>
-                    <p><strong>Apellido Materno:</strong><br>${d.alumnoMaterno}</p>
-                    <p><strong>RFC:</strong><br>${d.rfc ?? 'N/A'}</p>
-                    <p><strong>CURP:</strong><br>${d.curp ?? 'N/A'}</p>
+                <div class="datos-flex-center mt-3">
+                    <div class="dato-item">
+                        <label>Teléfono 1:</label>
+                        <p>${d.telefono1}</p>
+                    </div>
+                    <div class="dato-item">
+                        <label>Teléfono 2:</label>
+                        <p>${d.telefono2 ?? 'N/A'}</p>
+                    </div>
                 </div>
+
+                <hr class="separador-datos">
+
+                <!-- ASPIRANTE -->
+                <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
+
+                <div class="datos-grid-3">
+                    <div class="dato-item">
+                        <label>Nombre:</label>
+                        <p>${d.alumnoNombre}</p>
+                    </div>
+                    <div class="dato-item">
+                        <label>Apellido Paterno:</label>
+                        <p>${d.alumnoPaterno}</p>
+                    </div>
+                    <div class="dato-item">
+                        <label>Apellido Materno:</label>
+                        <p>${d.alumnoMaterno}</p>
+                    </div>
+                </div>
+
+                <div class="datos-flex-center mt-3">
+                    <div class="dato-item">
+                        <label>RFC:</label>
+                        <p>${d.rfc ?? 'N/A'}</p>
+                    </div>
+                    <div class="dato-item">
+                        <label>CURP:</label>
+                        <p>${d.curp ?? 'N/A'}</p>
+                    </div>
+                </div>
+
             </div>
         `;
     });
