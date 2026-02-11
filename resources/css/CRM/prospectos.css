@@ -2,39 +2,13 @@
     --crm-primary: #1f3a63;
     --crm-header-bg: #1f3a63;
     --crm-bg-gray: #d4dce3;
-    /* Simplificando grid para asegurar compatibilidad */
-    --prospectos-grid:1fr 1.2fr 1fr 1fr 1fr 1.3fr 1fr; 
 }
-
-
-/* Encabezado de la Tabla (Fijo arriba) */
-.table-header {
-    background: var(--crm-header-bg);
-    color: white;
-
-    display: grid;
-    grid-template-columns: 1fr 1.2fr 1fr 1fr 1fr 1.3fr 1fr;
-
-    padding: 18px 0px;
-    font-weight: 600;
-    text-align: center;
-    column-gap: 10px;
-}
-
-.table-header div {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 0 25px; 
-}
-
 
 /* Resetear todo el body y main-content para que ocupe 100vh */
 body:has(.crm-prospectos),
 body:has(.crm-prospectos) .main-content {
     background-color: #ffffff !important;
     height: 100vh !important;
-    /* Fijo para que no scrollee la pagina */
     overflow: hidden !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -138,10 +112,30 @@ body:has(.crm-prospectos) .main-content {
 /* Contenedor de la Tabla (Card Principal) */
 .table-container {
     background: transparent;
-
     flex: 1;
     display: flex;
     flex-direction: column;
+}
+
+.table-card {
+    background: var(--crm-bg-gray);
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Encabezado de la Tabla (Fijo arriba) */
+.table-row-header {
+    background: #1f3a63;
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr 1fr 1fr 1.3fr 1fr;
+    text-align: center;
+    column-gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 /* Cuerpo de la Tabla (Scroll interno) */
@@ -150,12 +144,9 @@ body:has(.crm-prospectos) .main-content {
     display: flex;
     flex-direction: column;
     gap: 12px;
-
     max-height: 500px;
     overflow-y: auto;
 }
-
-
 
 /* Scrollbar personalizado en el BODY */
 .table-body::-webkit-scrollbar {
@@ -178,42 +169,40 @@ body:has(.crm-prospectos) .main-content {
     background: white;
     border-radius: 12px;
     padding: 20px;
-
     display: grid;
     grid-template-columns: 1fr 1.2fr 1fr 1fr 1fr 1.3fr 1fr;
-
     text-align: center;
     column-gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
-
-
 
 .table-row:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
-.table-row>div {
+/* Clases específicas para cada columna */
+.col-rfc,
+.col-nombre,
+.col-paterno,
+.col-materno,
+.col-ctp,
+.col-tipo,
+.col-fecha {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 0;
 }
-
-.table-card {
-    background: var(--crm-bg-gray);
-    border-radius: 20px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
 
 /* Responsive */
 @media (max-width: 1200px) {
-
-    /* Si la pantalla es muy chica, permitimos scroll horizontal pero dentro del body */
     .table-body {
         overflow-x: auto;
     }
-
+    
+    .table-header,
+    .table-row {
+        min-width: 900px;
+    }
 }
