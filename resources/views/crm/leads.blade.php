@@ -1,7 +1,11 @@
 @extends('layouts.app')
 
 @section('title', 'CRM - Leads')
-@vite(['resources/css/CRM/leads.css'])
+
+@push('css')
+    @vite('resources/css/CRM/leads.css')
+@endpush
+
 @section('content')
 
 <div class="crm-leads">

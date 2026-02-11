@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @section('title', 'CRM - Prospectos')
-@vite(['resources/css/CRM/prospectos.css'])
+@push('css')
+    @vite('resources/css/CRM/prospectos.css')
+@endpush
 @section('content')
 <div class="crm-prospectos">
     
