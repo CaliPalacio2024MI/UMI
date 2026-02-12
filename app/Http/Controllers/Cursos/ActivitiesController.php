@@ -154,7 +154,19 @@ class ActivitiesController extends Controller
             }
         }
 
-        // 2. Marcar como completado usando el sistema polimórfico
+        // 3. Validar "Sopa de Letras"
+        elseif ($activity->type === 'SopaDeLetras') {
+            $validated = $request->validate(['completed' => 'required|boolean']);
+            
+            if ($validated['completed']) {
+                $score = 100.00;
+                $message = '¡Sopa de letras completada!';
+            } else {
+                return response()->json(['success' => false, 'message' => 'No has completado la sopa de letras.'], 422);
+            }
+        }
+
+        // 4. Marcar como completado usando el sistema polimórfico
         $completion = $user->completions()->updateOrCreate(
             [
                 'completable_type' => Activities::class, 
@@ -185,7 +197,7 @@ class ActivitiesController extends Controller
             'success' => true,
             'created' => $completion->wasRecentlyCreated, // Para que el JS sepa si debe actualizar la barra
             'score'   => $score,
-            'message' => '¡Actividad completada exitosamente!'
+            'message' => $message
         ]);
     }
 

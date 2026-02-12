@@ -1,0 +1,137 @@
+[33mc717f9c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mJuan-Pablo[m[33m, [m[1;31morigin/Juan-Pablo[m[33m)[m Implementación del panel y lector correctamente
+[33m7e33639[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/Luis-Gustavo[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;31morigin/Gulmaro[m[33m, [m[1;32mmaster[m[33m)[m ultimos retoques
+[33mf42d813[m limpieza
+[33ma429ff2[m limpieza de codigo
+[33m9b041cc[m Merge branch 'master' of https://github.com/EstebanRivers/UMI_MrkI
+[33m6ccbfeb[m ajustes finales
+[33mbfde443[m Merge pull request #15 from EstebanRivers/Facturación
+[33md97c360[m Updated package-lock.json
+[33mf85a84b[m Fix Boton de studentes .
+[33m3762a5d[m Merge remote-tracking branch 'origin/Facturación'
+[33m6f365fb[m Fix Boton de subir archivos .
+[33m03d55ce[m Merge remote-tracking branch 'origin/ajustes'
+[33mc9992dc[m CSS de la tabla
+[33mf5835d3[m Merge remote-tracking branch 'origin/Facturación'
+[33ma33d2b0[m ajustes en edicion de curso
+[33mc1eea19[m Fix Modal del expediente .
+[33mb04ade3[m Fix Checkbox de inscripción .
+[33ma9d5711[m Fix Estilos en Lista de alumnos .
+[33m8603eec[m Fix Inicializador de scripts en Lista de alumnos e Inscripción.
+[33m9dda932[m Fix + Lógica de Corrección de Datos de Anfitrión en Inscripción.
+[33m9f274f6[m Corrección de Datos de Anfitrión en Inscripción.
+[33mc45be60[m Estilos a los acordeones de Facturación.
+[33m047ba54[m Calculo de Fecha de Factura EXTRA simplificado.
+[33m402322b[m Se elimina archivo PDF subido basura de la carpeta public.
+[33m4a9d5dc[m fix: Alerta de Error cuando se sube un PDF mayor a 5 MB en Facturación
+[33m1011ec5[m fix: estilos del boton de Documentación en Matriculas
+[33m9ca7d76[m fix: estilos de los botones de la lista de alumnos
+[33mfa90b1d[m fix: input no modificable cuando es Anfitrión
+[33m9fdbd49[m FIX: Implementar lógica de subida y persistencia de documentos en studentController para la edición de alumnos.
+[33mc9a0cb0[m FIX: Definir una variable  en InscripcionController para facturación.
+[33m737478d[m Añadir Zona Local
+[33m62717ae[m Fix: Logica de UIDs robustos y filtro de alertas
+[33m95c6ea0[m Merge branch 'master' of https://github.com/EstebanRivers/UMI_MrkI
+[33mf03935c[m Actualizacion completa: Modulo de facturacion, inscripciones y estilos visuales
+[33m469d319[m diseño final ahora si en cursos
+[33m603d84d[m Ultimo ajuste en diseño de cursos
+[33m5f3ae40[m ajustes finales de cursos
+[33meb97616[m mas ajustes en cursos
+[33m92e7d56[m ajustes en cursos
+[33ma61d708[m arreglo en sidebar
+[33m68a96ff[m vista  faltante de facturacion
+[33mb7cdbef[m reinicio de rama
+[33m4bf0a39[m arreglos en compatibilidad
+[33mf93a15a[m Merge remote-tracking branch 'origin/Facturacion' into Proyecto
+[33m1f70e53[m ajustes de diseño cursos
+[33m16a364d[m Merge remote-tracking branch 'origin/ajustes' into Proyecto
+[33m04c1aa9[m arreglo de diseño y compatibilidad de resolucion en cursos
+[33m40ea4ad[m ajutes de diseno
+[33mf4f114f[m Conflictos Resueltos al hacer merge con ajustes
+[33m20f2269[m Ajustes finales antes del merge
+[33mce55518[m Correcciones finales: Login multi-rol, validaciones de usuario y estilos de botones
+[33m6663ab1[m Finalizado flujo completo: Inscripción inteligente, Facturación automática, Matrícula y Activación de Alumnos
+[33m7d68e3e[m lista de certificados y limpieza de codigo
+[33m4112610[m Refactor completion logic to use updateOrCreate method and update confirmation message for course deletion
+[33mc9f0540[m ajustes en cursos
+[33m73e4b32[m Fusionar rama Facturacion: Conflictos resueltos y migraciones corregidas
+[33me66d130[m Facturacion: Lógica de meses dinámicos, alertas y correcciones en vistas
+[33m9d607ce[m Fix: Lógica de fechas de vencimiento personalizadas y corrección de controladores
+[33m816659f[m certificado pdf
+[33m824f07e[m Fix: Modal facturación perfecto (Scroll, URL limpia y Botones unificados)
+[33m77cbc5a[m Merge: Fusionando rama ajustes con correcciones de facturación y menú
+[33m1d033e1[m Traer el menu lateral
+[33m0cd761e[m Fix: Modal facturación (Scroll, SPA), estilos de botones y redirección exacta por ancla
+[33m105c1a2[m Arreglo de compatibilidad y anadir las rutas de control admin
+[33ma56f702[m Merge remote-tracking branch 'origin/ControlAdmin' into Proyecto
+[33m1ed2d0c[m Remove unused migration files and update careers table to allow nullable fields for official_id, descriptions, and type
+[33m4c1d9b4[m Merge remote-tracking branch 'origin/ajustes' into Proyecto
+[33m77f2a5c[m Merge remote-tracking branch 'origin' into Proyecto
+[33m018b3c5[m certificado provisional
+[33m126f84c[m arreglos en diseno de examen
+[33m37e800e[m diseno exam
+[33m1e79db4[m diseno e implementacion de examen
+[33m2989234[m Tabla periodos
+[33me66f96e[m examen final de cursos
+[33m1b443e4[m diseno
+[33mf593924[m arreglos en los filtros y código mas limpio
+[33m9d60bf4[m Merge branch 'origin/Facturacion' - Integración de módulo de facturación
+[33md248570[m Avances facturación (abonos, UI, filtros)
+[33m6b6d5c1[m Modulo Administrativo: Listas (Materias)
+[33m16adff6[m Docentes y Alumnos Funcionales
+[33m155f8ca[m Modulo Administrativo: Listas Docentes y Alumnos, Inscripcion
+[33m130a6b3[m diseno crucigrama
+[33m81893cc[m arreglos en crucigrama
+[33m7ccfcda[m ajustes de vistas
+[33m4da33ac[m actividades crucigrama y sopa de letras
+[33maa804e0[m Modulo Administrativo: ControlEscolar
+[33m84ab6d2[m Modulo Administrativo:Seccion ControlEscolar
+[33m77f1f9b[m lo mismo
+[33mc924c7f[m Merge branch 'master' of https://github.com/EstebanRivers/UMI_MrkI
+[33me4ba7d3[m arreglos en archivos
+[33mfa75eb3[m Modulo Administrativo: Correcion Css c2
+[33m81026b5[m Updated package-lock.json
+[33m51c0479[m correccion de permisos y resolucion de actividades
+[33mb580811[m modificacion
+[33mc3e75c6[m Separación de Listas
+[33maa9b56e[m Mdulo Administrativo: Aulas
+[33m9c3290a[m json
+[33m428fe6c[m diseno
+[33m7bef1f5[m Updated package-lock.json
+[33maa58808[m diseno
+[33m61174d6[m Diseno del contenido del curso
+[33m3d4305b[m arreglo en filtros de creacion de cursos
+[33m497a961[m actualizacion en la barra de progreso en curso
+[33ma0b34e5[m Modulo Administrativo: Horarios Completado
+[33m1322e71[m Barra de progreso a los cursos con ajustes de vistas
+[33mff8a685[m Pre Merge
+[33m616d312[m Modulo Administrativo: Horarios
+[33m8fe780f[m compativilidad carreras
+[33mde66fa8[m conflicto base de datos
+[33m08d4a53[m conflictos
+[33mf45ea0f[m Merge remote-tracking branch 'origin/controladmin' into Proyecto
+[33ma2ca826[m Merge pull request #13 from EstebanRivers/Proyecto
+[33m19da0ca[m Merge pull request #12 from EstebanRivers/master
+[33m4b85924[m funcion de multi rol en la vista de usuarios
+[33mf90019a[m Conflictos parcialmente solucionados
+[33mf4b6dbb[m Conflictos de M:M
+[33m905eaea[m Merge pull request #11 from EstebanRivers/Proyecto
+[33m4788ee2[m ajustes de compatibilidad al juntar ajustes
+[33mafcabdd[m Merge branch 'ajustes' into Proyecto
+[33mc8d4515[m jhonson
+[33mb01e6e6[m Merge pull request #10 from EstebanRivers/Proyecto
+[33m703e078[m vistas cursos
+[33mc00291e[m feat(ajustes): menu desplegable de ajuestes y vistas, todavia faltan los modales del CRUD
+[33m0491db8[m vistas curso
+[33mb0f7c3c[m Merge pull request #8 from EstebanRivers/MiInformacion
+[33mb1b58b6[m Merge pull request #7 from EstebanRivers/Proyecto
+[33m04a694a[m Merge branch 'master' of https://github.com/EstebanRivers/UMI_MrkI
+[33m8f800c2[m edicion de temas cursos
+[33m4182515[m Merge pull request #6 from EstebanRivers/Facturacion
+[33m68a788d[m Merge pull request #5 from EstebanRivers/Proyecto
+[33m5369dd6[m Modulo Administrativo: arreglo
+[33mf8b570c[m Modulo Administrativo: Detalles en listas
+[33m359988c[m ModuloAdministrativo: Listas Funcionales
+[33mcb1d569[m Modulo Administrativo: Listas Funcionales. Conectando listas a Base de datos
+[33m3a9246e[m Merge branch 'Proyecto'
+[33m35ef797[m modificacion en los temas de cursos
+[33mc019327[m Modulo Administr

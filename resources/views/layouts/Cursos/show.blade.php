@@ -21,14 +21,14 @@
                 </div>
 
                 @foreach ($subtopic->activities as $activity)
-                    <div class="syllabus-link act" data-target="#content-activity-{{ $activity->id }}">
+                    <div class="syllabus-link act" data-target="#content-activity-{{ $activity->id }}" data-activity-id="{{ $activity->id }}">
                         ▶ {{ $activity->title }}
                     </div>
                 @endforeach
             @endforeach
 
             @foreach ($topic->activities as $activity)
-                <div class="syllabus-link act" data-target="#content-activity-{{ $activity->id }}">
+                <div class="syllabus-link act" data-target="#content-activity-{{ $activity->id }}" data-activity-id="{{ $activity->id }}">
                     ▶ {{ $activity->title }}
                 </div>
             @endforeach
@@ -77,29 +77,185 @@
                 </section>
 
                 @foreach ($subtopic->activities as $activity)
-                    <section class="content-panel" id="content-activity-{{ $activity->id }}">
+                    <section class="content-panel" id="content-activity-{{ $activity->id }}" data-activity-type="{{ $activity->type }}">
                         <h2>{{ $activity->title }}</h2>
                         <p>{{ $activity->description }}</p>
 
+                        {{-- CUESTIONARIO --}}
+                        @if ($activity->type === 'Cuestionario')
+                            <div class="game-container cuestionario-container">
+                                <div class="question-box">
+                                    <h3>{{ $activity->content['question'] ?? '' }}</h3>
+                                    <form class="cuestionario-form" data-activity-id="{{ $activity->id }}">
+                                        @csrf
+                                        @foreach ($activity->content['options'] ?? [] as $index => $option)
+                                            <label class="option-label">
+                                                <input type="radio" name="answer" value="{{ $index }}" required>
+                                                <span>{{ $option }}</span>
+                                            </label>
+                                        @endforeach
+                                        <button type="submit" class="btn-submit">Enviar Respuesta</button>
+                                    </form>
+                                    <div class="result-message"></div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- EXAMEN --}}
+                        @if ($activity->type === 'Examen')
+                            <div class="game-container examen-container">
+                                <form class="examen-form" data-activity-id="{{ $activity->id }}">
+                                    @csrf
+                                    @foreach ($activity->content['questions'] ?? [] as $qIndex => $question)
+                                        <div class="question-item">
+                                            <h4>{{ $qIndex + 1 }}. {{ $question['question'] }}</h4>
+                                            @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                                <label class="option-label">
+                                                    <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                    <span>{{ $option }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                    <button type="submit" class="btn-submit">Enviar Examen</button>
+                                </form>
+                                <div class="result-message"></div>
+                            </div>
+                        @endif
+
+                        {{-- SOPA DE LETRAS --}}
+                        @if ($activity->type === 'SopaDeLetras')
+                            <div class="game-container sopa-container">
+                                <div class="words-to-find">
+                                    <h4>Palabras a encontrar:</h4>
+                                    <ul id="word-list-{{ $activity->id }}">
+                                        @foreach ($activity->content['words'] ?? [] as $word)
+                                            <li data-word="{{ strtoupper(trim($word)) }}">{{ $word }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                <div class="grid-container" id="grid-{{ $activity->id }}" 
+                                     data-activity-id="{{ $activity->id }}"
+                                     data-words='@json(array_map(fn($w) => strtoupper(trim($w)), $activity->content['words'] ?? []))'
+                                     data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                                    <!-- La grilla se generará aquí con JavaScript -->
+                                </div>
+                                <button class="btn-submit" onclick="checkSopaCompletion({{ $activity->id }})">Verificar Completado</button>
+                                <div class="result-message"></div>
+                            </div>
+                        @endif
+
+                        {{-- ARCHIVOS MULTIMEDIA --}}
                         @if ($activity->file_path)
                             <div class="file-viewer">
                                 <iframe src="{{ asset('storage/'.$activity->file_path) }}"></iframe>
                             </div>
                         @endif
+
+                        {{-- JUEGOS EXTERNOS --}}
+                        @if ($activity->game_url)
+                            <div class="file-viewer">
+                                <iframe 
+                                    src="{{ $activity->game_url }}" 
+                                    frameborder="0" 
+                                    allowfullscreen
+                                    style="width:100%;height:500px;">
+                                </iframe>
+                            </div>
+                        @endif
+
                     </section>
                 @endforeach
             @endforeach
 
             @foreach ($topic->activities as $activity)
-                <section class="content-panel" id="content-activity-{{ $activity->id }}">
+                <section class="content-panel" id="content-activity-{{ $activity->id }}" data-activity-type="{{ $activity->type }}">
                     <h2>{{ $activity->title }}</h2>
                     <p>{{ $activity->description }}</p>
 
+                    {{-- CUESTIONARIO --}}
+                    @if ($activity->type === 'Cuestionario')
+                        <div class="game-container cuestionario-container">
+                            <div class="question-box">
+                                <h3>{{ $activity->content['question'] ?? '' }}</h3>
+                                <form class="cuestionario-form" data-activity-id="{{ $activity->id }}">
+                                    @csrf
+                                    @foreach ($activity->content['options'] ?? [] as $index => $option)
+                                        <label class="option-label">
+                                            <input type="radio" name="answer" value="{{ $index }}" required>
+                                            <span>{{ $option }}</span>
+                                        </label>
+                                    @endforeach
+                                    <button type="submit" class="btn-submit">Enviar Respuesta</button>
+                                </form>
+                                <div class="result-message"></div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- EXAMEN --}}
+                    @if ($activity->type === 'Examen')
+                        <div class="game-container examen-container">
+                            <form class="examen-form" data-activity-id="{{ $activity->id }}">
+                                @csrf
+                                @foreach ($activity->content['questions'] ?? [] as $qIndex => $question)
+                                    <div class="question-item">
+                                        <h4>{{ $qIndex + 1 }}. {{ $question['question'] }}</h4>
+                                        @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                            <label class="option-label">
+                                                <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                <span>{{ $option }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @endforeach
+                                <button type="submit" class="btn-submit">Enviar Examen</button>
+                            </form>
+                            <div class="result-message"></div>
+                        </div>
+                    @endif
+
+                    {{-- SOPA DE LETRAS --}}
+                    @if ($activity->type === 'SopaDeLetras')
+                        <div class="game-container sopa-container">
+                            <div class="words-to-find">
+                                <h4>Palabras a encontrar:</h4>
+                                <ul id="word-list-{{ $activity->id }}">
+                                    @foreach ($activity->content['words'] ?? [] as $word)
+                                        <li data-word="{{ strtoupper(trim($word)) }}">{{ $word }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            <div class="grid-container" id="grid-{{ $activity->id }}" 
+                                 data-activity-id="{{ $activity->id }}"
+                                 data-words='@json(array_map(fn($w) => strtoupper(trim($w)), $activity->content['words'] ?? []))'
+                                 data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                                <!-- La grilla se generará aquí con JavaScript -->
+                            </div>
+                            <button class="btn-submit" onclick="checkSopaCompletion({{ $activity->id }})">Verificar Completado</button>
+                            <div class="result-message"></div>
+                        </div>
+                    @endif
+
+                    {{-- ARCHIVOS MULTIMEDIA --}}
                     @if ($activity->file_path)
                         <div class="file-viewer">
                             <iframe src="{{ asset('storage/'.$activity->file_path) }}"></iframe>
                         </div>
                     @endif
+
+                    {{-- JUEGOS EXTERNOS --}}
+                    @if ($activity->game_url)
+                        <div class="file-viewer">
+                            <iframe 
+                                src="{{ $activity->game_url }}" 
+                                frameborder="0" 
+                                allowfullscreen
+                                style="width:100%;height:500px;">
+                            </iframe>
+                        </div>
+                    @endif
+
                 </section>
             @endforeach
         @endforeach
@@ -107,6 +263,7 @@
     </main>
 
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
@@ -120,6 +277,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     panels.forEach(p => p.style.display = 'none');
     showIndex(0);
+    
+    // Inicializar todas las sopas de letras al cargar
+    setTimeout(() => {
+        document.querySelectorAll('.grid-container').forEach(grid => {
+            if(!grid.innerHTML) {
+                initSopaDeLetras(grid);
+            }
+        });
+    }, 200);
 
     function showIndex(i){
         if(i < 0 || i >= links.length) return;
@@ -135,6 +301,14 @@ document.addEventListener('DOMContentLoaded', function () {
             links[i].classList.add('active');
             index = i;
             bar.style.width = ((i+1)/links.length)*100 + '%';
+            
+            // Inicializar sopa de letras si existe en el panel actual
+            setTimeout(() => {
+                const sopaGrid = panel.querySelector('.grid-container');
+                if(sopaGrid && !sopaGrid.innerHTML) {
+                    initSopaDeLetras(sopaGrid);
+                }
+            }, 100);
         }
     }
 
@@ -244,5 +418,420 @@ async function readPdf(url) {
 }
 </script>
 
+{{-- ========== CUESTIONARIO HANDLER ========== --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.cuestionario-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const activityId = this.dataset.activityId;
+            const formData = new FormData(this);
+            const resultDiv = this.parentElement.querySelector('.result-message');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            
+            // Deshabilitar botón mientras se envía
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
+            try {
+                const response = await fetch(`/activities/${activityId}/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                            <h3>✅ ${data.message}</h3>
+                            <small style="display: block; margin-top: 10px; opacity: 0.8;">
+                                La respuesta ha sido guardada correctamente.
+                            </small>
+                        </div>
+                    `;
+                    this.querySelectorAll('input').forEach(input => input.disabled = true);
+                    submitBtn.textContent = 'Respuesta Enviada';
+                    
+                    // NO recargamos la página
+                    if (data.created) {
+                        updateProgressBar();
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Enviar Respuesta';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">❌ Error al enviar la respuesta</div>`;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enviar Respuesta';
+                console.error(error);
+            }
+        });
+    });
+});
+</script>
+
+{{-- ========== EXAMEN HANDLER ========== --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.examen-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const activityId = this.dataset.activityId;
+            const resultDiv = this.parentElement.querySelector('.result-message');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            
+            // Recopilar respuestas
+            const answers = [];
+            let questionIndex = 0;
+            
+            while (true) {
+                const radio = this.querySelector(`input[name="question_${questionIndex}"]:checked`);
+                if (!radio) break;
+                
+                answers.push({
+                    q: questionIndex,
+                    a: radio.value
+                });
+                questionIndex++;
+            }
+            
+            // Deshabilitar botón mientras se envía
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
+            try {
+                const response = await fetch(`/activities/${activityId}/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ answers })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                            <h3 style="margin-bottom: 10px;">✅ ${data.message}</h3>
+                            <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">
+                                Calificación: ${data.score}%
+                            </p>
+                            <small style="display: block; margin-top: 10px; opacity: 0.8;">
+                                El examen ha sido guardado. Puedes continuar navegando el curso.
+                            </small>
+                        </div>
+                    `;
+                    
+                    // Deshabilitar todas las opciones del examen
+                    this.querySelectorAll('input').forEach(input => input.disabled = true);
+                    submitBtn.textContent = 'Examen Enviado';
+                    
+                    // NO recargamos la página para que el usuario vea su calificación
+                    // Si necesitas actualizar la barra de progreso, hazlo manualmente:
+                    if (data.created) {
+                        // Actualizar solo la barra de progreso sin recargar
+                        updateProgressBar();
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Enviar Examen';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">❌ Error al enviar el examen</div>`;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enviar Examen';
+                console.error(error);
+            }
+        });
+    });
+});
+
+// Función para actualizar la barra de progreso sin recargar
+function updateProgressBar() {
+    // Puedes implementar una llamada AJAX aquí para obtener el nuevo progreso
+    // Por ahora solo mostramos un mensaje
+    console.log('✅ Progreso actualizado');
+}
+</script>
+
+{{-- ========== SOPA DE LETRAS - DEFINIR FUNCIONES PRIMERO ========== --}}
+<script>
+// ========== FUNCIONES DE SOPA DE LETRAS ==========
+function initSopaDeLetras(gridContainer) {
+    console.log('🎮 Inicializando Sopa de Letras...');
+    console.log('Grid Container:', gridContainer);
+    
+    const activityId = gridContainer.dataset.activityId;
+    const wordsData = gridContainer.dataset.words;
+    const size = parseInt(gridContainer.dataset.size);
+    
+    console.log('Activity ID:', activityId);
+    console.log('Words Data (raw):', wordsData);
+    console.log('Size:', size);
+    
+    if (!wordsData) {
+        console.error('❌ No hay palabras definidas');
+        return;
+    }
+    
+    let words;
+    try {
+        words = JSON.parse(wordsData);
+        console.log('✅ Palabras parseadas:', words);
+    } catch(e) {
+        console.error('❌ Error al parsear palabras:', e);
+        return;
+    }
+    
+    // Crear la grilla
+    const grid = createEmptyGrid(size);
+    placeWords(grid, words, size);
+    fillEmptySpaces(grid, size);
+    
+    // Renderizar
+    renderGrid(gridContainer, grid, size, activityId);
+    console.log('✅ Sopa de Letras renderizada exitosamente');
+}
+
+function createEmptyGrid(size) {
+    return Array(size).fill(null).map(() => Array(size).fill(''));
+}
+
+function placeWords(grid, words, size) {
+    const directions = [
+        [0, 1],   // horizontal
+        [1, 0],   // vertical
+        [1, 1],   // diagonal derecha
+        [1, -1]   // diagonal izquierda
+    ];
+    
+    words.forEach(word => {
+        let placed = false;
+        let attempts = 0;
+        
+        while (!placed && attempts < 100) {
+            const dir = directions[Math.floor(Math.random() * directions.length)];
+            const row = Math.floor(Math.random() * size);
+            const col = Math.floor(Math.random() * size);
+            
+            if (canPlaceWord(grid, word, row, col, dir, size)) {
+                placeWord(grid, word, row, col, dir);
+                placed = true;
+            }
+            attempts++;
+        }
+    });
+}
+
+function canPlaceWord(grid, word, row, col, dir, size) {
+    const len = word.length;
+    for (let i = 0; i < len; i++) {
+        const newRow = row + (dir[0] * i);
+        const newCol = col + (dir[1] * i);
+        
+        if (newRow < 0 || newRow >= size || newCol < 0 || newCol >= size) {
+            return false;
+        }
+        
+        if (grid[newRow][newCol] !== '' && grid[newRow][newCol] !== word[i].toUpperCase()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function placeWord(grid, word, row, col, dir) {
+    for (let i = 0; i < word.length; i++) {
+        const newRow = row + (dir[0] * i);
+        const newCol = col + (dir[1] * i);
+        grid[newRow][newCol] = word[i].toUpperCase();
+    }
+}
+
+function fillEmptySpaces(grid, size) {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+            if (grid[i][j] === '') {
+                grid[i][j] = letters[Math.floor(Math.random() * letters.length)];
+            }
+        }
+    }
+}
+
+function renderGrid(container, grid, size, activityId) {
+    let html = '<table class="sopa-grid">';
+    for (let i = 0; i < size; i++) {
+        html += '<tr>';
+        for (let j = 0; j < size; j++) {
+            html += `<td class="sopa-cell" data-row="${i}" data-col="${j}">${grid[i][j]}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</table>';
+    container.innerHTML = html;
+
+    let firstCell = null;
+
+    container.querySelectorAll('.sopa-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            if (!firstCell) {
+                // PRIMER CLIC: Marcar inicio
+                firstCell = { row, col, element: cell };
+                cell.classList.add('selected');
+            } else {
+                // SEGUNDO CLIC: Intentar formar la palabra
+                const secondCell = { row, col, element: cell };
+                
+                // Obtenemos todas las celdas en la línea entre el primer y segundo clic
+                const path = getPath(firstCell, secondCell);
+                
+                if (path.length > 0) {
+                    const selectedElements = path.map(p => 
+                        container.querySelector(`[data-row="${p.row}"][data-col="${p.col}"]`)
+                    );
+                    
+                    // Verificamos si la palabra es correcta
+                    checkWord(selectedElements, activityId);
+                }
+
+                // Limpiar selección visual del primer clic
+                firstCell.element.classList.remove('selected');
+                firstCell = null;
+            }
+        });
+    });
+}
+
+// Función auxiliar para calcular la línea entre dos puntos (soporta diagonales)
+function getPath(start, end) {
+    const rowDiff = end.row - start.row;
+    const colDiff = end.col - start.col;
+    
+    // Calcular dirección (-1, 0, o 1)
+    const rowStep = rowDiff === 0 ? 0 : rowDiff / Math.abs(rowDiff);
+    const colStep = colDiff === 0 ? 0 : colDiff / Math.abs(colDiff);
+    
+    // Validar que sea una línea recta o diagonal perfecta (45 grados)
+    if (rowDiff !== 0 && colDiff !== 0 && Math.abs(rowDiff) !== Math.abs(colDiff)) {
+        return []; // No es una línea válida para sopa de letras
+    }
+
+    const path = [];
+    let currentRow = start.row;
+    let currentCol = start.col;
+    const steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+
+    for (let i = 0; i <= steps; i++) {
+        path.push({ row: currentRow, col: currentCol });
+        currentRow += rowStep;
+        currentCol += colStep;
+    }
+    
+    return path;
+}
+
+function checkWord(cells, activityId) {
+    const word = cells.map(c => c.textContent).join('');
+    const wordList = document.querySelector(`#word-list-${activityId}`);
+    
+    wordList.querySelectorAll('li').forEach(li => {
+        const targetWord = li.dataset.word;
+        if (word === targetWord || word.split('').reverse().join('') === targetWord) {
+            cells.forEach(c => c.classList.add('found'));
+            li.classList.add('found');
+        }
+    });
+    
+    cells.forEach(c => c.classList.remove('selected'));
+}
+
+function checkSopaCompletion(activityId) {
+    const wordList = document.querySelector(`#word-list-${activityId}`);
+    const totalWords = wordList.querySelectorAll('li').length;
+    const foundWords = wordList.querySelectorAll('li.found').length;
+    
+    const resultDiv = document.querySelector(`#grid-${activityId}`).parentElement.querySelector('.result-message');
+    const submitBtn = document.querySelector(`#grid-${activityId}`).parentElement.querySelector('.btn-submit');
+    
+    if (foundWords === totalWords) {
+        // Deshabilitar botón mientras se envía
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Enviando...';
+        
+        // Enviar completado al servidor
+        fetch(`/activities/${activityId}/submit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ completed: true })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                        <h3>✅ ¡Felicidades! Completaste la sopa de letras</h3>
+                        <p style="font-size: 16px; margin-top: 10px;">
+                            Encontraste todas las ${totalWords} palabras correctamente.
+                        </p>
+                        <small style="display: block; margin-top: 10px; opacity: 0.8;">
+                            Tu progreso ha sido guardado.
+                        </small>
+                    </div>
+                `;
+                submitBtn.textContent = 'Completado ✓';
+                
+                // NO recargamos la página
+                if (data.created) {
+                    updateProgressBar();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ Error al guardar el progreso</div>`;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Verificar Completado';
+        });
+    } else {
+        resultDiv.innerHTML = `
+            <div class="alert alert-warning" style="padding: 15px;">
+                ⚠️ Has encontrado <strong>${foundWords}</strong> de <strong>${totalWords}</strong> palabras.
+                <br>¡Sigue buscando!
+            </div>
+        `;
+    }
+}
+// Esperar a que el navegador cargue todo el HTML
+document.addEventListener('DOMContentLoaded', () => {
+    // Buscar todos los contenedores de sopa de letras en la página
+    const containers = document.querySelectorAll('.grid-container');
+    
+    containers.forEach(container => {
+        // Ejecutar la función inicializadora para cada uno
+        initSopaDeLetras(container);
+    });
+});
+</script>
 
 @endsection

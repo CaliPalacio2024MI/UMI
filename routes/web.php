@@ -96,6 +96,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         // Actividades (Gestión)
         Route::post('/actividades', [ActivitiesController::class, 'store'])->name('activities.store');
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
+        Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
     });
 
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
@@ -237,3 +238,4 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     }); // Fin Middleware Administrativo
 
 }); // Fin Middleware Auth + Ajax + SPA
+
