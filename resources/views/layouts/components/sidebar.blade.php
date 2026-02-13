@@ -255,7 +255,7 @@
             @endif
             <!--CRM-- sidebar-->
             {{-- 4.5 CRM --}}
-            @if($isMaster || $isControlGroup)
+            @if(($isMaster || $isControlGroup) && $isUniversity)
                 <li class="has-submenu {{ request()->routeIs('crm.*') ? 'active' : '' }}">
                     <a href="#">
                         <span class="icon" aria-hidden="true">

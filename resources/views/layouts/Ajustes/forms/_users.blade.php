@@ -214,7 +214,15 @@ setTimeout(function() {
 
         if (activeInstitutionName === universityName) {
             console.log("Filtro: Universidad");
-            const uniRoles = ['estudiante', 'docente', 'control_administrativo', 'control_escolar'];
+            const uniRoles = [
+                'estudiante',
+                'docente',
+                'control_administrativo',
+                'control_escolar',
+                'ctp',
+                'coordinador_ctp'
+            ];
+
             filteredRoles = allRoles.filter(role => uniRoles.includes(role.name));
         } else {
             console.log("Filtro: Corporativo");
