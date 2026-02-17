@@ -47,5 +47,16 @@ class RoleSeeder extends Seeder
             ['display_name' => 'Estudiante']
         );
 
+        Role::firstOrCreate(
+            ['name' => 'ctp'],
+            ['display_name' => 'CTP']
+        );
+        
+        Role::firstOrCreate(
+            ['name' => 'coordinador_ctp'],
+            ['display_name' => 'Coordinador del CTP']
+        );
+        
+
     }
 }
