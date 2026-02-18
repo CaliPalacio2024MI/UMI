@@ -5,18 +5,25 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Lead;
+use App\Models\Users\User;
 
 
 class CRMController extends Controller
 {
     public function leads()
-    {
-        $leads = \App\Models\Lead::with('seguimientos')
-            ->orderBy('created_at', 'desc')
-            ->get();
+{
+    $leads = Lead::with('seguimientos')
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-        return view('crm.leads', compact('leads'));
-    }
+    // 🔵 OBTENER SOLO USUARIOS CON ROL CTP
+    $ctps = User::whereHas('roles', function ($q) {
+        $q->where('name', 'ctp');
+    })->get();
+
+    return view('crm.leads', compact('leads', 'ctps'));
+}
+
 
     public function estadisticas()
     {
@@ -58,6 +65,13 @@ public function guardarSeguimiento(Request $request, Lead $lead)
 
         return view('crm.prospectos', compact('leads'));
     }
-
+    public function asignarCTP(Request $request, Lead $lead)
+    {
+        $lead->ctp_id = $request->ctp_id;
+        $lead->save();
+    
+        return response()->json(['success' => true]);
+    }
+    
 
 }

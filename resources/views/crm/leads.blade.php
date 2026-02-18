@@ -71,14 +71,24 @@
                     <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
 
                 <div class="acciones">
+                @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+                <button 
+                    class="btn btn-icon btn-asignar-ctp"
+                     data-lead="{{ $lead->id }}"
+                    title="Asignar CTP"
+                    >
+        <img src="{{ asset('images/icons/usuario_tag.svg') }}" class="icon">
+    </button>
+@endif
+
                     <button class="btn btn-icon btn-flecha">
                         <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
                     </button>
-
-
-                    <button class="btn btn-icon btn-eliminar" data-id="{{ $lead->id }}">
-                        <img src="{{ asset('images/icons/delete.svg') }}" class="icon">
-                    </button>
+                    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+        <button class="btn btn-icon btn-eliminar" data-id="{{ $lead->id }}">
+            <img src="{{ asset('images/icons/delete.svg') }}" class="icon">
+        </button>
+    @endif
                 </div>
             </div>
         @empty
@@ -124,14 +134,38 @@
         <!-- JS inyecta datos -->
     </div>
 
+    </div>
+
+
+
+    </div>
+
+
+</div>
+
+<div id="modal-ctp" class="modal-ctp hidden">
+    <div class="modal-content">
+        <h5>Asignar CTP</h5>
+
+        <select id="ctp-select" class="form-control">
+            @foreach($ctps as $ctp)
+                <option value="{{ $ctp->id }}">
+                    {{ $ctp->name }}
+                </option>
+            @endforeach
+        </select>
+
+        <div class="modal-actions">
+            <button id="guardar-ctp" class="btn btn-primary">Asignar</button>
+            <button id="cerrar-ctp" class="btn btn-secondary">Cancelar</button>
+        </div>
+    </div>
 </div>
 
 
-
-</div>
-
-
-</div>
+<script>
+    window.ROLE_ACTIVO = "{{ session('active_role_name') }}";
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -322,23 +356,58 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
 ======================= */
 document.addEventListener('click', function (e) {
 
-    const row = e.target.closest('.seguimiento-row');
-    if (!row) return;
+const row = e.target.closest('.seguimiento-row');
+if (!row) return;
 
-    if (row.classList.contains('muted')) return;
+if (row.classList.contains('muted')) return;
 
-    const nuevoEstado = row.dataset.estado;
-    const leadId = document.querySelector('.fila-lead.activo')?.dataset.id;
+// ⛔ BLOQUEO POR ROL
+if (!['ctp', 'master'].includes(window.ROLE_ACTIVO)) {
+    alert('No tienes permisos para dar seguimiento a este lead');
+    return;
+}
 
-    if (!leadId) return;
+const nuevoEstado = row.dataset.estado;
+const leadId = document.querySelector('.fila-lead.activo')?.dataset.id;
 
-    fetch(`/crm/leads/${leadId}/seguimiento`, {
+if (!leadId) return;
+
+fetch(`/crm/leads/${leadId}/seguimiento`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ estado: nuevoEstado })
+})
+.then(() => location.reload());
+});
+
+</script>
+<script>
+let LEAD_SELECCIONADO = null;
+
+document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
+    btn.addEventListener('click', () => {
+        LEAD_SELECCIONADO = btn.dataset.lead;
+        document.getElementById('modal-ctp').classList.remove('hidden');
+    });
+});
+
+document.getElementById('cerrar-ctp').addEventListener('click', () => {
+    document.getElementById('modal-ctp').classList.add('hidden');
+});
+
+document.getElementById('guardar-ctp').addEventListener('click', () => {
+    const ctpId = document.getElementById('ctp-select').value;
+
+    fetch(`/crm/leads/${LEAD_SELECCIONADO}/asignar-ctp`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ estado: nuevoEstado })
+        body: JSON.stringify({ ctp_id: ctpId })
     })
     .then(() => location.reload());
 });

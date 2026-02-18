@@ -257,12 +257,21 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                 Route::get('/', [CRMController::class, 'leads'])->name('leads');
 
                 // SOLO Master y Coordinador
-                Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+                    Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+
                     Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
                     Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
+
                     Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
-                    Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])->name('leads.destroy');
+
+                    // 🟢 NUEVA RUTA → ASIGNAR CTP
+                    Route::post('/leads/{lead}/asignar-ctp', [CRMController::class, 'asignarCTP'])
+                        ->name('leads.asignar_ctp');
+
+                    Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])
+                        ->name('leads.destroy');
                 });
+
             });
 
 }); // Fin Middleware Auth + Ajax + SPA
