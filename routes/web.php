@@ -218,20 +218,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::put('/lista-estudiantes/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-estudiantes/{id}', [studentController::class, 'destroy'])->name('students.destroy');
         });
-
-
-            // --- Módulo: CRM back---
-            Route::prefix('crm')->name('crm.')->group(function () {
-        
-            Route::get('/', [CRMController::class, 'leads'])->name('leads');
-            Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])->name('leads.destroy');
     
-            Route::middleware(['role:master,administrador'])->group(function () {
-                Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
-                Route::post('/crm/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
-                Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
-            });
-        });
         
         // FORMULARIO PÚBLICO
             Route::get('/inscripcion', [LeadPublicController::class, 'create']);
@@ -257,5 +244,25 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         });
 
     }); // Fin Middleware Administrativo
+
+            // =======================
+            // MÓDULO CRM (INDEPENDIENTE)
+            // =======================
+            Route::prefix('crm')
+            ->name('crm.')
+            ->middleware(['role:master,coordinador_ctp,ctp'])
+            ->group(function () {
+
+                // LEADS → todos
+                Route::get('/', [CRMController::class, 'leads'])->name('leads');
+
+                // SOLO Master y Coordinador
+                Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+                    Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
+                    Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
+                    Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
+                    Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])->name('leads.destroy');
+                });
+            });
 
 }); // Fin Middleware Auth + Ajax + SPA

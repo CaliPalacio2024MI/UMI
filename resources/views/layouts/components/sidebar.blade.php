@@ -41,6 +41,11 @@
 
         // Menú "Ajustes"
         $showSettings = $isMaster || $isControlGroup;
+
+        //CRM CTP
+        $isCTP = $user->hasActiveRole('ctp');
+        $isCoordinatorCTP = $user->hasActiveRole('coordinador_ctp');
+
     @endphp
 
     {{-- =================================================================== --}}
@@ -255,7 +260,7 @@
             @endif
             <!--CRM-- sidebar-->
             {{-- 4.5 CRM --}}
-            @if(($isMaster || $isControlGroup) && $isUniversity)
+            @if(($isMaster || $isControlGroup || $isCoordinatorCTP || $isCTP) && $isUniversity)
                 <li class="has-submenu {{ request()->routeIs('crm.*') ? 'active' : '' }}">
                     <a href="#">
                         <span class="icon" aria-hidden="true">
