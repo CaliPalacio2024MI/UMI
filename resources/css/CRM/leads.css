@@ -503,3 +503,7 @@ body:has(.crm-leads) .main-content {
 .icon-disabled {
     opacity: 0.3;
 }
+.seguimiento-row.activo {
+    background: #e8f1ff;
+    font-weight: 600;
+}

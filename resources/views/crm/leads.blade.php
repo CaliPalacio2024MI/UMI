@@ -245,6 +245,9 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
             .forEach(f => f.classList.remove('activo'));
         fila.classList.add('activo');
 
+        /* =======================
+           SEGUIMIENTO
+        ======================= */
         const seguimientoBody = document.querySelector('.seguimiento-body');
         seguimientoBody.innerHTML = '';
 
@@ -260,7 +263,6 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
             const registro = seguimientos.find(s => s.estado === estado);
 
             let habilitado = false;
-
             if (tieneCTP) {
                 if (!estadoActual && index === 0) habilitado = true;
                 if (estadoActual && ESTADOS[index - 1] === estadoActual) habilitado = true;
@@ -281,9 +283,49 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
                 </div>
             `;
         });
+
+        /* =======================
+           DATOS GENERALES  ✅
+        ======================= */
+        const d = fila.dataset;
+
+        document.getElementById('datos-panel').innerHTML = `
+            <div class="datos-card">
+
+                <h6 class="titulo-seccion">Datos del Tutor</h6>
+
+                <div class="datos-grid-3">
+                    <div class="dato-item"><label>Nombre:</label><p>${d.tutorNombre ?? '---'}</p></div>
+                    <div class="dato-item"><label>Apellido Paterno:</label><p>${d.tutorPaterno ?? '---'}</p></div>
+                    <div class="dato-item"><label>Apellido Materno:</label><p>${d.tutorMaterno ?? '---'}</p></div>
+                </div>
+
+                <div class="datos-flex-center mt-3">
+                    <div class="dato-item"><label>Teléfono 1:</label><p>${d.telefono1 ?? '---'}</p></div>
+                    <div class="dato-item"><label>Teléfono 2:</label><p>${d.telefono2 ?? '---'}</p></div>
+                </div>
+
+                <hr class="separador-datos">
+
+                <h6 class="titulo-seccion">Datos del Aspirante</h6>
+
+                <div class="datos-grid-3">
+                    <div class="dato-item"><label>Nombre:</label><p>${d.alumnoNombre ?? '---'}</p></div>
+                    <div class="dato-item"><label>Apellido Paterno:</label><p>${d.alumnoPaterno ?? '---'}</p></div>
+                    <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno ?? '---'}</p></div>
+                </div>
+
+                <div class="datos-flex-center mt-3">
+                    <div class="dato-item"><label>RFC:</label><p>${d.rfc ?? '---'}</p></div>
+                    <div class="dato-item"><label>CURP:</label><p>${d.curp ?? '---'}</p></div>
+                </div>
+
+            </div>
+        `;
     });
 });
 </script>
+
 <script>
 document.addEventListener('click', function (e) {
 
