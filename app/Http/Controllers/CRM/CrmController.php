@@ -12,23 +12,35 @@ class CRMController extends Controller
 {
     public function leads()
 {
-    $leads = Lead::with('seguimientos')
-        ->orderBy('created_at', 'desc')
-        ->get();
+    $query = Lead::with('seguimientos');
 
-    // 🔵 OBTENER SOLO USUARIOS CON ROL CTP
-    $ctps = User::whereHas('roles', function ($q) {
-        $q->where('name', 'ctp');
-    })->get();
+    $rol = session('active_role_name');
+    $userId = auth()->id();
+
+    // 👉 SI ES CTP: solo sus leads asignados
+    if ($rol === 'ctp') {
+        $query->where('ctp_id', $userId);
+    }
+
+    // 👉 Master y Coordinador ven todo
+    $leads = $query->orderBy('created_at', 'desc')->get();
+
+    // Solo master y coordinador necesitan la lista de CTPs
+    $ctps = [];
+    if (in_array($rol, ['master', 'coordinador_ctp'])) {
+        $ctps = \App\Models\Users\User::whereHas('roles', function ($q) {
+            $q->where('name', 'ctp');
+        })->get();
+    }
 
     return view('crm.leads', compact('leads', 'ctps'));
 }
 
 
+
     public function estadisticas()
     {
-        $leads = Lead::orderBy('created_at', 'desc')->get();
-        return view('crm.estadisticas', compact('leads'));
+        return view('crm.estadisticas');
     }
     public function destroy(Lead $lead)
 {
@@ -46,30 +58,36 @@ public function guardarSeguimiento(Request $request, Lead $lead)
 
     return response()->json(['success' => true]);
 }
-    public function prospectos(Request $request)
-    {
-        $query = Lead::query();
+public function prospectos(Request $request)
+{
+    $query = Lead::query();
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('rfc', 'like', "%$search%")
-                  ->orWhere('alumno_nombre', 'like', "%$search%")
-                  ->orWhere('alumno_paterno', 'like', "%$search%")
-                  ->orWhere('alumno_materno', 'like', "%$search%")
-                  ->orWhere('curp', 'like', "%$search%")
-                  ->orWhere('clasificacion', 'like', "%$search%");
-            });
-        }
+    $rol = session('active_role_name');
+    $userId = auth()->id();
 
-        $leads = $query
-            ->with('ctp') // 👈 cargar relación
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-
-        return view('crm.prospectos', compact('leads'));
+    // 🔒 CTP solo ve SUS prospectos
+    if ($rol === 'ctp') {
+        $query->where('ctp_id', $userId);
     }
+
+    // 🔍 Buscador
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('rfc', 'like', "%$search%")
+              ->orWhere('alumno_nombre', 'like', "%$search%")
+              ->orWhere('alumno_paterno', 'like', "%$search%")
+              ->orWhere('alumno_materno', 'like', "%$search%")
+              ->orWhere('clasificacion', 'like', "%$search%");
+        });
+    }
+
+    $leads = $query->orderBy('created_at', 'desc')->get();
+
+    return view('crm.prospectos', compact('leads'));
+}
+
+
     public function asignarCTP(Request $request, Lead $lead)
     {
         $lead->ctp_id = $request->ctp_id;
