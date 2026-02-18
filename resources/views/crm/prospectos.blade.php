@@ -61,7 +61,7 @@
                     <div class="col-nombre">{{ $lead->alumno_nombre }}</div>
                     <div class="col-paterno">{{ $lead->alumno_paterno }}</div>
                     <div class="col-materno">{{ $lead->alumno_materno }}</div>
-                    <div class="col-ctp">{{ $lead->curp }}</div>
+                    <div class="col-ctp">{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
                     <div class="col-tipo">{{ $lead->clasificacion }}</div>
                     <div class="col-fecha">{{ $lead->created_at->format('Y-m-d') }}</div>
                 </div>

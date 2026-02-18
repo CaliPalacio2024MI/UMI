@@ -48,22 +48,24 @@
 <div class="leads-body">
     <div class="cuerpo-tabla">
         @forelse($leads ?? [] as $lead)
-                <div class="fila-lead"
-                    data-id="{{ $lead->id }}"
-                    data-clasificacion="{{ $lead->clasificacion }}"
-                    data-tutor-nombre="{{ $lead->tutor_nombre }}"
-                    data-tutor-paterno="{{ $lead->tutor_paterno }}"
-                    data-tutor-materno="{{ $lead->tutor_materno }}"
-                    data-telefono1="{{ $lead->telefono1 }}"
-                    data-telefono2="{{ $lead->telefono2 }}"
-                    data-alumno-nombre="{{ $lead->alumno_nombre }}"
-                    data-alumno-paterno="{{ $lead->alumno_paterno }}"
-                    data-alumno-materno="{{ $lead->alumno_materno }}"
-                    data-rfc="{{ $lead->rfc }}"
-                    data-curp="{{ $lead->curp }}"
-                    data-seguimientos='@json($lead->seguimientos)'
+                    <div class="fila-lead"
+                        data-id="{{ $lead->id }}"
+                        data-tiene-ctp="{{ $lead->ctp_id ? '1' : '0' }}"
+                        data-ctp="{{ $lead->ctp_id }}"
+                        data-clasificacion="{{ $lead->clasificacion }}"
+                        data-tutor-nombre="{{ $lead->tutor_nombre }}"
+                        data-tutor-paterno="{{ $lead->tutor_paterno }}"
+                        data-tutor-materno="{{ $lead->tutor_materno }}"
+                        data-telefono1="{{ $lead->telefono1 }}"
+                        data-telefono2="{{ $lead->telefono2 }}"
+                        data-alumno-nombre="{{ $lead->alumno_nombre }}"
+                        data-alumno-paterno="{{ $lead->alumno_paterno }}"
+                        data-alumno-materno="{{ $lead->alumno_materno }}"
+                        data-rfc="{{ $lead->rfc }}"
+                        data-curp="{{ $lead->curp }}"
+                        data-seguimientos='@json($lead->seguimientos)'
+                    >
 
-                >
                     <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                     <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
                     <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
@@ -77,9 +79,9 @@
                      data-lead="{{ $lead->id }}"
                     title="Asignar CTP"
                     >
-        <img src="{{ asset('images/icons/usuario_tag.svg') }}" class="icon">
-    </button>
-@endif
+                        <img src="{{ asset('images/icons/usuario_tag.svg') }}" class="icon">
+                    </button>
+                @endif
 
                     <button class="btn btn-icon btn-flecha">
                         <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
@@ -148,12 +150,15 @@
         <h5>Asignar CTP</h5>
 
         <select id="ctp-select" class="form-control">
+            <option value="">Selecciona un CTP</option>
+
             @foreach($ctps as $ctp)
                 <option value="{{ $ctp->id }}">
                     {{ $ctp->name }}
                 </option>
             @endforeach
         </select>
+
 
         <div class="modal-actions">
             <button id="guardar-ctp" class="btn btn-primary">Asignar</button>
@@ -234,156 +239,77 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
     const btnFlecha = fila.querySelector('.btn-flecha');
     if (!btnFlecha) return;
 
-    btnFlecha.addEventListener('click', (e) => {
-        
-        e.stopPropagation(); // Evita otros eventos si los hubiera
+    btnFlecha.addEventListener('click', () => {
 
-        // activar fila
         document.querySelectorAll('.fila-lead')
             .forEach(f => f.classList.remove('activo'));
         fila.classList.add('activo');
 
-        const d = fila.dataset;
-
-        /* =======================
-           SEGUIMIENTO (DESDE BD)
-        ======================= */
         const seguimientoBody = document.querySelector('.seguimiento-body');
         seguimientoBody.innerHTML = '';
 
         const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
+        const tieneCTP = fila.dataset.tieneCtp === '1';
 
-        let estadoActual = null;
-        if (seguimientos.length > 0) {
-            estadoActual = seguimientos[seguimientos.length - 1].estado;
-        }
+        let estadoActual = seguimientos.length
+            ? seguimientos[seguimientos.length - 1].estado
+            : null;
 
-        ESTADOS.forEach(estado => {
+        ESTADOS.forEach((estado, index) => {
 
             const registro = seguimientos.find(s => s.estado === estado);
 
-            const fecha = registro?.fecha ?? '----------';
-            const hora = registro?.hora ?? '----------';
-            const accion = registro ? '✔' : '○';
+            let habilitado = false;
+
+            if (tieneCTP) {
+                if (!estadoActual && index === 0) habilitado = true;
+                if (estadoActual && ESTADOS[index - 1] === estadoActual) habilitado = true;
+            }
+
+            const accion = registro
+                ? `<img src="/images/icons/check.svg" class="icon-check activo">`
+                : habilitado
+                    ? `<img src="/images/icons/check.svg" class="icon-check clickeable" data-estado="${estado}">`
+                    : `<span class="icon-disabled">○</span>`;
 
             seguimientoBody.innerHTML += `
-                <div class="seguimiento-row ${registro ? '' : 'muted'}"
-                     data-estado="${estado}">
+                <div class="seguimiento-row ${habilitado || registro ? '' : 'muted'}">
                     <span>${estado}</span>
-                    <span>${fecha}</span>
-                    <span>${hora}</span>
+                    <span>${registro?.fecha ?? '---'}</span>
+                    <span>${registro?.hora ?? '---'}</span>
                     <span class="accion">${accion}</span>
                 </div>
             `;
         });
-
-        /* =======================
-           DATOS GENERALES
-        ======================= */
-        /* =======================
-           DATOS GENERALES
-        ======================= */
-        document.getElementById('datos-panel').innerHTML = `
-            <div class="datos-card">
-                
-                <!-- TUTOR -->
-                <h6 class="titulo-seccion">Datos del Tutor</h6>
-                
-                <div class="datos-grid-3">
-                    <div class="dato-item">
-                        <label>Nombre:</label>
-                        <p>${d.tutorNombre}</p>
-                    </div>
-                    <div class="dato-item">
-                        <label>Apellido Paterno:</label>
-                        <p>${d.tutorPaterno}</p>
-                    </div>
-                    <div class="dato-item">
-                        <label>Apellido Materno:</label>
-                        <p>${d.tutorMaterno}</p>
-                    </div>
-                </div>
-
-                <div class="datos-flex-center mt-3">
-                    <div class="dato-item">
-                        <label>Teléfono 1:</label>
-                        <p>${d.telefono1}</p>
-                    </div>
-                    <div class="dato-item">
-                        <label>Teléfono 2:</label>
-                        <p>${d.telefono2 ?? 'N/A'}</p>
-                    </div>
-                </div>
-
-                <hr class="separador-datos">
-
-                <!-- ASPIRANTE -->
-                <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
-
-                <div class="datos-grid-3">
-                    <div class="dato-item">
-                        <label>Nombre:</label>
-                        <p>${d.alumnoNombre}</p>
-                    </div>
-                    <div class="dato-item">
-                        <label>Apellido Paterno:</label>
-                        <p>${d.alumnoPaterno}</p>
-                    </div>
-                    <div class="dato-item">
-                        <label>Apellido Materno:</label>
-                        <p>${d.alumnoMaterno}</p>
-                    </div>
-                </div>
-
-                <div class="datos-flex-center mt-3">
-                    <div class="dato-item">
-                        <label>RFC:</label>
-                        <p>${d.rfc ?? 'N/A'}</p>
-                    </div>
-                    <div class="dato-item">
-                        <label>CURP:</label>
-                        <p>${d.curp ?? 'N/A'}</p>
-                    </div>
-                </div>
-
-            </div>
-        `;
     });
 });
-
-/* =======================
-   GUARDAR NUEVO ESTADO
-======================= */
+</script>
+<script>
 document.addEventListener('click', function (e) {
 
-const row = e.target.closest('.seguimiento-row');
-if (!row) return;
+    const check = e.target.closest('.icon-check.clickeable');
+    if (!check) return;
 
-if (row.classList.contains('muted')) return;
+    if (!['ctp', 'master'].includes(window.ROLE_ACTIVO)) {
+        alert('No tienes permisos');
+        return;
+    }
 
-// ⛔ BLOQUEO POR ROL
-if (!['ctp', 'master'].includes(window.ROLE_ACTIVO)) {
-    alert('No tienes permisos para dar seguimiento a este lead');
-    return;
-}
+    const nuevoEstado = check.dataset.estado;
+    const leadId = document.querySelector('.fila-lead.activo')?.dataset.id;
+    if (!leadId) return;
 
-const nuevoEstado = row.dataset.estado;
-const leadId = document.querySelector('.fila-lead.activo')?.dataset.id;
-
-if (!leadId) return;
-
-fetch(`/crm/leads/${leadId}/seguimiento`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-    },
-    body: JSON.stringify({ estado: nuevoEstado })
-})
-.then(() => location.reload());
+    fetch(`/crm/leads/${leadId}/seguimiento`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+    }).then(() => location.reload());
 });
-
 </script>
+
 <script>
 let LEAD_SELECCIONADO = null;
 
@@ -401,6 +327,11 @@ document.getElementById('cerrar-ctp').addEventListener('click', () => {
 document.getElementById('guardar-ctp').addEventListener('click', () => {
     const ctpId = document.getElementById('ctp-select').value;
 
+    if (!ctpId || !LEAD_SELECCIONADO) {
+        alert('Selecciona un CTP');
+        return;
+    }
+
     fetch(`/crm/leads/${LEAD_SELECCIONADO}/asignar-ctp`, {
         method: 'POST',
         headers: {
@@ -410,7 +341,8 @@ document.getElementById('guardar-ctp').addEventListener('click', () => {
         body: JSON.stringify({ ctp_id: ctpId })
     })
     .then(() => location.reload());
-});
+ });
+
 </script>
 
 

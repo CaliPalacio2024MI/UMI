@@ -448,3 +448,58 @@ body:has(.crm-leads) .main-content {
     margin: 15px 0;
     /* Compactado: de 25px a 15px */
 }
+.modal-ctp {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modal-ctp.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 24px;
+    border-radius: 14px;
+    width: 360px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.15);
+}
+
+.modal-title {
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.icon-check {
+    width: 18px;
+    height: 18px;
+}
+
+.icon-check.clickeable {
+    cursor: pointer;
+    opacity: 0.9;
+}
+
+.icon-check.clickeable:hover {
+    transform: scale(1.1);
+}
+
+.icon-check.activo {
+    opacity: 1;
+}
+
+.icon-disabled {
+    opacity: 0.3;
+}

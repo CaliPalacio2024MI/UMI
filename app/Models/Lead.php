@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Users\User;
 
 class Lead extends Model
 {
-    protected $table = 'leads';
 
     protected $fillable = [
         'tutor_nombre',
@@ -26,5 +26,10 @@ class Lead extends Model
 {
     return $this->hasMany(LeadSeguimiento::class);
 }
+public function ctp()
+{
+    return $this->belongsTo(User::class, 'ctp_id');
+}
+
 
 }

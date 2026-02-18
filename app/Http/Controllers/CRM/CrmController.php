@@ -61,7 +61,11 @@ public function guardarSeguimiento(Request $request, Lead $lead)
             });
         }
 
-        $leads = $query->orderBy('created_at', 'desc')->get();
+        $leads = $query
+            ->with('ctp') // 👈 cargar relación
+            ->orderBy('created_at', 'desc')
+            ->get();
+
 
         return view('crm.prospectos', compact('leads'));
     }
