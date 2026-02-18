@@ -27,7 +27,8 @@ class CRMController extends Controller
 
     public function estadisticas()
     {
-        return view('crm.estadisticas');
+        $leads = Lead::orderBy('created_at', 'desc')->get();
+        return view('crm.estadisticas', compact('leads'));
     }
     public function destroy(Lead $lead)
 {

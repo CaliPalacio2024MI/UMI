@@ -44,9 +44,11 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::get('/', function () {
-    return redirect()->route('dashboard');
-});
+Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
+
+// FORMULARIO PÚBLICO
+Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('public.inscripcion.create');
+Route::post('/registro-publico', [LeadPublicController::class, 'store'])->name('public.inscripcion.store');
 
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
@@ -220,9 +222,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         });
     
         
-        // FORMULARIO PÚBLICO
-            Route::get('/inscripcion', [LeadPublicController::class, 'create']);
-            Route::post('/inscripcion', [LeadPublicController::class, 'store']);
+
 
         // ------------------------------------------------------------
         // C. AJUSTES DEL SISTEMA
