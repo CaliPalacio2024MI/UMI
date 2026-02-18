@@ -37,7 +37,6 @@ class CRMController extends Controller
 }
 
 
-
     public function estadisticas()
     {
         return view('crm.estadisticas');
@@ -56,7 +55,10 @@ public function guardarSeguimiento(Request $request, Lead $lead)
         'hora' => now()->toTimeString(),
     ]);
 
-    return response()->json(['success' => true]);
+    return response()->json([
+        'success' => true,
+        'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
+    ]);
 }
 public function prospectos(Request $request)
 {
