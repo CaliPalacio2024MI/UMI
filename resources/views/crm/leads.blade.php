@@ -94,7 +94,11 @@
                             </div>
                         </div>
                     @empty
-                        <p class="text-center text-muted py-5">No hay leads registrados</p>
+                    @if(session('active_role_name') === 'ctp')
+        <p class="text-center text-muted py-5">No tienes leads asignados</p>
+    @else
+        <p class="text-center text-muted py-5">No hay leads registrados</p>
+    @endif
                     @endforelse
                 </div>
             </div>
@@ -219,7 +223,7 @@ const ESTADOS = [
     'Prospecto',
     'Prospecto frío',
     'Prospecto caliente',
-    'Alumno'
+    'Aspirante'
 ];
 
 // Rol puede editar seguimiento
@@ -271,7 +275,7 @@ function renderizarSeguimiento(fila) {
 
         seguimientoBody.innerHTML += `
             <div class="seguimiento-row ${registro ? 'registrado' : habilitado ? 'habilitado' : 'muted'}">
-                <span>${estado}</span>
+            <span>${estado}</span>
                 <span>${registro?.fecha ?? '---'}</span>
                 <span>${registro?.hora ?? '---'}</span>
                 <span class="accion">${accion}</span>
