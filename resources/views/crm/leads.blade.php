@@ -73,6 +73,9 @@
                             <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
 
                             <div class="acciones">
+                                <button class="btn btn-icon btn-flecha">
+                                    <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
+                                </button>
                                 @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
                                     <button 
                                         class="btn btn-icon btn-asignar-ctp"
@@ -82,10 +85,6 @@
                                         <img src="{{ asset('images/icons/usuario_tag.svg') }}" class="icon">
                                     </button>
                                 @endif
-
-                                <button class="btn btn-icon btn-flecha">
-                                    <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
-                                </button>
 
                                 @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
                                     <button class="btn btn-icon btn-eliminar" data-id="{{ $lead->id }}">
@@ -224,7 +223,9 @@ const ESTADOS = [
     'Prospecto',
     'Prospecto frío',
     'Prospecto caliente',
-    'Aspirante'
+    'Aspirante',
+    'Alumno',
+    'Cerrado'
 ];
 
 // Rol puede editar seguimiento

@@ -45,7 +45,7 @@
     <div class="table-card">
         <!-- HEADER -->
         <div class="table-row-header">
-            <div class="col-rfc">RFC</div>
+            <div class="col-curp">CURP</div>
             <div class="col-nombre">Nombre</div>
             <div class="col-paterno">Apellido Paterno</div>
             <div class="col-materno">Apellido Materno</div>
@@ -57,7 +57,7 @@
         <div class="table-body">
             @forelse($leads as $lead)
                 <div class="table-row">
-                    <div class="col-rfc">{{ $lead->rfc }}</div>
+                    <div class="col-curp">{{ $lead->alumno_curp }}</div>
                     <div class="col-nombre">{{ $lead->alumno_nombre }}</div>
                     <div class="col-paterno">{{ $lead->alumno_paterno }}</div>
                     <div class="col-materno">{{ $lead->alumno_materno }}</div>
