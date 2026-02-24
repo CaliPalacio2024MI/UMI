@@ -39,7 +39,7 @@
                     <span>Apellido Paterno</span>
                     <span>Apellido Materno</span>
                     <span>Teléfono 1</span>
-                    <span>Teléfono 2</span>
+                    <span>Estado</span>
                     <span>Acciones</span>
                 </div>
             </div>
@@ -70,7 +70,7 @@
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
                             <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
-                            <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
+                            <div>{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
 
                             <div class="acciones">
                                 <button class="btn btn-icon btn-flecha">
@@ -141,19 +141,50 @@
 </div>
 
 <!-- MODAL CTP -->
-<div id="modal-ctp" class="modal-ctp hidden">
+<div id="modal-ctp" class="modal-ctp d-none">
     <div class="modal-content">
-        <h5>Asignar CTP</h5>
-        <select id="ctp-select" class="form-control">
-            <option value="">Selecciona un CTP</option>
-            @foreach($ctps as $ctp)
-                <option value="{{ $ctp->id }}">{{ $ctp->name }}</option>
-            @endforeach
-        </select>
-        <div class="modal-actions">
-            <button id="guardar-ctp" class="btn btn-primary">Asignar</button>
-            <button id="cerrar-ctp" class="btn btn-secondary">Cancelar</button>
+
+        <!-- Vista: ya tiene CTP asignado -->
+        <div id="vista-asignado" class="d-none">
+            <p class="modal-asignado-label">Asignado a:</p>
+            <p id="modal-ctp-nombre" class="modal-asignado-nombre"></p>
+            <button id="btn-reasignar" class="btn btn-outline-primary w-100 mt-2">
+                Reasignar
+            </button>
         </div>
+
+        <!-- Vista: seleccionar CTP (nueva asignación o reasignación) -->
+        <div id="vista-seleccionar" class="d-none">
+            <h5 id="modal-titulo">Asignar CTP</h5>
+            <select id="ctp-select" class="form-control mt-2">
+                <option value="">Selecciona un CTP</option>
+                @foreach($ctps as $ctp)
+                    <option value="{{ $ctp->id }}" data-nombre="{{ $ctp->name }}">
+                        {{ $ctp->name }}
+                    </option>
+                @endforeach
+            </select>
+
+            <!-- Comentario (solo visible al reasignar) -->
+            <div id="comentario-wrapper" class="d-none mt-3">
+                <label class="form-label fw-bold" style="font-size:13px;">
+                    Motivo del cambio:
+                </label>
+                <textarea 
+                    id="ctp-comentario" 
+                    class="form-control" 
+                    rows="3" 
+                    placeholder="Escribe brevemente el motivo del cambio..."
+                    style="resize:none; font-size:13px;"
+                ></textarea>
+            </div>
+
+            <div class="modal-actions mt-3">
+                <button id="guardar-ctp" class="btn btn-primary">Asignar</button>
+                <button id="cerrar-ctp" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -220,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
 ────────────────────────────────────────────── --}}
 <script>
 const ESTADOS = [
-    'Prospecto',
     'Prospecto frío',
     'Prospecto caliente',
     'Aspirante',
@@ -423,24 +453,77 @@ document.addEventListener('click', function (e) {
      ASIGNAR CTP
 ────────────────────────────────────────────── --}}
 <script>
-let LEAD_SELECCIONADO = null;
+let LEAD_SELECCIONADO  = null;
+let ES_REASIGNACION    = false;
 
+// Abrir modal
 document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
     btn.addEventListener('click', () => {
         LEAD_SELECCIONADO = btn.dataset.lead;
-        document.getElementById('modal-ctp').classList.remove('hidden');
+        ES_REASIGNACION   = false;
+
+        // Buscar la fila para saber si ya tiene CTP
+        const fila      = document.querySelector(`.fila-lead[data-id="${LEAD_SELECCIONADO}"]`);
+        const tieneCTP = fila?.getAttribute('data-tiene-ctp') === '1';
+        const ctpNombre = fila?.querySelector
+            ? null
+            : null;
+
+        // Obtener nombre del CTP desde el select (si existe en opciones)
+        let nombreActual = '---';
+        if (tieneCTP) {
+            const ctpId = fila.dataset.ctp;
+            const opcion = document.querySelector(`#ctp-select option[value="${ctpId}"]`);
+            if (opcion) nombreActual = opcion.dataset.nombre || opcion.text;
+        }
+
+        // Limpiar estado anterior
+        document.getElementById('ctp-select').value       = '';
+        document.getElementById('ctp-comentario').value   = '';
+        document.getElementById('comentario-wrapper').classList.add('d-none');
+
+        if (tieneCTP) {
+            // Mostrar vista "ya asignado"
+            document.getElementById('modal-ctp-nombre').textContent = nombreActual;
+            document.getElementById('vista-asignado').classList.remove('d-none');
+            document.getElementById('vista-seleccionar').classList.add('d-none');
+        } else {
+            // Mostrar vista "asignar por primera vez"
+            document.getElementById('modal-titulo').textContent = 'Asignar CTP';
+            document.getElementById('vista-asignado').classList.add('d-none');
+            document.getElementById('vista-seleccionar').classList.remove('d-none');
+        }
+
+        document.getElementById('modal-ctp').classList.remove('d-none');
     });
 });
 
-document.getElementById('cerrar-ctp').addEventListener('click', () => {
-    document.getElementById('modal-ctp').classList.add('hidden');
+// Botón reasignar → muestra el select + comentario
+document.getElementById('btn-reasignar').addEventListener('click', () => {
+    ES_REASIGNACION = true;
+    document.getElementById('modal-titulo').textContent = 'Reasignar CTP';
+    document.getElementById('vista-asignado').classList.add('d-none');
+    document.getElementById('vista-seleccionar').classList.remove('d-none');
+    document.getElementById('comentario-wrapper').classList.remove('d-none');
 });
 
+// Cerrar modal
+document.getElementById('cerrar-ctp').addEventListener('click', () => {
+    document.getElementById('modal-ctp').classList.add('d-none');
+});
+
+// Guardar asignación / reasignación
 document.getElementById('guardar-ctp').addEventListener('click', () => {
-    const ctpId = document.getElementById('ctp-select').value;
+    const ctpId     = document.getElementById('ctp-select').value;
+    const comentario = document.getElementById('ctp-comentario').value.trim();
 
     if (!ctpId || !LEAD_SELECCIONADO) {
         alert('Selecciona un CTP');
+        return;
+    }
+
+    if (ES_REASIGNACION && !comentario) {
+        alert('Por favor escribe el motivo del cambio');
         return;
     }
 
@@ -450,7 +533,10 @@ document.getElementById('guardar-ctp').addEventListener('click', () => {
             'X-CSRF-TOKEN': window.CSRF_TOKEN,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ ctp_id: ctpId })
+        body: JSON.stringify({ 
+            ctp_id: ctpId,
+            comentario: ES_REASIGNACION ? comentario : null
+        })
     })
     .then(() => location.reload());
 });
