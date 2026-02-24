@@ -256,13 +256,15 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                 // LEADS → todos
                 Route::get('/', [CRMController::class, 'leads'])->name('leads');
 
+                Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
+
                 // SOLO Master y Coordinador
                     Route::middleware(['role:master,coordinador_ctp'])->group(function () {
 
                     Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
                     Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
 
-                    Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
+
 
                     // 🟢 NUEVA RUTA → ASIGNAR CTP
                     Route::post('/leads/{lead}/asignar-ctp', [CRMController::class, 'asignarCTP'])

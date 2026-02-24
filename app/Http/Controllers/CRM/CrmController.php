@@ -37,7 +37,6 @@ class CRMController extends Controller
 }
 
 
-
 public function estadisticas(Request $request)
 {
     $query = Lead::query();
@@ -50,46 +49,40 @@ public function estadisticas(Request $request)
 
     if ($rol === 'ctp') {
         $query->where('ctp_id', $userId);
-    }
 
+        return view('crm.estadisticas');
+
+    }
    
     // FILTROS DINÁMICOS
-    // ======================
 
-    // 🔹 Filtro por estatus
     if ($request->filled('estatus')) {
         $query->where('clasificacion', $request->estatus);
     }
 
-    // 🔹 Filtro por fecha inicio
     if ($request->filled('fecha_inicio')) {
         $query->whereDate('created_at', '>=', $request->fecha_inicio);
     }
 
-    // 🔹 Filtro por fecha fin
     if ($request->filled('fecha_fin')) {
         $query->whereDate('created_at', '<=', $request->fecha_fin);
     }
 
-    // 🔹 Buscador por CTP (CURP)
     if ($request->filled('buscar')) {
         $query->where('curp', 'like', '%' . $request->buscar . '%');
     }
 
    
     // OBTENER RESULTADOS FILTRADOS
-    // ======================
     $leads = $query->get();
 
     
     // CONTEOS PARA GRÁFICA 1
-    // ======================
     $totalProspecto = (clone $query)->where('clasificacion', 'Prospecto')->count();
     $totalFrio = (clone $query)->where('clasificacion', 'Prospecto Frío')->count();
     $totalCaliente = (clone $query)->where('clasificacion', 'Prospecto Caliente')->count();
     $totalAspirante = (clone $query)->where('clasificacion', 'Aspirante')->count();
 
-    // ======================
     // CONVERSIÓN (GRÁFICA 2)
     // ======================
     $totalInteresados = (clone $query)->whereIn('clasificacion', [
@@ -131,7 +124,10 @@ public function guardarSeguimiento(Request $request, Lead $lead)
         'hora' => now()->toTimeString(),
     ]);
 
-    return response()->json(['success' => true]);
+    return response()->json([
+        'success' => true,
+        'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
+    ]);
 }
 public function prospectos(Request $request)
 {

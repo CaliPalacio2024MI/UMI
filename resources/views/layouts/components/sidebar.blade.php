@@ -82,6 +82,7 @@
                             <a href="{{ route('MiInformacion.index') }}">Perfil</a>
                         </li>
                         {{-- Opciones académicas solo visibles en contexto Universidad --}}
+                        @if(!$isCoordinatorCTP && !$isCTP)
                         <li class="{{ request()->routeIs('MiInformacion.clases') ? 'active-submenu' : '' }}">
                             <a href="{{ route('MiInformacion.clases') }}">Clases</a>
                         </li>
@@ -98,6 +99,7 @@
                                 <a href="#">Boletas</a>
                             </li>
                         @endif
+                        @endif
                     </ul>
                 </li>
             @else
@@ -113,6 +115,7 @@
             @endif
 
             {{-- 2. CURSOS --}}
+            @if(!$isCoordinatorCTP && !$isCTP)
             <li class="has-submenu {{ request()->routeIs('Cursos.*') || request()->routeIs('courses.certificates.*') ? 'active' : '' }}">
                 <a href="#">
                     <span class="icon" aria-hidden="true">
@@ -134,8 +137,10 @@
                     </li>
                 </ul>
             </li>
+            @endif
 
             {{-- 3. FACTURACIÓN --}}
+            @if(!$isCoordinatorCTP && !$isCTP)
             @if($hasFacturacionSubmenu)
                 {{-- CASO A: Master y Control Administrativo (Con submenú flotante) --}}
                 <li class="has-submenu submenu-flotante {{ request()->routeIs('Facturacion.*') ? 'active' : '' }}">
@@ -165,6 +170,7 @@
                         <span class="text">Facturación</span>
                     </a>
                 </li>
+            @endif
             @endif
 
             {{-- 4. CONTROL ADMINISTRATIVO --}}
@@ -258,37 +264,44 @@
                     </ul>
                 </li>
             @endif
-            <!--CRM-- sidebar-->
-            {{-- 4.5 CRM --}}
-            @if(($isMaster || $isControlGroup || $isCoordinatorCTP || $isCTP) && $isUniversity)
-                <li class="has-submenu {{ request()->routeIs('crm.*') ? 'active' : '' }}">
-                    <a href="#">
-                        <span class="icon" aria-hidden="true">
-                            <img src="{{ asset('images/icons/crm.svg') }}"
-                            alt="CRM Icon"
-                            style="width:24px;height:24px"
-                            loading="lazy">
-                        </span>
-                        <span class="text">CRM</span>
-                             <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </a>
+           <!--CRM-- sidebar-->
+{{-- 4.5 CRM --}}
+@if(($isMaster || $isControlGroup || $isCoordinatorCTP || $isCTP) && $isUniversity)
+    <li class="has-submenu {{ request()->routeIs('crm.*') ? 'active' : '' }}">
+        <a href="#">
+            <span class="icon" aria-hidden="true">
+                <img src="{{ asset('images/icons/crm.svg') }}"
+                alt="CRM Icon"
+                style="width:24px;height:24px"
+                loading="lazy">
+            </span>
+            <span class="text">CRM</span>
+            <i class="fas fa-chevron-down dropdown-icon"></i>
+        </a>
 
-                    <ul class="submenu">
-                        <li class="{{ request()->routeIs('CRM.leads') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('crm.leads') }}">Leads</a>
-                        </li>
+        <ul class="submenu">
+            {{-- Leads: todos ven --}}
+            <li class="{{ request()->routeIs('crm.leads') ? 'active-submenu' : '' }}">
+                <a href="{{ route('crm.leads') }}">Leads</a>
+            </li>
 
-                        <li class="{{ request()->routeIs('CRM.prospectos') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('crm.prospectos') }}">Prospectos</a>
-                        </li>
-
-                        <li class="{{ request()->routeIs('CRM.estadisticas') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('crm.estadisticas') }}">Estadisticas</a>
-                        </li>
-                    </ul>
+            {{-- Prospectos: solo Master y Coordinador --}}
+            @if($isMaster || $isCoordinatorCTP)
+                <li class="{{ request()->routeIs('crm.prospectos') ? 'active-submenu' : '' }}">
+                    <a href="{{ route('crm.prospectos') }}">Prospectos</a>
                 </li>
             @endif
-            <!--termina CRM-->
+
+            {{-- Estadísticas: Master, Coordinador y CTP --}}
+    @if($isMaster || $isCoordinatorCTP || $isCTP)
+        <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
+            <a href="{{ route('crm.estadisticas') }}">Estadísticas</a>
+        </li>
+            @endif
+        </ul>
+    </li>  {{-- ← este faltaba --}}
+@endif
+<!--termina CRM-->
 
             {{-- 5. AJUSTES --}}
             @if($showSettings)
