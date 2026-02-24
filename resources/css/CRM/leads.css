@@ -433,6 +433,8 @@ body:has(.crm-leads) .main-content {
     /* Compactado */
     font-size: 13px;
     /* Compactado: de 14px a 13px */
+    word-break: break-word;  
+    hyphens: auto;           
 }
 
 .dato-item p {
@@ -510,8 +512,8 @@ body:has(.crm-leads) .main-content {
 /* GRID de 4 columnas para datos del tutor */
 .datos-grid-4 {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1.6fr; /* 👈 CLAVE */
-    gap: 24px;
+    grid-template-columns: 1fr 1fr;  /* 👈 2 columnas en vez de 4 */
+    gap: 14px;
     text-align: center;
     margin-top: 10px;
 }
@@ -535,3 +537,6 @@ body:has(.crm-leads) .main-content {
     margin-top: 4px;
 }
 
+.datos-card + .datos-card {
+    margin-top: 0px; /* el margin del propio .datos-card ya tiene 10px */
+}

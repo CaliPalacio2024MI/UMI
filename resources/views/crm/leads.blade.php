@@ -290,70 +290,71 @@ function renderizarDatos(fila) {
     const d = fila.dataset;
 
     document.getElementById('datos-panel').innerHTML = `
-        <div class="datos-card">
 
-            <h6 class="titulo-seccion">Datos del Tutor</h6>
+    <!-- TARJETA TUTOR -->
+    <div class="datos-card">
+        <h6 class="titulo-seccion">Datos del Tutor</h6>
 
-            <div class="datos-grid-3">
-                <div class="dato-item">
-                    <label>Nombre:</label>
-                    <p>${d.tutorNombre || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Apellido Paterno:</label>
-                    <p>${d.tutorPaterno || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Apellido Materno:</label>
-                    <p>${d.tutorMaterno || '---'}</p>
-                </div>
+        <div class="datos-grid-3">
+            <div class="dato-item">
+                <label>Nombre:</label>
+                <p>${d.tutorNombre || '---'}</p>
             </div>
-
-            <div class="datos-grid-4 mt-3">
-                <div class="dato-item">
-                    <label>CURP:</label>
-                    <p>${d.tutorCurp || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Teléfono 1:</label>
-                    <p>${d.telefono1 || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Teléfono 2:</label>
-                    <p>${d.telefono2 || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Correo electrónico:</label>
-                    <p>${d.tutorEmail || '---'}</p>
-                </div>
+            <div class="dato-item">
+                <label>Apellido Paterno:</label>
+                <p>${d.tutorPaterno || '---'}</p>
             </div>
-
-            <hr class="separador-datos">
-
-            <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
-
-            <div class="datos-grid-3">
-                <div class="dato-item">
-                    <label>Nombre:</label>
-                    <p>${d.alumnoNombre || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Apellido Paterno:</label>
-                    <p>${d.alumnoPaterno || '---'}</p>
-                </div>
-                <div class="dato-item">
-                    <label>Apellido Materno:</label>
-                    <p>${d.alumnoMaterno || '---'}</p>
-                </div>
+            <div class="dato-item">
+                <label>Apellido Materno:</label>
+                <p>${d.tutorMaterno || '---'}</p>
             </div>
-
-            <div class="datos-curp-centrado mt-3">
-                <label>CURP:</label>
-                <p>${d.alumnoCurp || '---'}</p>
-            </div>
-
         </div>
-    `;
+
+        <div class="datos-grid-4 mt-3">
+            <div class="dato-item">
+                <label>CURP:</label>
+                <p>${d.tutorCurp || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Teléfono 1:</label>
+                <p>${d.telefono1 || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Teléfono 2:</label>
+                <p>${d.telefono2 || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Correo electrónico:</label>
+                <p>${d.tutorEmail || '---'}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TARJETA ASPIRANTE -->
+    <div class="datos-card">
+        <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
+
+        <div class="datos-grid-3">
+            <div class="dato-item">
+                <label>Nombre:</label>
+                <p>${d.alumnoNombre || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Apellido Paterno:</label>
+                <p>${d.alumnoPaterno || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Apellido Materno:</label>
+                <p>${d.alumnoMaterno || '---'}</p>
+            </div>
+        </div>
+
+        <div class="datos-curp-centrado mt-3">
+    <label>CURP:</label>
+    <p style="font-weight: 400; letter-spacing: 0;">${d.alumnoCurp || '---'}</p>
+</div>
+    </div>
+`;
 }
 
 // Click en flecha → seleccionar lead y mostrar panel
