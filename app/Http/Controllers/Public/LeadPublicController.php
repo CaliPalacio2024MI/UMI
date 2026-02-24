@@ -15,43 +15,51 @@ class LeadPublicController extends Controller
     }
 
     // Guarda el lead que viene del formulario
-    public function store(Request $request)
-    {
-        $request->validate([
-            'tutor_nombre' => 'required|string',
-            'tutor_paterno' => 'required|string',
-            'tutor_materno' => 'required|string',
-            'telefono1' => 'required|numeric',
-            'alumno_nombre' => 'required|string',
-            'alumno_paterno' => 'required|string'
-        ]);
-            // Crear el LEAD
+public function store(Request $request)
+{
+    $request->validate([
+        'tutor_curp' => 'required|string|max:18',
+        'tutor_nombre' => 'required|string',
+        'tutor_paterno' => 'required|string',
+        'tutor_materno' => 'required|string',
+        'telefono1' => 'required|numeric',
+        'telefono2' => 'nullable|numeric',
+        'tutor_email' => 'nullable|email',
 
-        $lead = Lead::create([
-            'tutor_nombre' => $request->tutor_nombre,
-            'tutor_paterno' => $request->tutor_paterno,
-            'tutor_materno' => $request->tutor_materno,
-            'telefono1' => $request->telefono1,
-            'telefono2' => $request->telefono2,
-            'alumno_nombre' => $request->alumno_nombre,
-            'alumno_paterno' => $request->alumno_paterno,
-            'alumno_materno' => $request->alumno_materno,
-            'rfc' => strtoupper($request->rfc),
-            'curp' => strtoupper($request->curp),
-            'origen' => 'formulario_publico',
-            'clasificacion' => 'nuevo'
-        ]);
-            // Crear el PRIMER SEGUIMIENTO
-        $lead->seguimientos()->create([
-            'estado' => 'Prospecto',
-            'fecha' => now()->toDateString(),
-            'hora' => now()->toTimeString(),
-        ]);
-        
-        
+        'alumno_curp' => 'required|string|max:18',
+        'alumno_nombre' => 'required|string',
+        'alumno_paterno' => 'required|string',
+        'alumno_materno' => 'required|string',
+    ]);
 
-        return redirect()->back()->with('success', 'Registro enviado correctamente');
-    }
+    // Crear el LEAD
+    $lead = Lead::create([
+        'tutor_curp' => strtoupper($request->tutor_curp),
+        'tutor_nombre' => $request->tutor_nombre,
+        'tutor_paterno' => $request->tutor_paterno,
+        'tutor_materno' => $request->tutor_materno,
+        'telefono1' => $request->telefono1,
+        'telefono2' => $request->telefono2,
+        'tutor_email' => $request->tutor_email,
+
+        'alumno_curp' => strtoupper($request->alumno_curp),
+        'alumno_nombre' => $request->alumno_nombre,
+        'alumno_paterno' => $request->alumno_paterno,
+        'alumno_materno' => $request->alumno_materno,
+
+        'origen' => 'formulario_publico',
+        'clasificacion' => 'Prospecto'
+    ]);
+
+    // Crear el PRIMER SEGUIMIENTO
+    $lead->seguimientos()->create([
+        'estado' => 'Prospecto',
+        'fecha' => now()->toDateString(),
+        'hora' => now()->toTimeString(),
+    ]);
+
+    return redirect()->back()->with('success', 'Registro enviado correctamente');
+}
 
     // Muestra la página de inicio (Landing Page)
     public function landing()

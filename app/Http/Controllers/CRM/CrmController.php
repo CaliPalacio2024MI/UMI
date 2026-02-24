@@ -37,10 +37,86 @@ class CRMController extends Controller
 }
 
 
-    public function estadisticas()
-    {
-        return view('crm.estadisticas');
+
+public function estadisticas(Request $request)
+{
+    $query = Lead::query();
+
+    // ======================
+    // FILTRO POR ROL
+    // ======================
+    $rol = session('active_role_name');
+    $userId = auth()->id();
+
+    if ($rol === 'ctp') {
+        $query->where('ctp_id', $userId);
     }
+
+   
+    // FILTROS DINÁMICOS
+    // ======================
+
+    // 🔹 Filtro por estatus
+    if ($request->filled('estatus')) {
+        $query->where('clasificacion', $request->estatus);
+    }
+
+    // 🔹 Filtro por fecha inicio
+    if ($request->filled('fecha_inicio')) {
+        $query->whereDate('created_at', '>=', $request->fecha_inicio);
+    }
+
+    // 🔹 Filtro por fecha fin
+    if ($request->filled('fecha_fin')) {
+        $query->whereDate('created_at', '<=', $request->fecha_fin);
+    }
+
+    // 🔹 Buscador por CTP (CURP)
+    if ($request->filled('buscar')) {
+        $query->where('curp', 'like', '%' . $request->buscar . '%');
+    }
+
+   
+    // OBTENER RESULTADOS FILTRADOS
+    // ======================
+    $leads = $query->get();
+
+    
+    // CONTEOS PARA GRÁFICA 1
+    // ======================
+    $totalProspecto = (clone $query)->where('clasificacion', 'Prospecto')->count();
+    $totalFrio = (clone $query)->where('clasificacion', 'Prospecto Frío')->count();
+    $totalCaliente = (clone $query)->where('clasificacion', 'Prospecto Caliente')->count();
+    $totalAspirante = (clone $query)->where('clasificacion', 'Aspirante')->count();
+
+    // ======================
+    // CONVERSIÓN (GRÁFICA 2)
+    // ======================
+    $totalInteresados = (clone $query)->whereIn('clasificacion', [
+        'Prospecto',
+        'Prospecto Frío',
+        'Prospecto Caliente'
+    ])->count();
+
+    $totalAspirantes = (clone $query)->where('clasificacion', 'Aspirante')->count();
+
+    $porcentajeConversion = $totalInteresados > 0
+        ? round(($totalAspirantes / $totalInteresados) * 100, 1)
+        : 0;
+
+    return view('crm.estadisticas', compact(
+        'leads',
+        'totalProspecto',
+        'totalFrio',
+        'totalCaliente',
+        'totalAspirante',
+        'totalInteresados',
+        'totalAspirantes',
+        'porcentajeConversion'
+    ));
+}
+
+
     public function destroy(Lead $lead)
 {
     $lead->delete();
