@@ -143,12 +143,12 @@ public function prospectos(Request $request)
     $rol = session('active_role_name');
     $userId = auth()->id();
 
-    // 🔒 CTP solo ve SUS prospectos
+    // CTP solo ve SUS prospectos
     if ($rol === 'ctp') {
         $query->where('ctp_id', $userId);
     }
 
-    // 🔍 Buscador
+    // Buscador
     if ($request->filled('search')) {
         $search = $request->search;
         $query->where(function ($q) use ($search) {
@@ -166,13 +166,18 @@ public function prospectos(Request $request)
 }
 
 
-    public function asignarCTP(Request $request, Lead $lead)
-    {
-        $lead->ctp_id = $request->ctp_id;
-        $lead->save();
+public function asignarCTP(Request $request, Lead $lead)
+{
+    $lead->ctp_id = $request->ctp_id;
     
-        return response()->json(['success' => true]);
+    if ($request->filled('comentario')) {
+        $lead->comentario_reasignacion = $request->comentario;
     }
+    
+    $lead->save();
+
+    return response()->json(['success' => true]);
+}
     
 
 }

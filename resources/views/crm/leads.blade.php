@@ -65,6 +65,7 @@
                             data-tutor-curp="{{ $lead->tutor_curp }}"
                             data-tutor-email="{{ $lead->tutor_email }}"
                             data-alumno-curp="{{ $lead->alumno_curp }}"
+                            data-comentario-reasignacion="{{ $lead->comentario_reasignacion }}"
                         >
                             <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
@@ -146,12 +147,20 @@
 
         <!-- Vista: ya tiene CTP asignado -->
         <div id="vista-asignado" class="d-none">
-            <p class="modal-asignado-label">Asignado a:</p>
-            <p id="modal-ctp-nombre" class="modal-asignado-nombre"></p>
-            <button id="btn-reasignar" class="btn btn-outline-primary w-100 mt-2">
-                Reasignar
-            </button>
-        </div>
+    <p class="modal-asignado-label">Asignado a:</p>
+    <p id="modal-ctp-nombre" class="modal-asignado-nombre"></p>
+
+    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+    <div id="historial-ultimo" class="historial-ultimo-wrapper d-none">
+        <span class="historial-ultimo-label">Última reasignación:</span>
+        <p id="modal-comentario-actual" class="modal-comentario-actual"></p>
+    </div>
+@endif
+
+    <button id="btn-reasignar" class="btn btn-outline-primary w-100 mt-2">
+        Reasignar
+    </button>
+</div>
 
         <!-- Vista: seleccionar CTP (nueva asignación o reasignación) -->
         <div id="vista-seleccionar" class="d-none">
@@ -271,7 +280,7 @@ function renderizarSeguimiento(fila) {
     const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
     const tieneCTP     = fila.dataset.tieneCtp === '1';
 
-    // ✅ FIX: tomar el estado registrado de MAYOR índice (no el último del array)
+    // FIX: tomar el estado registrado de MAYOR índice (no el último del array)
     let estadoActualIndex = -1;
     seguimientos.forEach(s => {
         const i = ESTADOS.indexOf(s.estado);
@@ -463,11 +472,18 @@ document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
         ES_REASIGNACION   = false;
 
         // Buscar la fila para saber si ya tiene CTP
-        const fila      = document.querySelector(`.fila-lead[data-id="${LEAD_SELECCIONADO}"]`);
-        const tieneCTP = fila?.getAttribute('data-tiene-ctp') === '1';
-        const ctpNombre = fila?.querySelector
-            ? null
-            : null;
+        const fila        = document.querySelector(`.fila-lead[data-id="${LEAD_SELECCIONADO}"]`);
+const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
+const ctpActualId = fila?.getAttribute('data-ctp');
+
+// Filtrar select: ocultar el CTP actual
+document.querySelectorAll('#ctp-select option').forEach(opt => {
+    if (opt.value && opt.value === ctpActualId) {
+        opt.style.display = 'none';
+    } else {
+        opt.style.display = '';
+    }
+});
 
         // Obtener nombre del CTP desde el select (si existe en opciones)
         let nombreActual = '---';
@@ -483,6 +499,16 @@ document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
         document.getElementById('comentario-wrapper').classList.add('d-none');
 
         if (tieneCTP) {
+            const comentario = fila.getAttribute('data-comentario-reasignacion');
+const historialEl = document.getElementById('historial-ultimo');
+if (historialEl) {
+    if (comentario) {
+        document.getElementById('modal-comentario-actual').textContent = `"${comentario}"`;
+        historialEl.classList.remove('d-none');
+    } else {
+        historialEl.classList.add('d-none');
+    }
+}
             // Mostrar vista "ya asignado"
             document.getElementById('modal-ctp-nombre').textContent = nombreActual;
             document.getElementById('vista-asignado').classList.remove('d-none');
