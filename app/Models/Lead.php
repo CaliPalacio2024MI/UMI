@@ -9,16 +9,19 @@ class Lead extends Model
 {
 
     protected $fillable = [
+        'tutor_curp',
         'tutor_nombre',
         'tutor_paterno',
         'tutor_materno',
         'telefono1',
         'telefono2',
+        'tutor_email',
+
+        'alumno_curp',
         'alumno_nombre',
         'alumno_paterno',
         'alumno_materno',
-        'rfc',
-        'curp',
+
         'origen',
         'clasificacion'
     ];

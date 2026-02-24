@@ -41,7 +41,14 @@
 
                 <!-- Section: Datos del responsable o tutor -->
                 <div class="form-section">
-                    <h2 class="section-title">Datos del responsable o tutor</h2>
+                    <h2 class="section-title">Datos del padre o tutor interesado:</h2>
+
+                    <div class="form-group">
+                        <label class="form-label">CURP:</label>
+                        <div class="form-input-container">
+                            <input type="text" name="tutor_curp" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="18">
+                        </div>
+                    </div>
 
                     <div class="form-group">
                         <label class="form-label">Nombre(s):</label>
@@ -72,11 +79,27 @@
                             <input type="text" name="telefono2" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric" maxlength="10">
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Correo electrónico:</label>
+                        <div class="form-input-container">
+                            <input type="email" 
+                                name="tutor_email" 
+                                class="form-control">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Section: Datos del Alumno -->
                 <div class="form-section" style="margin-top: 50px;">
-                    <h2 class="section-title">Datos del Alumno:</h2>
+                    <h2 class="section-title">Datos del postulante:</h2>
+
+                    <div class="form-group">
+                        <label class="form-label">CURP:</label>
+                        <div class="form-input-container">
+                            <input type="text" name="alumno_curp" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="18">
+                        </div>
+                    </div>
 
                     <div class="form-group">
                         <label class="form-label">Nombre(s):</label>
@@ -99,19 +122,7 @@
                         </div>
                     </div>
 
-                     <div class="form-group">
-                        <label class="form-label">RFC:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="rfc" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="13">
-                        </div>
-                    </div>
 
-                     <div class="form-group">
-                        <label class="form-label">CURP:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="curp" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="18">
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Submit Button -->
