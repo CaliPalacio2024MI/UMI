@@ -307,11 +307,16 @@ function renderizarSeguimiento(fila) {
         // - Bloqueado        → círculo opaco
         let accion;
         if (registro) {
-            accion = `<img src="/images/icons/check.svg" class="icon-check activo" title="Completado">`;
+            accion = `
+                <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
+                <img src="/images/icons/eye.svg" class="icon-eye" title="Ver detalle">
+            `;
         } else if (habilitado && puedeEditarSeguimiento()) {
-            accion = `<img src="/images/icons/check.svg" class="icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}">`;
+            accion = `
+                <i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>
+            `;
         } else {
-            accion = `<span class="icon-disabled">○</span>`;
+            accion = `<i class="bi bi-circle icon-disabled"></i>`;
         }
 
         seguimientoBody.innerHTML += `

@@ -162,7 +162,7 @@ body:has(.crm-leads) .main-content {
 .encabezado-fila {
     grid-template-columns: var(--leads-grid);
     align-items: center;
-    /* 👇 clave */
+    /* clave */
     padding: 16px 0 12px;
     gap: 0;
 
@@ -194,7 +194,7 @@ body:has(.crm-leads) .main-content {
     border-radius: 16px;
     padding: 20px;
     margin: 12px;
-    /* 👈 MUY IMPORTANTE: pequeño */
+    /* MUY IMPORTANTE: pequeño */
     flex: 1;
 }
 
@@ -280,7 +280,7 @@ body:has(.crm-leads) .main-content {
     border-radius: 18px;
     margin: 1px -6px 10px -6px;
     margin-top: -6px;
-    /* 👈 flota arriba */
+    /* flota arriba */
 }
 
 /* Titulo lateral idéntico al de la izquierda */
@@ -657,4 +657,38 @@ body:has(.crm-leads) .main-content {
     color: #999;
     display: block;
     margin-bottom: 4px;
+}
+.icon-check.activo {
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.icon-check.clickeable {
+    color: var(--crm-primary);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.icon-check.clickeable:hover {
+    transform: scale(1.1);
+    display: inline-block;
+}
+
+.icon-disabled {
+    color: #ccc;
+    font-size: 18px;
+    opacity: 0.5;
+}
+
+.icon-eye {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    opacity: 0.7;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.icon-eye:hover {
+    opacity: 1;
 }
