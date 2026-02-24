@@ -61,9 +61,10 @@
                             data-alumno-nombre="{{ $lead->alumno_nombre }}"
                             data-alumno-paterno="{{ $lead->alumno_paterno }}"
                             data-alumno-materno="{{ $lead->alumno_materno }}"
-                            data-rfc="{{ $lead->rfc }}"
-                            data-curp="{{ $lead->curp }}"
                             data-seguimientos='@json($lead->seguimientos)'
+                            data-tutor-curp="{{ $lead->tutor_curp }}"
+                            data-tutor-email="{{ $lead->tutor_email }}"
+                            data-alumno-curp="{{ $lead->alumno_curp }}"
                         >
                             <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
@@ -287,31 +288,68 @@ function renderizarSeguimiento(fila) {
 // Renderiza datos generales
 function renderizarDatos(fila) {
     const d = fila.dataset;
+
     document.getElementById('datos-panel').innerHTML = `
         <div class="datos-card">
 
             <h6 class="titulo-seccion">Datos del Tutor</h6>
+
             <div class="datos-grid-3">
-                <div class="dato-item"><label>Nombre:</label><p>${d.tutorNombre ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Paterno:</label><p>${d.tutorPaterno ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Materno:</label><p>${d.tutorMaterno ?? '---'}</p></div>
+                <div class="dato-item">
+                    <label>Nombre:</label>
+                    <p>${d.tutorNombre || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Apellido Paterno:</label>
+                    <p>${d.tutorPaterno || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Apellido Materno:</label>
+                    <p>${d.tutorMaterno || '---'}</p>
+                </div>
             </div>
-            <div class="datos-flex-center mt-3">
-                <div class="dato-item"><label>Teléfono 1:</label><p>${d.telefono1 ?? '---'}</p></div>
-                <div class="dato-item"><label>Teléfono 2:</label><p>${d.telefono2 ?? '---'}</p></div>
+
+            <div class="datos-grid-4 mt-3">
+                <div class="dato-item">
+                    <label>CURP:</label>
+                    <p>${d.tutorCurp || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Teléfono 1:</label>
+                    <p>${d.telefono1 || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Teléfono 2:</label>
+                    <p>${d.telefono2 || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Correo electrónico:</label>
+                    <p>${d.tutorEmail || '---'}</p>
+                </div>
             </div>
 
             <hr class="separador-datos">
 
-            <h6 class="titulo-seccion">Datos del Aspirante</h6>
+            <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
+
             <div class="datos-grid-3">
-                <div class="dato-item"><label>Nombre:</label><p>${d.alumnoNombre ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Paterno:</label><p>${d.alumnoPaterno ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno ?? '---'}</p></div>
+                <div class="dato-item">
+                    <label>Nombre:</label>
+                    <p>${d.alumnoNombre || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Apellido Paterno:</label>
+                    <p>${d.alumnoPaterno || '---'}</p>
+                </div>
+                <div class="dato-item">
+                    <label>Apellido Materno:</label>
+                    <p>${d.alumnoMaterno || '---'}</p>
+                </div>
             </div>
-            <div class="datos-flex-center mt-3">
-                <div class="dato-item"><label>RFC:</label><p>${d.rfc ?? '---'}</p></div>
-                <div class="dato-item"><label>CURP:</label><p>${d.curp ?? '---'}</p></div>
+
+            <div class="datos-curp-centrado mt-3">
+                <label>CURP:</label>
+                <p>${d.alumnoCurp || '---'}</p>
             </div>
 
         </div>
