@@ -176,6 +176,16 @@ public function asignarCTP(Request $request, Lead $lead)
     
     $lead->save();
 
+    // 👇 Registrar "Prospecto frío" automáticamente si no existe
+    $yaExiste = $lead->seguimientos()->where('estado', 'Prospecto frío')->exists();
+    if (!$yaExiste) {
+        $lead->seguimientos()->create([
+            'estado' => 'Prospecto frío',
+            'fecha'  => now()->toDateString(),
+            'hora'   => now()->toTimeString(),
+        ]);
+    }
+
     return response()->json(['success' => true]);
 }
     

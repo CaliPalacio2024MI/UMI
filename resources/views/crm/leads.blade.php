@@ -311,7 +311,7 @@ function renderizarSeguimiento(fila) {
                 <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
                 <img src="/images/icons/eye.svg" class="icon-eye" title="Ver detalle">
             `;
-        } else if (habilitado && puedeEditarSeguimiento()) {
+        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
             accion = `
                 <i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>
             `;
