@@ -373,3 +373,387 @@ body {
     background: #81c784;
     color: white;
 }
+
+/* Estilos para juegos */
+.game-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.question-box h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.option-label {
+    display: block;
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.option-label:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+}
+
+.option-label input {
+    margin-right: 10px;
+}
+
+.btn-submit {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+.btn-submit:hover {
+    background: #218838;
+}
+
+.btn-submit:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.result-message {
+    margin-top: 15px;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Examen */
+.question-item {
+    background: white;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.question-item h4 {
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+/* Sopa de Letras */
+.words-to-find {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.words-to-find h4 {
+    margin-bottom: 10px;
+}
+
+.words-to-find ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.words-to-find li {
+    background: #007bff;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.words-to-find li.found {
+    background: #28a745;
+    text-decoration: line-through;
+}
+
+.sopa-grid {
+    border-collapse: collapse;
+    margin: 0 auto;
+    user-select: none;
+}
+
+.sopa-cell {
+    width: 35px;
+    height: 35px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    background: white;
+    transition: background 0.2s;
+}
+
+.sopa-cell:hover {
+    background: #e3f2fd;
+}
+
+.sopa-cell.selected {
+    background: #90caf9;
+}
+
+.sopa-cell.found {
+    background: #81c784;
+    color: white;
+}
+
+/* ========== AHORCADO ========== */
+.ahorcado-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.ahorcado-game {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.hangman-drawing {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+.hangman-svg {
+    display: block;
+}
+
+.hangman-part {
+    stroke: #dc3545;
+    stroke-width: 3;
+    fill: none;
+}
+
+.hangman-part[data-part="0"] {
+    fill: #dc3545;
+    stroke: #dc3545;
+}
+
+.ahorcado-info {
+    text-align: center;
+    width: 100%;
+}
+
+.ahorcado-info p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.hint-text {
+    color: #007bff;
+    font-style: italic;
+}
+
+.attempts-text {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.word-display {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.word-display .letter {
+    width: 40px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    border-bottom: 3px solid #333;
+}
+
+.word-display .letter.revealed {
+    color: #28a745;
+}
+
+.word-display .letter.hidden {
+    color: transparent;
+}
+
+.keyboard {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+    max-width: 500px;
+    margin: 20px 0;
+}
+
+.letter-btn {
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.letter-btn:hover:not(:disabled) {
+    background: #0056b3;
+    transform: scale(1.05);
+}
+
+.letter-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.letter-btn.correct {
+    background: #28a745;
+}
+
+.letter-btn.incorrect {
+    background: #dc3545;
+}
+
+.letter-btn.used {
+    opacity: 0.5;
+}
+
+/* ========== CRUCIGRAMA ========== */
+.crucigrama-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.crucigrama-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .crucigrama-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.crucigrama-clues {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.clues-section {
+    margin-bottom: 20px;
+}
+
+.clues-section h4 {
+    color: #007bff;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+}
+
+.clues-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.clues-section li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.crucigrama-grid-wrapper {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    overflow-x: auto;
+}
+
+.crossword-table {
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+.crossword-cell {
+    width: 35px;
+    height: 35px;
+    border: 1px solid #333;
+    text-align: center;
+    position: relative;
+}
+
+.crossword-cell.blocked {
+    background: #333;
+}
+
+.crossword-cell.editable {
+    background: white;
+}
+
+.crossword-cell.correct {
+    background: #d4edda;
+}
+
+.crossword-cell.incorrect {
+    background: #f8d7da;
+}
+
+.cell-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    background: transparent;
+}
+
+.cell-input:focus {
+    outline: 2px solid #007bff;
+    background: #e3f2fd;
+}
+

@@ -145,6 +145,79 @@
                             </div>
                         @endif
 
+                        {{-- AHORCADO --}}
+                        @if ($activity->type === 'Ahorcado')
+                            <div class="game-container ahorcado-container">
+                                <div class="ahorcado-game" id="ahorcado-{{ $activity->id }}"
+                                     data-activity-id="{{ $activity->id }}"
+                                     data-word="{{ strtoupper($activity->content['word'] ?? '') }}"
+                                     data-hint="{{ $activity->content['hint'] ?? '' }}"
+                                     data-max-attempts="{{ $activity->content['max_attempts'] ?? 6 }}">
+                                    
+                                    <div class="hangman-drawing" id="hangman-drawing-{{ $activity->id }}">
+                                        <svg width="200" height="250" class="hangman-svg">
+                                            <line x1="10" y1="230" x2="150" y2="230" stroke="#333" stroke-width="4"/> <!-- Base -->
+                                            <line x1="50" y1="230" x2="50" y2="20" stroke="#333" stroke-width="4"/> <!-- Poste -->
+                                            <line x1="50" y1="20" x2="130" y2="20" stroke="#333" stroke-width="4"/> <!-- Viga -->
+                                            <line x1="130" y1="20" x2="130" y2="50" stroke="#333" stroke-width="4"/> <!-- Cuerda -->
+                                            
+                                            <!-- Partes del cuerpo (ocultas inicialmente) -->
+                                            <circle cx="130" cy="70" r="20" class="hangman-part" data-part="0" style="display:none"/> <!-- Cabeza -->
+                                            <line x1="130" y1="90" x2="130" y2="150" class="hangman-part" data-part="1" style="display:none"/> <!-- Cuerpo -->
+                                            <line x1="130" y1="110" x2="100" y2="130" class="hangman-part" data-part="2" style="display:none"/> <!-- Brazo izq -->
+                                            <line x1="130" y1="110" x2="160" y2="130" class="hangman-part" data-part="3" style="display:none"/> <!-- Brazo der -->
+                                            <line x1="130" y1="150" x2="110" y2="190" class="hangman-part" data-part="4" style="display:none"/> <!-- Pierna izq -->
+                                            <line x1="130" y1="150" x2="150" y2="190" class="hangman-part" data-part="5" style="display:none"/> <!-- Pierna der -->
+                                        </svg>
+                                    </div>
+
+                                    <div class="ahorcado-info">
+                                        <p class="hint-text"><strong>Pista:</strong> <span id="hint-{{ $activity->id }}"></span></p>
+                                        <p class="attempts-text">Intentos restantes: <span id="attempts-{{ $activity->id }}"></span></p>
+                                    </div>
+
+                                    <div class="word-display" id="word-display-{{ $activity->id }}"></div>
+                                    
+                                    <div class="keyboard" id="keyboard-{{ $activity->id }}"></div>
+                                    
+                                    <div class="result-message"></div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- CRUCIGRAMA --}}
+                        @if ($activity->type === 'Crucigrama')
+                            <div class="game-container crucigrama-container">
+                                <div class="crucigrama-game" id="crucigrama-{{ $activity->id }}"
+                                     data-activity-id="{{ $activity->id }}"
+                                     data-words='@json($activity->content['words'] ?? [])'
+                                     data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                                    
+                                    <div class="crucigrama-layout">
+                                        <div class="crucigrama-clues">
+                                            <div class="clues-section">
+                                                <h4>Horizontales</h4>
+                                                <ul id="clues-horizontal-{{ $activity->id }}"></ul>
+                                            </div>
+                                            <div class="clues-section">
+                                                <h4>Verticales</h4>
+                                                <ul id="clues-vertical-{{ $activity->id }}"></ul>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="crucigrama-grid-wrapper">
+                                            <div class="crucigrama-grid" id="crucigrama-grid-{{ $activity->id }}">
+                                                <!-- La grilla se generará con JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn-submit" onclick="checkCrucigramaCompletion({{ $activity->id }})">Verificar Crucigrama</button>
+                                    <div class="result-message"></div>
+                                </div>
+                            </div>
+                        @endif
+
                         {{-- ARCHIVOS MULTIMEDIA --}}
                         @if ($activity->file_path)
                             <div class="file-viewer">
@@ -237,12 +310,85 @@
                         </div>
                     @endif
 
+                    {{-- AHORCADO --}}
+                    @if ($activity->type === 'Ahorcado')
+                        <div class="game-container ahorcado-container">
+                            <div class="ahorcado-game" id="ahorcado-{{ $activity->id }}"
+                                 data-activity-id="{{ $activity->id }}"
+                                 data-word="{{ strtoupper($activity->content['word'] ?? '') }}"
+                                 data-hint="{{ $activity->content['hint'] ?? '' }}"
+                                 data-max-attempts="{{ $activity->content['max_attempts'] ?? 6 }}">
+                                
+                                <div class="hangman-drawing" id="hangman-drawing-{{ $activity->id }}">
+                                    <svg width="200" height="250" class="hangman-svg">
+                                        <line x1="10" y1="230" x2="150" y2="230" stroke="#333" stroke-width="4"/>
+                                        <line x1="50" y1="230" x2="50" y2="20" stroke="#333" stroke-width="4"/>
+                                        <line x1="50" y1="20" x2="130" y2="20" stroke="#333" stroke-width="4"/>
+                                        <line x1="130" y1="20" x2="130" y2="50" stroke="#333" stroke-width="4"/>
+                                        
+                                        <circle cx="130" cy="70" r="20" class="hangman-part" data-part="0" style="display:none"/>
+                                        <line x1="130" y1="90" x2="130" y2="150" class="hangman-part" data-part="1" style="display:none"/>
+                                        <line x1="130" y1="110" x2="100" y2="130" class="hangman-part" data-part="2" style="display:none"/>
+                                        <line x1="130" y1="110" x2="160" y2="130" class="hangman-part" data-part="3" style="display:none"/>
+                                        <line x1="130" y1="150" x2="110" y2="190" class="hangman-part" data-part="4" style="display:none"/>
+                                        <line x1="130" y1="150" x2="150" y2="190" class="hangman-part" data-part="5" style="display:none"/>
+                                    </svg>
+                                </div>
+
+                                <div class="ahorcado-info">
+                                    <p class="hint-text"><strong>Pista:</strong> <span id="hint-{{ $activity->id }}"></span></p>
+                                    <p class="attempts-text">Intentos restantes: <span id="attempts-{{ $activity->id }}"></span></p>
+                                </div>
+
+                                <div class="word-display" id="word-display-{{ $activity->id }}"></div>
+                                
+                                <div class="keyboard" id="keyboard-{{ $activity->id }}"></div>
+                                
+                                <div class="result-message"></div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- CRUCIGRAMA --}}
+                    @if ($activity->type === 'Crucigrama')
+                        <div class="game-container crucigrama-container">
+                            <div class="crucigrama-game" id="crucigrama-{{ $activity->id }}"
+                                 data-activity-id="{{ $activity->id }}"
+                                 data-words='@json($activity->content['words'] ?? [])'
+                                 data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                                
+                                <div class="crucigrama-layout">
+                                    <div class="crucigrama-clues">
+                                        <div class="clues-section">
+                                            <h4>Horizontales</h4>
+                                            <ul id="clues-horizontal-{{ $activity->id }}"></ul>
+                                        </div>
+                                        <div class="clues-section">
+                                            <h4>Verticales</h4>
+                                            <ul id="clues-vertical-{{ $activity->id }}"></ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="crucigrama-grid-wrapper">
+                                        <div class="crucigrama-grid" id="crucigrama-grid-{{ $activity->id }}">
+                                            <!-- La grilla se generará con JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn-submit" onclick="checkCrucigramaCompletion({{ $activity->id }})">Verificar Crucigrama</button>
+                                <div class="result-message"></div>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- ARCHIVOS MULTIMEDIA --}}
                     @if ($activity->file_path)
                         <div class="file-viewer">
                             <iframe src="{{ asset('storage/'.$activity->file_path) }}"></iframe>
                         </div>
                     @endif
+                    
 
                     {{-- JUEGOS EXTERNOS --}}
                     @if ($activity->game_url)
@@ -285,6 +431,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 initSopaDeLetras(grid);
             }
         });
+        
+        // Inicializar Ahorcado
+        document.querySelectorAll('.ahorcado-game').forEach(game => {
+            if(!game.querySelector('.letter-btn')) {
+                initAhorcado(game);
+            }
+        });
+        
+        // Inicializar Crucigrama
+        document.querySelectorAll('.crucigrama-game').forEach(game => {
+            const grid = game.querySelector('.crucigrama-grid');
+            if(grid && !grid.innerHTML) {
+                initCrucigrama(game);
+            }
+        });
     }, 200);
 
     function showIndex(i){
@@ -307,6 +468,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 const sopaGrid = panel.querySelector('.grid-container');
                 if(sopaGrid && !sopaGrid.innerHTML) {
                     initSopaDeLetras(sopaGrid);
+                }
+                
+                // Inicializar Ahorcado si existe
+                const ahorcadoGame = panel.querySelector('.ahorcado-game');
+                if(ahorcadoGame && !ahorcadoGame.querySelector('.letter-btn')) {
+                    initAhorcado(ahorcadoGame);
+                }
+                
+                // Inicializar Crucigrama si existe
+                const crucigramaGame = panel.querySelector('.crucigrama-game');
+                if(crucigramaGame) {
+                    const grid = crucigramaGame.querySelector('.crucigrama-grid');
+                    if(grid && !grid.innerHTML) {
+                        initCrucigrama(crucigramaGame);
+                    }
                 }
             }, 100);
         }
@@ -349,9 +525,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
 });
-</script>
 
-<script>
 document.addEventListener('DOMContentLoaded', () => {
 
     const btn = document.getElementById('btnSpeak');
@@ -416,10 +590,8 @@ async function readPdf(url) {
         speak('No se pudo leer el PDF.');
     }
 }
-</script>
 
 {{-- ========== CUESTIONARIO HANDLER ========== --}}
-<script>
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.cuestionario-form').forEach(form => {
         form.addEventListener('submit', async function(e) {
@@ -476,10 +648,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-</script>
 
 {{-- ========== EXAMEN HANDLER ========== --}}
-<script>
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.examen-form').forEach(form => {
         form.addEventListener('submit', async function(e) {
@@ -565,10 +735,8 @@ function updateProgressBar() {
     // Por ahora solo mostramos un mensaje
     console.log('✅ Progreso actualizado');
 }
-</script>
 
 {{-- ========== SOPA DE LETRAS - DEFINIR FUNCIONES PRIMERO ========== --}}
-<script>
 // ========== FUNCIONES DE SOPA DE LETRAS ==========
 function initSopaDeLetras(gridContainer) {
     console.log('🎮 Inicializando Sopa de Letras...');
@@ -832,6 +1000,348 @@ document.addEventListener('DOMContentLoaded', () => {
         initSopaDeLetras(container);
     });
 });
+
+// ========== FUNCIONES DE AHORCADO ==========
+function initAhorcado(gameContainer) {
+    console.log('🎮 Inicializando Ahorcado...');
+    
+    const activityId = gameContainer.dataset.activityId;
+    const word = gameContainer.dataset.word;
+    const hint = gameContainer.dataset.hint;
+    const maxAttempts = parseInt(gameContainer.dataset.maxAttempts);
+    
+    if (!word) {
+        console.error('❌ No hay palabra definida');
+        return;
+    }
+    
+    let attempts = 0;
+    let guessedLetters = [];
+    let wordArray = word.split('');
+    
+    // Mostrar pista
+    document.getElementById(`hint-${activityId}`).textContent = hint || 'Sin pista';
+    document.getElementById(`attempts-${activityId}`).textContent = maxAttempts;
+    
+    // Crear display de palabra
+    updateWordDisplay();
+    
+    // Crear teclado
+    const keyboard = document.getElementById(`keyboard-${activityId}`);
+    const letters = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+    
+    letters.split('').forEach(letter => {
+        const btn = document.createElement('button');
+        btn.textContent = letter;
+        btn.className = 'letter-btn';
+        btn.onclick = () => guessLetter(letter, btn);
+        keyboard.appendChild(btn);
+    });
+    
+    function guessLetter(letter, btn) {
+        if (guessedLetters.includes(letter)) return;
+        
+        guessedLetters.push(letter);
+        btn.disabled = true;
+        btn.classList.add('used');
+        
+        if (wordArray.includes(letter)) {
+            btn.classList.add('correct');
+            updateWordDisplay();
+            checkWin();
+        } else {
+            btn.classList.add('incorrect');
+            attempts++;
+            updateAttemptsDisplay();
+            showHangmanPart(attempts - 1);
+            checkLoss();
+        }
+    }
+    
+    function updateWordDisplay() {
+        const display = document.getElementById(`word-display-${activityId}`);
+        display.innerHTML = wordArray.map(letter => {
+            return guessedLetters.includes(letter) 
+                ? `<span class="letter revealed">${letter}</span>`
+                : `<span class="letter hidden">_</span>`;
+        }).join('');
+    }
+    
+    function updateAttemptsDisplay() {
+        document.getElementById(`attempts-${activityId}`).textContent = maxAttempts - attempts;
+    }
+    
+    function showHangmanPart(partIndex) {
+        const part = gameContainer.querySelector(`.hangman-part[data-part="${partIndex}"]`);
+        if (part) part.style.display = 'block';
+    }
+    
+    function checkWin() {
+        if (wordArray.every(letter => guessedLetters.includes(letter))) {
+            const resultDiv = gameContainer.querySelector('.result-message');
+            resultDiv.innerHTML = `
+                <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                    <h3>🎉 ¡Felicidades! Adivinaste la palabra</h3>
+                    <p style="font-size: 20px; font-weight: bold;">${word}</p>
+                </div>
+            `;
+            
+            // Deshabilitar teclado
+            keyboard.querySelectorAll('.letter-btn').forEach(btn => btn.disabled = true);
+            
+            // Enviar al servidor
+            submitAhorcado(activityId, true);
+        }
+    }
+    
+    function checkLoss() {
+        if (attempts >= maxAttempts) {
+            const resultDiv = gameContainer.querySelector('.result-message');
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                    <h3>😞 Game Over</h3>
+                    <p>La palabra era: <strong>${word}</strong></p>
+                </div>
+            `;
+            
+            // Deshabilitar teclado
+            keyboard.querySelectorAll('.letter-btn').forEach(btn => btn.disabled = true);
+            
+            // Mostrar palabra completa
+            const display = document.getElementById(`word-display-${activityId}`);
+            display.innerHTML = wordArray.map(letter => 
+                `<span class="letter revealed">${letter}</span>`
+            ).join('');
+        }
+    }
+}
+
+function submitAhorcado(activityId, success) {
+    fetch(`/activities/${activityId}/submit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ success })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('✅ Ahorcado guardado:', data);
+        if (data.created) {
+            updateProgressBar();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+/**
+ * INICIALIZACIÓN AUTOMÁTICA
+ */
+window.onload = function() {
+    console.log('🚀 Iniciando sistema de crucigramas...');
+    const games = document.querySelectorAll('.crucigrama-game');
+    games.forEach(game => initCrucigrama(game));
+};
+
+function initCrucigrama(gameContainer) {
+    const activityId = gameContainer.dataset.activityId;
+    const wordsData = gameContainer.dataset.words;
+    const size = parseInt(gameContainer.dataset.size);
+    
+    if (!wordsData) {
+        console.error('❌ No hay palabras definidas');
+        return;
+    }
+    
+    let words;
+    try {
+        const parsedData = JSON.parse(wordsData);
+        // SOLUCIÓN AL ERROR: Convertir objeto a array si es necesario
+        words = Array.isArray(parsedData) ? parsedData : Object.values(parsedData);
+        console.log('✅ Palabras cargadas para actividad ' + activityId, words);
+    } catch(e) {
+        console.error('❌ Error al parsear palabras:', e);
+        return;
+    }
+    
+    if (!words || words.length === 0) return;
+    
+    // Crear grilla y colocar palabras
+    const { grid, placements } = createCrucigramaGrid(size, words);
+    renderCrucigramaGrid(activityId, grid, size, placements);
+    renderCrucigramaClues(activityId, words, placements);
+}
+
+function createCrucigramaGrid(size, words) {
+    // Inicializar grilla vacía
+    const grid = Array(size).fill(null).map(() => 
+        Array(size).fill(null).map(() => ({ letter: '', editable: false, wordIndex: -1 }))
+    );
+    
+    const placements = [];
+    
+    words.forEach((wordData, index) => {
+        if (!wordData.word) return; // Saltar si no hay palabra
+
+        const word = wordData.word.toUpperCase();
+        const direction = wordData.direction;
+        const wordLength = word.length;
+        
+        let placed = false;
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (!placed && attempts < maxAttempts) {
+            let row, col;
+            
+            if (direction === 'horizontal') {
+                row = Math.floor(Math.random() * size);
+                col = Math.floor(Math.random() * (size - wordLength + 1));
+                
+                let canPlace = true;
+                for (let i = 0; i < wordLength; i++) {
+                    if (grid[row][col + i].editable && grid[row][col + i].letter !== word[i]) {
+                        canPlace = false;
+                        break;
+                    }
+                }
+                
+                if (canPlace) {
+                    for (let i = 0; i < wordLength; i++) {
+                        grid[row][col + i] = {
+                            letter: word[i],
+                            editable: true,
+                            wordIndex: index,
+                            direction: 'horizontal'
+                        };
+                    }
+                    placements.push({ index, row, col, direction, word, clue: wordData.clue });
+                    placed = true;
+                }
+            } else { // vertical
+                row = Math.floor(Math.random() * (size - wordLength + 1));
+                col = Math.floor(Math.random() * size);
+                
+                let canPlace = true;
+                for (let i = 0; i < wordLength; i++) {
+                    if (grid[row + i][col].editable && grid[row + i][col].letter !== word[i]) {
+                        canPlace = false;
+                        break;
+                    }
+                }
+                
+                if (canPlace) {
+                    for (let i = 0; i < wordLength; i++) {
+                        grid[row + i][col] = {
+                            letter: word[i],
+                            editable: true,
+                            wordIndex: index,
+                            direction: 'vertical'
+                        };
+                    }
+                    placements.push({ index, row, col, direction, word, clue: wordData.clue });
+                    placed = true;
+                }
+            }
+            attempts++;
+        }
+    });
+    
+    return { grid, placements };
+}
+
+function renderCrucigramaGrid(activityId, grid, size, placements) {
+    const gridContainer = document.getElementById(`crucigrama-grid-${activityId}`);
+    if (!gridContainer) return;
+    
+    let html = '<table class="crossword-table">';
+    for (let i = 0; i < size; i++) {
+        html += '<tr>';
+        for (let j = 0; j < size; j++) {
+            const cell = grid[i][j];
+            if (cell.editable) {
+                let wordNumber = '';
+                const placement = placements.find(p => p.row === i && p.col === j);
+                if (placement) {
+                    wordNumber = `<span class="cell-number">${placement.index + 1}</span>`;
+                }
+                
+                html += `
+                    <td class="crossword-cell editable" data-row="${i}" data-col="${j}" data-answer="${cell.letter}">
+                        ${wordNumber}
+                        <input type="text" maxlength="1" class="cell-input" data-row="${i}" data-col="${j}">
+                    </td>`;
+            } else {
+                html += '<td class="crossword-cell blocked"></td>';
+            }
+        }
+        html += '</tr>';
+    }
+    html += '</table>';
+    
+    gridContainer.innerHTML = html;
+    
+    // Eventos de movimiento de foco
+    gridContainer.querySelectorAll('.cell-input').forEach(input => {
+        input.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            if (this.value.length === 1) {
+                const r = parseInt(this.dataset.row);
+                const c = parseInt(this.dataset.col);
+                // Intenta buscar siguiente a la derecha, si no, abajo
+                const next = gridContainer.querySelector(`.cell-input[data-row="${r}"][data-col="${c + 1}"]`) || 
+                             gridContainer.querySelector(`.cell-input[data-row="${r + 1}"][data-col="${c}"]`);
+                if (next) next.focus();
+            }
+        });
+    });
+}
+
+function renderCrucigramaClues(activityId, words, placements) {
+    const hList = document.getElementById(`clues-horizontal-${activityId}`);
+    const vList = document.getElementById(`clues-vertical-${activityId}`);
+    if (!hList || !vList) return;
+    
+    hList.innerHTML = '';
+    vList.innerHTML = '';
+    
+    placements.forEach((p) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${p.index + 1}.</strong> ${p.clue} <small>(${p.word.length} letras)</small>`;
+        if (p.direction === 'horizontal') hList.appendChild(li);
+        else vList.appendChild(li);
+    });
+}
+
+function checkCrucigramaCompletion(activityId) {
+    const gridElem = document.getElementById(`crucigrama-grid-${activityId}`);
+    const cells = gridElem.querySelectorAll('.crossword-cell.editable');
+    const resultDiv = gridElem.closest('.crucigrama-game').querySelector('.result-message');
+    
+    let correctCount = 0;
+    cells.forEach(cell => {
+        const input = cell.querySelector('.cell-input');
+        const answer = cell.dataset.answer;
+        cell.classList.remove('correct', 'incorrect');
+        
+        if (input.value.toUpperCase() === answer) {
+            correctCount++;
+            cell.classList.add('correct');
+        } else if (input.value !== '') {
+            cell.classList.add('incorrect');
+        }
+    });
+
+    if (correctCount === cells.length) {
+        resultDiv.innerHTML = '<div style="color:green; font-weight:bold; margin-top:10px;">¡Excelente! Todo correcto.</div>';
+    } else {
+        resultDiv.innerHTML = `<div style="color:orange; margin-top:10px;">Llevas ${correctCount} de ${cells.length} correctas.</div>`;
+    }
+}
+
 </script>
+
 
 @endsection

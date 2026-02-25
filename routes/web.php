@@ -111,6 +111,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     Route::post('/cursos/{course}/desinscribir', [CourseController::class, 'unenroll'])->name('courses.unenroll');
     Route::post('/completions/mark', [CompletionController::class, 'mark'])->name('completions.mark');
     Route::post('/actividades/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
+    
 
 
     // ======================================================================

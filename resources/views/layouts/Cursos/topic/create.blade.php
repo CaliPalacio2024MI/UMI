@@ -135,7 +135,9 @@
                             <option value="" disabled selected>Selecciona un tipo</option>
                             <option value="Cuestionario">Cuestionario (Quiz)</option>
                             <option value="SopaDeLetras">Sopa de Letras</option>
-                            <option value="Examen">Examen (Múltiples preguntas)</option> 
+                            <option value="Examen">Examen (Múltiples preguntas)</option>
+                            <option value="Ahorcado">Ahorcado</option>
+                            <option value="Crucigrama">Crucigrama</option>
                         </select>
                     </div>
 
@@ -190,6 +192,60 @@
                             <button type="button" id="add-examen-question-btn" class="btn-secondary-exam" disabled>
                                 + Añadir Pregunta al Examen
                             </button>
+                        </div>
+
+                        {{-- NUEVO: TEMPLATE AHORCADO --}}
+                        <div id="template-Ahorcado" class="activity-template" style="display: none;">
+                            <div class="activity-fields-container">
+                                <div class="form-group">
+                                    <label for="ahorcado_word">Palabra a adivinar:</label>
+                                    <input type="text" name="content[word]" id="ahorcado_word" 
+                                           class="form-field-ahorcado" 
+                                           placeholder="Ej: PROGRAMACION" 
+                                           pattern="[A-ZÑ]+" 
+                                           disabled>
+                                    <small>Solo letras mayúsculas sin espacios ni acentos</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ahorcado_hint">Pista (opcional):</label>
+                                    <input type="text" name="content[hint]" id="ahorcado_hint" 
+                                           class="form-field-ahorcado" 
+                                           placeholder="Ej: Proceso de escribir código" 
+                                           disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ahorcado_attempts">Intentos máximos:</label>
+                                    <input type="number" name="content[max_attempts]" id="ahorcado_attempts" 
+                                           value="6" min="3" max="10" 
+                                           class="form-field-ahorcado" 
+                                           disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- NUEVO: TEMPLATE CRUCIGRAMA --}}
+                        <div id="template-Crucigrama" class="activity-template" style="display: none;">
+                            <div class="activity-fields-container">
+                                <div class="form-group">
+                                    <label for="cw_grid_size">Tamaño de Cuadrícula:</label>
+                                    <input type="number" name="content[grid_size]" id="cw_grid_size" 
+                                           value="10" min="5" max="15" 
+                                           class="form-field-crucigrama" 
+                                           disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <h4>Palabras y Pistas del Crucigrama</h4>
+                                    <div id="cw_words_container" style="margin-bottom: 10px;">
+                                        {{-- Aquí se agregarán las palabras dinámicamente --}}
+                                    </div>
+                                    <button type="button" id="cw_add_word_btn" class="btn-secondary" disabled>
+                                        + Añadir Palabra
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div> 
                 </form>
@@ -569,19 +625,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===================================================
     // 6. SELECTOR DE TIPO DE ACTIVIDAD (CORREGIDO)
     // ===================================================
-    const activityTypeSelect = document.getElementById('activity_type'); // <- Corregido: Usar el ID
+    const activityTypeSelect = document.getElementById('activity_type');
 
     if (activityTypeSelect) {
         activityTypeSelect.addEventListener('change', function () {
-            const selectedType = this.value; // ej: "Cuestionario" o "SopaDeLetras"
+            const selectedType = this.value;
             const form = this.closest('form');
             
             // 1. Ocultar TODAS las plantillas
             const allTemplates = form.querySelectorAll('.activity-template');
             allTemplates.forEach(template => {
                 template.style.display = 'none';
-                
-                // Deshabilitar todos sus campos para que no se envíen
                 template.querySelectorAll('input, button, select, textarea').forEach(input => {
                     input.disabled = true;
                 });
@@ -591,49 +645,44 @@ document.addEventListener('DOMContentLoaded', function() {
             const activeTemplate = form.querySelector('#template-' + selectedType);
             if (activeTemplate) {
                 activeTemplate.style.display = 'block';
-                
-                // Habilitar solo sus campos
                 activeTemplate.querySelectorAll('input, button, select, textarea').forEach(input => {
                     input.disabled = false;
                 });
+                
+                // Inicializar funciones específicas según el tipo
                 if (selectedType === 'Crucigrama') {
-                    const gridSize = document.getElementById('cw_grid_size').value;
-                    drawEditorGrid(gridSize);
+                    initCrucigramaForm();
                 }
             }
         });
     }
 
-    // Lógica para el formulario de Sopa de Letras (Esta parte ya estaba bien)
+    // ===================================================
+    // 7. LÓGICA SOPA DE LETRAS
+    // ===================================================
     const addWordBtn = document.getElementById('ws_add_word_btn');
     const wordInput = document.getElementById('ws_word_input');
     const wordList = document.getElementById('ws_word_list');
     const hiddenInputsContainer = document.getElementById('ws_hidden_inputs');
 
     if (addWordBtn) {
-        
-        // Función para añadir la palabra
         const addWord = () => {
             let word = wordInput.value.trim().toUpperCase();
             
-            // Validar (simple)
             if (word === '' || word.includes(' ')) {
                 alert('Por favor, escribe una sola palabra sin espacios.');
                 return;
             }
 
-            // 1. Crear el input oculto para el formulario
             const hiddenInput = document.createElement('input');
             hiddenInput.type = 'hidden';
-            hiddenInput.name = 'content[words][]'; // Esto crea el array en PHP
+            hiddenInput.name = 'content[words][]';
             hiddenInput.value = word;
             hiddenInputsContainer.appendChild(hiddenInput);
 
-            // 2. Crear el elemento <li> para que el usuario lo vea
             const li = document.createElement('li');
             li.textContent = word;
 
-            // 3. (Opcional) Añadir botón de eliminar
             const removeBtn = document.createElement('span');
             removeBtn.textContent = ' [X]';
             removeBtn.style.color = 'red';
@@ -645,26 +694,22 @@ document.addEventListener('DOMContentLoaded', function() {
             li.appendChild(removeBtn);
             
             wordList.appendChild(li);
-
-            // 4. Limpiar el input
             wordInput.value = '';
             wordInput.focus();
         };
 
-        // Añadir al hacer clic
         addWordBtn.addEventListener('click', addWord);
-        
-        // Añadir al presionar Enter
         wordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault(); // Evitar que el formulario se envíe
+                e.preventDefault();
                 addWord();
             }
         });
     }
 
-    
-    // --- LÓGICA PARA NUEVO EXAMEN (MÚLTIPLES PREGUNTAS) ---
+    // ===================================================
+    // 8. LÓGICA EXAMEN
+    // ===================================================
     const addExamenBtn = document.getElementById('add-examen-question-btn');
     const examenContainer = document.getElementById('examen-questions-container');
     let examenQuestionCounter = 0;
@@ -674,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === 'Examen') {
                 addExamenBtn.disabled = false;
                 if (examenContainer.childElementCount === 0) {
-                    addExamenQuestionBlock(); // Añadir la primera pregunta
+                    addExamenQuestionBlock();
                 }
             } else {
                 addExamenBtn.disabled = true;
@@ -715,32 +760,95 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===================================================
-    // 7. DELEGACIÓN DE EVENTO: EDITAR TEMA
+    // 9. NUEVO: LÓGICA CRUCIGRAMA
+    // ===================================================
+    let crucigramaWordCounter = 0;
+    
+    function initCrucigramaForm() {
+        const addWordBtn = document.getElementById('cw_add_word_btn');
+        const wordsContainer = document.getElementById('cw_words_container');
+        
+        if (addWordBtn && !addWordBtn.dataset.initialized) {
+            addWordBtn.dataset.initialized = 'true';
+            addWordBtn.addEventListener('click', function() {
+                addCrucigramaWord(wordsContainer);
+            });
+            
+            // Agregar la primera palabra automáticamente
+            addCrucigramaWord(wordsContainer);
+        }
+    }
+    
+    function addCrucigramaWord(container) {
+        const index = crucigramaWordCounter++;
+        const wordBlock = document.createElement('div');
+        wordBlock.classList.add('crucigrama-word-block');
+        wordBlock.style.border = '1px solid #ddd';
+        wordBlock.style.padding = '10px';
+        wordBlock.style.marginBottom = '10px';
+        wordBlock.style.borderRadius = '6px';
+        wordBlock.style.backgroundColor = '#f9f9f9';
+        
+        wordBlock.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h5 style="margin: 0;">Palabra ${index + 1}</h5>
+                <button type="button" class="btn-danger-small btn-remove-cw-word">Eliminar</button>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Palabra:</label>
+                <input type="text" 
+                       name="content[words][${index}][word]" 
+                       placeholder="Ej: MATEMATICA" 
+                       pattern="[A-ZÑ]+" 
+                       required 
+                       style="text-transform: uppercase;">
+                <small>Solo letras mayúsculas, sin espacios ni acentos</small>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Pista:</label>
+                <input type="text" 
+                       name="content[words][${index}][clue]" 
+                       placeholder="Ej: Ciencia de los números" 
+                       required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Dirección:</label>
+                <select name="content[words][${index}][direction]" required>
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
+                </select>
+            </div>
+        `;
+        
+        wordBlock.querySelector('.btn-remove-cw-word').addEventListener('click', function() {
+            wordBlock.remove();
+        });
+        
+        container.appendChild(wordBlock);
+    }
+
+    // ===================================================
+    // 10. DELEGACIÓN DE EVENTO: EDITAR TEMA
     // ===================================================
     document.addEventListener('click', function (event) {
         if (event.target.closest('.btn-edit-topic')) {
-            console.log("✅ Click detectado en botón editar tema");
             const btn = event.target.closest('.btn-edit-topic');
-            console.log("Datos del botón:", btn.dataset);
-
             const topicId = btn.dataset.id;
             const title = btn.dataset.title;
             const description = btn.dataset.description;
             const filePath = btn.dataset.filePath;
             const updateUrl = btn.dataset.updateUrl;
 
-            console.log({ topicId, title, description, filePath, updateUrl });
-
-            // Verificar existencia del formulario
             const editForm = document.getElementById('form-edit-topic');
             if (!editForm) {
-                console.error("❌ No se encontró el formulario de edición (id='form-edit-topic')");
+                console.error("❌ No se encontró el formulario de edición");
                 return;
             }
 
             editForm.querySelector('form').action = updateUrl;
-
-            // Llenar formulario
             document.getElementById('edit-topic-id').value = topicId || '';
             document.getElementById('edit-title').value = title || '';
             document.getElementById('edit-description').value = description || '';
@@ -753,19 +861,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     : 'No hay archivo adjunto.';
             }
 
-            // Cambiar el modo
-            console.log("Cambiando a modo edición...");
-            if (typeof setFormMode === "function") {
-                setFormMode('edit-topic');
-            } else {
-                console.error("⚠️ La función setFormMode no está definida o no es global.");
-            }
+            setFormMode('edit-topic');
         }
     });
 
-
     // ===================================================
-    // 9. ESTADO INICIAL
+    // 11. ESTADO INICIAL
     // ===================================================
     setFormMode(currentMode);
 });
@@ -773,3 +874,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @endpush
 @endonce
+</document_content>
