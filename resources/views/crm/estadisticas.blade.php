@@ -33,6 +33,13 @@
                         <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom">
                     </div>
 
+                    <!-- Buscador -->
+                    <div class="input-group-custom search-wrapper">
+                        <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
+                        <input type="text" name="buscar" value="{{ request('buscar') }}" class="input-custom"
+                            placeholder="Buscar por CTP">
+                    </div>
+
                     <!-- Filtro de Estatus -->
                     <div class="input-group-custom">
                         <select name="estatus" class="input-custom" onchange="this.form.submit()">
@@ -57,13 +64,6 @@
                         </select>
                     </div>
 
-                    <!-- Buscador -->
-                    <div class="input-group-custom search-wrapper">
-                        <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
-                        <input type="text" name="buscar" value="{{ request('buscar') }}" class="input-custom"
-                            placeholder="Buscar por CTP">
-                    </div>
-
                 </div>
 
                 <button type="submit" class="btn-exportar">
@@ -74,124 +74,153 @@
             </div>
         </form>
 
-        {{-- Main Content Section (Charts) --}}
-        <!-- ================= GRÁFICAS ================= -->
-        <div class="charts-container">
+        <!-- ================= TARJETAS RESUMEN ================= -->
+    <div class="cards-resumen">
 
-            <div class="charts-inner">
+        <div class="card-resumen">
+            <div class="card-titulo">Prospectos</div>
+            <div class="card-numero">{{ $totalProspecto }}</div>
+        </div>
 
-                <div class="charts-wrapper">
+        <div class="card-resumen">
+            <div class="card-titulo">Prospectos Fríos</div>
+            <div class="card-numero">{{ $totalFrio }}</div>
+        </div>
 
-                    <!-- COLUMNA 1 -->
-                    <div class="chart-column">
+        <div class="card-resumen">
+            <div class="card-titulo">Prospectos Calientes</div>
+            <div class="card-numero">{{ $totalCaliente }}</div>
+        </div>
 
-                        <div class="chart-item">
-                            <h4>Distribución de Prospectos por Estado</h4>
-                            <canvas id="chartNumero"></canvas>
-                        </div>
+        <div class="card-resumen">
+            <div class="card-titulo">Aspirantes</div>
+            <div class="card-numero">{{ $totalAspirante }}</div>
+        </div>
 
-                        <div class="chart-table">
+    </div>
 
-                            <div class="chart-title">Distribución de Prospectos por Estado</div>
+       {{-- Main Content Section (Charts) --}}
 
-                            <div class="table-header">
-                                <div>Estado</div>
-                                <div>Total</div>
-                                <div>% del Total</div>
-                            </div>
+       <!-- ================= CARD GRÁFICAS ================= -->
 
-                            <div class="table-body-mini">
+    <div class="charts-card">
 
-                                @php
-                                    $totalGeneral = $totalProspecto + $totalFrio + $totalCaliente + $totalAspirante;
+        <div class="charts-wrapper">
 
-                                    $porcentajeProspecto =
-                                        $totalGeneral > 0 ? round(($totalProspecto / $totalGeneral) * 100, 1) : 0;
-                                    $porcentajeFrio =
-                                        $totalGeneral > 0 ? round(($totalFrio / $totalGeneral) * 100, 1) : 0;
-                                    $porcentajeCaliente =
-                                        $totalGeneral > 0 ? round(($totalCaliente / $totalGeneral) * 100, 1) : 0;
-                                    $porcentajeAspirante =
-                                        $totalGeneral > 0 ? round(($totalAspirante / $totalGeneral) * 100, 1) : 0;
-                                @endphp
+            <!-- COLUMNA 1 -->
+            <div class="chart-column">
 
-                                <div class="table-row-mini">
-                                    <div>Prospecto</div>
-                                    <div>{{ $totalProspecto }}</div>
-                                    <div>{{ $porcentajeProspecto }}%</div>
-                                </div>
+                <div class="chart-item">
+                    <h4>Distribución de Prospectos por Mes</h4>
 
-                                <div class="table-row-mini">
-                                    <div>Prospecto Frío</div>
-                                    <div>{{ $totalFrio }}</div>
-                                    <div>{{ $porcentajeFrio }}%</div>
-                                </div>
+                    <div class="leyenda-estatus">
 
-                                <div class="table-row-mini">
-                                    <div>Prospecto Caliente</div>
-                                    <div>{{ $totalCaliente }}</div>
-                                    <div>{{ $porcentajeCaliente }}%</div>
-                                </div>
-
-                                <div class="table-row-mini">
-                                    <div>Aspirante</div>
-                                    <div>{{ $totalAspirante }}</div>
-                                    <div>{{ $porcentajeAspirante }}%</div>
-                                </div>
-
-                            </div>
-
-
-                        </div>
-
+                    <div class="item-leyenda">
+                        <span class="color-box prospecto"></span>
+                        Prospecto
                     </div>
 
+                    <div class="item-leyenda">
+                        <span class="color-box frio"></span>
+                        Prospecto Frío
+                    </div>
 
-                    <!-- COLUMNA 2 -->
-                    <div class="chart-column">
+                    <div class="item-leyenda">
+                        <span class="color-box caliente"></span>
+                        Prospecto Caliente
+                    </div>
 
-                        <div class="chart-item">
-                            <h4>Tasa de Conversión a Aspirantes</h4>
-                            <canvas id="chartCierre"></canvas>
+                    <div class="item-leyenda">
+                        <span class="color-box aspirante"></span>
+                        Aspirante
+                    </div>
+
+                </div>
+                    <canvas id="chartNumero"></canvas>
+                </div>
+
+            </div>
+
+
+            <!-- COLUMNA 2 -->
+            <div class="chart-column">
+
+                <div class="chart-item">
+                    <h4>Tasa de Conversión a Aspirantes</h4>
+                    <canvas id="chartCierre"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= CARD TABLAS ================= -->
+
+    <div class="tables-card">
+
+        <div class="charts-wrapper">
+
+            <!-- TABLA 1 -->
+            <div class="chart-column">
+
+                <div class="chart-table">
+
+                    <div class="chart-title">
+                        Distribución de Prospectos por mes
+                    </div>
+
+                    <div class="table-header">
+                        <div>Estado</div>
+                        <div>Total</div>
+                        <div>% del Total</div>
+                    </div>
+
+                    @php
+                    $totalGeneral = $totalProspecto + $totalFrio + $totalCaliente + $totalAspirante;
+
+                    $porcentajeProspecto = $totalGeneral > 0 
+                        ? round(($totalProspecto / $totalGeneral) * 100, 1) 
+                        : 0;
+
+                    $porcentajeFrio = $totalGeneral > 0 
+                        ? round(($totalFrio / $totalGeneral) * 100, 1) 
+                        : 0;
+
+                    $porcentajeCaliente = $totalGeneral > 0 
+                        ? round(($totalCaliente / $totalGeneral) * 100, 1) 
+                        : 0;
+
+                    $porcentajeAspirante = $totalGeneral > 0 
+                        ? round(($totalAspirante / $totalGeneral) * 100, 1) 
+                        : 0;
+                    @endphp
+
+                    <div class="table-body-mini">
+
+                        <div class="table-row-mini">
+                            <div>Prospecto</div>
+                            <div>{{ $totalProspecto }}</div>
+                            <div>{{ $porcentajeProspecto }}%</div>
                         </div>
 
-                        <div class="chart-table">
+                        <div class="table-row-mini">
+                            <div>Prospecto Frío</div>
+                            <div>{{ $totalFrio }}</div>
+                            <div>{{ $porcentajeFrio }}%</div>
+                        </div>
 
-                            <div class="chart-title">Tasa de Conversión a Aspirantes</div>
+                        <div class="table-row-mini">
+                            <div>Prospecto Caliente</div>
+                            <div>{{ $totalCaliente }}</div>
+                            <div>{{ $porcentajeCaliente }}%</div>
+                        </div>
 
-                            <div class="table-header">
-                                <div>Indicador</div>
-                                <div>Valor</div>
-                            </div>
-
-                            <div class="table-body-mini">
-
-                                @php
-                                    $noConvertidos = $totalInteresados - $totalAspirantes;
-                                @endphp
-
-                                <div class="table-row-mini">
-                                    <div>Total Interesados</div>
-                                    <div>{{ $totalInteresados }}</div>
-                                </div>
-
-                                <div class="table-row-mini">
-                                    <div>Total Aspirantes</div>
-                                    <div>{{ $totalAspirantes }}</div>
-                                </div>
-
-                                <div class="table-row-mini">
-                                    <div>No Convertidos</div>
-                                    <div>{{ $noConvertidos }}</div>
-                                </div>
-
-                                <div class="table-row-mini">
-                                    <div><strong>Tasa de Conversión</strong></div>
-                                    <div><strong>{{ $porcentajeConversion }}%</strong></div>
-                                </div>
-
-                            </div>
-
+                        <div class="table-row-mini">
+                            <div>Aspirante</div>
+                            <div>{{ $totalAspirante }}</div>
+                            <div>{{ $porcentajeAspirante }}%</div>
                         </div>
 
                     </div>
@@ -199,10 +228,55 @@
                 </div>
 
             </div>
+
+
+            <!-- TABLA 2 -->
+            <div class="chart-column">
+
+                <div class="chart-table">
+
+                    <div class="chart-title">
+                        Tasa de Conversión a Aspirantes
+                    </div>
+
+                    <div class="table-header">
+                        <div>Indicador</div>
+                        <div>Valor</div>
+                    </div>
+
+                    <div class="table-body-mini">
+
+                        <div class="table-row-mini">
+                            <div>Total Interesados</div>
+                            <div>{{ $totalInteresados }}</div>
+                        </div>
+
+                        <div class="table-row-mini">
+                            <div>Total Aspirantes</div>
+                            <div>{{ $totalAspirantes }}</div>
+                        </div>
+
+                        <div class="table-row-mini">
+                            <div>No Convertidos</div>
+                            <div>{{ $totalInteresados - $totalAspirantes }}</div>
+                        </div>
+
+                        <div class="table-row-mini">
+                            <div><strong>Tasa Conversión</strong></div>
+                            <div><strong>{{ $porcentajeConversion }}%</strong></div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
 
-
     </div>
+       
+</div>
 @endsection
 
 @push('scripts')
@@ -271,31 +345,42 @@
             };
 
 
-            /* ================= GRÁFICA 1: DISTRIBUCIÓN POR ESTADO ================= */
+            /* ================= GRÁFICA 1: NÚMERO POR MES ================= */
             const ctxNumero = document.getElementById('chartNumero').getContext('2d');
 
             new Chart(ctxNumero, {
                 type: 'bar',
                 data: {
                     labels: [
-                        'Prospecto',
-                        'Prospecto Frío',
-                        'Prospecto Caliente',
-                        'Aspirante'
+                        'Enero',
+                        'Febrero',
+                        'Marzo',
+                        'Abril',
+                        'Mayo',
+                        'Junio',
+                        'Julio',
+                        'Agosto',
+                        'Septiembre',
+                        'Octubre',
+                        'Noviembre',
+                        'Diciembre'
                     ],
                     datasets: [{
                         data: [
-                            {{ $totalProspecto }},
-                            {{ $totalFrio }},
-                            {{ $totalCaliente }},
-                            {{ $totalAspirante }}
+                            {{ $enero ?? 0 }},
+                            {{ $febrero ?? 0 }},
+                            {{ $marzo ?? 0 }},
+                            {{ $abril ?? 0 }},
+                            {{ $mayo ?? 0 }},
+                            {{ $junio ?? 0 }},
+                            {{ $julio ?? 0 }},
+                            {{ $agosto ?? 0 }},
+                            {{ $septiembre ?? 0 }},
+                            {{ $octubre ?? 0 }},
+                            {{ $noviembre ?? 0 }},
+                            {{ $diciembre ?? 0 }}
                         ],
-                        backgroundColor: [
-                            '#6c757d',
-                            '#17a2b8',
-                            '#ffc107',
-                            '#28a745'
-                        ],
+                        backgroundColor: '#c27c3a',
                         borderRadius: 6
                     }]
                 },
@@ -307,7 +392,6 @@
                             display: false
                         },
 
-                        // 🔹 NÚMEROS ARRIBA DE LAS BARRAS
                         datalabels: {
                             anchor: 'end',
                             align: 'top',
@@ -335,9 +419,8 @@
                         }
                     }
                 },
-                plugins: [ChartDataLabels] // 🔥 Activar plugin
+                plugins: [ChartDataLabels]
             });
-
 
             /* ================= GRÁFICA 2: % CONVERSIÓN ================= */
             const ctxCierre = document.getElementById('chartCierre').getContext('2d');

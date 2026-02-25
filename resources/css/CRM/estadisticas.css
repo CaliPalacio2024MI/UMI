@@ -226,6 +226,94 @@ body:has(.crm-estadisticas) .main-content {
     padding: 6px 0;
 }
 
+.charts-card{
+background:#d4dce3;
+border-radius:25px;
+padding:30px;
+margin-bottom:40px;
+}
+
+.tables-card{
+background:#d4dce3;
+border-radius:25px;
+padding:30px;
+}
+
+.crm-estadisticas {
+    height: 100%;
+    overflow-y: auto; /* 🔥 Activa scroll vertical */
+    padding-bottom: 40px; /* espacio extra abajo */
+}
+
+/* ================= TARJETAS RESUMEN ================= */
+
+.cards-resumen {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    margin-top: 40px;
+    margin-bottom: 30px;
+}
+
+.card-resumen {
+    background: white;
+    border-radius: 20px;
+    padding: 12px 20px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.card-titulo {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.card-numero {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2f4b7c;
+}
+
+/* ===== LEYENDA DE ESTATUS ===== */
+
+.leyenda-estatus {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.item-leyenda {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.color-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+/* Colores */
+
+.prospecto {
+    background: #6c757d;
+}
+
+.frio {
+    background: #17a2b8;
+}
+
+.caliente {
+    background: #ffc107;
+}
+
+.aspirante {
+    background: #28a745;
+}
 
 /* Responsive */
 @media (max-width: 900px) {
