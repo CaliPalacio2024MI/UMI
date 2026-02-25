@@ -39,7 +39,7 @@
                     <span>Apellido Paterno</span>
                     <span>Apellido Materno</span>
                     <span>Teléfono 1</span>
-                    <span>Teléfono 2</span>
+                    <span>Estado</span>
                     <span>Acciones</span>
                 </div>
             </div>
@@ -61,17 +61,22 @@
                             data-alumno-nombre="{{ $lead->alumno_nombre }}"
                             data-alumno-paterno="{{ $lead->alumno_paterno }}"
                             data-alumno-materno="{{ $lead->alumno_materno }}"
-                            data-rfc="{{ $lead->rfc }}"
-                            data-curp="{{ $lead->curp }}"
                             data-seguimientos='@json($lead->seguimientos)'
+                            data-tutor-curp="{{ $lead->tutor_curp }}"
+                            data-tutor-email="{{ $lead->tutor_email }}"
+                            data-alumno-curp="{{ $lead->alumno_curp }}"
+                            data-comentario-reasignacion="{{ $lead->comentario_reasignacion }}"
                         >
                             <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
                             <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
-                            <div>{{ $lead->telefono2 ?? 'N/A' }}</div>
+                            <div>{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
 
                             <div class="acciones">
+                                <button class="btn btn-icon btn-flecha">
+                                    <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
+                                </button>
                                 @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
                                     <button 
                                         class="btn btn-icon btn-asignar-ctp"
@@ -81,10 +86,6 @@
                                         <img src="{{ asset('images/icons/usuario_tag.svg') }}" class="icon">
                                     </button>
                                 @endif
-
-                                <button class="btn btn-icon btn-flecha">
-                                    <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
-                                </button>
 
                                 @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
                                     <button class="btn btn-icon btn-eliminar" data-id="{{ $lead->id }}">
@@ -141,19 +142,58 @@
 </div>
 
 <!-- MODAL CTP -->
-<div id="modal-ctp" class="modal-ctp hidden">
+<div id="modal-ctp" class="modal-ctp d-none">
     <div class="modal-content">
-        <h5>Asignar CTP</h5>
-        <select id="ctp-select" class="form-control">
-            <option value="">Selecciona un CTP</option>
-            @foreach($ctps as $ctp)
-                <option value="{{ $ctp->id }}">{{ $ctp->name }}</option>
-            @endforeach
-        </select>
-        <div class="modal-actions">
-            <button id="guardar-ctp" class="btn btn-primary">Asignar</button>
-            <button id="cerrar-ctp" class="btn btn-secondary">Cancelar</button>
+
+        <!-- Vista: ya tiene CTP asignado -->
+        <div id="vista-asignado" class="d-none">
+    <p class="modal-asignado-label">Asignado a:</p>
+    <p id="modal-ctp-nombre" class="modal-asignado-nombre"></p>
+
+    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+    <div id="historial-ultimo" class="historial-ultimo-wrapper d-none">
+        <span class="historial-ultimo-label">Última reasignación:</span>
+        <p id="modal-comentario-actual" class="modal-comentario-actual"></p>
+    </div>
+@endif
+
+    <button id="btn-reasignar" class="btn btn-outline-primary w-100 mt-2">
+        Reasignar
+    </button>
+</div>
+
+        <!-- Vista: seleccionar CTP (nueva asignación o reasignación) -->
+        <div id="vista-seleccionar" class="d-none">
+            <h5 id="modal-titulo">Asignar CTP</h5>
+            <select id="ctp-select" class="form-control mt-2">
+                <option value="">Selecciona un CTP</option>
+                @foreach($ctps as $ctp)
+                    <option value="{{ $ctp->id }}" data-nombre="{{ $ctp->name }}">
+                        {{ $ctp->name }}
+                    </option>
+                @endforeach
+            </select>
+
+            <!-- Comentario (solo visible al reasignar) -->
+            <div id="comentario-wrapper" class="d-none mt-3">
+                <label class="form-label fw-bold" style="font-size:13px;">
+                    Motivo del cambio:
+                </label>
+                <textarea 
+                    id="ctp-comentario" 
+                    class="form-control" 
+                    rows="3" 
+                    placeholder="Escribe brevemente el motivo del cambio..."
+                    style="resize:none; font-size:13px;"
+                ></textarea>
+            </div>
+
+            <div class="modal-actions mt-3">
+                <button id="guardar-ctp" class="btn btn-primary">Asignar</button>
+                <button id="cerrar-ctp" class="btn btn-secondary">Cancelar</button>
+            </div>
         </div>
+
     </div>
 </div>
 
@@ -220,10 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
 ────────────────────────────────────────────── --}}
 <script>
 const ESTADOS = [
-    'Prospecto',
     'Prospecto frío',
     'Prospecto caliente',
-    'Aspirante'
+    'Aspirante',
+    'Alumno',
+    'Cerrado'
 ];
 
 // Rol puede editar seguimiento
@@ -239,7 +280,7 @@ function renderizarSeguimiento(fila) {
     const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
     const tieneCTP     = fila.dataset.tieneCtp === '1';
 
-    // ✅ FIX: tomar el estado registrado de MAYOR índice (no el último del array)
+    // FIX: tomar el estado registrado de MAYOR índice (no el último del array)
     let estadoActualIndex = -1;
     seguimientos.forEach(s => {
         const i = ESTADOS.indexOf(s.estado);
@@ -266,11 +307,16 @@ function renderizarSeguimiento(fila) {
         // - Bloqueado        → círculo opaco
         let accion;
         if (registro) {
-            accion = `<img src="/images/icons/check.svg" class="icon-check activo" title="Completado">`;
-        } else if (habilitado && puedeEditarSeguimiento()) {
-            accion = `<img src="/images/icons/check.svg" class="icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}">`;
+            accion = `
+                <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
+                <img src="/images/icons/eye.svg" class="icon-eye" title="Ver detalle">
+            `;
+        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
+            accion = `
+                <i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>
+            `;
         } else {
-            accion = `<span class="icon-disabled">○</span>`;
+            accion = `<i class="bi bi-circle icon-disabled"></i>`;
         }
 
         seguimientoBody.innerHTML += `
@@ -287,35 +333,73 @@ function renderizarSeguimiento(fila) {
 // Renderiza datos generales
 function renderizarDatos(fila) {
     const d = fila.dataset;
+
     document.getElementById('datos-panel').innerHTML = `
-        <div class="datos-card">
 
-            <h6 class="titulo-seccion">Datos del Tutor</h6>
-            <div class="datos-grid-3">
-                <div class="dato-item"><label>Nombre:</label><p>${d.tutorNombre ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Paterno:</label><p>${d.tutorPaterno ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Materno:</label><p>${d.tutorMaterno ?? '---'}</p></div>
-            </div>
-            <div class="datos-flex-center mt-3">
-                <div class="dato-item"><label>Teléfono 1:</label><p>${d.telefono1 ?? '---'}</p></div>
-                <div class="dato-item"><label>Teléfono 2:</label><p>${d.telefono2 ?? '---'}</p></div>
-            </div>
+    <!-- TARJETA TUTOR -->
+    <div class="datos-card">
+        <h6 class="titulo-seccion">Datos del Tutor</h6>
 
-            <hr class="separador-datos">
-
-            <h6 class="titulo-seccion">Datos del Aspirante</h6>
-            <div class="datos-grid-3">
-                <div class="dato-item"><label>Nombre:</label><p>${d.alumnoNombre ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Paterno:</label><p>${d.alumnoPaterno ?? '---'}</p></div>
-                <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno ?? '---'}</p></div>
+        <div class="datos-grid-3">
+            <div class="dato-item">
+                <label>Nombre:</label>
+                <p>${d.tutorNombre || '---'}</p>
             </div>
-            <div class="datos-flex-center mt-3">
-                <div class="dato-item"><label>RFC:</label><p>${d.rfc ?? '---'}</p></div>
-                <div class="dato-item"><label>CURP:</label><p>${d.curp ?? '---'}</p></div>
+            <div class="dato-item">
+                <label>Apellido Paterno:</label>
+                <p>${d.tutorPaterno || '---'}</p>
             </div>
-
+            <div class="dato-item">
+                <label>Apellido Materno:</label>
+                <p>${d.tutorMaterno || '---'}</p>
+            </div>
         </div>
-    `;
+
+        <div class="datos-grid-4 mt-3">
+            <div class="dato-item">
+                <label>CURP:</label>
+                <p>${d.tutorCurp || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Teléfono 1:</label>
+                <p>${d.telefono1 || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Teléfono 2:</label>
+                <p>${d.telefono2 || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Correo electrónico:</label>
+                <p>${d.tutorEmail || '---'}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TARJETA ASPIRANTE -->
+    <div class="datos-card">
+        <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
+
+        <div class="datos-grid-3">
+            <div class="dato-item">
+                <label>Nombre:</label>
+                <p>${d.alumnoNombre || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Apellido Paterno:</label>
+                <p>${d.alumnoPaterno || '---'}</p>
+            </div>
+            <div class="dato-item">
+                <label>Apellido Materno:</label>
+                <p>${d.alumnoMaterno || '---'}</p>
+            </div>
+        </div>
+
+        <div class="datos-curp-centrado mt-3">
+    <label>CURP:</label>
+    <p style="font-weight: 400; letter-spacing: 0;">${d.alumnoCurp || '---'}</p>
+</div>
+    </div>
+`;
 }
 
 // Click en flecha → seleccionar lead y mostrar panel
@@ -383,24 +467,94 @@ document.addEventListener('click', function (e) {
      ASIGNAR CTP
 ────────────────────────────────────────────── --}}
 <script>
-let LEAD_SELECCIONADO = null;
+let LEAD_SELECCIONADO  = null;
+let ES_REASIGNACION    = false;
 
+// Abrir modal
 document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
     btn.addEventListener('click', () => {
         LEAD_SELECCIONADO = btn.dataset.lead;
-        document.getElementById('modal-ctp').classList.remove('hidden');
+        ES_REASIGNACION   = false;
+
+        // Buscar la fila para saber si ya tiene CTP
+        const fila        = document.querySelector(`.fila-lead[data-id="${LEAD_SELECCIONADO}"]`);
+const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
+const ctpActualId = fila?.getAttribute('data-ctp');
+
+// Filtrar select: ocultar el CTP actual
+document.querySelectorAll('#ctp-select option').forEach(opt => {
+    if (opt.value && opt.value === ctpActualId) {
+        opt.style.display = 'none';
+    } else {
+        opt.style.display = '';
+    }
+});
+
+        // Obtener nombre del CTP desde el select (si existe en opciones)
+        let nombreActual = '---';
+        if (tieneCTP) {
+            const ctpId = fila.dataset.ctp;
+            const opcion = document.querySelector(`#ctp-select option[value="${ctpId}"]`);
+            if (opcion) nombreActual = opcion.dataset.nombre || opcion.text;
+        }
+
+        // Limpiar estado anterior
+        document.getElementById('ctp-select').value       = '';
+        document.getElementById('ctp-comentario').value   = '';
+        document.getElementById('comentario-wrapper').classList.add('d-none');
+
+        if (tieneCTP) {
+            const comentario = fila.getAttribute('data-comentario-reasignacion');
+const historialEl = document.getElementById('historial-ultimo');
+if (historialEl) {
+    if (comentario) {
+        document.getElementById('modal-comentario-actual').textContent = `"${comentario}"`;
+        historialEl.classList.remove('d-none');
+    } else {
+        historialEl.classList.add('d-none');
+    }
+}
+            // Mostrar vista "ya asignado"
+            document.getElementById('modal-ctp-nombre').textContent = nombreActual;
+            document.getElementById('vista-asignado').classList.remove('d-none');
+            document.getElementById('vista-seleccionar').classList.add('d-none');
+        } else {
+            // Mostrar vista "asignar por primera vez"
+            document.getElementById('modal-titulo').textContent = 'Asignar CTP';
+            document.getElementById('vista-asignado').classList.add('d-none');
+            document.getElementById('vista-seleccionar').classList.remove('d-none');
+        }
+
+        document.getElementById('modal-ctp').classList.remove('d-none');
     });
 });
 
-document.getElementById('cerrar-ctp').addEventListener('click', () => {
-    document.getElementById('modal-ctp').classList.add('hidden');
+// Botón reasignar → muestra el select + comentario
+document.getElementById('btn-reasignar').addEventListener('click', () => {
+    ES_REASIGNACION = true;
+    document.getElementById('modal-titulo').textContent = 'Reasignar CTP';
+    document.getElementById('vista-asignado').classList.add('d-none');
+    document.getElementById('vista-seleccionar').classList.remove('d-none');
+    document.getElementById('comentario-wrapper').classList.remove('d-none');
 });
 
+// Cerrar modal
+document.getElementById('cerrar-ctp').addEventListener('click', () => {
+    document.getElementById('modal-ctp').classList.add('d-none');
+});
+
+// Guardar asignación / reasignación
 document.getElementById('guardar-ctp').addEventListener('click', () => {
-    const ctpId = document.getElementById('ctp-select').value;
+    const ctpId     = document.getElementById('ctp-select').value;
+    const comentario = document.getElementById('ctp-comentario').value.trim();
 
     if (!ctpId || !LEAD_SELECCIONADO) {
         alert('Selecciona un CTP');
+        return;
+    }
+
+    if (ES_REASIGNACION && !comentario) {
+        alert('Por favor escribe el motivo del cambio');
         return;
     }
 
@@ -410,7 +564,10 @@ document.getElementById('guardar-ctp').addEventListener('click', () => {
             'X-CSRF-TOKEN': window.CSRF_TOKEN,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ ctp_id: ctpId })
+        body: JSON.stringify({ 
+            ctp_id: ctpId,
+            comentario: ES_REASIGNACION ? comentario : null
+        })
     })
     .then(() => location.reload());
 });

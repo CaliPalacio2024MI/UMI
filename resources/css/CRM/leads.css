@@ -162,7 +162,7 @@ body:has(.crm-leads) .main-content {
 .encabezado-fila {
     grid-template-columns: var(--leads-grid);
     align-items: center;
-    /* 👇 clave */
+    /* clave */
     padding: 16px 0 12px;
     gap: 0;
 
@@ -194,7 +194,7 @@ body:has(.crm-leads) .main-content {
     border-radius: 16px;
     padding: 20px;
     margin: 12px;
-    /* 👈 MUY IMPORTANTE: pequeño */
+    /* MUY IMPORTANTE: pequeño */
     flex: 1;
 }
 
@@ -280,7 +280,7 @@ body:has(.crm-leads) .main-content {
     border-radius: 18px;
     margin: 1px -6px 10px -6px;
     margin-top: -6px;
-    /* 👈 flota arriba */
+    /* flota arriba */
 }
 
 /* Titulo lateral idéntico al de la izquierda */
@@ -433,6 +433,8 @@ body:has(.crm-leads) .main-content {
     /* Compactado */
     font-size: 13px;
     /* Compactado: de 14px a 13px */
+    word-break: break-word;  
+    hyphens: auto;           
 }
 
 .dato-item p {
@@ -458,7 +460,7 @@ body:has(.crm-leads) .main-content {
     z-index: 999;
 }
 
-.modal-ctp.hidden {
+.modal-ctp.d-none {
     display: none;
 }
 
@@ -506,4 +508,187 @@ body:has(.crm-leads) .main-content {
 .seguimiento-row.activo {
     background: #e8f1ff;
     font-weight: 600;
+}
+/* GRID de 4 columnas para datos del tutor */
+.datos-grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;  /* 👈 2 columnas en vez de 4 */
+    gap: 14px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* CURP centrado del aspirante */
+.datos-curp-centrado {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.datos-curp-centrado label {
+    font-weight: 700;
+    color: #000;
+    font-size: 13px;
+}
+
+.datos-curp-centrado p {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+.datos-card + .datos-card {
+    margin-top: 0px; /* el margin del propio .datos-card ya tiene 10px */
+}
+
+.modal-asignado-label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.modal-asignado-nombre {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--crm-primary);
+    margin-bottom: 8px;
+}
+
+/* Forzar ocultamiento con !important */
+#vista-asignado.d-none,
+#vista-seleccionar.d-none,
+#comentario-wrapper.d-none,
+#modal-ctp.d-none {
+    display: none !important;
+}
+
+/* BOTÓN REASIGNAR */
+#btn-reasignar {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--crm-primary);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--crm-primary);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+#btn-reasignar:hover {
+    background: var(--crm-primary);
+    color: white;
+}
+
+/* TEXTAREA COMENTARIO */
+#ctp-comentario {
+    width: 100%;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #444;
+    background: #f8f9fa;
+    resize: none;
+    transition: border-color 0.2s ease;
+}
+
+#ctp-comentario:focus {
+    border-color: var(--crm-primary);
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(44, 71, 112, 0.1);
+}
+
+/* LABEL MOTIVO */
+#comentario-wrapper label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* TÍTULO DEL MODAL */
+#modal-titulo {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--crm-primary);
+    margin-bottom: 12px;
+}
+
+/* LABEL "Asignado a:" */
+.modal-asignado-label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+/* NOMBRE DEL CTP ASIGNADO */
+.modal-asignado-nombre {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--crm-primary);
+    margin-bottom: 12px;
+}
+.modal-comentario-actual {
+    font-size: 13px;
+    font-style: italic;
+    color: #666;
+    background: #f8f9fa;
+    border-left: 3px solid var(--crm-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 8px 0;
+}
+.historial-ultimo-wrapper {
+    margin: 10px 0;
+}
+
+.historial-ultimo-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    display: block;
+    margin-bottom: 4px;
+}
+.icon-check.activo {
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.icon-check.clickeable {
+    color: var(--crm-primary);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.icon-check.clickeable:hover {
+    transform: scale(1.1);
+    display: inline-block;
+}
+
+.icon-disabled {
+    color: #ccc;
+    font-size: 18px;
+    opacity: 0.5;
+}
+
+.icon-eye {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    opacity: 0.7;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.icon-eye:hover {
+    opacity: 1;
 }
