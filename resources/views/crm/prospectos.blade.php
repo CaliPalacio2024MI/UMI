@@ -64,7 +64,11 @@
             <div class="col-materno">{{ $lead->alumno_materno }}</div>
             <div class="col-ctp">{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
             <div class="col-tipo">
-                {{ $lead->seguimientos()->orderBy('id', 'desc')->first()?->estado ?? 'Sin seguimiento' }}
+            @if($lead->ctp_id)
+    {{ $lead->seguimientos()->orderBy('id', 'desc')->first()?->estado ?? 'Prospecto frío' }}
+@else
+    Sin asignar
+@endif
             </div>
             <div class="col-fecha">{{ $lead->created_at->format('Y-m-d') }}</div>
             <div class="col-acciones">  {{-- 👈 dentro del table-row --}}
