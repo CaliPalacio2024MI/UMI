@@ -47,30 +47,35 @@
         <div class="table-row-header">
             <div class="col-curp">CURP</div>
             <div class="col-nombre">Nombre</div>
-            <div class="col-paterno">Apellido Paterno</div>
-            <div class="col-materno">Apellido Materno</div>
+            <div class="col-paterno">Apellido<br>Paterno</div>
+            <div class="col-materno">Apellido<br>Materno</div>
             <div class="col-ctp">CTP</div>
             <div class="col-tipo">Tipo de prospecto</div>
             <div class="col-fecha">Fecha</div>
+            <div class="col-acciones">Acciones</div>
         </div>
         <!-- BODY -->
-        <div class="table-body">
-            @forelse($leads as $lead)
-                <div class="table-row">
-                    <div class="col-curp">{{ $lead->alumno_curp }}</div>
-                    <div class="col-nombre">{{ $lead->alumno_nombre }}</div>
-                    <div class="col-paterno">{{ $lead->alumno_paterno }}</div>
-                    <div class="col-materno">{{ $lead->alumno_materno }}</div>
-                    <div class="col-ctp">{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
-                    <div class="col-tipo">
-                    {{ $lead->seguimientos()->orderBy('id', 'desc')->first()?->estado ?? 'Sin seguimiento' }}
-</div>
-                    <div class="col-fecha">{{ $lead->created_at->format('Y-m-d') }}</div>
-                </div>
-            @empty
-                <p>No hay prospectos.</p>
-            @endforelse
+<div class="table-body">
+    @forelse($leads as $lead)
+        <div class="table-row">
+            <div class="col-curp">{{ $lead->alumno_curp }}</div>
+            <div class="col-nombre">{{ $lead->alumno_nombre }}</div>
+            <div class="col-paterno">{{ $lead->alumno_paterno }}</div>
+            <div class="col-materno">{{ $lead->alumno_materno }}</div>
+            <div class="col-ctp">{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
+            <div class="col-tipo">
+                {{ $lead->seguimientos()->orderBy('id', 'desc')->first()?->estado ?? 'Sin seguimiento' }}
+            </div>
+            <div class="col-fecha">{{ $lead->created_at->format('Y-m-d') }}</div>
+            <div class="col-acciones">  {{-- 👈 dentro del table-row --}}
+                <img src="{{ asset('images/icons/eye.svg') }}" class="icon-accion" title="Ver">
+                <img src="{{ asset('images/icons/download.svg') }}" class="icon-accion" title="Descargar">
+            </div>
         </div>
+    @empty
+        <p>No hay prospectos.</p>
+    @endforelse
+</div>
     </div>
 </div>
 @endsection

@@ -71,7 +71,13 @@
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
                             <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
-                            <div>{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
+                            <div>
+                                    @if($lead->ctp_id)
+                                        {{ $lead->seguimientos->sortByDesc('id')->first()?->estado ?? 'Prospecto frío' }}
+                                    @else
+                                        Sin asignar
+                                    @endif
+                                </div>
 
                             <div class="acciones">
                                 <button class="btn btn-icon btn-flecha">

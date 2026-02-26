@@ -692,3 +692,14 @@ body:has(.crm-leads) .main-content {
 .icon-eye:hover {
     opacity: 1;
 }
+.fila-lead > div:nth-child(5) {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+    font-size: 12px;
+}
+
+.encabezado-fila span:nth-child(5) {
+    white-space: normal;
+    word-break: break-word;
+}

@@ -12,7 +12,7 @@ class CRMController extends Controller
 {
     public function leads()
 {
-    $query = Lead::with('seguimientos');
+    $query = Lead::with(['seguimientos', 'ctp']);
 
     $rol = session('active_role_name');
     $userId = auth()->id();
