@@ -270,7 +270,6 @@ const ESTADOS = [
     'Prospecto caliente',
     'Aspirante',
     'Alumno',
-    'Cerrado'
 ];
 
 // Rol puede editar seguimiento

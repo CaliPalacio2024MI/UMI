@@ -50,7 +50,7 @@
             <div class="col-paterno">Apellido<br>Paterno</div>
             <div class="col-materno">Apellido<br>Materno</div>
             <div class="col-ctp">CTP</div>
-            <div class="col-tipo">Tipo de prospecto</div>
+            <div class="col-tipo">Estatus</div>
             <div class="col-fecha">Fecha</div>
             <div class="col-acciones">Acciones</div>
         </div>
