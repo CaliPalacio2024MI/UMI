@@ -346,3 +346,65 @@ body:has(.crm-prospectos) .main-content {
 .modal-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; text-align: center; }
 .modal-dato label { font-weight: 700; font-size: 12px; display: block; }
 .modal-dato p { font-size: 13px; color: #555; margin: 0; }
+
+.modal-fila-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.modal-fila-centro {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.modal-campo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 4px 8px;
+}
+.modal-datos-card label {
+    all: unset;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    color: #333 !important;
+    display: block !important;
+    margin-bottom: 3px !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+
+.modal-datos-card p {
+    all: unset;
+    font-size: 13px !important;
+    color: #555 !important;
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+#modal-prospecto .modal-datos-card label {
+    all: unset !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    color: #333 !important;
+    display: block !important;
+    margin-bottom: 3px !important;
+    text-align: center !important;
+    width: 100% !important;
+    cursor: default !important;
+}
+
+#modal-prospecto .modal-datos-card p {
+    all: unset !important;
+    font-size: 13px !important;
+    color: #555 !important;
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+}
