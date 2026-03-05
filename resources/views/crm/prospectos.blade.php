@@ -37,6 +37,7 @@
             </div>
         </div>
         <button class="btn-exportar">
+        <img src="{{ asset('images/icons/export.svg') }}" alt="Search" width="16">
              <i class="fa fa-file-excel-o"></i> 
              Exportar
         </button>
@@ -157,6 +158,7 @@
 </div>
 @endsection
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script>
 const ESTADOS = ['Prospecto frío','Prospecto caliente','Aspirante','Alumno'];
 
@@ -450,5 +452,76 @@ document.querySelectorAll('.icon-calendar').forEach(icon => {
     document.getElementById('modal-prospecto').addEventListener('click', function(e) {
         if (e.target === this) this.classList.add('d-none');
     });
+    // EXPORTAR A EXCEL PROFESIONAL
+const btnExportar = document.querySelector('.btn-exportar');
+
+btnExportar.addEventListener('click', () => {
+
+    const datos = [];
+
+    // fecha de generación
+    const fechaExport = new Date().toLocaleDateString('es-MX');
+
+    datos.push([`Reporte de Prospectos`]);
+    datos.push([`Generado el: ${fechaExport}`]);
+    datos.push([]);
+
+    // encabezados
+    datos.push([
+        "CURP",
+        "Nombre",
+        "Apellido Paterno",
+        "Apellido Materno",
+        "CTP",
+        "Estatus",
+        "Fecha"
+    ]);
+
+    document.querySelectorAll('.table-row').forEach(fila => {
+
+        if (fila.style.display === 'none') return;
+
+        const curp = fila.querySelector('.col-curp')?.innerText.trim();
+        const nombre = fila.querySelector('.col-nombre')?.innerText.trim();
+        const paterno = fila.querySelector('.col-paterno')?.innerText.trim();
+        const materno = fila.querySelector('.col-materno')?.innerText.trim();
+        const ctp = fila.querySelector('.col-ctp')?.innerText.trim();
+        const estatus = fila.querySelector('.col-tipo')?.innerText.trim();
+        const fecha = fila.querySelector('.col-fecha')?.innerText.trim();
+
+        datos.push([
+            curp,
+            nombre,
+            paterno,
+            materno,
+            ctp,
+            estatus,
+            fecha
+        ]);
+    });
+
+    const hoja = XLSX.utils.aoa_to_sheet(datos);
+
+    // ancho de columnas
+    hoja['!cols'] = [
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 12 }
+    ];
+
+    // crear libro
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Prospectos");
+
+    // nombre con fecha
+    const fechaArchivo = new Date().toISOString().slice(0,10);
+
+    XLSX.writeFile(libro, `prospectos_${fechaArchivo}.xlsx`);
+
+});
 });
 </script>
