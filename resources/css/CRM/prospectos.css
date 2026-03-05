@@ -253,3 +253,96 @@ body:has(.crm-prospectos) .main-content {
 .icon-accion-bi:hover {
     opacity: 1;
 }
+/* MODAL PROSPECTO */
+.modal-prospecto {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+.modal-prospecto.d-none { display: none !important; }
+
+.modal-prospecto-content {
+    background: #fff;
+    border-radius: 20px;
+    width: 680px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,.2);
+}
+
+.modal-prospecto-header {
+    background: #2c4770;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-prospecto-header h5 { margin: 0; font-weight: 700; }
+
+.btn-cerrar-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-prospecto-body { padding: 20px 24px; }
+
+.modal-seccion-titulo {
+    background: #2c4770;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.modal-seguimiento-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    font-weight: 700;
+    font-size: 13px;
+    text-align: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.modal-seg-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: center;
+    font-size: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+.modal-seg-row.registrado { color: #2c4770; font-weight: 600; }
+.modal-seg-row.pendiente  { color: #aaa; }
+
+.modal-datos-card {
+    background: #f8f9fa;
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 12px;
+}
+.modal-titulo-card {
+    text-align: center;
+    color: #c18b54;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+.modal-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; }
+.modal-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; text-align: center; }
+.modal-dato label { font-weight: 700; font-size: 12px; display: block; }
+.modal-dato p { font-size: 13px; color: #555; margin: 0; }
