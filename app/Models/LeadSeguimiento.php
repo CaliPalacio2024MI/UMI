@@ -11,7 +11,8 @@ class LeadSeguimiento extends Model
         'lead_id',
         'estado',
         'fecha',
-        'hora'
+        'hora',
+        'comentario',
     ];
 
     public function lead()

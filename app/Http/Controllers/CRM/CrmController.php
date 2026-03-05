@@ -126,13 +126,14 @@ public function estadisticas(Request $request)
 public function guardarSeguimiento(Request $request, Lead $lead)
 {
     $lead->seguimientos()->create([
-        'estado' => $request->estado,
-        'fecha' => now()->toDateString(),
-        'hora' => now()->toTimeString(),
+        'estado'     => $request->estado,
+        'fecha'      => now()->toDateString(),
+        'hora'       => now()->toTimeString(),
+        'comentario' => $request->comentario ?? null,
     ]);
 
     return response()->json([
-        'success' => true,
+        'success'      => true,
         'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
     ]);
 }

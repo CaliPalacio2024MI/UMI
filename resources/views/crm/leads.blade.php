@@ -201,6 +201,51 @@
         </div>
 
     </div>
+    </div>
+</div>
+
+<!-- MODAL COMENTARIO SEGUIMIENTO -->
+<div id="modal-seguimiento" class="modal-ctp d-none">
+    <div class="modal-content">
+        <h5 style="color:var(--crm-primary);font-weight:700;margin-bottom:12px;">
+            Registrar estado
+        </h5>
+        <p id="modal-seg-estado-label" style="font-size:13px;color:#666;margin-bottom:10px;"></p>
+
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:6px;">
+            Comentario <span style="color:#999;font-weight:400;">(opcional)</span>:
+        </label>
+        <textarea
+            id="seg-comentario"
+            class="form-control"
+            rows="3"
+            placeholder="Escribe un comentario sobre este seguimiento..."
+            style="resize:none;font-size:13px;border-radius:10px;"
+        ></textarea>
+
+        <div class="modal-actions mt-3">
+            <button id="guardar-seguimiento-btn" class="btn btn-primary">Guardar</button>
+            <button id="cancelar-seguimiento-btn" class="btn btn-secondary">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VER COMENTARIO -->
+<div id="modal-ver-comentario" class="modal-ctp d-none">
+    <div class="modal-content">
+        <h5 style="color:var(--crm-primary);font-weight:700;margin-bottom:4px;" id="modal-ver-estado"></h5>
+        <p style="font-size:12px;color:#999;margin-bottom:12px;" id="modal-ver-fecha"></p>
+
+        <label style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#999;display:block;margin-bottom:6px;">
+            Comentario:
+        </label>
+        <div id="modal-ver-texto" class="modal-comentario-actual" style="min-height:50px;"></div>
+
+        <div class="text-end mt-3">
+            <button id="cerrar-ver-comentario" class="btn btn-secondary btn-sm">Cerrar</button>
+        </div>
+    </div>
+</div>
 </div>
 
 
@@ -272,12 +317,10 @@ const ESTADOS = [
     'Alumno',
 ];
 
-// Rol puede editar seguimiento
 function puedeEditarSeguimiento() {
     return ['ctp', 'master'].includes(window.ROLE_ACTIVO);
 }
 
-// Renderiza el panel de seguimiento para la fila activa
 function renderizarSeguimiento(fila) {
     const seguimientoBody = document.querySelector('.seguimiento-body');
     seguimientoBody.innerHTML = '';
@@ -285,7 +328,6 @@ function renderizarSeguimiento(fila) {
     const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
     const tieneCTP     = fila.dataset.tieneCtp === '1';
 
-    // FIX: tomar el estado registrado de MAYOR índice (no el último del array)
     let estadoActualIndex = -1;
     seguimientos.forEach(s => {
         const i = ESTADOS.indexOf(s.estado);
@@ -294,31 +336,32 @@ function renderizarSeguimiento(fila) {
     const estadoActual = estadoActualIndex >= 0 ? ESTADOS[estadoActualIndex] : null;
 
     ESTADOS.forEach((estado, index) => {
-
         const registro = seguimientos.find(s => s.estado === estado);
 
-        // Lógica de habilitación:
-        // - Prospecto: habilitado si no hay ningún estado aún
-        // - Los siguientes: habilitados solo si el anterior ya está registrado
         let habilitado = false;
         if (tieneCTP) {
             if (index === 0 && !estadoActual)                        habilitado = true;
             if (index > 0 && ESTADOS[index - 1] === estadoActual)   habilitado = true;
         }
 
-        // Icono según estado:
-        // - Ya registrado   → check estático (sin click)
-        // - Habilitado      → check clickeable (solo si puede editar)
-        // - Bloqueado        → círculo opaco
         let accion;
         if (registro) {
-            accion = `
-                <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
-                <img src="/images/icons/eye.svg" class="icon-eye" title="Ver detalle">
-            `;
+    const mostrarOjo = estado !== 'Prospecto frío';
+    accion = `
+        <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
+        ${mostrarOjo ? `<img src="/images/icons/eye.svg" 
+             class="icon-eye" 
+             title="Ver comentario"
+             data-estado="${estado}"
+             data-fecha="${registro.fecha ?? ''}"
+             data-hora="${registro.hora ?? ''}"
+             data-comentario="${encodeURIComponent(registro.comentario ?? '')}">` : ''}
+    `;
         } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
             accion = `
-                <i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>
+                <i class="bi bi-check-circle icon-check clickeable" 
+                   data-estado="${estado}" 
+                   title="Marcar como ${estado}"></i>
             `;
         } else {
             accion = `<i class="bi bi-circle icon-disabled"></i>`;
@@ -326,7 +369,7 @@ function renderizarSeguimiento(fila) {
 
         seguimientoBody.innerHTML += `
             <div class="seguimiento-row ${registro ? 'registrado' : habilitado ? 'habilitado' : 'muted'}">
-            <span>${estado}</span>
+                <span>${estado}</span>
                 <span>${registro?.fecha ?? '---'}</span>
                 <span>${registro?.hora ?? '---'}</span>
                 <span class="accion">${accion}</span>
@@ -335,83 +378,40 @@ function renderizarSeguimiento(fila) {
     });
 }
 
-// Renderiza datos generales
 function renderizarDatos(fila) {
     const d = fila.dataset;
-
     document.getElementById('datos-panel').innerHTML = `
-
-    <!-- TARJETA TUTOR -->
     <div class="datos-card">
         <h6 class="titulo-seccion">Datos del Tutor</h6>
-
         <div class="datos-grid-3">
-            <div class="dato-item">
-                <label>Nombre:</label>
-                <p>${d.tutorNombre || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Paterno:</label>
-                <p>${d.tutorPaterno || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Materno:</label>
-                <p>${d.tutorMaterno || '---'}</p>
-            </div>
+            <div class="dato-item"><label>Nombre:</label><p>${d.tutorNombre || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Paterno:</label><p>${d.tutorPaterno || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Materno:</label><p>${d.tutorMaterno || '---'}</p></div>
         </div>
-
         <div class="datos-grid-4 mt-3">
-            <div class="dato-item">
-                <label>CURP:</label>
-                <p>${d.tutorCurp || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Teléfono 1:</label>
-                <p>${d.telefono1 || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Teléfono 2:</label>
-                <p>${d.telefono2 || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Correo electrónico:</label>
-                <p>${d.tutorEmail || '---'}</p>
-            </div>
+            <div class="dato-item"><label>CURP:</label><p>${d.tutorCurp || '---'}</p></div>
+            <div class="dato-item"><label>Teléfono 1:</label><p>${d.telefono1 || '---'}</p></div>
+            <div class="dato-item"><label>Teléfono 2:</label><p>${d.telefono2 || '---'}</p></div>
+            <div class="dato-item"><label>Correo electrónico:</label><p>${d.tutorEmail || '---'}</p></div>
         </div>
     </div>
-
-    <!-- TARJETA ASPIRANTE -->
     <div class="datos-card">
         <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
-
         <div class="datos-grid-3">
-            <div class="dato-item">
-                <label>Nombre:</label>
-                <p>${d.alumnoNombre || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Paterno:</label>
-                <p>${d.alumnoPaterno || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Materno:</label>
-                <p>${d.alumnoMaterno || '---'}</p>
-            </div>
+            <div class="dato-item"><label>Nombre:</label><p>${d.alumnoNombre || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Paterno:</label><p>${d.alumnoPaterno || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno || '---'}</p></div>
         </div>
-
         <div class="datos-curp-centrado mt-3">
-    <label>CURP:</label>
-    <p style="font-weight: 400; letter-spacing: 0;">${d.alumnoCurp || '---'}</p>
-</div>
-    </div>
-`;
+            <label>CURP:</label>
+            <p style="font-weight:400;letter-spacing:0;">${d.alumnoCurp || '---'}</p>
+        </div>
+    </div>`;
 }
 
-// Click en flecha → seleccionar lead y mostrar panel
 document.querySelectorAll('.fila-lead').forEach(fila => {
     const btnFlecha = fila.querySelector('.btn-flecha');
     if (!btnFlecha) return;
-
     btnFlecha.addEventListener('click', () => {
         document.querySelectorAll('.fila-lead').forEach(f => f.classList.remove('activo'));
         fila.classList.add('activo');
@@ -423,21 +423,47 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
 
 
 {{-- ─────────────────────────────────────────────
-     CLICK EN CHECK → GUARDAR SEGUIMIENTO
+     CLICK EN CHECK → ABRIR MODAL DE COMENTARIO
 ────────────────────────────────────────────── --}}
 <script>
+let _pendienteEstado = null;
+
 document.addEventListener('click', function (e) {
 
+    // ── ABRIR MODAL COMENTARIO al hacer click en check ──
     const check = e.target.closest('.icon-check.clickeable');
-    if (!check) return;
+    if (check) {
+        _pendienteEstado = check.dataset.estado;
+        document.getElementById('modal-seg-estado-label').textContent =
+            `Estás marcando este lead como: ${_pendienteEstado}`;
+        document.getElementById('seg-comentario').value = '';
+        document.getElementById('modal-seguimiento').classList.remove('d-none');
+        return;
+    }
 
-    const nuevoEstado = check.dataset.estado;
-    const filaActiva  = document.querySelector('.fila-lead.activo');
-    const leadId      = filaActiva?.dataset.id;
-    if (!leadId || !nuevoEstado) return;
+    // ── ABRIR MODAL VER COMENTARIO al click en 👁 ──
+    const ojo = e.target.closest('.icon-eye');
+    if (ojo) {
+        const comentario = decodeURIComponent(ojo.dataset.comentario || '');
+        document.getElementById('modal-ver-estado').textContent = ojo.dataset.estado;
+        document.getElementById('modal-ver-fecha').textContent  =
+            `${ojo.dataset.fecha} ${ojo.dataset.hora}`;
+        document.getElementById('modal-ver-texto').textContent  =
+            comentario || '(Sin comentario)';
+        document.getElementById('modal-ver-comentario').classList.remove('d-none');
+        return;
+    }
+});
 
-    check.classList.remove('clickeable');
-    check.style.opacity = '0.5';
+// Guardar seguimiento con comentario
+document.getElementById('guardar-seguimiento-btn').addEventListener('click', () => {
+    const filaActiva = document.querySelector('.fila-lead.activo');
+    const leadId     = filaActiva?.dataset.id;
+    if (!leadId || !_pendienteEstado) return;
+
+    const comentario = document.getElementById('seg-comentario').value.trim();
+
+    document.getElementById('modal-seguimiento').classList.add('d-none');
 
     fetch(`/crm/leads/${leadId}/seguimiento`, {
         method: 'POST',
@@ -445,7 +471,7 @@ document.addEventListener('click', function (e) {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': window.CSRF_TOKEN
         },
-        body: JSON.stringify({ estado: nuevoEstado })
+        body: JSON.stringify({ estado: _pendienteEstado, comentario })
     })
     .then(res => res.json())
     .then(data => {
@@ -454,18 +480,26 @@ document.addEventListener('click', function (e) {
             renderizarSeguimiento(filaActiva);
         } else {
             alert('Error al guardar el seguimiento');
-            check.classList.add('clickeable');
-            check.style.opacity = '';
         }
     })
-    .catch(() => {
-        alert('Error de conexión');
-        check.classList.add('clickeable');
-        check.style.opacity = '';
-    });
+    .catch(() => alert('Error de conexión'));
 
+    _pendienteEstado = null;
+});
+
+// Cancelar modal comentario
+document.getElementById('cancelar-seguimiento-btn').addEventListener('click', () => {
+    document.getElementById('modal-seguimiento').classList.add('d-none');
+    _pendienteEstado = null;
+});
+
+// Cerrar modal ver comentario
+document.getElementById('cerrar-ver-comentario').addEventListener('click', () => {
+    document.getElementById('modal-ver-comentario').classList.add('d-none');
 });
 </script>
+
+
 
 
 {{-- ─────────────────────────────────────────────
