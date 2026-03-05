@@ -17,14 +17,15 @@
             
             <!-- Fecha Inicio -->
             <div class="input-group-custom">
-                <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                <input type="date" class="input-custom" placeholder="Fecha inicio">
-            </div>
-            <!-- Fecha Fin -->
-            <div class="input-group-custom">
-                 <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                <input type="date" class="input-custom" placeholder="Fecha fin">
-            </div>
+    <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+    <input type="date" class="input-custom" id="fecha-inicio">
+</div>
+
+<!-- Fecha Fin -->
+<div class="input-group-custom">
+    <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+    <input type="date" class="input-custom" id="fecha-fin">
+</div>
             <!-- Buscador (Live Search) -->
             <div class="input-group-custom search-wrapper">
                 <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
@@ -372,7 +373,35 @@ const drawField = (label, value, x, fy) => {
             });
         });
     }
+    // Filtro por fechas
+const fechaInicio = document.getElementById('fecha-inicio');
+const fechaFin    = document.getElementById('fecha-fin');
 
+function filtrarPorFecha() {
+    const inicio = fechaInicio.value; // "2026-03-04"
+    const fin    = fechaFin.value;
+
+    document.querySelectorAll('.table-row').forEach(fila => {
+        const fechaFila = fila.querySelector('.col-fecha')?.textContent.trim(); // "2026-03-04"
+
+        let visible = true;
+
+        if (inicio && fechaFila < inicio) visible = false;
+        if (fin    && fechaFila > fin)    visible = false;
+
+        fila.style.display = visible ? '' : 'none';
+    });
+}
+
+fechaInicio.addEventListener('change', filtrarPorFecha);
+fechaFin.addEventListener('change',    filtrarPorFecha);
+
+// Abrir calendario al hacer click en el icono
+document.querySelectorAll('.icon-calendar').forEach(icon => {
+    icon.addEventListener('click', function () {
+        this.nextElementSibling.showPicker();
+    });
+});
     // Abrir modal al click en ojo
     document.querySelectorAll('.btn-ver-prospecto').forEach(btn => {
         btn.addEventListener('click', function () {
