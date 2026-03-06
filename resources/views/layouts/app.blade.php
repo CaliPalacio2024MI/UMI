@@ -15,6 +15,7 @@
   {{-- Vite inyecta los enlaces a CSS/JS de resources --}}
   @vite(['resources/css/CRM/leads.css'])
   @vite(['resources/css/CRM/prospectos.css'])
+  @vite(['resources/css/CRM/estadisticas.css'])
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   @stack('css')
 

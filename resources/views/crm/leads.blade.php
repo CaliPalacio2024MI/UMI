@@ -262,13 +262,10 @@
      ELIMINAR LEAD
 ────────────────────────────────────────────── --}}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-
     document.querySelectorAll('.btn-eliminar').forEach(btn => {
         btn.addEventListener('click', function () {
             const leadId = this.dataset.id;
             if (!confirm('¿Eliminar este lead?')) return;
-
             fetch(`/crm/leads/${leadId}`, {
                 method: 'DELETE',
                 headers: {
@@ -283,8 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(() => alert('Error al eliminar el lead'));
         });
     });
-
-});
 </script>
 
 
@@ -310,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
      ESTADOS Y RENDERIZADO DEL PANEL
 ────────────────────────────────────────────── --}}
 <script>
+
 const ESTADOS = [
     'Prospecto frío',
     'Prospecto caliente',
@@ -324,49 +320,36 @@ function puedeEditarSeguimiento() {
 function renderizarSeguimiento(fila) {
     const seguimientoBody = document.querySelector('.seguimiento-body');
     seguimientoBody.innerHTML = '';
-
     const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
     const tieneCTP     = fila.dataset.tieneCtp === '1';
-
     let estadoActualIndex = -1;
     seguimientos.forEach(s => {
         const i = ESTADOS.indexOf(s.estado);
         if (i > estadoActualIndex) estadoActualIndex = i;
     });
     const estadoActual = estadoActualIndex >= 0 ? ESTADOS[estadoActualIndex] : null;
-
     ESTADOS.forEach((estado, index) => {
         const registro = seguimientos.find(s => s.estado === estado);
-
         let habilitado = false;
         if (tieneCTP) {
-            if (index === 0 && !estadoActual)                        habilitado = true;
-            if (index > 0 && ESTADOS[index - 1] === estadoActual)   habilitado = true;
+            if (index === 0 && !estadoActual)                      habilitado = true;
+            if (index > 0 && ESTADOS[index - 1] === estadoActual) habilitado = true;
         }
-
         let accion;
         if (registro) {
-    const mostrarOjo = estado !== 'Prospecto frío';
-    accion = `
-        <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
-        ${mostrarOjo ? `<img src="/images/icons/eye.svg" 
-             class="icon-eye" 
-             title="Ver comentario"
-             data-estado="${estado}"
-             data-fecha="${registro.fecha ?? ''}"
-             data-hora="${registro.hora ?? ''}"
-             data-comentario="${encodeURIComponent(registro.comentario ?? '')}">` : ''}
-    `;
-        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
+            const mostrarOjo = estado !== 'Prospecto frío';
             accion = `
-                <i class="bi bi-check-circle icon-check clickeable" 
-                   data-estado="${estado}" 
-                   title="Marcar como ${estado}"></i>
+                <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
+                ${mostrarOjo ? `<img src="/images/icons/eye.svg" class="icon-eye" title="Ver comentario"
+                     data-estado="${estado}" data-fecha="${registro.fecha ?? ''}"
+                     data-hora="${registro.hora ?? ''}"
+                     data-comentario="${encodeURIComponent(registro.comentario ?? '')}">` : ''}
             `;
+        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
+            accion = `<i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>`;
         } else {
             accion = `<i class="bi bi-circle icon-disabled"></i>`;
         }
-
         seguimientoBody.innerHTML += `
             <div class="seguimiento-row ${registro ? 'registrado' : habilitado ? 'habilitado' : 'muted'}">
                 <span>${estado}</span>
@@ -409,6 +392,9 @@ function renderizarDatos(fila) {
     </div>`;
 }
 
+// ← IMPORTANTE: estas funciones deben ser globales para que el modal pueda usarlas
+window.renderizarSeguimiento = renderizarSeguimiento;
+
 document.querySelectorAll('.fila-lead').forEach(fila => {
     const btnFlecha = fila.querySelector('.btn-flecha');
     if (!btnFlecha) return;
@@ -429,8 +415,6 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
 let _pendienteEstado = null;
 
 document.addEventListener('click', function (e) {
-
-    // ── ABRIR MODAL COMENTARIO al hacer click en check ──
     const check = e.target.closest('.icon-check.clickeable');
     if (check) {
         _pendienteEstado = check.dataset.estado;
@@ -440,65 +424,51 @@ document.addEventListener('click', function (e) {
         document.getElementById('modal-seguimiento').classList.remove('d-none');
         return;
     }
-
-    // ── ABRIR MODAL VER COMENTARIO al click en 👁 ──
     const ojo = e.target.closest('.icon-eye');
     if (ojo) {
         const comentario = decodeURIComponent(ojo.dataset.comentario || '');
         document.getElementById('modal-ver-estado').textContent = ojo.dataset.estado;
-        document.getElementById('modal-ver-fecha').textContent  =
-            `${ojo.dataset.fecha} ${ojo.dataset.hora}`;
-        document.getElementById('modal-ver-texto').textContent  =
-            comentario || '(Sin comentario)';
+        document.getElementById('modal-ver-fecha').textContent  = `${ojo.dataset.fecha} ${ojo.dataset.hora}`;
+        document.getElementById('modal-ver-texto').textContent  = comentario || '(Sin comentario)';
         document.getElementById('modal-ver-comentario').classList.remove('d-none');
         return;
     }
 });
 
-// Guardar seguimiento con comentario
 document.getElementById('guardar-seguimiento-btn').addEventListener('click', () => {
     const filaActiva = document.querySelector('.fila-lead.activo');
     const leadId     = filaActiva?.dataset.id;
     if (!leadId || !_pendienteEstado) return;
-
     const comentario = document.getElementById('seg-comentario').value.trim();
-
     document.getElementById('modal-seguimiento').classList.add('d-none');
-
     fetch(`/crm/leads/${leadId}/seguimiento`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': window.CSRF_TOKEN
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.CSRF_TOKEN },
         body: JSON.stringify({ estado: _pendienteEstado, comentario })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
             filaActiva.dataset.seguimientos = JSON.stringify(data.seguimientos);
-            renderizarSeguimiento(filaActiva);
+            window.renderizarSeguimiento(filaActiva);
         } else {
             alert('Error al guardar el seguimiento');
         }
     })
     .catch(() => alert('Error de conexión'));
-
     _pendienteEstado = null;
 });
 
-// Cancelar modal comentario
 document.getElementById('cancelar-seguimiento-btn').addEventListener('click', () => {
     document.getElementById('modal-seguimiento').classList.add('d-none');
     _pendienteEstado = null;
 });
 
-// Cerrar modal ver comentario
 document.getElementById('cerrar-ver-comentario').addEventListener('click', () => {
     document.getElementById('modal-ver-comentario').classList.add('d-none');
 });
-</script>
 
+</script>
 
 
 
@@ -506,69 +476,51 @@ document.getElementById('cerrar-ver-comentario').addEventListener('click', () =>
      ASIGNAR CTP
 ────────────────────────────────────────────── --}}
 <script>
-let LEAD_SELECCIONADO  = null;
-let ES_REASIGNACION    = false;
 
-// Abrir modal
+let LEAD_SELECCIONADO = null;
+let ES_REASIGNACION   = false;
+
 document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
     btn.addEventListener('click', () => {
         LEAD_SELECCIONADO = btn.dataset.lead;
         ES_REASIGNACION   = false;
-
-        // Buscar la fila para saber si ya tiene CTP
         const fila        = document.querySelector(`.fila-lead[data-id="${LEAD_SELECCIONADO}"]`);
-const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
-const ctpActualId = fila?.getAttribute('data-ctp');
-
-// Filtrar select: ocultar el CTP actual
-document.querySelectorAll('#ctp-select option').forEach(opt => {
-    if (opt.value && opt.value === ctpActualId) {
-        opt.style.display = 'none';
-    } else {
-        opt.style.display = '';
-    }
-});
-
-        // Obtener nombre del CTP desde el select (si existe en opciones)
+        const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
+        const ctpActualId = fila?.getAttribute('data-ctp');
+        document.querySelectorAll('#ctp-select option').forEach(opt => {
+            opt.style.display = (opt.value && opt.value === ctpActualId) ? 'none' : '';
+        });
         let nombreActual = '---';
         if (tieneCTP) {
-            const ctpId = fila.dataset.ctp;
-            const opcion = document.querySelector(`#ctp-select option[value="${ctpId}"]`);
+            const opcion = document.querySelector(`#ctp-select option[value="${fila.dataset.ctp}"]`);
             if (opcion) nombreActual = opcion.dataset.nombre || opcion.text;
         }
-
-        // Limpiar estado anterior
-        document.getElementById('ctp-select').value       = '';
-        document.getElementById('ctp-comentario').value   = '';
+        document.getElementById('ctp-select').value     = '';
+        document.getElementById('ctp-comentario').value = '';
         document.getElementById('comentario-wrapper').classList.add('d-none');
-
         if (tieneCTP) {
-            const comentario = fila.getAttribute('data-comentario-reasignacion');
-const historialEl = document.getElementById('historial-ultimo');
-if (historialEl) {
-    if (comentario) {
-        document.getElementById('modal-comentario-actual').textContent = `"${comentario}"`;
-        historialEl.classList.remove('d-none');
-    } else {
-        historialEl.classList.add('d-none');
-    }
-}
-            // Mostrar vista "ya asignado"
+            const comentario  = fila.getAttribute('data-comentario-reasignacion');
+            const historialEl = document.getElementById('historial-ultimo');
+            if (historialEl) {
+                if (comentario) {
+                    document.getElementById('modal-comentario-actual').textContent = `"${comentario}"`;
+                    historialEl.classList.remove('d-none');
+                } else {
+                    historialEl.classList.add('d-none');
+                }
+            }
             document.getElementById('modal-ctp-nombre').textContent = nombreActual;
             document.getElementById('vista-asignado').classList.remove('d-none');
             document.getElementById('vista-seleccionar').classList.add('d-none');
         } else {
-            // Mostrar vista "asignar por primera vez"
             document.getElementById('modal-titulo').textContent = 'Asignar CTP';
             document.getElementById('vista-asignado').classList.add('d-none');
             document.getElementById('vista-seleccionar').classList.remove('d-none');
         }
-
         document.getElementById('modal-ctp').classList.remove('d-none');
     });
 });
 
-// Botón reasignar → muestra el select + comentario
 document.getElementById('btn-reasignar').addEventListener('click', () => {
     ES_REASIGNACION = true;
     document.getElementById('modal-titulo').textContent = 'Reasignar CTP';
@@ -577,39 +529,23 @@ document.getElementById('btn-reasignar').addEventListener('click', () => {
     document.getElementById('comentario-wrapper').classList.remove('d-none');
 });
 
-// Cerrar modal
 document.getElementById('cerrar-ctp').addEventListener('click', () => {
     document.getElementById('modal-ctp').classList.add('d-none');
 });
 
-// Guardar asignación / reasignación
 document.getElementById('guardar-ctp').addEventListener('click', () => {
-    const ctpId     = document.getElementById('ctp-select').value;
+    const ctpId      = document.getElementById('ctp-select').value;
     const comentario = document.getElementById('ctp-comentario').value.trim();
-
-    if (!ctpId || !LEAD_SELECCIONADO) {
-        alert('Selecciona un CTP');
-        return;
-    }
-
-    if (ES_REASIGNACION && !comentario) {
-        alert('Por favor escribe el motivo del cambio');
-        return;
-    }
-
+    if (!ctpId || !LEAD_SELECCIONADO) { alert('Selecciona un CTP'); return; }
+    if (ES_REASIGNACION && !comentario) { alert('Por favor escribe el motivo del cambio'); return; }
     fetch(`/crm/leads/${LEAD_SELECCIONADO}/asignar-ctp`, {
         method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': window.CSRF_TOKEN,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            ctp_id: ctpId,
-            comentario: ES_REASIGNACION ? comentario : null
-        })
+        headers: { 'X-CSRF-TOKEN': window.CSRF_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ctp_id: ctpId, comentario: ES_REASIGNACION ? comentario : null })
     })
     .then(() => location.reload());
 });
+
 </script>
 
 @endsection
