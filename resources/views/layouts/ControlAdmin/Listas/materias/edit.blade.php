@@ -1,20 +1,30 @@
 <div id="editMateriaModal_{{ $registro->id }}" class="modal-overlay"> 
     <div class="modal-content-container">
         <div class="modal-header-custom">
-            <h5 id="editMateriaModalLabel">Editar Materia: {{ $registro->nombre }}</h5>
+            <h5 id="editMateriaModalLabel">Editar Materia</h5>
             <button type="button" class="close-custom">&times;</button>
         </div>
         
         <div class="modal-body-custom" id="modalBodyContent">
             
-            <form method="post" action="{{ route('Listas.materias.update', $registro) }}">
+            <form method="post" action="{{ route('control.subjects.update', $registro) }}">
                 @csrf 
-                @method('PUT') {{-- NECESARIO para que Laravel lo trate como una actualización --}}
+                @method('PUT')
+
+                @if(session('edit_materia_id') == $registro->id && $errors->any())
+                    <div class="error-message" style="margin-bottom: 1rem;">
+                        @if($errors->has('nombre') && $errors->first('nombre') === 'Ya existe una materia con ese nombre. Elija otro.')
+                            Ya existe una materia con ese nombre. Elija otro.
+                        @else
+                            Te falta un campo por rellenar.
+                        @endif
+                    </div>
+                @endif
 
                 {{-- Campo: Carrera (carrera_id) --}}
                 <div class="form-field lists">
                     <label for="carrera_id">Carrera:</label> 
-                    <select id="carrera_id" name="carrera_id" class="@error('carrera_id') validation-error @enderror">
+                    <select id="carrera_id" name="carrera_id" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
                         <option value="">Seleccione una Carrera</option> 
                         
                         {{-- La clave foránea en la DB es 'career_id' --}}
@@ -28,39 +38,28 @@
                             </option>
                         @endforeach
                     </select>
-                    @error('carrera_id')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
                 </div>
-                
+
                 {{-- Campo: Nombre --}}
                 <div class="form-field">
                     <label for="nombre">Nombre:</label>
-                    {{-- El valor inicial es el de la materia --}}
-                    <input type="text" id="nombre" name="nombre" class="@error('nombre') validation-error @enderror" value="{{ old('nombre', $registro->nombre) }}">
-                    @error('nombre')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
+                    <input type="text" id="nombre" name="nombre" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif" value="{{ old('nombre', $registro->nombre) }}">
                 </div>
-                
+
                 {{-- Campo: No. Créditos --}}
                 <div class="form-field lists">
                     <label for="creditos">No. de Creditos:</label>
-                    <select id="creditos" name="creditos" class="@error('creditos') validation-error @enderror">
-                        @for ($i = 1; $i <= 15; $i++)
+                    <select id="creditos" name="creditos" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
+                        @for ($i = 1; $i <= 10; $i++)
                             <option 
                                 value="{{ $i }}" 
                                 {{ old('creditos', $registro->creditos) == $i ? 'selected' : '' }}
                             >{{ $i }}</option>
                         @endfor
                     </select>
-                    @error('creditos')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
                 </div>
-                
+
                 <div class="options">
-                    
                     {{-- Campo: Modalidad (type) --}}
                     <div class="form-field Checkboxes">
                         <label>Modalidad:</label>
@@ -72,32 +71,25 @@
                             <input type="radio" id="type_enlinea_{{ $registro->id }}" name="type" value="En linea" {{ old('type', $registro->type) == 'En linea' ? 'checked' : '' }}>
                             <label for="type_enlinea_{{ $registro->id }}">En linea:</label>
                         </div>
-                        @error('type')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
                     </div>
-                    
+
                     {{-- Campo: Semestre --}}
                     <div class="form-field lists">
                         <label for="semestre">No. de Semestre:</label>
-                        <select id="semestre" name="semestre" class="@error('semestre') validation-error @enderror">
-                            @for ($i = 1; $i <= 15; $i++)
+                        <select id="semestre" name="semestre" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
+                            @for ($i = 1; $i <= 8; $i++)
                                 <option 
                                     value="{{ $i }}" 
                                     {{ old('semestre', $registro->semestre) == $i ? 'selected' : '' }}
                                 >{{ $i }}</option>
                             @endfor
                         </select>
-                        @error('semestre')
-                            <div class="error-message">{{ $message }}</div>
-                        @enderror
                         <input type="hidden" name="clave" value="{{ old('clave', $registro->clave) }}">
                         <input type="hidden" name="descripcion" value="{{ old('descripcion', $registro->descripcion) }}">
                     </div>
                 </div>              
                 <div class="modal-footer-custom mt-3">
-                    <button type="button" class="btn-secondary">Cancelar</button>
-                    <button type="submit" class="submit-button">Guardar Cambios</button>
+                    <button type="submit" class="submit-button">+ Actualizar</button>
                 </div>
             </form>
 

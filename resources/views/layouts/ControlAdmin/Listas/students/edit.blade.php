@@ -343,14 +343,19 @@
             const inputEdad = document.getElementById('edad');
 
             function calcularEdad() {
-                if (!inputFecha || !inputFecha.value) return;
-                const fecha = new Date(inputFecha.value);
+                if (!inputFecha || !inputFecha.value) { if (inputEdad) inputEdad.value = ''; return; }
+
+                // Parseo LOCAL para evitar desfase por zona horaria (YYYY-MM-DD)
+                const parts = inputFecha.value.split('-').map(Number);
+                const fecha = (parts.length === 3) ? new Date(parts[0], parts[1] - 1, parts[2]) : null;
+                if (!fecha || Number.isNaN(fecha.getTime())) { inputEdad.value = ''; return; }
+
                 const hoy = new Date();
                 let edad = hoy.getFullYear() - fecha.getFullYear();
-                const m = hoy.getMonth() - fecha.getMonth();
-                if (m < 0 || (m === 0 && hoy.getDate() < (fecha.getDate() + 1))) { // +1 por ajuste de zona horaria simple
-                    edad--;
-                }
+                const cumplio =
+                    (hoy.getMonth() > fecha.getMonth()) ||
+                    (hoy.getMonth() === fecha.getMonth() && hoy.getDate() >= fecha.getDate());
+                if (!cumplio) edad--;
                 inputEdad.value = edad >= 0 ? edad : 0;
             }
 

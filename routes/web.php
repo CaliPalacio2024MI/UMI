@@ -23,6 +23,7 @@ use App\Http\Controllers\Facturacion\BillingConceptController;
 // --- Controladores Administrativos y Escolares ---
 use App\Http\Controllers\Control_admin\ControlAdministrativoController;
 use App\Http\Controllers\AdmonCont\HorarioController;
+use App\Http\Controllers\AdmonCont\ClaseController;
 use App\Http\Controllers\AdmonCont\FacilityController;
 use App\Http\Controllers\AdmonCont\store\studentController;
 use App\Http\Controllers\AdmonCont\store\careerController;
@@ -158,6 +159,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                 
             // 2. Lista de Alumnos (Gestión y Contraseña)
             Route::get('/lista-alumnos', [studentController::class, 'index'])->name('students.index');
+            Route::get('/lista-alumnos/export', [studentController::class, 'export'])->name('students.export');
+            Route::get('/lista-alumnos/{id}/horarios', [studentController::class, 'horarios'])->name('students.horarios');
             Route::get('/lista-alumnos/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
             Route::put('/lista-alumnos/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-alumnos/{id}', [studentController::class, 'destroy'])->name('students.destroy');
@@ -183,14 +186,20 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
             // Docentes
             Route::get('/lista-docentes', [teacherController::class, 'index'])->name('teachers.index');
+            Route::get('/lista-docentes/export', [teacherController::class, 'export'])->name('teachers.export');
             Route::get('/lista-docentes/registro', [teacherController::class, 'form'])->name('teachers.form');
+            Route::get('/lista-docentes/list-for-register', [teacherController::class, 'listForRegister'])->name('teachers.list-for-register');
             Route::post('/lista-docentes/create', [teacherController::class, 'store'])->name('teachers.store');
-            Route::get('/lista-docentes/{id}/edit',[teacherController::class, 'edit'])->name('teachers.edit');
-            Route::put('/lista-docentes/{id}',[teacherController::class, 'update'])->name('teachers.update');
+            Route::get('/lista-docentes/{id}/horarios', [teacherController::class, 'horarios'])->name('teachers.horarios');
+            Route::get('/lista-docentes/{id}', [teacherController::class, 'show'])->name('teachers.show');
+            Route::get('/lista-docentes/{id}/edit', [teacherController::class, 'edit'])->name('teachers.edit');
+            Route::put('/lista-docentes/{id}', [teacherController::class, 'update'])->name('teachers.update');
+            Route::delete('/lista-docentes/{id}', [teacherController::class, 'destroy'])->name('teachers.destroy');
 
             // Carreras y Materias
             Route::get('/carreras', [careerController::class, 'index'])->name('careers.index'); 
             Route::get('/carreras/create',[careerController::class,'create'])->name('careers.create');
+            Route::get('/carreras/{carrera}/reticula', [careerController::class, 'reticula'])->name('careers.reticula');
             Route::post('/carreras', [careerController::class, 'store'])->name('careers.store');
             Route::put('/carreras/{carrera}', [careerController::class, 'update'])->name('careers.update');
             Route::delete('/carreras/{carrera}', [careerController::class, 'destroy'])->name('careers.destroy');
@@ -198,6 +207,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/listas/materias', [MateriaController::class, 'index'])->name('subjects.index');
             Route::post('/listas/materias/create', [MateriaController::class, 'store'])->name('subjects.store');
             Route::put('/listas/materias/{registro}', [MateriaController::class, 'update'])->name('subjects.update');
+            Route::delete('/listas/materias/{registro}', [MateriaController::class, 'destroy'])->name('subjects.destroy');
 
             // Aulas y Horarios
             Route::get('/aulas',[FacilityController::class, 'index'])->name('facilities.index');
@@ -205,10 +215,24 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::post('/aulas', [FacilityController::class, 'store'])->name('facilities.store');
             Route::delete('/aulas/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
             
+            Route::get('/horarios/{horario}/edit-data', [HorarioController::class, 'editData'])->name('schedules.editData');
             Route::resource('horarios', HorarioController::class)->names('schedules');
+
+            // Clases (asignar alumnos a horarios) — Control Académico
+            Route::get('/clases', [ClaseController::class, 'index'])->name('classes.index');
+            Route::get('/clases/crear', [ClaseController::class, 'create'])->name('classes.create');
+            Route::post('/clases', [ClaseController::class, 'store'])->name('classes.store');
+            Route::post('/clases/guardar-cajita', [ClaseController::class, 'guardarCajita'])->name('classes.guardar-cajita');
+            Route::get('/clases/{clase}', [ClaseController::class, 'show'])->name('classes.show');
+            Route::get('/clases/{clase}/editar', [ClaseController::class, 'edit'])->name('classes.edit');
+            Route::put('/clases/{clase}', [ClaseController::class, 'update'])->name('classes.update');
+            Route::delete('/clases/{clase}', [ClaseController::class, 'destroy'])->name('classes.destroy');
+            Route::post('/clases/{clase}/inscribir-todos', [ClaseController::class, 'inscribirTodos'])->name('classes.inscribir-todos');
             
             // Espejo de Alumnos para Admin
             Route::get('/lista-estudiantes', [studentController::class, 'index'])->name('students.index');
+            Route::get('/lista-estudiantes/export', [studentController::class, 'export'])->name('students.export');
+            Route::get('/lista-estudiantes/{id}/horarios', [studentController::class, 'horarios'])->name('students.horarios');
             Route::get('/lista-estudiantes/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
             Route::put('/lista-estudiantes/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-estudiantes/{id}', [studentController::class, 'destroy'])->name('students.destroy');

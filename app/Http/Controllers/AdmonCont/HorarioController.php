@@ -20,13 +20,12 @@ class HorarioController extends Controller
         // 1. Obtener los datos necesarios para los desplegables
         $carreras = Career::all();
         $aulas = Facility::all();
-        $horarios = HorarioClase::with(['carrera', 'materia', 'user', 'aula'])->get();
         $query = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas']);
         $search = $request->search_query;
 
         // 💡 Importante: Filtramos los usuarios para que solo sean docentes.
         // Asumiendo que tienes un campo 'role' o una tabla de roles
-        $docentes = User::whereHas('roles', function ($query) {
+        $docentes = User::with('academicProfile')->whereHas('roles', function ($query) {
             $query->where('name', 'docente'); // Asumiendo que el campo 'name' del Role es 'docente'
         })->get(); 
         
@@ -71,19 +70,55 @@ class HorarioController extends Controller
             // 4. aulas
             'aulas' => $aulas,
             // 5. Horarios
-            'horarios' => $horarios
+            'horarios' => $horarios,
         ]);
+    }
+
+    /**
+     * Visualizar un horario (carrera, materia, docente, aula y franjas).
+     * Si la petición pide JSON (p. ej. para el modal), devuelve los datos.
+     */
+    public function show(Request $request, HorarioClase $horario)
+    {
+        $horario->load(['carrera', 'materia', 'user', 'aula', 'franjas']);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            $diasNombres = ['1' => 'Lunes', '2' => 'Martes', '3' => 'Miércoles', '4' => 'Jueves', '5' => 'Viernes', '6' => 'Sábado', '7' => 'Domingo'];
+            $franjas = $horario->franjas->map(function ($f) use ($diasNombres) {
+                $dias = is_array($f->dias_semana) ? $f->dias_semana : [$f->dias_semana];
+                $diaStr = implode(', ', array_map(fn($d) => $diasNombres[(string)$d] ?? 'Día ' . $d, $dias));
+                return [
+                    'dia_str' => $diaStr,
+                    'hora_inicio' => \Carbon\Carbon::parse($f->hora_inicio)->format('h:i A'),
+                    'hora_fin' => \Carbon\Carbon::parse($f->hora_fin)->format('h:i A'),
+                ];
+            })->toArray();
+
+            return response()->json([
+                'carrera' => $horario->carrera->name ?? '—',
+                'materia' => $horario->materia->nombre ?? '—',
+                'docente' => $horario->user->nombre ?? '—',
+                'aula' => $horario->aula->numero_aula ?? '—',
+                'franjas' => $franjas,
+            ]);
+        }
+
+        return view('layouts.ControlAdmin.Horarios.show', compact('horario'));
     }
     
     public function store(Request $request){
-        // 1. VALIDACIÓN
+        // 1. VALIDACIÓN (aula_id opcional por el momento)
         $request->validate([
             'materia_id' => 'required|exists:materias,id',
-            // 1             2        3      4
-            'carrera_id' => 'required|exists:carrers,id',
+            'carrera_id' => 'required|exists:careers,id',
             'docente_id' => 'required|exists:users,id',
-            'aula_id'    => 'required|exists:facilities,id',
-            'franjas_json' => 'required|json', // Aseguramos que la data venga
+            'aula_id'    => 'nullable|exists:facilities,id',
+            'franjas_json' => 'required|json',
+        ], [
+            'docente_id.required' => 'Seleccione un docente.',
+            'materia_id.required' => 'Seleccione una materia.',
+            'carrera_id.required' => 'Seleccione una carrera.',
+            'franjas_json.required' => 'Añada al menos una franja horaria.',
         ]);
         
         // Decodificar las franjas (el array temporal de JS)
@@ -102,9 +137,9 @@ class HorarioController extends Controller
             // 2. CREAR REGISTRO MAESTRO (HorarioClase)
             $horarioClase = HorarioClase::create([
                 'materia_id' => $request->materia_id,
-                'carrera_id' => $request->carrera_id,
+                'career_id'  => $request->carrera_id,
                 'user_id'    => $request->docente_id,
-                'aula_id'    => $request->aula_id,
+                'aula_id'    => $request->aula_id ?: null,
             ]);
             
             // 3. PREPARAR Y GUARDAR FRANJAS RELACIONADAS
@@ -126,18 +161,11 @@ class HorarioController extends Controller
             
             DB::commit();
 
-            return redirect()->route('Horarios.index')->with('success', 'Horario creado exitosamente!');
+            return redirect()->route('control.schedules.index');
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // 🚨 ESTO ES LO QUE DEBE PERMANECER PARA EL DIAGNÓSTICO 🚨
-            dd('ERROR DE BASE DE DATOS:', $e->getMessage(), 'LÍNEA DE CÓDIGO:', $e->getLine());
-            // Manejo de errores
-            //return redirect()->back()->withInput()->withErrors(['error' => 'Error al guardar el horario.']);
-
-            //dd($e->getMessage(), $e->getLine());
-            
+            return redirect()->back()->withInput()->withErrors(['error' => 'Error al guardar el horario: ' . $e->getMessage()]);
         }
     }
     public function destroy(HorarioClase $horario){
@@ -149,63 +177,65 @@ class HorarioController extends Controller
             // La configuración 'onDelete('cascade')' en tu migración se encarga 
             // de borrar automáticamente todas las filas de horario_franjas relacionadas.
 
-            return redirect()->route('Horarios.index')->with('success', 'Horario eliminado correctamente.');
+            return redirect()->route('control.schedules.index');
             
         } catch (\Exception $e) {
             // Maneja cualquier error de base de datos
-            return redirect()->route('Horarios.index')->withErrors(['error' => 'No se pudo eliminar el horario.']);
+            return redirect()->route('control.schedules.index')->withErrors(['error' => 'No se pudo eliminar el horario.']);
         }
     }
-    public function edit(HorarioClase $horario){
-        // Cargar listas
+    /**
+     * Devuelve en JSON los datos del horario para edición (modal o AJAX).
+     */
+    public function editData(HorarioClase $horario)
+    {
+        $horario->load('franjas');
+        $franjas = $horario->franjas->map(function ($f) {
+            $dias = is_array($f->dias_semana) ? $f->dias_semana : [$f->dias_semana];
+            return [
+                'dias_semana' => array_map('intval', $dias),
+                'hora_inicio' => \Carbon\Carbon::parse($f->hora_inicio)->format('H:i'),
+                'hora_fin'    => \Carbon\Carbon::parse($f->hora_fin)->format('H:i'),
+            ];
+        })->toArray();
+
+        return response()->json([
+            'career_id'  => $horario->career_id,
+            'materia_id' => $horario->materia_id,
+            'user_id'    => $horario->user_id,
+            'aula_id'    => $horario->aula_id,
+            'franjas'    => $franjas,
+            'update_url' => route('control.schedules.update', $horario->id),
+        ]);
+    }
+
+    public function edit(HorarioClase $horario)
+    {
         $carreras = Career::all();
         $aulas = Facility::all();
         $horario->load('franjas');
-
-        // 💡 Importante: Filtramos los usuarios para que solo sean docentes.
-        // Asumiendo que tienes un campo 'role' o una tabla de roles
-        $docentes = User::whereHas('roles', function ($query) {
-            $query->where('name', 'docente'); // Asumiendo que el campo 'name' del Role es 'docente'
-        })->get(); 
-        
-        // Las materias se cargan normalmente. 
-        // Nota: Si dependes de la carrera seleccionada, esta lista se cargará inicialmente vacía o con AJAX.
-        $materias = Materia::all(); 
-        // Cargar las franjas horarias y el contador
-        $franjas_json = json_encode($horario->franjas->toArray());
-        
-        // NOTA: Para simplificar, asumiremos que tu tabla de horarios también se carga aquí
+        $docentes = User::with('academicProfile')->whereHas('roles', function ($q) {
+            $q->where('name', 'docente');
+        })->get();
+        $materias = Materia::all();
         $horarios = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas'])->get();
-
-        // 💡 PASAMOS EL OBJETO $horario A LA VISTA INDEX.
         return view('layouts.ControlAdmin.Horarios.index', compact(
-            // 1. carreras
-            'carreras',
-            // 2. materias
-            'materias',
-            // 3. docentes
-            'docentes',
-            // 4. aulas
-            'aulas',
-            // 5. Horarios
-            'horarios',
-            // 6. Franjas JSON
-            'franjas_json',
-            // 7. Horario
-            'horario'
+            'carreras', 'materias', 'docentes', 'aulas', 'horarios', 'horario'
         ));
     }
     public function update(Request $request, HorarioClase $horario){
     // 1. VALIDACIÓN
     $request->validate([
-        // Los campos bloqueados (carrera_id, materia_id) se reciben del input hidden
-        'materia_id' => 'required|exists:materias,id', 
-        'carrera_id' => 'required|exists:carrers,id',   
-        
-        // Campos editables
+        'materia_id' => 'required|exists:materias,id',
+        'carrera_id' => 'required|exists:careers,id',
         'docente_id' => 'required|exists:users,id',
-        'aula_id'    => 'required|exists:facilities,id',
-        'franjas_json' => 'required|json', 
+        'aula_id'    => 'nullable|exists:facilities,id',
+        'franjas_json' => 'required|json',
+    ], [
+        'docente_id.required' => 'Seleccione un docente.',
+        'materia_id.required' => 'Seleccione una materia.',
+        'carrera_id.required' => 'Seleccione una carrera.',
+        'franjas_json.required' => 'Añada al menos una franja horaria.',
     ]);
     
     // Decodificar las franjas (el array temporal de JS)
@@ -220,9 +250,9 @@ class HorarioController extends Controller
         // 2. ACTUALIZAR REGISTRO MAESTRO (HorarioClase)
         $horario->update([
             'materia_id' => $request->materia_id,
-            'carrera_id' => $request->carrera_id,
+            'career_id'  => $request->carrera_id,
             'user_id'    => $request->docente_id,
-            'aula_id'    => $request->aula_id,
+            'aula_id'    => $request->aula_id ?: null,
         ]);
         
         // 3. PREPARAR Y SINCRONIZAR FRANJAS HORARIAS
@@ -245,12 +275,16 @@ class HorarioController extends Controller
 
         DB::commit();
 
-        return redirect()->route('Horarios.index')->with('success', 'Horario actualizado exitosamente!');
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+        return redirect()->route('control.schedules.index');
 
     } catch (\Exception $e) {
         DB::rollBack();
-        
-        // Para depuración, puedes usar dd($e->getMessage()) aquí.
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => false, 'message' => 'Error al actualizar el horario.'], 422);
+        }
         return redirect()->back()->withInput()->withErrors(['error' => 'Error al actualizar el horario.']);
     }
 }

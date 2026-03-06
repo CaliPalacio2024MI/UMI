@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
@@ -14,8 +15,6 @@ use App\Models\Users\User;
 use App\Models\Users\Address;
 use App\Models\Users\Career; 
 use App\Models\Users\AcademicProfile;
-use App\Models\Users\Department;
-use App\Models\Users\Workstation;
 use App\Models\Users\Enrollment; 
 use App\Models\Users\Period;
 use App\Models\Facturacion\Billing;
@@ -37,30 +36,14 @@ class InscripcionController extends Controller
         }
 
         $carreras = Career::all();
-        $departamentos = Department::all(); 
-        $puestos = Workstation::all();      
-
-        // Obtener Anfitriones para el select
-        $ESTUDIANTE_ROLE_ID = 7; 
-        // Obtener Anfitriones para el select que NO sean estudiantes
-        $usuariosAnfitriones = User::whereHas('roles', function($q) {
-            $q->where('roles.id', 4) // Debe tener rol Anfitrión (ID 4)
-            ->where('user_roles_institution.is_active', 1);
-        })->whereDoesntHave('roles', function($q) use ($ESTUDIANTE_ROLE_ID) {
-            // 🚨 EXCLUIR usuarios que tengan el rol de Estudiante (ID 7)
-            $q->where('roles.id', $ESTUDIANTE_ROLE_ID); 
-        })->get();
 
         // Obtener Conceptos de Facturación Disponibles
-        $conceptosDisponibles = BillingConcept::all(); // O BillingConcept::where('is_active', 1)->get();
+        $conceptosDisponibles = BillingConcept::all();
 
         return view('layouts.ControlEsc.Inscripcion.index', compact(
-            'carreras', 
-            'departamentos', 
-            'puestos', 
+            'carreras',
             'periodoActivo',
             'periods',
-            'usuariosAnfitriones',
             'conceptosDisponibles'
         ));
     }
@@ -93,23 +76,21 @@ class InscripcionController extends Controller
 
         if (!$request->filled('existing_user_id')) {
             $rules['email'] = 'required|email|unique:users,email';
+            $rules['curp'] = 'required|string|size:18|unique:users,curp';
         } else {
             $rules['email'] = 'required|email';
+            $rules['curp'] = 'required|string|size:18|unique:users,curp,' . $request->existing_user_id;
         }
 
-        // 🚨 LÓGICA DE NEGOCIO Y VALIDACIÓN DE FACTURACIÓN OBLIGATORIA 
-    $isAnfitrion = $request->has('is_anfitrion');
-    
-    if (!$isAnfitrion) {
-        // Si NO es Anfitrión (Estudiante Regular), la Factura es OBLIGATORIA
-        
+        // Factura obligatoria para inscripción
         if (!$request->has('generar_factura')) {
-            // Si el checkbox no fue marcado, detenemos la creación del alumno.
-            return back()->withInput()->withErrors([
-                'generar_factura' => 'La ficha de pago/factura es obligatoria para aspirantes que no son Anfitriones. Por favor, marque la casilla.',
+            $redirect = $request->filled('modal')
+                ? redirect()->route('escolar.inscripcion.create', ['modal' => 1])
+                : back();
+            return $redirect->withInput()->withErrors([
+                'generar_factura' => 'La ficha de pago/factura es obligatoria. Por favor, marque la casilla.',
             ]);
         }
-    }
 
         if ($request->has('generar_factura')) {
             $rules['period_id'] = 'required';
@@ -118,7 +99,18 @@ class InscripcionController extends Controller
             $rules['status'] = 'required';
         }
 
-        $request->validate($rules);
+        $messages = [
+            'curp.required' => 'El campo CURP es obligatorio.',
+            'curp.size' => 'La CURP debe tener exactamente 18 caracteres.',
+            'curp.unique' => 'Esta CURP ya está registrada.',
+        ];
+        $validator = Validator::make($request->all(), $rules, $messages);
+        if ($validator->fails()) {
+            $redirect = $request->filled('modal')
+                ? redirect()->route('escolar.inscripcion.create', ['modal' => 1])
+                : back();
+            return $redirect->withInput()->withErrors($validator);
+        }
 
         DB::beginTransaction();
 
@@ -166,13 +158,14 @@ class InscripcionController extends Controller
                     'email' => $request->email,
                     'password' => Hash::make('TMP_' . uniqid()), 
                     'RFC' => $rfcFinal,
+                    'curp' => $request->curp,
                     'telefono' => $request->telefono,
                     'fecha_nacimiento' => $request->fecha_nacimiento,
                     'edad' => $request->edad,
                     'address_id' => $address->id,
                     'institution_id' => 4,
-                    'department_id' => $request->has('is_anfitrion') ? $request->department_id : null,
-                    'workstation_id' => $request->has('is_anfitrion') ? $request->workstation_id : null,
+                    'department_id' => null,
+                    'workstation_id' => null,
                     'role_id' => 7,
                     'is_active' => 1
                 ]);
@@ -196,8 +189,8 @@ class InscripcionController extends Controller
             $datosPerfil = [
                 'career_id' => $request->carrera_id, 
                 'semestre' => 1,
-                'status' => 'Aspirante', 
-                'is_anfitrion' => $request->has('is_anfitrion'),
+                'status' => 'Alumno Inactivo', 
+                'is_anfitrion' => false,
             ];
 
             // 3. Fusionar para guardar en BD
@@ -249,6 +242,10 @@ class InscripcionController extends Controller
             }
 
             DB::commit();
+            if ($request->filled('modal')) {
+                return redirect()->route('escolar.inscripcion.create', ['modal' => 1, 'success' => 1])
+                    ->with('success', 'Aspirante registrado correctamente.' . $mensajeExtra);
+            }
             return redirect()->route('escolar.students.index')
                 ->with('success', 'Aspirante registrado correctamente.' . $mensajeExtra);
 
@@ -282,7 +279,8 @@ class InscripcionController extends Controller
                 'apellido_materno' => $request->apellido_materno,
                 'email' => $request->email,
                 'telefono' => $request->telefono,
-                'RFC' => $request->RFC,
+                'RFC' => $request->filled('RFC') ? $request->RFC : $user->RFC,
+                'curp' => $request->curp,
                 'fecha_nacimiento' => $request->fecha_nacimiento,
                 'edad' => $request->edad,
             ]);
@@ -318,7 +316,7 @@ class InscripcionController extends Controller
                 'semestre' => $nuevoSemestre,
                 'career_id' => $nuevaCarreraId,
                 'status' => 'Inactivo', 
-                'is_anfitrion' => $request->has('is_anfitrion'),
+                'is_anfitrion' => false,
             ]));
 
             // 4. Crear Historial (Enrollment) con la foto completa de documentos
@@ -369,20 +367,15 @@ class InscripcionController extends Controller
         $periods = Period::all(); // También enviamos periods aquí
         $user = User::with(['address', 'academicProfile'])->findOrFail($id);
         $carreras = Career::all();
-        $departamentos = Department::all();
-        $puestos = Workstation::all();
         $historialInscripciones = Enrollment::where('user_id', $id)->orderBy('created_at', 'desc')->get();
         $conceptosDisponibles = BillingConcept::all();
-        
+
         return view('layouts.ControlEsc.Inscripcion.index', [
             'alumno' => $user,
             'carreras' => $carreras,
             'periodoActivo' => $periodoActivo,
             'periods' => $periods,
             'historialInscripciones' => $historialInscripciones,
-            'departamentos' => $departamentos,
-            'puestos' => $puestos,
-            'usuariosAnfitriones' => [],
             'conceptosDisponibles' => $conceptosDisponibles
         ]);
     }

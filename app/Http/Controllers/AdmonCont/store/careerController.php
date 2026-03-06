@@ -11,88 +11,102 @@ class careerController extends Controller
 {
     public function index()
     {
-        // 1. Obtener todas las carreras
-        $careers = Career::all();
+        $institutionId = session('active_institution_id');
+        $institutionId = $institutionId ? (int) $institutionId : null;
 
-        // 2. Retornar la vista pasando los datos
-        // Nota: Usamos 'careers' porque es probable que tu vista index.blade.php
-        // esté esperando esa variable (basado en como lo hacía generalController)
+        $careers = $institutionId
+            ? Career::where('institution_id', $institutionId)->orderBy('created_at', 'desc')->get()
+            : Career::orderBy('created_at', 'desc')->get();
+
         return view('layouts.ControlAdmin.Carreras.index', compact('careers'));
     }
     public function create()
     {
-        return view('layouts.ControlAdmin.Carreras.create'); // Aquí se llama/renderiza create.blade.php
-    }
-    public function store(Request $request){
-        //Validación de datos
-        //1.Nombre de input
-        //2.especificar que si es requerida
-        //3.tipo de dato
-        //4.restriccion de datos(tamaño maximo,tamaño minimo, valor especifico,etc.)
-        $request->validate([
-            //1.       2.       3.     4.
-            'name' => 'required|string|max:255',
-            'official_id' => 'required|string|max:255',
-            'type' => 'required|in:Presencial,En linea',
-            'semesters' => 'required|integer|min:1|max:255',
-            
-
-        ]);
-        //LLamada para guardar datos
-        //1.Nombre de columna de tabla
-        //2.Llamada de request
-        //3.Nombre de valor
-        Career::create([
-            //1.      2.        3.
-            'name' => $request->name,
-            'official_id' => $request->official_id,
-            'description1' => $request->description1,
-            'description2' => $request->description2,
-            'description3' => $request->description3,
-            'type' => $request->type,
-            'semesters' => $request->semesters,
-        ]);
-        //retorno a pantalla
-
-        return redirect()->route('Carreras.index')->with('success', 'Carrera creada exitosamente.');
+        return view('layouts.ControlAdmin.Carreras.create');
     }
 
-    public function update(Request $request, Career $career)
+    public function reticula(Career $carrera)
     {
-        // 1. VALIDACIÓN
-        // La validación verifica que los campos sean válidos. 
-        // Importante: La regla 'unique' debe ignorar el ID de la carrera actual ($career->id).
+        return view('layouts.ControlAdmin.Carreras.reticula', compact('carrera'));
+    }
+    public function store(Request $request)
+    {
         $request->validate([
-            'name' => 'required|string|max:255|unique:carrers,name,' . $career->id,
-            'official_id' => 'required|string|max:100',
-            'type' => 'required|in:Presencial,En linea',
-            'semesters' => 'required|integer|min:1|max:15',
-            'description1' => 'nullable|string|max:500', 
-            'description2' => 'nullable|string|max:500', 
-            'description3' => 'nullable|string|max:500',
+            'name'         => 'required|string|max:255',
+            'official_id'  => 'required|string|max:255',
+            'description1' => 'required|string|max:500',
+            'description2' => 'required|string|max:500',
+            'description3' => 'required|string|max:500',
+            'type'         => 'required|in:Presencial,En linea',
+            'semesters'    => 'required|integer|min:1|max:8',
+        ], [
+            'name.required'         => 'El nombre de la carrera es obligatorio.',
+            'official_id.required'  => 'El RVOE es obligatorio.',
+            'description1.required' => 'Profesionalización y empleabilidad es obligatorio.',
+            'description2.required'  => 'Objetivo General es obligatorio.',
+            'description3.required' => 'Elige Ser es obligatorio.',
+            'type.required'         => 'Debe seleccionar la modalidad.',
+            'semesters.required'    => 'Debe seleccionar el número de semestres.',
         ]);
-        
-        // Si la validación falla, Laravel automáticamente redirige de vuelta a la URL anterior 
-        // y adjunta los errores ($errors) y los datos viejos (old()), lo que activa tu modal.
 
-        // 2. ACTUALIZACIÓN DEL MODELO
-        $career->update($request->all());
+        $institutionId = session('active_institution_id');
+        if (!$institutionId) {
+            return redirect()->back()->with('error', 'No hay institución activa. Seleccione una institución.');
+        }
+        $institutionId = (int) $institutionId;
 
-        // 3. REDIRECCIÓN TRAS ÉXITO
-        // Redirige al listado principal con un mensaje de éxito.
-        return redirect()->route('Carreras.index')->with('success', '¡Carrera actualizada exitosamente!');
+        Career::create([
+            'name'           => $request->name,
+            'official_id'    => $request->official_id,
+            'description1'  => $request->description1,
+            'description2'  => $request->description2,
+            'description3'  => $request->description3,
+            'type'           => $request->type,
+            'semesters'      => $request->semesters,
+            'institution_id' => $institutionId,
+        ]);
+
+        return redirect()->route('control.careers.index', [], 303)
+            ->with('success', 'Carrera creada exitosamente.');
+    }
+
+    public function update(Request $request, Career $carrera)
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'name'         => 'required|string|max:255|unique:careers,name,' . $carrera->id,
+            'official_id'  => 'required|string|max:255',
+            'type'         => 'required|in:Presencial,En linea',
+            'semesters'    => 'required|integer|min:1|max:8',
+            'description1' => 'nullable|string|max:500',
+            'description2' => 'nullable|string|max:500',
+            'description3' => 'nullable|string|max:500',
+        ], [
+            'name.required'   => 'El nombre de la carrera es obligatorio.',
+            'name.unique'    => 'Ya existe una carrera con ese nombre.',
+            'official_id.required' => 'El RVOE es obligatorio.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('edit_career_id', $carrera->id);
+        }
+
+        $carrera->update($request->only([
+            'name', 'official_id', 'description1', 'description2', 'description3',
+            'type', 'semesters',
+        ]));
+
+        return redirect()->route('control.careers.index')->with('success', '¡Carrera actualizada exitosamente!');
     }
     //Eliminar
     //1. Modulo a usar
     //2. Clase(debe ser igual al nombre de la tabla pero en singular)
     //                      1.     2.
-    public function destroy(career $carrera) 
+    public function destroy(Career $carrera)
     {
-        // Laravel automáticamente encuentra la carrera por la ID pasada en la ruta
-        // y la elimina.
-        $carrera->delete(); 
-        
-        // 2. Redirigir de vuelta a la lista con un mensaje de éxito
-        return redirect()->route('Carreras.index')->with('success', 'Carrera eliminada exitosamente.');
+        $carrera->delete();
+        return redirect()->route('control.careers.index')->with('success', 'Carrera eliminada exitosamente.');
     }
 }

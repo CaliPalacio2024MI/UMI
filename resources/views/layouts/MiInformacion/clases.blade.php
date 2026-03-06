@@ -40,11 +40,13 @@
             @forelse($clases as $clase)
                 <div class="class-card">
                     <div class="class-icon-container">
-                        {{-- Intenta cargar la imagen de la materia, o usa una por defecto --}}
-                        <img src="{{ asset('images/' . ($clase->icono ?? 'default-class.svg')) }}" alt="Ícono">
+                        <img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="Ícono">
                     </div>
                     <div class="class-content">
-                        <div class="class-title">{{ $clase->nombre }}</div>
+                        <div class="class-title">{{ $clase->materia->nombre ?? 'Materia' }}</div>
+                        @if($clase->carrera)
+                            <div class="class-subtitle" style="font-size: 0.85rem; color: #666;">{{ $clase->carrera->name }}</div>
+                        @endif
                         <div class="class-orange-line"></div>
                         <div class="class-footer">
                             {{-- Botones de acción con Font Awesome --}}
