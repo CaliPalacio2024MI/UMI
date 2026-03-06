@@ -191,12 +191,12 @@
                                 <td>{{ $horario->user->nombre }}</td>
                                 <td>
                                     <div class="carrer-btn-section" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                                        <a href="{{ route('control.schedules.show', $horario->id) }}" class="btn-view" title="Ver información">
+                                        <a href="{{ route('control.schedules.show', $horario->id) }}" class="btn-view" data-show-url="{{ route('control.schedules.show', $horario->id) }}" title="Ver información">
                                             <svg width="20" height="20" viewBox="0 0 29 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M14.4987 0.625C10.4307 0.625 7.17322 2.49375 4.80187 4.71797C2.44562 6.92188 0.869748 9.5625 0.124609 11.3754C-0.0415365 11.7766 -0.0415365 12.2234 0.124609 12.6246C0.869748 14.4375 2.44562 17.0781 4.80187 19.282C7.17322 21.5063 10.4307 23.375 14.4987 23.375C18.5668 23.375 21.8243 21.5063 24.1956 19.282C26.5519 17.073 28.1277 14.4375 28.8779 12.6246C29.0441 12.2234 29.0441 11.7766 28.8779 11.3754C28.1277 9.5625 26.5519 6.92188 24.1956 4.71797C21.8243 2.49375 18.5668 0.625 14.4987 0.625ZM7.24874 12C7.24874 10.0606 8.01258 8.20064 9.37222 6.82928C10.7319 5.45792 12.5759 4.6875 14.4987 4.6875C16.4216 4.6875 18.2656 5.45792 19.6253 6.82928C20.9849 8.20064 21.7487 10.0606 21.7487 12C21.7487 13.9394 20.9849 15.7994 19.6253 17.1707C18.2656 18.5421 16.4216 19.3125 14.4987 19.3125C12.5759 19.3125 10.7319 18.5421 9.37222 17.1707C8.01258 15.7994 7.24874 13.9394 7.24874 12ZM14.4987 8.75C14.4987 10.5426 13.0538 12 11.2765 12C10.9191 12 10.5767 11.9391 10.2545 11.8324C9.97756 11.741 9.65534 11.9137 9.66541 12.2082C9.68051 12.5586 9.73086 12.909 9.82652 13.2594C10.5163 15.8594 13.1696 17.4031 15.7474 16.7074C18.3251 16.0117 19.8557 13.3355 19.1659 10.7355C18.6071 8.62813 16.7593 7.21133 14.7052 7.125C14.4132 7.11484 14.242 7.43477 14.3326 7.71914C14.4383 8.04414 14.4987 8.38945 14.4987 8.75Z" fill="#BC8A55"/>
                                             </svg>
                                         </a>
-                                        <a href="{{ route('control.schedules.edit', $horario->id) }}" class="btn-edit" title="Editar">
+                                        <a href="{{ route('control.schedules.edit', $horario->id) }}" class="btn-edit" data-edit-url="{{ route('control.schedules.edit', $horario->id) }}" title="Editar">
                                             <svg width="20" height="20" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M22.3364 0.648281C21.2991 -0.216094 19.6225 -0.216094 18.5852 0.648281L17.1596 1.83235L21.7964 5.69638L23.2221 4.50836C24.2593 3.64399 24.2593 2.24678 23.2221 1.38241L22.3364 0.648281ZM8.16538 9.33149C7.87646 9.57225 7.65386 9.86827 7.52598 10.1959L6.12403 13.7007C5.98668 14.0402 6.09561 14.4151 6.39874 14.6717C6.70186 14.9282 7.15181 15.015 7.56387 14.9006L11.7697 13.7323C12.1581 13.6257 12.5133 13.4402 12.8069 13.1995L20.7308 6.59233L16.0892 2.72436L8.16538 9.33149ZM4.54685 2.31783C2.03661 2.31783 0 4.015 0 6.10686V16.211C0 18.3028 2.03661 20 4.54685 20H16.6718C19.182 20 21.2186 18.3028 21.2186 16.211V12.4219C21.2186 11.7233 20.5413 11.1589 19.703 11.1589C18.8647 11.1589 18.1874 11.7233 18.1874 12.4219V16.211C18.1874 16.9096 17.5101 17.474 16.6718 17.474H4.54685C3.70852 17.474 3.03123 16.9096 3.03123 16.211V6.10686C3.03123 5.40826 3.70852 4.84385 4.54685 4.84385H9.09369C9.93202 4.84385 10.6093 4.27944 10.6093 3.58084C10.6093 2.88223 9.93202 2.31783 9.09369 2.31783H4.54685Z" fill="black"/>
                                             </svg>
@@ -223,6 +223,32 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Ver horario --}}
+    <div id="horarioVerModal" class="modal-overlay modal-overlay--center" style="display: none; z-index: 10000;" aria-hidden="true">
+        <div class="modal-view-career__container modal-view-career__container--wide">
+            <div class="modal-view-career__header">
+                <h5 class="modal-view-career__title">Detalle del horario</h5>
+                <button type="button" class="close-custom btn-close-view modal-view-career__close horario-modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-view-career__body" id="horarioVerModalBody" style="max-height: 70vh; overflow-y: auto;">
+                <div class="horario-modal-loading" style="padding: 1.5rem; text-align: center; color: #666;">Cargando...</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Editar horario (iframe) --}}
+    <div id="horarioEditModal" class="modal-overlay modal-overlay--center" style="display: none; z-index: 10000;" aria-hidden="true">
+        <div class="modal-view-career__container modal-view-career__container--wide" style="max-width: 95%; width: 900px; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-view-career__header">
+                <h5 class="modal-view-career__title">Editar horario</h5>
+                <button type="button" class="close-custom btn-close-view modal-view-career__close horario-modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-view-career__body" style="flex: 1; min-height: 0; padding: 0;">
+                <iframe id="horarioEditIframe" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
             </div>
         </div>
     </div>
@@ -310,6 +336,61 @@
             aulaSelect.addEventListener('change', updateAulaPlaceholderStyle);
             updateAulaPlaceholderStyle();
         }
+
+        // Modal Ver horario: delegación en tbody (los botones se inyectan por búsqueda)
+        document.getElementById('horarios-tbody') && document.getElementById('horarios-tbody').addEventListener('click', function(e) {
+            var btnVer = e.target.closest('a.btn-view[data-show-url]');
+            if (btnVer) {
+                e.preventDefault();
+                var url = btnVer.getAttribute('data-show-url');
+                var modal = document.getElementById('horarioVerModal');
+                var body = document.getElementById('horarioVerModalBody');
+                if (!modal || !body || !url) return;
+                body.innerHTML = '<div class="horario-modal-loading" style="padding: 1.5rem; text-align: center; color: #666;">Cargando...</div>';
+                modal.style.display = 'flex';
+                modal.setAttribute('aria-hidden', 'false');
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error('Error al cargar')); })
+                    .then(function(html) {
+                        body.innerHTML = html;
+                    })
+                    .catch(function() {
+                        body.innerHTML = '<p style="color: #c00; padding: 1rem;">No se pudo cargar el detalle.</p>';
+                    });
+                return;
+            }
+            var btnEditar = e.target.closest('a.btn-edit[data-edit-url]');
+            if (btnEditar) {
+                e.preventDefault();
+                var url = btnEditar.getAttribute('data-edit-url');
+                var modal = document.getElementById('horarioEditModal');
+                var iframe = document.getElementById('horarioEditIframe');
+                if (modal && iframe) {
+                    iframe.src = url;
+                    modal.style.display = 'flex';
+                    modal.setAttribute('aria-hidden', 'false');
+                }
+            }
+        });
+
+        // Cerrar modales de horario (botón y clic en overlay)
+        function closeHorarioModals() {
+            var verModal = document.getElementById('horarioVerModal');
+            var editModal = document.getElementById('horarioEditModal');
+            var iframe = document.getElementById('horarioEditIframe');
+            if (verModal) { verModal.style.display = 'none'; verModal.setAttribute('aria-hidden', 'true'); }
+            if (editModal) { editModal.style.display = 'none'; editModal.setAttribute('aria-hidden', 'true'); }
+            if (iframe) iframe.src = 'about:blank';
+        }
+        document.querySelectorAll('.horario-modal-close').forEach(function(btn) {
+            btn.addEventListener('click', closeHorarioModals);
+        });
+        document.getElementById('horarioVerModal') && document.getElementById('horarioVerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeHorarioModals();
+        });
+        document.getElementById('horarioEditModal') && document.getElementById('horarioEditModal').addEventListener('click', function(e) {
+            if (e.target === this) closeHorarioModals();
+        });
 
         // Salir de edición: tacha (X) — ocultar barra de búsqueda y tabla ya se hace con .is-editing
         function exitScheduleEditMode() {
