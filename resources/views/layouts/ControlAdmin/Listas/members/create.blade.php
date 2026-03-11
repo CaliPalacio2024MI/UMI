@@ -129,25 +129,12 @@
                 </div>
 
                 {{-- Sección: Contraseña y Carrera --}}
-                <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Acceso</h3>
+                <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Carrera</h3>
                 <hr>
 
                 <div class="form-group-triple">
-                    {{-- Contraseña --}}
-                    <div class="form-field">
-                        <label for="password">Contraseña</label>
-                        <input type="password" id="password" name="password" placeholder="Cree una contraseña" required>
-                    </div>
-
-                    {{-- Confirmar Contraseña --}}
-                    <div class="form-field">
-                        <label for="password_confirmation">Confirmar Contraseña</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Introduzca de nuevo la contraseña" required>
-                    </div>
-
                     {{-- Carrera --}}
                     <div class="form-field">
-                        <label for="carrera">Carrera</label>
                         <select id="carrera" name="carrera" required>
                             <option value="" class="select-placeholder">Seleccione una Carrera</option>
                             @foreach ($carreras as $carrera)

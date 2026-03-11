@@ -103,7 +103,8 @@ class HorarioController extends Controller
             ]);
         }
 
-        return view('layouts.ControlAdmin.Horarios.show', compact('horario'));
+        // Solo se usa el modal desde el índice; acceso directo a la URL redirige a la lista.
+        return redirect()->route('control.schedules.index');
     }
     
     public function store(Request $request){
@@ -118,7 +119,7 @@ class HorarioController extends Controller
             'docente_id.required' => 'Seleccione un docente.',
             'materia_id.required' => 'Seleccione una materia.',
             'carrera_id.required' => 'Seleccione una carrera.',
-            'franjas_json.required' => 'Añada al menos una franja horaria.',
+            'franjas_json.required' => '',
         ]);
         
         // Decodificar las franjas (el array temporal de JS)
@@ -127,7 +128,7 @@ class HorarioController extends Controller
         //dd($request->all(), $franjasData);
         // ¡Validación crítica! Asegurar que se haya añadido al menos una franja de tiempo
         if (empty($franjasData)) {
-            return redirect()->back()->withErrors(['franjas_json' => 'Debe añadir al menos una franja horaria.']);
+            return redirect()->back()->withErrors(['franjas_json' => '']);
         }
 
         // Usamos una transacción para asegurar que, si falla el guardado de una franja, 
@@ -209,19 +210,20 @@ class HorarioController extends Controller
         ]);
     }
 
-    public function edit(HorarioClase $horario)
+    public function edit(Request $request, HorarioClase $horario)
     {
+        $horario->load('franjas');
         $carreras = Career::all();
         $aulas = Facility::all();
-        $horario->load('franjas');
         $docentes = User::with('academicProfile')->whereHas('roles', function ($q) {
             $q->where('name', 'docente');
         })->get();
         $materias = Materia::all();
-        $horarios = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas'])->get();
-        return view('layouts.ControlAdmin.Horarios.index', compact(
-            'carreras', 'materias', 'docentes', 'aulas', 'horarios', 'horario'
-        ));
+        $data = compact('carreras', 'materias', 'docentes', 'aulas', 'horario');
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('layouts.ControlAdmin.Horarios.edit_partial', $data);
+        }
+        return view('layouts.ControlAdmin.Horarios.edit', $data);
     }
     public function update(Request $request, HorarioClase $horario){
     // 1. VALIDACIÓN
@@ -235,14 +237,14 @@ class HorarioController extends Controller
         'docente_id.required' => 'Seleccione un docente.',
         'materia_id.required' => 'Seleccione una materia.',
         'carrera_id.required' => 'Seleccione una carrera.',
-        'franjas_json.required' => 'Añada al menos una franja horaria.',
+        'franjas_json.required' => '',
     ]);
     
     // Decodificar las franjas (el array temporal de JS)
     $franjasData = json_decode($request->franjas_json, true);
     
     if (empty($franjasData)) {
-        return redirect()->back()->withInput()->withErrors(['franjas_json' => 'Debe añadir al menos una franja horaria.']);
+        return redirect()->back()->withInput()->withErrors(['franjas_json' => '']);
     }
 
     DB::beginTransaction();

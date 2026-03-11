@@ -64,17 +64,15 @@
                         <td data-label="Materno">{{ $user->apellido_materno }}</td>
                         <td data-label="Estado">{{ isset($user->is_active) && $user->is_active ? 'Activo' : 'Inactivo' }}</td>
                         <td data-label="Acciones" class="data-actions-cell">
-                            <button
-                                type="button"
+                            <a
+                                href="{{ route('control.teachers.horarios', $user->id) }}"
                                 class="data-action-btn data-btn-view data-btn-clock"
                                 title="Horarios"
-                                data-teacher-horarios-url="{{ route('control.teachers.horarios', $user->id) }}"
-                                data-teacher-name="{{ trim($user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno) }}"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true" focusable="false" style="width:27px;height:27px;fill:#092034">
                                     <path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z"/>
                                 </svg>
-                            </button>
+                            </a>
                             <button type="button" class="data-action-btn data-btn-view" title="Ver" data-teacher-view-url="{{ route('control.teachers.show', $user->id) }}" data-teacher-name="{{ trim($user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno) }}"><img src="{{asset('images/icons/eye-solid-full.svg')}}" alt="" style="width:27;height:27px" loading="lazy"></button>
                             <button type="button" class="data-action-btn data-btn-edit" title="Editar" data-teacher-edit-url="{{ route('control.teachers.edit', $user->id) }}" data-teacher-name="{{ trim($user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno) }}"><img src="{{asset('images/icons/pen-to-square-solid-full.svg')}}" alt="" style="width:27;height:27px" loading="lazy"></button>
                             <form action="{{ route('control.teachers.destroy', $user->id) }}" method="POST" class="data-action-form" style="display: inline;">

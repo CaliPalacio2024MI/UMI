@@ -87,19 +87,10 @@
         <div class="form-field"></div>
     </div>
 
-    <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Acceso</h3>
+    <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Carrera</h3>
     <hr>
     <div class="form-group-triple">
         <div class="form-field">
-            <label for="modal_password">Contraseña</label>
-            <input type="password" id="modal_password" name="password" placeholder="Cree una contraseña" required>
-        </div>
-        <div class="form-field">
-            <label for="modal_password_confirmation">Confirmar Contraseña</label>
-            <input type="password" id="modal_password_confirmation" name="password_confirmation" placeholder="Repita la contraseña" required>
-        </div>
-        <div class="form-field">
-            <label for="modal_carrera">Carrera</label>
             <select id="modal_carrera" name="carrera" required>
                 <option value="">Seleccione una Carrera</option>
                 @foreach ($carreras as $carrera)

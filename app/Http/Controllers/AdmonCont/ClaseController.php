@@ -7,6 +7,7 @@ use App\Models\Users\Career;
 use App\Models\Users\User;
 use App\Models\AdmonCont\Materia;
 use App\Models\AdmonCont\HorarioClase;
+use App\Models\AdmonCont\HorarioClaseOculta;
 use Illuminate\Http\Request;
 
 /**
@@ -127,8 +128,25 @@ class ClaseController extends Controller
             })->values();
         }
 
-        // Ocultar clases ya "guardadas" (finalizadas) para que no vuelvan a aparecer en la tabla
-        $clasesOcultas = array_map('intval', (array) $request->session()->get('clases_ocultas', []));
+        // Ocultar clases ya "guardadas" (finalizadas) para que no vuelvan a aparecer en la tabla.
+        // Origen: BD (horario_clase_ocultas por usuario). Si hay datos en sesión, se migran a BD una vez.
+        $user = $request->user();
+        $clasesOcultas = [];
+        if ($user) {
+            $clasesOcultas = $user->horarioClaseOcultas()->pluck('horario_clase_id')->map(fn ($id) => (int) $id)->toArray();
+            $prevSession = array_map('intval', (array) $request->session()->get('clases_ocultas', []));
+            if (!empty($prevSession)) {
+                foreach ($prevSession as $hid) {
+                    if ($hid > 0) {
+                        HorarioClaseOculta::firstOrCreate(
+                            ['user_id' => $user->id, 'horario_clase_id' => $hid]
+                        );
+                    }
+                }
+                $request->session()->forget('clases_ocultas');
+                $clasesOcultas = $user->horarioClaseOcultas()->pluck('horario_clase_id')->map(fn ($id) => (int) $id)->toArray();
+            }
+        }
         $clasesOcultas = array_values(array_unique(array_filter($clasesOcultas, fn($v) => $v > 0)));
         $clasesParaTabla = $clases->filter(fn($hc) => !in_array((int) $hc->id, $clasesOcultas, true))->values();
 
@@ -224,7 +242,8 @@ class ClaseController extends Controller
     }
 
     /**
-     * Guardar el contenido de la cajita (clases agregadas) en sesión.
+     * Guardar el contenido de la cajita (clases agregadas) en la base de datos.
+     * Se guarda por usuario en horario_clase_ocultas para ocultar esas filas de la tabla.
      */
     public function guardarCajita(Request $request)
     {
@@ -237,12 +256,22 @@ class ClaseController extends Controller
         ]);
 
         $ids = array_values(array_unique(array_map('intval', $request->input('clase_ids', []))));
-        $prev = array_map('intval', (array) $request->session()->get('clases_ocultas', []));
-        $ocultas = array_values(array_unique(array_merge($prev, $ids)));
-        $request->session()->put('clases_ocultas', $ocultas);
+        $user = $request->user();
 
-        // Ya quedaron guardadas: limpiar la cajita en sesión
+        if ($user) {
+            $prevSession = array_map('intval', (array) $request->session()->get('clases_ocultas', []));
+            $todosIds = array_values(array_unique(array_merge($prevSession, $ids)));
+            foreach ($todosIds as $horarioClaseId) {
+                if ($horarioClaseId > 0) {
+                    HorarioClaseOculta::firstOrCreate(
+                        ['user_id' => $user->id, 'horario_clase_id' => $horarioClaseId]
+                    );
+                }
+            }
+        }
+
         $request->session()->forget('clases_agregadas_cajita');
+        $request->session()->forget('clases_ocultas');
 
         return redirect()
             ->route('control.classes.index', array_filter([
@@ -250,7 +279,7 @@ class ClaseController extends Controller
                 'semestre' => $request->input('semestre'),
                 'materia_id' => $request->input('materia_id'),
             ], fn($v) => $v !== null && $v !== ''))
-            ->with('success', 'Fue exitoso el proceso.');
+            ->with('success', 'Departamento actualizado exitosamente.');
     }
 
     /**

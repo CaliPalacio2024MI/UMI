@@ -66,21 +66,6 @@
     </main>
   </div>
 
-  {{-- Modal Horarios del docente (en layout para que exista siempre con SPA) --}}
-  <div id="teacherHorariosModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
-    <div class="modal-view-career__container modal-view-career__container--wide">
-      <div class="modal-view-career__header">
-        <h5 id="teacherHorariosModalTitle" class="modal-view-career__title">Horario de Docente</h5>
-        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
-      </div>
-      <div class="modal-view-career__body">
-        <div id="teacherHorariosModalContent" style="min-height: 120px;">
-          <div style="padding: 1rem; color:#555;">Cargando...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   {{-- Modal Ver docente (en layout para que exista siempre con SPA) --}}
   <div id="teacherViewModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
     <div class="modal-view-career__container modal-view-career__container--wide">
@@ -103,6 +88,19 @@
       </div>
       <div class="modal-view-career__body">
         <div id="teacherEditModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Horario Docente/Alumno (lista de Docentes enlace directo; lista de Alumnos abre este modal) --}}
+  <div id="teacherHorariosModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherHorariosModalTitle" class="modal-view-career__title">Horario</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherHorariosModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
       </div>
     </div>
   </div>

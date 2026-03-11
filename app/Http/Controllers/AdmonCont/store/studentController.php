@@ -23,16 +23,18 @@ class studentController extends Controller
             $q->where('name', 'estudiante');
         })->with(['academicProfile.career']);
 
-        // Buscador
+        // Buscador general: nombre, apellido paterno, apellido materno, CURP, carrera
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = trim($request->input('search'));
             $query->where(function($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
                   ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('apellido_materno', 'like', "%{$search}%")
                   ->orWhere('curp', 'like', "%{$search}%")
                   ->orWhereHas('academicProfile', function($subQ) use ($search) {
-                      $subQ->where('matricula', 'like', "%{$search}%");
+                      $subQ->whereHas('career', function($cq) use ($search) {
+                          $cq->where('name', 'like', "%{$search}%");
+                      });
                   });
             });
         }
@@ -52,6 +54,11 @@ class studentController extends Controller
         }
 
         $dataList = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        // Petición AJAX: devolver solo el cuerpo de la tabla (sin recargar toda la página)
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('layouts.ControlAdmin.Listas.students.partials.table_body', compact('dataList'));
+        }
 
         return view('layouts.ControlAdmin.Listas.students.index', compact('dataList'));
     }
@@ -179,14 +186,16 @@ class studentController extends Controller
         })->with(['academicProfile.career', 'address']);
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = trim($request->input('search'));
             $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
                     ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('apellido_materno', 'like', "%{$search}%")
                     ->orWhere('curp', 'like', "%{$search}%")
                     ->orWhereHas('academicProfile', function ($subQ) use ($search) {
-                        $subQ->where('matricula', 'like', "%{$search}%");
+                        $subQ->whereHas('career', function ($cq) use ($search) {
+                            $cq->where('name', 'like', "%{$search}%");
+                        });
                     });
             });
         }

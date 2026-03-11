@@ -118,8 +118,16 @@
 #horarios-materia-box .horario-item--selected { background: #e8eef3; border: 2px solid #001f3f; padding: 0.6rem !important; }
 #horarios-materia-box .btn-horario-seleccionar--selected:hover { background: #001a33 !important; color: #fff; box-shadow: 0 3px 8px rgba(0,31,63,0.45); }
 /* Contenedores con scroll horizontal en tablas */
-.filtros-tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.filtros-tabla-scroll { overflow: visible; -webkit-overflow-scrolling: touch; }
 .clases-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Tabla de filtros (Carrera, Alumno, Matrícula, Acciones): sin scroll, se muestra completa */
+#clases-tabla-filtros { height: 390px; }
+#clases-tabla-filtros table.tabla-base { height: 390px; }
+#clases-tabla-filtros .filtros-tabla-scroll {
+    overflow: visible;
+    height: auto;
+    min-height: 0;
+}
 /* Columna izquierda: más ancho para el select; un poco más a la izquierda */
 #form-filtros .filtros-col-izq { max-width: 560px !important; }
 #form-filtros .filtros-col-izq .caja-gris-filtros { max-width: 560px; }
@@ -150,7 +158,49 @@
 @section('content')
 <div class="container">
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        {{-- Modal de éxito (estilo: icono, título, mensaje, botón OK) --}}
+        <div id="clasesSuccessModal" class="modal-overlay modal-overlay--center" style="display: none; z-index: 10000;" aria-hidden="true">
+            <div class="modal-content-container clases-success-modal__box">
+                <div class="clases-success-modal__icon-wrap">
+                    <svg class="clases-success-modal__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                </div>
+                <h5 class="clases-success-modal__title">Operación exitosa</h5>
+                <p class="clases-success-modal__message">{{ session('success') }}</p>
+                <div class="clases-success-modal__footer">
+                    <button type="button" class="clases-success-modal__btn-ok btn-close-success-modal">OK</button>
+                </div>
+            </div>
+        </div>
+        <style>
+        .clases-success-modal__box { text-align: center; padding: 1.5rem 1.75rem; max-width: 420px; }
+        .clases-success-modal__icon-wrap {
+            width: 56px; height: 56px; margin: 0 auto 1rem;
+            border: 2px solid #86efac; background: #dcfce7;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+        .clases-success-modal__icon { width: 28px; height: 28px; color: #16a34a; }
+        .clases-success-modal__title { font-size: 1.25rem; font-weight: bold; color: #374151; margin: 0 0 0.5rem; }
+        .clases-success-modal__message { font-size: 0.95rem; color: #4b5563; margin: 0 0 1.25rem; line-height: 1.4; }
+        .clases-success-modal__footer { display: flex; justify-content: center; }
+        .clases-success-modal__btn-ok {
+            padding: 0.5rem 2rem; font-size: 0.9rem; font-weight: 600; text-transform: uppercase;
+            color: #fff; background: #001f3f; border: none; border-radius: 6px; cursor: pointer;
+        }
+        .clases-success-modal__btn-ok:hover { background: #001a33; color: #fff; }
+        </style>
+        <script>
+        (function() {
+            var modal = document.getElementById('clasesSuccessModal');
+            if (!modal) return;
+            function showModal() { modal.classList.add('is-visible'); modal.style.display = ''; modal.setAttribute('aria-hidden', 'false'); }
+            function hideModal() { modal.classList.remove('is-visible'); modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
+            document.querySelectorAll('.btn-close-success-modal').forEach(function(btn) { btn.addEventListener('click', hideModal); });
+            modal.addEventListener('click', function(e) { if (e.target === modal) hideModal(); });
+            showModal();
+        })();
+        </script>
     @endif
     @if(session('error'))
         <div class="alert alert-danger">{{ session('error') }}</div>
@@ -184,8 +234,8 @@
                         </select>
                     </div>
                     <div class="caja-gris-filtros" id="clases-tabla-filtros">
-                        <div class="filtros-tabla-scroll" style="width: 559px; height: 391px; overflow: auto;">
-                        <table class="tabla-base tabla-rayas tabla-bordes" style="width: 100%; max-width: 559px;">
+                        <div class="filtros-tabla-scroll" style="width: 100%; max-width: 559px;">
+                        <table class="tabla-base tabla-rayas tabla-bordes" style="width: 100%; max-width: 559px; height: 390px;">
                             <thead class="encabezado-tabla">
                                 <tr>
                                     <th class="col-carrera" style="width: 100px; max-width: 100px;">Carrera</th>

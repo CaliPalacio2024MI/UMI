@@ -5,7 +5,13 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/facturacion.js'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.js',
+                'resources/js/facturacion.js',
+                'resources/css/Control Admin/horario-edit.css',
+                'resources/js/horario-edit.js',
+            ],
             refresh: true,
         }),
         tailwindcss(),

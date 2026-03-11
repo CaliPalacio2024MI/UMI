@@ -24,6 +24,7 @@ use App\Models\Users\CorporateProfile;
 use App\Models\Cursos\Course;
 use App\Models\Cursos\Completion;
 use App\Models\AdmonCont\HorarioClase;
+use App\Models\AdmonCont\HorarioClaseOculta;
 use App\Models\Users\Department;  
 use App\Models\Users\Workstation;
 
@@ -168,6 +169,12 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(HorarioClase::class, 'horario_clase_user', 'user_id', 'horario_clase_id')
             ->withTimestamps();
+    }
+
+    /** Clases que este usuario (control académico) marcó como guardadas/ocultas en el módulo Clases. */
+    public function horarioClaseOcultas(): HasMany
+    {
+        return $this->hasMany(HorarioClaseOculta::class);
     }
 
     public function completions()

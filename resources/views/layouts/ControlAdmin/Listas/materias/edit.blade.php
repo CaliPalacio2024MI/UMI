@@ -75,7 +75,7 @@
 
                     {{-- Campo: Semestre --}}
                     <div class="form-field lists">
-                        <label for="semestre">No. de Semestre:</label>
+                        <label for="semestre">Semestre:</label>
                         <select id="semestre" name="semestre" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
                             @for ($i = 1; $i <= 8; $i++)
                                 <option 

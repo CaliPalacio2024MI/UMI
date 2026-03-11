@@ -227,6 +227,18 @@
         </div>
     </div>
 
+    {{-- Modal Editar horario (abre por modal en lugar de vista) --}}
+    <div id="horarioEditModal" class="modal-overlay modal-overlay--center" style="display: none; z-index: 10001;" aria-hidden="true">
+        <div class="modal-view-career__container modal-view-career__container--wide">
+            <div class="modal-view-career__header">
+                <h5 class="modal-view-career__title">Editar horario</h5>
+                <button type="button" class="close-custom btn-close-view modal-view-career__close horario-edit-modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-view-career__body" id="horarioEditContent" style="max-height: 80vh; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+
     {{-- Modal Ver horario --}}
     <div id="horarioVerModal" class="modal-overlay modal-overlay--center" style="display: none; z-index: 10000;" aria-hidden="true">
         <div class="modal-view-career__container modal-view-career__container--wide">
@@ -240,19 +252,7 @@
         </div>
     </div>
 
-    {{-- Modal Editar horario (iframe) --}}
-    <div id="horarioEditModal" class="modal-overlay modal-overlay--center" style="display: none; z-index: 10000;" aria-hidden="true">
-        <div class="modal-view-career__container modal-view-career__container--wide" style="max-width: 95%; width: 900px; height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-view-career__header">
-                <h5 class="modal-view-career__title">Editar horario</h5>
-                <button type="button" class="close-custom btn-close-view modal-view-career__close horario-modal-close" aria-label="Cerrar">&times;</button>
-            </div>
-            <div class="modal-view-career__body" style="flex: 1; min-height: 0; padding: 0;">
-                <iframe id="horarioEditIframe" style="width: 100%; height: 100%; min-height: 400px; border: none;"></iframe>
-            </div>
-        </div>
-    </div>
-</div>
+    {{-- Modal Ver horario --}}
 @push('scripts')
 <script>
     // Franjas horarias (añadir, eliminar, guardar, vista previa e inicial en edición) se gestionan en app.js (delegación + data-initial-franjas).
@@ -359,37 +359,18 @@
                     });
                 return;
             }
-            var btnEditar = e.target.closest('a.btn-edit[data-edit-url]');
-            if (btnEditar) {
-                e.preventDefault();
-                var url = btnEditar.getAttribute('data-edit-url');
-                var modal = document.getElementById('horarioEditModal');
-                var iframe = document.getElementById('horarioEditIframe');
-                if (modal && iframe) {
-                    iframe.src = url;
-                    modal.style.display = 'flex';
-                    modal.setAttribute('aria-hidden', 'false');
-                }
-            }
         });
 
-        // Cerrar modales de horario (botón y clic en overlay)
-        function closeHorarioModals() {
+        // Cerrar modal Ver horario (botón y clic en overlay)
+        function closeHorarioVerModal() {
             var verModal = document.getElementById('horarioVerModal');
-            var editModal = document.getElementById('horarioEditModal');
-            var iframe = document.getElementById('horarioEditIframe');
             if (verModal) { verModal.style.display = 'none'; verModal.setAttribute('aria-hidden', 'true'); }
-            if (editModal) { editModal.style.display = 'none'; editModal.setAttribute('aria-hidden', 'true'); }
-            if (iframe) iframe.src = 'about:blank';
         }
         document.querySelectorAll('.horario-modal-close').forEach(function(btn) {
-            btn.addEventListener('click', closeHorarioModals);
+            btn.addEventListener('click', closeHorarioVerModal);
         });
         document.getElementById('horarioVerModal') && document.getElementById('horarioVerModal').addEventListener('click', function(e) {
-            if (e.target === this) closeHorarioModals();
-        });
-        document.getElementById('horarioEditModal') && document.getElementById('horarioEditModal').addEventListener('click', function(e) {
-            if (e.target === this) closeHorarioModals();
+            if (e.target === this) closeHorarioVerModal();
         });
 
         // Salir de edición: tacha (X) — ocultar barra de búsqueda y tabla ya se hace con .is-editing

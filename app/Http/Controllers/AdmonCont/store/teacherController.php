@@ -432,35 +432,16 @@ class teacherController extends Controller
             abort(403, 'Acceso no autorizado.');
         }
 
-        $q = trim((string) $request->input('q', ''));
-        $dia = $request->input('dia');
-
-        $horariosQuery = HorarioClase::query()
+        $horarios = HorarioClase::query()
             ->with(['carrera', 'materia', 'aula', 'franjas'])
-            ->where('user_id', $user->id);
-
-        if ($q !== '') {
-            $horariosQuery->where(function ($w) use ($q) {
-                $w->whereHas('materia', fn($m) => $m->where('nombre', 'LIKE', '%' . $q . '%'))
-                    ->orWhereHas('carrera', fn($c) => $c->where('name', 'LIKE', '%' . $q . '%'))
-                    ->orWhereHas('aula', fn($a) => $a->where('numero_aula', 'LIKE', '%' . $q . '%'));
-            });
-        }
-
-        if ($dia !== null && $dia !== '') {
-            $diaInt = (int) $dia;
-            $horariosQuery->whereHas('franjas', function ($fr) use ($diaInt) {
-                $fr->whereRaw('JSON_CONTAINS(dias_semana, ?)', [json_encode($diaInt)]);
-            });
-        }
-
-        $horarios = $horariosQuery->get();
+            ->where('user_id', $user->id)
+            ->get();
 
         // Cuando se abre desde el modal (AJAX), devolvemos solo la grilla semanal.
         if ($request->ajax()) {
-            return view('layouts.ControlAdmin.Listas.members.partials.horarios_grilla_semanal', compact('user', 'horarios', 'q', 'dia'));
+            return view('layouts.ControlAdmin.Listas.members.partials.horarios_grilla_semanal', compact('user', 'horarios'));
         }
 
-        return view('layouts.ControlAdmin.Listas.members.horarios', compact('user', 'horarios', 'q', 'dia'));
+        return view('layouts.ControlAdmin.Listas.members.horarios', compact('user', 'horarios'));
     }
 }

@@ -14,7 +14,7 @@
 
     {{-- TOOLBAR (Fija) --}}
     <div class="umi-toolbar">
-        <form action="{{ request()->url() }}" method="GET" class="umi-toolbar-search-form" style="display: flex; align-items: center; gap: 12px; flex-grow: 1; max-width: 580px;">
+        <form action="{{ request()->url() }}" method="GET" class="umi-toolbar-search-form" id="umi-search-form" style="display: flex; align-items: center; gap: 12px; flex-grow: 1; max-width: 580px;">
             <div class="umi-search-wrapper umi-search-wrapper--icon-left" style="flex: 1; max-width: none;">
                 <span class="umi-search-icon umi-search-icon--left" aria-hidden="true">
                     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.91" stroke-miterlimit="10"><circle cx="9.14" cy="9.14" r="7.64"/><line x1="22.5" y1="22.5" x2="14.39" y2="14.39"/></svg>
@@ -27,7 +27,7 @@
                 <span class="umi-status-filter-icon-wrap" style="display: flex; align-items: center; justify-content: center; padding-left: 12px; flex-shrink: 0;">
                     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#002A4E" stroke-miterlimit="10" stroke-width="1.91"><circle cx="9.14" cy="9.14" r="7.64"/><line x1="22.5" y1="22.5" x2="14.39" y2="14.39"/></svg>
                 </span>
-                <select name="filter_status" onchange="this.form.submit()" class="umi-filter-select" style="flex: 1; padding: 6px 12px 6px 6px; border: none; background: transparent; color: #555; font-size: 0.9rem; cursor: pointer; outline: none; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23555%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center;">
+                <select name="filter_status" id="filter_status" class="umi-filter-select" style="flex: 1; padding: 6px 12px 6px 6px; border: none; background: transparent; color: #555; font-size: 0.9rem; cursor: pointer; outline: none; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23555%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center;">
                     <option value="" {{ (request('filter_status') ?? '') === '' ? 'selected' : '' }}>Estatus</option>
                     <option value="activos" {{ request('filter_status') === 'activos' ? 'selected' : '' }}>Alumno activo</option>
                     <option value="inactivos" {{ request('filter_status') === 'inactivos' ? 'selected' : '' }}>Alumno inactivo</option>
@@ -71,79 +71,8 @@
                         <th style="text-align:center">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="data-table-body">
-                    @forelse ($dataList as $user)
-                        <tr>
-                            <td style="font-family: monospace; font-size: 0.9rem; font-weight: bold;">
-                                {{ $user->curp ?? '—' }}
-                            </td>
-                            <td style="font-weight: 700;">
-                                {{ $user->nombre }}
-                            </td>
-                            <td style="font-weight: 700;">{{ $user->apellido_paterno }}</td>
-                            <td style="font-weight: 700;">{{ $user->apellido_materno }}</td>
-                            
-                            {{-- Status con Lógica de Negocio Visual --}}
-                            <td style="text-align:center">
-                                @php
-                                    $status = $user->academicProfile->status ?? 'Aspirante';
-                                    $matricula = $user->academicProfile->matricula ?? null;
-                                    
-                                    $statusColor = match($status) {
-                                        'Alumno Activo' => '#27ae60', // Verde
-                                        'Alumno Inactivo' => '#e74c3c', // Rojo
-                                        'Baja' => '#7f8c8d', // Gris
-                                        'Egresado' => '#3498db', // Azul
-                                        default => '#f39c12', // Naranja (Aspirante)
-                                    };
-                                @endphp
-
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                                    <span style="color: #000; font-weight: bold; border: none; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; width: fit-content;">
-                                        {{ $status }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td style="font-weight: 600; color: #555;">
-                                <div class="career-cell">
-                                    {{ $user->academicProfile?->career?->name ?? 'Sin Asignar' }}
-                                </div>
-                            </td>
-                            <td style="text-align:center; vertical-align: middle;">
-                                <div class="actions-row umi-actions-icons" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap;">
-                                {{-- Botón Horario (mismo diseño que Horario de Docente) --}}
-                                <button type="button" class="btn-icon data-btn-clock-student" title="Horario"
-                                    data-student-horarios-url="{{ request()->routeIs('control.*') ? route('control.students.horarios', $user->id) : route('escolar.students.horarios', $user->id) }}"
-                                    data-student-name="{{ trim($user->nombre . ' ' . ($user->apellido_paterno ?? '') . ' ' . ($user->apellido_materno ?? '')) }}"
-                                    style="border:none; background:none; display: inline-flex; align-items: center; justify-content: center;">
-                                    <img src="{{ asset('images/icons/clock-solid-full-092034.svg') }}" alt="Horario" width="20" height="20">
-                                </button>
-                                {{-- Botón Ver Expediente --}}
-                                <button type="button" class="btn-icon" title="Ver Expediente" style="border:none; background:none; display: inline-flex; align-items: center; justify-content: center;"
-                                    data-action="open-expediente" 
-                                    data-name="{{ $user->nombre }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}"
-                                    data-email="{{ $user->email }}"
-                                    data-phone="{{ $user->telefono ?? 'N/A' }}"
-                                    data-career="{{ $user->academicProfile->career->name ?? 'Sin Carrera' }}"
-                                    data-semester="{{ $user->academicProfile->semestre ?? '1' }}"
-                                    data-status="{{ $user->academicProfile->status ?? 'Pendiente' }}"
-                                    data-matricula="{{ $user->academicProfile->matricula ?? 'No Asignada' }}"
-                                    data-doc-acta="{{ $user->academicProfile->doc_acta_nacimiento ? Storage::url($user->academicProfile->doc_acta_nacimiento) : '' }}"
-                                    data-doc-cert="{{ $user->academicProfile->doc_certificado_prepa ? Storage::url($user->academicProfile->doc_certificado_prepa) : '' }}"
-                                    data-doc-curp="{{ $user->academicProfile->doc_curp ? Storage::url($user->academicProfile->doc_curp) : '' }}"
-                                    data-doc-ine="{{ $user->academicProfile->doc_ine ? Storage::url($user->academicProfile->doc_ine) : '' }}">
-                                    <img src="{{ asset('images/icons/eye-solid-full-bc8a55.svg') }}" alt="Ver">
-                                </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 20px; color: #666;">
-                                No se encontraron alumnos registrados.
-                            </td>
-                        </tr>
-                    @endforelse
+                <tbody class="data-table-body" id="students-table-body">
+                    @include('layouts.ControlAdmin.Listas.students.partials.table_body', ['dataList' => $dataList])
                 </tbody>
             </table>
         </div>
@@ -187,11 +116,11 @@
             <div class="details-grid">
                 {{-- Columna Izquierda: Datos --}}
                 <div class="details-column">
-                    <h4 style="color:#666; border-bottom:1px solid #eee; padding-bottom:5px; margin-bottom:15px;">
+                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px;">
                         <i class="fa-solid fa-id-card"></i> Información Personal
                     </h4>
                     <div class="detail-item">
-                        <label>Matrícula:</label> <span id="modalMatricula" style="font-weight: bold; color: #2c3e50;">-</span>
+                        <label>Matrícula:</label> <span id="modalMatricula" style="font-weight: normal; color: #000;">-</span>
                     </div>
                     <div class="detail-item">
                         <label>Email:</label> <span id="modalEmail">-</span>
@@ -200,7 +129,7 @@
                         <label>Teléfono:</label> <span id="modalPhone">-</span>
                     </div>
                     
-                    <h4 style="color:#666; border-bottom:1px solid #eee; padding-bottom:5px; margin-bottom:15px; margin-top:20px;">
+                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px; margin-top:20px;">
                         <i class="fa-solid fa-graduation-cap"></i> Académico
                     </h4>
                     <div class="detail-item">
@@ -213,7 +142,7 @@
 
                 {{-- Columna Derecha: Documentos --}}
                 <div class="details-column">
-                    <h4 style="color:#666; border-bottom:1px solid #eee; padding-bottom:5px; margin-bottom:15px;">
+                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px;">
                         <i class="fa-solid fa-folder-open"></i> Documentación
                     </h4>
                     <div class="docs-list">
@@ -394,6 +323,8 @@
         color: var(--umi-blue-dark, #223F70); /* Usa la variable si existe, sino un azul oscuro seguro */
         font-weight: 700;
         margin: 0;
+        flex: 1;
+        text-align: center;
     }
     
     /* Media Query para pantallas pequeñas */
@@ -420,13 +351,13 @@
     .doc-btn:hover { background: #e3f2fd; border-color: #3498db; color: #223F70; transform: translateX(5px); }
     .doc-btn i { margin-right: 12px; font-size: 1.2rem; color: #e74c3c; }
     .hidden { display: none !important; }
-    .no-docs { text-align: center; color: #aaa; font-style: italic; padding: 15px; border: 1px dashed #eee; border-radius: 8px; }
+    .no-docs { text-align: center; color: #aaa; padding: 15px; border: none; }
 
     /* Badges Status */
     .badge-status { border: 1px solid; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 0.8rem; }
     .badge-green { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
     .badge-orange { background: #fff3e0; color: #ef6c00; border-color: #ffe0b2; }
-    .badge-gray { background: #f5f5f5; color: #616161; border-color: #e0e0e0; }
+    .badge-gray { background: #223F70; color: #fff; border-color: #223F70; }
 
     .student-summary { display: flex; align-items: center; gap: 15px; }
     .avatar-placeholder { width: 50px; height: 50px; background: #e0e0e0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; color: white; }
@@ -437,13 +368,14 @@
         align-items: center; 
         gap: 15px; 
     }
+    .student-info-header .badge-status { margin-left: 20px; }
     .student-info-header h2 {
-        margin: 0; font-size: 1.4rem; color: #2c3e50;
+        margin: 0; font-size: 1.4rem; color: #223F70;
     }
 
     .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
     .detail-item { margin-bottom: 12px; }
-    .detail-item label { font-weight: 600; color: #7f8c8d; width: 80px; display: inline-block; }
+    .detail-item label { font-weight: 600; color: #BC8A55; width: 80px; display: inline-block; }
     
 </style>
 {{-- SCRIPTS --}}
@@ -560,6 +492,50 @@
             return;
         }
     });
+
+    // =============================================================
+    // 3. BÚSQUEDA EN VIVO: actualizar solo la tabla por AJAX (sin recargar la página)
+    // =============================================================
+    (function() {
+        const form = document.getElementById('umi-search-form');
+        const input = document.getElementById('search');
+        const filterSelect = form ? form.querySelector('select[name="filter_status"]') : null;
+        const tbody = document.getElementById('students-table-body');
+        if (!form || !input || !tbody) return;
+
+        let debounceTimer;
+        function refreshTable() {
+            const search = input.value.trim();
+            const filterStatus = filterSelect ? filterSelect.value : '';
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            if (filterStatus) params.set('filter_status', filterStatus);
+            const url = form.action + (params.toString() ? '?' + params.toString() : '');
+
+            fetch(url, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
+            })
+            .then(function(r) { if (!r.ok) throw new Error('Error'); return r.text(); })
+            .then(function(html) {
+                tbody.innerHTML = html;
+                if (typeof history !== 'undefined' && history.replaceState) {
+                    history.replaceState(null, '', url);
+                }
+            })
+            .catch(function() {
+                form.submit();
+            });
+        }
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(refreshTable, 400);
+        });
+        if (filterSelect) {
+            filterSelect.addEventListener('change', refreshTable);
+        }
+    })();
 
 </script>
 

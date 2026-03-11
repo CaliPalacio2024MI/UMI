@@ -622,23 +622,20 @@
     max-width: 780px;
     min-width: 680px;
     flex: 0 1 auto;
-    min-height: 80px;
-    max-height: 420px;
-    height: auto;
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    scrollbar-gutter: stable;
-    scrollbar-color: #223f70 #e8eaed;
-    scrollbar-width: thin;
+    min-height: 0;
     align-self: flex-start;
     padding: 0 0 6px 0;
     margin-left: 12px;
     margin-right: 12px;
+    max-height: 380px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-color: #223f70 #e8eaed;
+    scrollbar-width: thin;
 }
 .schedule-table .Table-view::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
 }
 .schedule-table .Table-view::-webkit-scrollbar-track {
     background: #e8eaed;
@@ -647,10 +644,9 @@
 .schedule-table .Table-view::-webkit-scrollbar-thumb {
     background: #223f70;
     border-radius: 10px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
 }
 .schedule-table .Table-view::-webkit-scrollbar-thumb:hover {
-    background: #2a4a88;
+    background: #1a3360;
 }
 .schedule-table .Table-view .tabla-base.tabla-bordes {
     flex: 0 0 auto;
@@ -674,6 +670,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 4px;
+    cursor: pointer;
+}
+#horarios-tbody .btn-view:focus-visible,
+#horarios-tbody .btn-edit:focus-visible,
+#horarios-tbody .btn-delete:focus-visible {
+    outline: 2px solid rgba(34, 63, 112, 0.5);
+    outline-offset: 2px;
 }
 #horarios-tbody .btn-view:hover,
 #horarios-tbody .btn-edit:hover,
@@ -814,7 +821,7 @@
 /* Horario y vista previa en modo edición: misma línea roja */
 .creator-container.is-editing .schedule-select-title,
 .creator-container.is-editing .schedule-resume__title {
-    color: #c17d3a;
+    color: #b5b5b5;
     font-weight: 600;
     font-size: 1rem;
     margin-bottom: 0.5rem;
@@ -1134,10 +1141,30 @@
     /* Nota: Si ya estás usando .schedule-container, podrías renombrarlo a .creator-container */
 }
 
-/* Columna del formulario: ancho estable para que la vista previa no mueva todo al cambiar contenido */
+/* Columna del formulario: ancho estable y un solo scroll para todo el menú (Carrera, Materia, Docente, Horario, Vista previa, Aula) */
 .schedule-lists {
     min-width: 380px;
     flex: 0 1 auto;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-color: #223f70 #e8eaed;
+    scrollbar-width: thin;
+}
+.schedule-lists::-webkit-scrollbar {
+    width: 10px;
+}
+.schedule-lists::-webkit-scrollbar-track {
+    background: #e8eaed;
+    border-radius: 10px;
+}
+.schedule-lists::-webkit-scrollbar-thumb {
+    background: #223f70;
+    border-radius: 10px;
+}
+.schedule-lists::-webkit-scrollbar-thumb:hover {
+    background: #1a3360;
 }
 
 .schedule-list-select{
@@ -1173,7 +1200,7 @@
     text-align: center;
 }
 #carrera_select:invalid:not(:focus) {
-    color: #b0b0b0;
+    color: #6c6c6c;
 }
 #carrera_select:valid,
 #carrera_select:focus {
@@ -1626,7 +1653,7 @@
 }
 
 .schedule-select-title {
-    color: #ACACAC;
+    color: #b5b5b5;
     font-size: 0.875rem;
     font-weight: normal;
     margin: 0 0 8px 0;
@@ -1726,6 +1753,53 @@
 /* Modal Informe de Horario: subir un poco el contenido */
 #scheduleModal .schedule-modal-content {
     transform: translateY(-80px);
+}
+
+/* Modal Detalle horario (módulo Horarios): subir un poco y reducir ancho */
+#horarioDetalleModal .modal-view-career__container,
+#horarioVerModal .modal-view-career__container {
+    transform: translateY(-70px);
+    max-width: 520px;
+    width: calc(100% - 2rem);
+}
+
+/* Modal Editar horario (módulo Horarios): subir un poco y reducir ancho */
+#horarioEditModal .modal-view-career__container {
+    transform: translateY(-70px);
+    max-width: 540px;
+    width: calc(100% - 2rem);
+    /* Un solo scroll: el del contenido del iframe; no otro en el modal */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+#horarioEditModal .modal-view-career__body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+/* Un solo scroll en el modal: solo el body; el .schedule-lists interno no hace scroll */
+#horarioEditModal .schedule-lists {
+    overflow: visible;
+    max-height: none;
+}
+/* Contenido del modal Editar horario: formulario centrado y texto de selects centrado */
+#horarioEditContent .horario-edit-wrap {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+#horarioEditContent .schedule-list-select select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    text-align-last: center;
+}
+#horarioEditContent .schedule-list-select select option {
+    text-align: center;
 }
 
 .modal-header-custom {
@@ -2640,9 +2714,9 @@ select[name="semestre"] {
 }
 .teacher-horarios-grilla thead th:not(.grilla-col-hora) {
     text-transform: none;
-    width: 246px;
-    min-width: 246px;
-    max-width: 246px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
     box-sizing: border-box;
 }
 .teacher-horarios-grilla .grilla-col-hora {
@@ -2668,9 +2742,9 @@ select[name="semestre"] {
     min-width: 6rem;
 }
 .teacher-horarios-grilla tbody td.grilla-cell {
-    width: 246px;
-    min-width: 246px;
-    max-width: 246px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
     height: 95px;
     min-height: 95px;
     max-height: 95px;
@@ -2855,9 +2929,94 @@ select[name="semestre"] {
     }
 }
 
+/* Botón Exportar en vista Horario: ovalado azul marino */
+.horario-export-pdf-btn {
+    background-color: #2c5282;
+    color: #fff;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.65rem 2.25rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.horario-export-pdf-btn:hover {
+    background-color: #2a4365;
+}
+
+/* Imprimir desde la vista completa de Horario de Docente (no modal) */
+@media print {
+    body.print-teacher-horario-page .mobile-menu-toggle,
+    body.print-teacher-horario-page .sidebar,
+    body.print-teacher-horario-page .main-content > .header {
+        display: none !important;
+    }
+    body.print-teacher-horario-page .teacher-horario-modal-export-btn,
+    body.print-teacher-horario-page .horario-export-pdf-btn,
+    body.print-teacher-horario-page .horario-close-btn {
+        display: none !important;
+    }
+}
+
 #teacherViewModal .modal-view-career__body {
     padding: 0.75rem 1rem;
     background: #fff;
+}
+/* Vista docente: misma estructura que editar (form-group-triple, form-field) solo lectura - aplica en modal y en página show */
+.modal-view-career__body .form-body--view-only .form-group-triple,
+#teacherViewModal .form-body--view-only .form-group-triple {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.modal-view-career__body .form-body--view-only .form-group-double,
+#teacherViewModal .form-body--view-only .form-group-double {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.modal-view-career__body .form-body--view-only .form-field,
+#teacherViewModal .form-body--view-only .form-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+.modal-view-career__body .form-body--view-only .form-field label,
+#teacherViewModal .form-body--view-only .form-field label {
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #BC8A55;
+}
+.modal-view-career__body .form-body--view-only .form-field input,
+#teacherViewModal .form-body--view-only .form-field input {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    font-size: 1rem;
+    background: #f5f5f5;
+    cursor: default;
+    color: #333;
+}
+.modal-view-career__body .form-body--view-only h3,
+#teacherViewModal .form-body--view-only h3 {
+    margin: 1rem 0 0.25rem;
+    font-size: 1.1rem;
+    color: #BC8A55;
+}
+.modal-view-career__body .form-body--view-only h3:first-child,
+#teacherViewModal .form-body--view-only h3:first-child {
+    margin-top: 0;
+}
+.modal-view-career__body .form-body--view-only hr,
+#teacherViewModal .form-body--view-only hr {
+    margin: 0.5rem 0 1rem;
+    border: none;
+    border-top: 1px solid #eee;
 }
 #teacherViewModal .career-view-row {
     border-bottom: 2px solid #DB5865;

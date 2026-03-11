@@ -63,7 +63,7 @@
                     </div>
                     
                     <div class="form-field lists">
-                        <label for="semestre">No. de semestres:</label>
+                        <label for="semestre">Semestre:</label>
                         <select id="semestre" name="semestre" class="@if($errors->any()) validation-error @endif">
                             @for ($i = 1; $i <= 8; $i++)
                             <option value="{{ $i }}" {{ old('semestre') == $i ? 'selected' : '' }}>{{ $i }}</option>

@@ -584,7 +584,7 @@ document.addEventListener('click', (e) => {
     modal.style.display = 'none';
 });
 
-// --- Lista de Docentes: modal "Horarios" (reloj) sin navegar ---
+// --- Lista de Docentes: horario ya es vista (enlace). Modal solo para lista de Alumnos (Horario de Alumno). ---
 function initTeacherHorariosModal() {
     if (initTeacherHorariosModal._initialized) return;
     initTeacherHorariosModal._initialized = true;
@@ -634,32 +634,6 @@ function initTeacherHorariosModal() {
         }
     }
 
-    // Abrir modal desde el botón del reloj: cargar contenido primero, luego abrir (sin pantalla "Cargando...")
-    document.addEventListener('click', (e) => {
-        if (!(e.target instanceof Element)) return;
-        const btn = e.target.closest('.data-btn-clock[data-teacher-horarios-url]');
-        if (!btn) return;
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        const url = btn.getAttribute('data-teacher-horarios-url');
-        const teacherName = (btn.getAttribute('data-teacher-name') || '').trim();
-        const { title, content } = getModalEls();
-        if (title) title.textContent = 'Horario de Docente';
-        if (!url) return;
-        fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
-            .then((res) => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
-            .then((html) => {
-                if (content) content.innerHTML = html;
-                openModal();
-            })
-            .catch((err) => {
-                console.error(err);
-                if (content) content.innerHTML = '<div style="padding: 1rem; color:#b00020;">No se pudo cargar el contenido.</div>';
-                openModal();
-            });
-    }, true);
-
     // Abrir modal desde el botón del reloj en lista de Alumnos (mismo diseño que Horario de Docente)
     document.addEventListener('click', (e) => {
         if (!(e.target instanceof Element)) return;
@@ -698,14 +672,18 @@ function initTeacherHorariosModal() {
         if (modal && modal.style.display !== 'none') closeModal();
     });
 
-    // Al exportar (imprimir) desde el modal Horario de Docente, marcar body para que las reglas
-    // @media print solo oculten el resto de la página y muestren este modal (evita que en Mi Información > Horario
-    // al exportar solo se vea "Cargando...").
+    // Al exportar (imprimir): desde el modal Horario de Docente/Alumno o desde la vista completa de Horario de Docente.
     document.addEventListener('click', (e) => {
         if (!(e.target instanceof Element)) return;
         const btn = e.target.closest('.teacher-horario-modal-export-btn');
-        if (!btn || !document.getElementById('teacherHorariosModal')?.contains(btn)) return;
-        document.body.classList.add('print-teacher-horario');
+        if (!btn) return;
+        e.preventDefault();
+        const isInModal = document.getElementById('teacherHorariosModal')?.contains(btn);
+        if (isInModal) {
+            document.body.classList.add('print-teacher-horario');
+        } else {
+            document.body.classList.add('print-teacher-horario-page');
+        }
         window.print();
     }, true);
 }
@@ -713,8 +691,18 @@ window.initTeacherHorariosModal = initTeacherHorariosModal;
 initTeacherHorariosModal();
 
 window.addEventListener('afterprint', () => {
-    document.body.classList.remove('print-teacher-horario');
+    document.body.classList.remove('print-teacher-horario', 'print-teacher-horario-page');
 });
+
+// --- Vista Horario (docente/alumno): botón Exportar → abrir diálogo imprimir (Guardar como PDF) ---
+document.addEventListener('click', (e) => {
+    if (!(e.target instanceof Element)) return;
+    const btn = e.target.closest('.horario-export-pdf-btn');
+    if (!btn) return;
+    e.preventDefault();
+    document.body.classList.add('print-teacher-horario-page');
+    window.print();
+}, true);
 
 // --- Lista de Docentes: modal "Ver" (ojo) sin navegar ---
 function initTeacherViewModal() {
@@ -1031,7 +1019,240 @@ function doHorariosSearch(searchInput, searchForm, tbody) {
         .catch(() => {});
 }
 
-// --- Horarios: Ver en modal (no navegar) ---
+// --- Horarios: cuando la edición guardó (postMessage o evento horario-updated desde div) ---
+function onHorarioUpdated() {
+    const modal = document.getElementById('horarioEditModal');
+    const content = document.getElementById('horarioEditContent');
+    if (modal) { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
+    if (content) content.innerHTML = '';
+    const searchForm = document.getElementById('search-form');
+    const tbody = document.getElementById('horarios-tbody');
+    if (searchForm && tbody) {
+        const inp = document.getElementById('search-input');
+        const q = inp ? inp.value.trim() : '';
+        const baseUrl = (searchForm.getAttribute('action') || searchForm.action || '').replace(/\?.*$/, '');
+        const url = baseUrl + (q ? '?search_query=' + encodeURIComponent(q) : '');
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, credentials: 'same-origin' })
+            .then(r => r.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const newTbody = doc.getElementById('horarios-tbody');
+                if (newTbody) tbody.innerHTML = newTbody.innerHTML;
+            })
+            .catch(() => {});
+    }
+}
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'horario-updated') onHorarioUpdated();
+});
+document.addEventListener('horario-updated', onHorarioUpdated);
+
+// --- Horarios: Ver en modal (no navegar) — se abre el modal solo cuando ya está el contenido ---
+// Usa horarioDetalleModal/horarioDetalleModalContent O horarioVerModal/horarioVerModalBody (vista Horarios index)
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-view[data-show-url]');
+    if (!btn || !btn.closest('.schedule-table')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const url = btn.getAttribute('data-show-url');
+    if (!url) return;
+    const modal = document.getElementById('horarioDetalleModal') || document.getElementById('horarioVerModal');
+    const content = document.getElementById('horarioDetalleModalContent') || document.getElementById('horarioVerModalBody');
+    if (!modal || !content) return;
+    fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+        .then((r) => r.ok ? r.json() : Promise.reject(new Error('Error al cargar')))
+        .then((data) => {
+            function escapeHtml(text) {
+                if (text == null) return '—';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            let html = '<dl class="career-view-dl career-view-dl--styled">';
+            html += '<div class="career-view-row"><dt>Carrera:</dt><dd>' + escapeHtml(data.carrera) + '</dd></div>';
+            html += '<div class="career-view-row"><dt>Materia:</dt><dd>' + escapeHtml(data.materia) + '</dd></div>';
+            html += '<div class="career-view-row"><dt>Docente:</dt><dd>' + escapeHtml(data.docente) + '</dd></div>';
+            html += '<div class="career-view-row"><dt>Aula:</dt><dd>' + escapeHtml(data.aula) + '</dd></div>';
+            html += '<div class="career-view-row career-view-row--no-border"><dt class="career-view-dt--gold">Horario:</dt><dd>';
+            if (!data.franjas || data.franjas.length === 0) {
+                html += '<p style="color: #666;">No hay franjas registradas.</p>';
+            } else {
+                html += '<table class="tabla-base tabla-rayas tabla-bordes" style="width: 100%; margin-top: 0.5rem;"><thead><tr><th>Día</th><th>Hora inicio</th><th>Hora fin</th></tr></thead><tbody>';
+                data.franjas.forEach((f) => {
+                    html += '<tr><td>' + escapeHtml(f.dia_str) + '</td><td>' + escapeHtml(f.hora_inicio) + '</td><td>' + escapeHtml(f.hora_fin) + '</td></tr>';
+                });
+                html += '</tbody></table>';
+            }
+            html += '</dd></div></dl>';
+            content.innerHTML = html;
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+        })
+        .catch(() => {
+            content.innerHTML = '<div style="padding: 1rem; color: #c00;">Error al cargar el detalle del horario.</div>';
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+        });
+}, true);
+document.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('.horario-detalle-modal-close') || e.target.closest('.horario-modal-close');
+    if (closeBtn) {
+        const modal = document.getElementById('horarioDetalleModal') || document.getElementById('horarioVerModal');
+        if (modal) { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
+    }
+    if (e.target.id === 'horarioDetalleModal' || e.target.id === 'horarioVerModal') {
+        e.target.style.display = 'none';
+        e.target.setAttribute('aria-hidden', 'true');
+    }
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const modal = document.getElementById('horarioDetalleModal') || document.getElementById('horarioVerModal');
+    if (modal && modal.style.display === 'flex') {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    }
+    const editModal = document.getElementById('horarioEditModal');
+    if (editModal && editModal.style.display === 'flex') {
+        editModal.style.display = 'none';
+        editModal.setAttribute('aria-hidden', 'true');
+        const content = document.getElementById('horarioEditContent');
+        if (content) content.innerHTML = '';
+    }
+});
+
+// --- Horarios: Editar en modal — contenido en div horarioEditContent (fetch) ---
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-edit[data-edit-url]');
+    if (!btn || !btn.closest('.schedule-table')) return;
+    const modal = document.getElementById('horarioEditModal');
+    const content = document.getElementById('horarioEditContent');
+    if (!modal || !content) return;
+
+    const url = btn.getAttribute('data-edit-url');
+    if (!url) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Mostrar el modal solo cuando el contenido esté cargado (no mostrar "Cargando...")
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, credentials: 'same-origin' })
+        .then((r) => r.ok ? r.text() : Promise.reject(new Error('Error')))
+        .then((html) => {
+            content.innerHTML = html;
+            if (typeof window.initHorarioEditForm === 'function') window.initHorarioEditForm(content);
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+        })
+        .catch(() => {
+            content.innerHTML = '<p style="padding:1rem; color:#b00;">No se pudo cargar el formulario.</p>';
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+        });
+}, true);
+
+window.initHorarioEditForm = function(container) {
+    if (!container) return;
+    if (typeof window.initScheduleClockPickersForContainer === 'function') window.initScheduleClockPickersForContainer(container);
+    const form = container.querySelector('#schedule_form');
+    if (form && form.getAttribute('data-initial-franjas')) {
+        if (typeof scheduleGetState === 'function') scheduleGetState(form);
+        if (typeof scheduleRenderPreview === 'function') scheduleRenderPreview(form);
+    }
+    const carreraSelect = container.querySelector('#carrera_select');
+    const materiaSelect = container.querySelector('#materia_select');
+    const docenteSelect = container.querySelector('#docente_select');
+    if (carreraSelect && materiaSelect && docenteSelect && typeof initHorariosCareerFilterForContainer === 'function') {
+        initHorariosCareerFilterForContainer(container);
+    }
+    if (form && container.closest('#horarioEditModal')) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const { franjas } = typeof scheduleGetState === 'function' ? scheduleGetState(form) : { franjas: [] };
+            let hidden = form.querySelector('input[name="franjas_json"]');
+            if (!hidden) {
+                hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'franjas_json';
+                form.appendChild(hidden);
+            }
+            hidden.value = JSON.stringify(form._scheduleFranjas || franjas);
+            const submitBtn = form.querySelector('#save_schedule_btn');
+            if (submitBtn) submitBtn.disabled = true;
+            const formData = new FormData(form);
+            fetch(form.action, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }, credentials: 'same-origin' })
+                .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+                .then(({ ok, data }) => {
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (ok && data.success) {
+                        if (typeof onHorarioUpdated === 'function') onHorarioUpdated();
+                    } else {
+                        alert(data.message || 'Error al actualizar el horario.');
+                    }
+                })
+                .catch(() => {
+                    if (submitBtn) submitBtn.disabled = false;
+                    alert('Error al actualizar el horario.');
+                });
+        });
+    }
+};
+function initHorariosCareerFilterForContainer(container) {
+    const carreraSelect = container.querySelector('#carrera_select');
+    const materiaSelect = container.querySelector('#materia_select');
+    const docenteSelect = container.querySelector('#docente_select');
+    if (!carreraSelect || !materiaSelect || !docenteSelect) return;
+    const form = container.querySelector('#schedule_form');
+    if (!form || form.dataset.careerFilterInit === '1') return;
+    form.dataset.careerFilterInit = '1';
+    const materiasData = [];
+    const docentesData = [];
+    Array.from(materiaSelect.options).forEach((opt, i) => {
+        if (i === 0) return;
+        materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
+    });
+    Array.from(docenteSelect.options).forEach((opt, i) => {
+        if (i === 0) return;
+        docentesData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
+    });
+    function filterByCareer(resetValues = true) {
+        const careerId = String(carreraSelect.value || '');
+        const savedMateriaId = materiaSelect.value;
+        const savedDocenteId = docenteSelect.value;
+        const materiasFiltered = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
+        const docentesFiltered = careerId ? docentesData.filter((d) => d.careerId === careerId) : docentesData;
+        materiaSelect.innerHTML = '';
+        docenteSelect.innerHTML = '';
+        materiaSelect.appendChild(new Option('Seleccione una Materia', '', true));
+        materiasFiltered.forEach((m) => materiaSelect.appendChild(new Option(m.text, m.value, false)));
+        docenteSelect.appendChild(new Option('Seleccione un Docente', '', true));
+        docentesFiltered.forEach((d) => docenteSelect.appendChild(new Option(d.text, d.value, false)));
+        if (!resetValues && savedMateriaId && materiasFiltered.some((m) => m.value === savedMateriaId)) materiaSelect.value = savedMateriaId;
+        if (!resetValues && savedDocenteId && docentesFiltered.some((d) => d.value === savedDocenteId)) docenteSelect.value = savedDocenteId;
+    }
+    carreraSelect.addEventListener('change', () => filterByCareer(true));
+    filterByCareer(false);
+}
+document.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('.horario-edit-modal-close') || e.target.closest('#horarioEditModal .schedule-edit-close');
+    if (closeBtn || (e.target.closest('.horario-modal-close') && e.target.closest('#horarioEditModal'))) {
+        const modal = document.getElementById('horarioEditModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+            const content = document.getElementById('horarioEditContent');
+            if (content) content.innerHTML = '';
+        }
+    }
+    if (e.target.id === 'horarioEditModal') {
+        e.target.style.display = 'none';
+        e.target.setAttribute('aria-hidden', 'true');
+        const content = document.getElementById('horarioEditContent');
+        if (content) content.innerHTML = '';
+    }
+});
+
+// --- Horarios: Ver en modal (legacy: data-schedule-show-url + scheduleModal) ---
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.btn-view[data-schedule-show-url]');
     if (!btn || !btn.closest('.schedule-table')) return;
@@ -1138,18 +1359,18 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// --- Horarios: botones de día (Lun, Mar, Mié…) — delegación para SPA y carga normal ---
+// --- Horarios: botones de día (Lun, Mar, Mié…) — delegación ---
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.day-selection-buttons button[data-day]');
     if (!btn) return;
     btn.classList.toggle('selected');
-    const form = btn.closest('form.schedule-form');
+    const form = btn.closest('#schedule_form') || btn.closest('form.schedule-form');
     if (form && typeof scheduleUpdatePreviewSelection === 'function') scheduleUpdatePreviewSelection(form);
 });
 // --- Horarios: actualizar vista previa cuando cambian las horas de inicio/fin ---
 document.addEventListener('input', (e) => {
     if (e.target.matches('input[name="hora_inicio"], input[name="hora_fin"]')) {
-        const form = e.target.closest('form.schedule-form');
+        const form = e.target.closest('#schedule_form') || e.target.closest('form.schedule-form');
         if (form && typeof scheduleUpdatePreviewSelection === 'function') scheduleUpdatePreviewSelection(form);
     }
 });
@@ -1252,7 +1473,7 @@ document.addEventListener('click', (e) => {
     const addBtn = e.target.closest('.add-time-slot-btn');
     if (addBtn) {
         e.preventDefault();
-        const form = addBtn.closest('form.schedule-form');
+        const form = addBtn.closest('#schedule_form') || addBtn.closest('form.schedule-form');
         if (!form) return;
         const { franjas, tempIdCounter } = scheduleGetState(form);
         const diasSeleccionados = [];
@@ -1283,7 +1504,7 @@ document.addEventListener('click', (e) => {
     }
     const delBtn = e.target.closest('.delete-franja');
     if (delBtn) {
-        const form = delBtn.closest('form.schedule-form');
+        const form = delBtn.closest('#schedule_form') || delBtn.closest('form.schedule-form');
         if (!form) return;
         const id = parseInt(delBtn.getAttribute('data-id'), 10);
         if (isNaN(id)) return;
@@ -1294,7 +1515,7 @@ document.addEventListener('click', (e) => {
     }
     const saveBtn = e.target.closest('#save_schedule_btn');
     if (saveBtn) {
-        const form = saveBtn.closest('form.schedule-form');
+        const form = saveBtn.closest('#schedule_form') || saveBtn.closest('form.schedule-form');
         if (!form) return;
         e.preventDefault();
         const { franjas } = scheduleGetState(form);
