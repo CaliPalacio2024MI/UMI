@@ -171,7 +171,7 @@
             <div class="chart-column">
 
                 <div class="chart-item">
-                    <h4>Leads VS Alumnos</h4>
+                    <h4 id="tituloDona">Leads VS Alumnos</h4>
                     <canvas id="chartCierre"></canvas>
                 </div>
 
@@ -447,6 +447,30 @@
 
             };
 
+            const textoCentroDona = {
+                id: 'textoCentroDona',
+                beforeDraw(chart) {
+
+                    const {width} = chart;
+                    const {height} = chart;
+                    const ctx = chart.ctx;
+
+                    ctx.restore();
+
+                    const fontSize = (height / 110).toFixed(2);
+                    ctx.font = fontSize + "em sans-serif";
+                    ctx.textBaseline = "middle";
+                    ctx.textAlign = "center";
+
+                    const text = chart.config.data.centerText || "";
+
+                    ctx.fillStyle = "#333";
+                    ctx.fillText(text, width / 2, height / 2);
+
+                    ctx.save();
+                }
+            };
+
 
             /* CREAR GRÁFICA */
 
@@ -568,57 +592,155 @@
             .addEventListener('change', function() {
 
                 actualizarGrafica(this.value);
+                actualizarGraficaDona(this.value);
+
 
             });
 
 
-            /* ================= GRÁFICA 2: CONVERSIÓN POR ESTADO ================= */
+
+
+            /* ================= GRÁFICA 2: DISTRIBUCIÓN POR ESTADO ================= */
 
             const ctxCierre = document.getElementById('chartCierre').getContext('2d');
 
-            new Chart(ctxCierre, {
+            const totalLeads = {{ $totalLeads }};
+
+            const totalesEstados = {
+                "Prospecto frío": {{ $totalFrio }},
+                "Prospecto caliente": {{ $totalCaliente }},
+                "Aspirante": {{ $totalAspirante }},
+                "Alumno": {{ $totalAlumno }}
+            };
+
+            const coloresEstados = {
+                "Prospecto frío": '#17a2b8',
+                "Prospecto caliente": '#ffc107',
+                "Aspirante": '#28a745',
+                "Alumno": '#6f42c1'
+            };
+
+            let chartCierre = new Chart(ctxCierre, {
+
                 type: 'doughnut',
+
                 data: {
-                    labels: [
-                        'Prospecto Frío',
-                        'Prospecto Caliente',
-                        'Aspirante',
-                        'Alumno'
-                    ],
+                    labels: [],
                     datasets: [{
-                        data: [
-                            {{ $porcentajeFrio }},
-                            {{ $porcentajeCaliente }},
-                            {{ $porcentajeAspirante }},
-                            {{ $porcentajeAlumno }}
-                        ],
-                        backgroundColor: [
-                            '#17a2b8',
-                            '#ffc107',
-                            '#28a745',
-                            '#6f42c1'
-                        ],
+                        data: [],
+                        backgroundColor: [],
                         borderWidth: 0
                     }]
                 },
+
                 options: {
                     cutout: '70%',
                     responsive: true,
                     maintainAspectRatio: false,
+
                     plugins: {
+
                         legend: {
                             position: 'bottom'
                         },
+
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.label + ': ' + context.raw + '%';
+                                    return context.label + ': ' + context.raw;
                                 }
                             }
                         }
+
                     }
+
                 }
+
             });
+
+
+            /* ================= ACTUALIZAR GRÁFICA DONA ================= */
+            function actualizarGraficaDona(estado){
+
+                const titulo = document.getElementById("tituloDona");
+
+                const colores = {
+                    "Prospecto frío": "#17a2b8",
+                    "Prospecto caliente": "#ffc107",
+                    "Aspirante": "#28a745",
+                    "Alumno": "#6f42c1"
+                };
+
+                const porcentajes = {
+                    "Prospecto frío": {{ $porcentajeFrio }},
+                    "Prospecto caliente": {{ $porcentajeCaliente }},
+                    "Aspirante": {{ $porcentajeAspirante }},
+                    "Alumno": {{ $porcentajeAlumno }}
+                };
+
+                // 🔵 CUANDO ES TODOS
+                if(!estado || estado === "Todos"){
+
+                    titulo.innerText = "Tasa de conversión";
+
+                    chartCierre.data.labels = [
+                        "Prospecto frío",
+                        "Prospecto caliente",
+                        "Aspirante",
+                        "Alumno"
+                    ];
+
+                    chartCierre.data.datasets[0].data = [
+                        {{ $porcentajeFrio }},
+                        {{ $porcentajeCaliente }},
+                        {{ $porcentajeAspirante }},
+                        {{ $porcentajeAlumno }}
+                    ];
+
+                    chartCierre.data.datasets[0].backgroundColor = [
+                        colores["Prospecto frío"],
+                        colores["Prospecto caliente"],
+                        colores["Aspirante"],
+                        colores["Alumno"]
+                    ];
+
+                    // ❌ NO TEXTO EN EL CENTRO
+                    chartCierre.config.data.centerText = null;
+                }
+
+                // 🟢 CUANDO SE FILTRA UN ESTADO
+                else{
+
+                    titulo.innerText = "Leads vs " + estado;
+
+                    const porcentaje = porcentajes[estado];
+
+                    chartCierre.data.labels = [
+                        "Leads",
+                        estado
+                    ];
+
+                    chartCierre.data.datasets[0].data = [
+                        100 - porcentaje,
+                        porcentaje
+                    ];
+
+                    chartCierre.data.datasets[0].backgroundColor = [
+                        "#dee2e6",
+                        colores[estado]
+                    ];
+
+                    // ✅ TEXTO EN EL CENTRO
+                    chartCierre.config.data.centerText = porcentaje + "%";
+                }
+
+                chartCierre.update();
+            }
+
+
+            /* ESTADO INICIAL */
+
+           actualizarGraficaDona("{{ request('estatus') }}");
 
         });
 
@@ -693,7 +815,27 @@
 
         });
 
-});
-        
-    </script>
+        document.addEventListener('DOMContentLoaded', function(){
+
+                const filtroEstado = document.querySelector('.filtro-estatus');
+                const fechaInicio = document.querySelector('[name="fecha_inicio"]');
+                const fechaFin = document.querySelector('[name="fecha_fin"]');
+
+                if(filtroEstado){
+                    filtroEstado.addEventListener('change', cargarDatos);
+            }
+
+            if(fechaInicio){
+                fechaInicio.addEventListener('change', cargarDatos);
+            }
+
+            if(fechaFin){
+                fechaFin.addEventListener('change', cargarDatos);
+            }
+
+        });
+
+    });
+    
+</script>
 @endpush

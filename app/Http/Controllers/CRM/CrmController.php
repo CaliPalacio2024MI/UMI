@@ -6,17 +6,18 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Lead;
 use App\Models\Users\User;
+use Carbon\Carbon;
 
 class CRMController extends Controller
 {
+
+    /* ===========================
+    LEADS
+    =========================== */
+
     public function leads()
-<<<<<<< HEAD
     {
-        $query = Lead::with('seguimientos');
-=======
-{
-    $query = Lead::with(['seguimientos', 'ctp']);
->>>>>>> origin/Josseline
+        $query = Lead::with(['seguimientos', 'ctp']);
 
         $rol = session('active_role_name');
         $userId = auth()->id();
@@ -28,6 +29,7 @@ class CRMController extends Controller
         $leads = $query->orderBy('created_at', 'desc')->get();
 
         $ctps = [];
+
         if (in_array($rol, ['master', 'coordinador_ctp'])) {
             $ctps = User::whereHas('roles', function ($q) {
                 $q->where('name', 'ctp');
@@ -40,6 +42,7 @@ class CRMController extends Controller
     /* ===========================
     ESTADÍSTICAS
     =========================== */
+
     public function estadisticas(Request $request)
     {
         $query = Lead::with([
@@ -52,27 +55,15 @@ class CRMController extends Controller
         $rol = session('active_role_name');
         $userId = auth()->id();
 
-        /* ===========================
-        FILTRO POR ROL
-        =========================== */
-
         if ($rol === 'ctp') {
             $query->where('ctp_id', $userId);
         }
-
-        /* ===========================
-        FILTRO POR CTP
-        =========================== */
 
         if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('buscar')) {
             $query->whereHas('ctp', function ($q) use ($request) {
                 $q->where('nombre', 'like', '%' . $request->buscar . '%');
             });
         }
-
-        /* ===========================
-        FILTRO POR FECHAS
-        =========================== */
 
         if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
 
@@ -91,10 +82,6 @@ class CRMController extends Controller
 
         $leads = $query->get();
 
-        /* ===========================
-        TOTAL LEADS
-        =========================== */
-
         $totalLeads = $leads->count();
 
         /* ===========================
@@ -110,10 +97,6 @@ class CRMController extends Controller
                 : 'Prospecto frío';
         });
 
-        /* ===========================
-        CONTEOS GENERALES
-        =========================== */
-
         $conteos = $estados->countBy();
 
         $totalFrio = $conteos['Prospecto frío'] ?? 0;
@@ -122,7 +105,7 @@ class CRMController extends Controller
         $totalAlumno = $conteos['Alumno'] ?? 0;
 
         /* ===========================
-        PORCENTAJE POR ESTADO
+        PORCENTAJES
         =========================== */
 
         $porcentajeFrio = $totalLeads > 0 ? round(($totalFrio / $totalLeads) * 100, 1) : 0;
@@ -143,7 +126,7 @@ class CRMController extends Controller
 
         foreach ($leads as $lead) {
 
-            $fechaInicio = \Carbon\Carbon::parse($lead->created_at);
+            $fechaInicio = Carbon::parse($lead->created_at);
 
             $ultimoSeguimiento = $lead->seguimientos->first();
 
@@ -153,9 +136,9 @@ class CRMController extends Controller
 
             $estado = $ultimoSeguimiento->estado;
 
-            $fechaFin = \Carbon\Carbon::parse($ultimoSeguimiento->fecha);
+            $fechaFin = Carbon::parse($ultimoSeguimiento->fecha);
 
-            $dias = $fechaInicio->diffInHours($fechaFin) / 24;
+            $dias = abs($fechaInicio->diffInHours($fechaFin)) / 24;
 
             if (isset($tiempos[$estado])) {
                 $tiempos[$estado][] = $dias;
@@ -197,13 +180,13 @@ class CRMController extends Controller
 
         foreach ($leads as $lead) {
 
-            $fechaInicio = \Carbon\Carbon::parse($lead->created_at);
+            $fechaInicio = Carbon::parse($lead->created_at);
 
             $ultimoSeguimiento = $lead->seguimientos->first();
 
             if ($ultimoSeguimiento) {
 
-                $fechaFin = \Carbon\Carbon::parse(
+                $fechaFin = Carbon::parse(
                     $ultimoSeguimiento->fecha . ' ' . $ultimoSeguimiento->hora
                 );
 
@@ -254,10 +237,6 @@ class CRMController extends Controller
         $aspirantePorMes = $porMes['Aspirante'];
         $alumnoPorMes = $porMes['Alumno'];
 
-        /* ===========================
-        LISTA CTPS
-        =========================== */
-
         $ctps = User::whereHas('roles', function ($q) {
             $q->where('name', 'ctp');
         })->get();
@@ -289,51 +268,63 @@ class CRMController extends Controller
         ));
     }
 
-
-    public function destroy(Lead $lead)
-
-{
-    $lead->delete();
-    return response()->json(['success' => true]);
-}
-
-    public function guardarSeguimiento(Request $request, Lead $lead)
+    public function data(Request $request)
     {
-        $lead->seguimientos()->create([
-            'estado'     => $request->estado,
-            'fecha'      => now()->toDateString(),
-            'hora'       => now()->toTimeString(),
-            'comentario' => $request->comentario ?? null,
-        ]);
+        $estatus = $request->estatus;
+        $fechaInicio = $request->fecha_inicio;
+        $fechaFin = $request->fecha_fin;
+
+        $leads = Lead::query();
+
+        if($estatus){
+            $leads->whereHas('seguimientos', function($q) use ($estatus){
+                $q->where('estatus', $estatus);
+            });
+        }
+
+        if($fechaInicio){
+            $leads->whereDate('created_at','>=',$fechaInicio);
+        }
+
+        if($fechaFin){
+            $leads->whereDate('created_at','<=',$fechaFin);
+        }
+
+        $totalLeads = $leads->count();
 
         return response()->json([
-            'success'      => true,
-            'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
+            'totalLeads'=>$totalLeads,
+            'totalFrio'=>$totalFrio,
+            'totalCaliente'=>$totalCaliente,
+            'totalAspirante'=>$totalAspirante,
+            'totalAlumno'=>$totalAlumno
         ]);
     }
-        
-    public function prospectos(Request $request)
+
+    /* ===========================
+    ELIMINAR LEAD
+    =========================== */
+
+    public function destroy(Lead $lead)
     {
-        $query = Lead::query();
+        $lead->delete();
 
-        $rol = session('active_role_name');
-        $userId = auth()->id();
-
-        // CTP solo ve SUS prospectos
-        if ($rol === 'ctp') {
-            $query->where('ctp_id', $userId);
+        return response()->json([
+            'success' => true
+        ]);
     }
+
+    /* ===========================
+    GUARDAR SEGUIMIENTO
+    =========================== */
 
     public function guardarSeguimiento(Request $request, Lead $lead)
     {
-        $request->validate([
-            'estado' => 'required|in:Prospecto frío,Prospecto caliente,Aspirante,Alumno'
-        ]);
-
         $lead->seguimientos()->create([
             'estado' => $request->estado,
             'fecha' => now()->toDateString(),
             'hora' => now()->toTimeString(),
+            'comentario' => $request->comentario ?? null,
         ]);
 
         return response()->json([
@@ -341,6 +332,10 @@ class CRMController extends Controller
             'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
         ]);
     }
+
+    /* ===========================
+    PROSPECTOS
+    =========================== */
 
     public function prospectos(Request $request)
     {
@@ -354,8 +349,11 @@ class CRMController extends Controller
         }
 
         if ($request->filled('search')) {
+
             $search = $request->search;
+
             $query->where(function ($q) use ($search) {
+
                 $q->where('rfc', 'like', "%$search%")
                     ->orWhere('alumno_nombre', 'like', "%$search%")
                     ->orWhere('alumno_paterno', 'like', "%$search%")
@@ -368,6 +366,10 @@ class CRMController extends Controller
 
         return view('crm.prospectos', compact('leads'));
     }
+
+    /* ===========================
+    ASIGNAR CTP
+    =========================== */
 
     public function asignarCTP(Request $request, Lead $lead)
     {
@@ -384,13 +386,16 @@ class CRMController extends Controller
             ->exists();
 
         if (!$yaExiste) {
+
             $lead->seguimientos()->create([
                 'estado' => 'Prospecto frío',
-                'fecha'  => now()->toDateString(),
-                'hora'   => now()->toTimeString(),
+                'fecha' => now()->toDateString(),
+                'hora' => now()->toTimeString(),
             ]);
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true
+        ]);
     }
 }
