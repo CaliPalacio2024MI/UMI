@@ -71,7 +71,13 @@
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
                             <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
-                            <div>{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
+                            <div>
+                            @if($lead->ctp_id)
+                                {{ $lead->seguimientos->sortByDesc('id')->first()?->estado ?? 'Prospecto frío' }}
+                            @else
+                                Sin asignar
+                            @endif
+                        </div>
 
                             <div class="acciones">
                                 <button class="btn btn-icon btn-flecha">
@@ -195,6 +201,51 @@
         </div>
 
     </div>
+    </div>
+</div>
+
+<!-- MODAL COMENTARIO SEGUIMIENTO -->
+<div id="modal-seguimiento" class="modal-ctp d-none">
+    <div class="modal-content">
+        <h5 style="color:var(--crm-primary);font-weight:700;margin-bottom:12px;">
+            Registrar estado
+        </h5>
+        <p id="modal-seg-estado-label" style="font-size:13px;color:#666;margin-bottom:10px;"></p>
+
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:6px;">
+            Comentario <span style="color:#999;font-weight:400;">(opcional)</span>:
+        </label>
+        <textarea
+            id="seg-comentario"
+            class="form-control"
+            rows="3"
+            placeholder="Escribe un comentario sobre este seguimiento..."
+            style="resize:none;font-size:13px;border-radius:10px;"
+        ></textarea>
+
+        <div class="modal-actions mt-3">
+            <button id="guardar-seguimiento-btn" class="btn btn-primary">Guardar</button>
+            <button id="cancelar-seguimiento-btn" class="btn btn-secondary">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VER COMENTARIO -->
+<div id="modal-ver-comentario" class="modal-ctp d-none">
+    <div class="modal-content">
+        <h5 style="color:var(--crm-primary);font-weight:700;margin-bottom:4px;" id="modal-ver-estado"></h5>
+        <p style="font-size:12px;color:#999;margin-bottom:12px;" id="modal-ver-fecha"></p>
+
+        <label style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#999;display:block;margin-bottom:6px;">
+            Comentario:
+        </label>
+        <div id="modal-ver-texto" class="modal-comentario-actual" style="min-height:50px;"></div>
+
+        <div class="text-end mt-3">
+            <button id="cerrar-ver-comentario" class="btn btn-secondary btn-sm">Cerrar</button>
+        </div>
+    </div>
+</div>
 </div>
 
 
@@ -211,13 +262,10 @@
      ELIMINAR LEAD
 ────────────────────────────────────────────── --}}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-
     document.querySelectorAll('.btn-eliminar').forEach(btn => {
         btn.addEventListener('click', function () {
             const leadId = this.dataset.id;
             if (!confirm('¿Eliminar este lead?')) return;
-
             fetch(`/crm/leads/${leadId}`, {
                 method: 'DELETE',
                 headers: {
@@ -232,8 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(() => alert('Error al eliminar el lead'));
         });
     });
-
-});
 </script>
 
 
@@ -259,69 +305,54 @@ document.addEventListener('DOMContentLoaded', () => {
      ESTADOS Y RENDERIZADO DEL PANEL
 ────────────────────────────────────────────── --}}
 <script>
+
 const ESTADOS = [
     'Prospecto frío',
     'Prospecto caliente',
     'Aspirante',
     'Alumno',
-    'Cerrado'
 ];
 
-// Rol puede editar seguimiento
 function puedeEditarSeguimiento() {
     return ['ctp', 'master'].includes(window.ROLE_ACTIVO);
 }
 
-// Renderiza el panel de seguimiento para la fila activa
 function renderizarSeguimiento(fila) {
     const seguimientoBody = document.querySelector('.seguimiento-body');
     seguimientoBody.innerHTML = '';
-
     const seguimientos = JSON.parse(fila.dataset.seguimientos || '[]');
     const tieneCTP     = fila.dataset.tieneCtp === '1';
-
-    // FIX: tomar el estado registrado de MAYOR índice (no el último del array)
     let estadoActualIndex = -1;
     seguimientos.forEach(s => {
         const i = ESTADOS.indexOf(s.estado);
         if (i > estadoActualIndex) estadoActualIndex = i;
     });
     const estadoActual = estadoActualIndex >= 0 ? ESTADOS[estadoActualIndex] : null;
-
     ESTADOS.forEach((estado, index) => {
-
         const registro = seguimientos.find(s => s.estado === estado);
-
-        // Lógica de habilitación:
-        // - Prospecto: habilitado si no hay ningún estado aún
-        // - Los siguientes: habilitados solo si el anterior ya está registrado
         let habilitado = false;
         if (tieneCTP) {
-            if (index === 0 && !estadoActual)                        habilitado = true;
-            if (index > 0 && ESTADOS[index - 1] === estadoActual)   habilitado = true;
+            if (index === 0 && !estadoActual)                      habilitado = true;
+            if (index > 0 && ESTADOS[index - 1] === estadoActual) habilitado = true;
         }
-
-        // Icono según estado:
-        // - Ya registrado   → check estático (sin click)
-        // - Habilitado      → check clickeable (solo si puede editar)
-        // - Bloqueado        → círculo opaco
         let accion;
         if (registro) {
+            const mostrarOjo = estado !== 'Prospecto frío';
             accion = `
                 <i class="bi bi-check-circle-fill icon-check activo" title="Completado"></i>
-                <img src="/images/icons/eye.svg" class="icon-eye" title="Ver detalle">
+                ${mostrarOjo ? `<img src="/images/icons/eye.svg" class="icon-eye" title="Ver comentario"
+                     data-estado="${estado}" data-fecha="${registro.fecha ?? ''}"
+                     data-hora="${registro.hora ?? ''}"
+                     data-comentario="${encodeURIComponent(registro.comentario ?? '')}">` : ''}
             `;
         } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
-            accion = `
-                <i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>
-            `;
+            accion = `<i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>`;
         } else {
             accion = `<i class="bi bi-circle icon-disabled"></i>`;
         }
-
         seguimientoBody.innerHTML += `
             <div class="seguimiento-row ${registro ? 'registrado' : habilitado ? 'habilitado' : 'muted'}">
-            <span>${estado}</span>
+                <span>${estado}</span>
                 <span>${registro?.fecha ?? '---'}</span>
                 <span>${registro?.hora ?? '---'}</span>
                 <span class="accion">${accion}</span>
@@ -330,83 +361,43 @@ function renderizarSeguimiento(fila) {
     });
 }
 
-// Renderiza datos generales
 function renderizarDatos(fila) {
     const d = fila.dataset;
-
     document.getElementById('datos-panel').innerHTML = `
-
-    <!-- TARJETA TUTOR -->
     <div class="datos-card">
         <h6 class="titulo-seccion">Datos del Tutor</h6>
-
         <div class="datos-grid-3">
-            <div class="dato-item">
-                <label>Nombre:</label>
-                <p>${d.tutorNombre || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Paterno:</label>
-                <p>${d.tutorPaterno || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Materno:</label>
-                <p>${d.tutorMaterno || '---'}</p>
-            </div>
+            <div class="dato-item"><label>Nombre:</label><p>${d.tutorNombre || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Paterno:</label><p>${d.tutorPaterno || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Materno:</label><p>${d.tutorMaterno || '---'}</p></div>
         </div>
-
         <div class="datos-grid-4 mt-3">
-            <div class="dato-item">
-                <label>CURP:</label>
-                <p>${d.tutorCurp || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Teléfono 1:</label>
-                <p>${d.telefono1 || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Teléfono 2:</label>
-                <p>${d.telefono2 || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Correo electrónico:</label>
-                <p>${d.tutorEmail || '---'}</p>
-            </div>
+            <div class="dato-item"><label>CURP:</label><p>${d.tutorCurp || '---'}</p></div>
+            <div class="dato-item"><label>Teléfono 1:</label><p>${d.telefono1 || '---'}</p></div>
+            <div class="dato-item"><label>Teléfono 2:</label><p>${d.telefono2 || '---'}</p></div>
+            <div class="dato-item"><label>Correo electrónico:</label><p>${d.tutorEmail || '---'}</p></div>
         </div>
     </div>
-
-    <!-- TARJETA ASPIRANTE -->
     <div class="datos-card">
         <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
-
         <div class="datos-grid-3">
-            <div class="dato-item">
-                <label>Nombre:</label>
-                <p>${d.alumnoNombre || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Paterno:</label>
-                <p>${d.alumnoPaterno || '---'}</p>
-            </div>
-            <div class="dato-item">
-                <label>Apellido Materno:</label>
-                <p>${d.alumnoMaterno || '---'}</p>
-            </div>
+            <div class="dato-item"><label>Nombre:</label><p>${d.alumnoNombre || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Paterno:</label><p>${d.alumnoPaterno || '---'}</p></div>
+            <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno || '---'}</p></div>
         </div>
-
         <div class="datos-curp-centrado mt-3">
-    <label>CURP:</label>
-    <p style="font-weight: 400; letter-spacing: 0;">${d.alumnoCurp || '---'}</p>
-</div>
-    </div>
-`;
+            <label>CURP:</label>
+            <p style="font-weight:400;letter-spacing:0;">${d.alumnoCurp || '---'}</p>
+        </div>
+    </div>`;
 }
 
-// Click en flecha → seleccionar lead y mostrar panel
+// ← IMPORTANTE: estas funciones deben ser globales para que el modal pueda usarlas
+window.renderizarSeguimiento = renderizarSeguimiento;
+
 document.querySelectorAll('.fila-lead').forEach(fila => {
     const btnFlecha = fila.querySelector('.btn-flecha');
     if (!btnFlecha) return;
-
     btnFlecha.addEventListener('click', () => {
         document.querySelectorAll('.fila-lead').forEach(f => f.classList.remove('activo'));
         fila.classList.add('activo');
@@ -418,118 +409,118 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
 
 
 {{-- ─────────────────────────────────────────────
-     CLICK EN CHECK → GUARDAR SEGUIMIENTO
+     CLICK EN CHECK → ABRIR MODAL DE COMENTARIO
 ────────────────────────────────────────────── --}}
 <script>
+let _pendienteEstado = null;
+
 document.addEventListener('click', function (e) {
-
     const check = e.target.closest('.icon-check.clickeable');
-    if (!check) return;
+    if (check) {
+        _pendienteEstado = check.dataset.estado;
+        document.getElementById('modal-seg-estado-label').textContent =
+            `Estás marcando este lead como: ${_pendienteEstado}`;
+        document.getElementById('seg-comentario').value = '';
+        document.getElementById('modal-seguimiento').classList.remove('d-none');
+        return;
+    }
+    const ojo = e.target.closest('.icon-eye');
+    if (ojo) {
+        const comentario = decodeURIComponent(ojo.dataset.comentario || '');
+        document.getElementById('modal-ver-estado').textContent = ojo.dataset.estado;
+        document.getElementById('modal-ver-fecha').textContent  = `${ojo.dataset.fecha} ${ojo.dataset.hora}`;
+        document.getElementById('modal-ver-texto').textContent  = comentario || '(Sin comentario)';
+        document.getElementById('modal-ver-comentario').classList.remove('d-none');
+        return;
+    }
+});
 
-    const nuevoEstado = check.dataset.estado;
-    const filaActiva  = document.querySelector('.fila-lead.activo');
-    const leadId      = filaActiva?.dataset.id;
-    if (!leadId || !nuevoEstado) return;
-
-    check.classList.remove('clickeable');
-    check.style.opacity = '0.5';
-
+document.getElementById('guardar-seguimiento-btn').addEventListener('click', () => {
+    const filaActiva = document.querySelector('.fila-lead.activo');
+    const leadId     = filaActiva?.dataset.id;
+    if (!leadId || !_pendienteEstado) return;
+    const comentario = document.getElementById('seg-comentario').value.trim();
+    document.getElementById('modal-seguimiento').classList.add('d-none');
     fetch(`/crm/leads/${leadId}/seguimiento`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': window.CSRF_TOKEN
-        },
-        body: JSON.stringify({ estado: nuevoEstado })
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.CSRF_TOKEN },
+        body: JSON.stringify({ estado: _pendienteEstado, comentario })
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
             filaActiva.dataset.seguimientos = JSON.stringify(data.seguimientos);
-            renderizarSeguimiento(filaActiva);
+            window.renderizarSeguimiento(filaActiva);
         } else {
             alert('Error al guardar el seguimiento');
-            check.classList.add('clickeable');
-            check.style.opacity = '';
         }
     })
-    .catch(() => {
-        alert('Error de conexión');
-        check.classList.add('clickeable');
-        check.style.opacity = '';
-    });
-
+    .catch(() => alert('Error de conexión'));
+    _pendienteEstado = null;
 });
+
+document.getElementById('cancelar-seguimiento-btn').addEventListener('click', () => {
+    document.getElementById('modal-seguimiento').classList.add('d-none');
+    _pendienteEstado = null;
+});
+
+document.getElementById('cerrar-ver-comentario').addEventListener('click', () => {
+    document.getElementById('modal-ver-comentario').classList.add('d-none');
+});
+
 </script>
+
 
 
 {{-- ─────────────────────────────────────────────
      ASIGNAR CTP
 ────────────────────────────────────────────── --}}
 <script>
-let LEAD_SELECCIONADO  = null;
-let ES_REASIGNACION    = false;
 
-// Abrir modal
+let LEAD_SELECCIONADO = null;
+let ES_REASIGNACION   = false;
+
 document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
     btn.addEventListener('click', () => {
         LEAD_SELECCIONADO = btn.dataset.lead;
         ES_REASIGNACION   = false;
-
-        // Buscar la fila para saber si ya tiene CTP
         const fila        = document.querySelector(`.fila-lead[data-id="${LEAD_SELECCIONADO}"]`);
-const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
-const ctpActualId = fila?.getAttribute('data-ctp');
-
-// Filtrar select: ocultar el CTP actual
-document.querySelectorAll('#ctp-select option').forEach(opt => {
-    if (opt.value && opt.value === ctpActualId) {
-        opt.style.display = 'none';
-    } else {
-        opt.style.display = '';
-    }
-});
-
-        // Obtener nombre del CTP desde el select (si existe en opciones)
+        const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
+        const ctpActualId = fila?.getAttribute('data-ctp');
+        document.querySelectorAll('#ctp-select option').forEach(opt => {
+            opt.style.display = (opt.value && opt.value === ctpActualId) ? 'none' : '';
+        });
         let nombreActual = '---';
         if (tieneCTP) {
-            const ctpId = fila.dataset.ctp;
-            const opcion = document.querySelector(`#ctp-select option[value="${ctpId}"]`);
+            const opcion = document.querySelector(`#ctp-select option[value="${fila.dataset.ctp}"]`);
             if (opcion) nombreActual = opcion.dataset.nombre || opcion.text;
         }
-
-        // Limpiar estado anterior
-        document.getElementById('ctp-select').value       = '';
-        document.getElementById('ctp-comentario').value   = '';
+        document.getElementById('ctp-select').value     = '';
+        document.getElementById('ctp-comentario').value = '';
         document.getElementById('comentario-wrapper').classList.add('d-none');
-
         if (tieneCTP) {
-            const comentario = fila.getAttribute('data-comentario-reasignacion');
-const historialEl = document.getElementById('historial-ultimo');
-if (historialEl) {
-    if (comentario) {
-        document.getElementById('modal-comentario-actual').textContent = `"${comentario}"`;
-        historialEl.classList.remove('d-none');
-    } else {
-        historialEl.classList.add('d-none');
-    }
-}
-            // Mostrar vista "ya asignado"
+            const comentario  = fila.getAttribute('data-comentario-reasignacion');
+            const historialEl = document.getElementById('historial-ultimo');
+            if (historialEl) {
+                if (comentario) {
+                    document.getElementById('modal-comentario-actual').textContent = `"${comentario}"`;
+                    historialEl.classList.remove('d-none');
+                } else {
+                    historialEl.classList.add('d-none');
+                }
+            }
             document.getElementById('modal-ctp-nombre').textContent = nombreActual;
             document.getElementById('vista-asignado').classList.remove('d-none');
             document.getElementById('vista-seleccionar').classList.add('d-none');
         } else {
-            // Mostrar vista "asignar por primera vez"
             document.getElementById('modal-titulo').textContent = 'Asignar CTP';
             document.getElementById('vista-asignado').classList.add('d-none');
             document.getElementById('vista-seleccionar').classList.remove('d-none');
         }
-
         document.getElementById('modal-ctp').classList.remove('d-none');
     });
 });
 
-// Botón reasignar → muestra el select + comentario
 document.getElementById('btn-reasignar').addEventListener('click', () => {
     ES_REASIGNACION = true;
     document.getElementById('modal-titulo').textContent = 'Reasignar CTP';
@@ -538,39 +529,23 @@ document.getElementById('btn-reasignar').addEventListener('click', () => {
     document.getElementById('comentario-wrapper').classList.remove('d-none');
 });
 
-// Cerrar modal
 document.getElementById('cerrar-ctp').addEventListener('click', () => {
     document.getElementById('modal-ctp').classList.add('d-none');
 });
 
-// Guardar asignación / reasignación
 document.getElementById('guardar-ctp').addEventListener('click', () => {
-    const ctpId     = document.getElementById('ctp-select').value;
+    const ctpId      = document.getElementById('ctp-select').value;
     const comentario = document.getElementById('ctp-comentario').value.trim();
-
-    if (!ctpId || !LEAD_SELECCIONADO) {
-        alert('Selecciona un CTP');
-        return;
-    }
-
-    if (ES_REASIGNACION && !comentario) {
-        alert('Por favor escribe el motivo del cambio');
-        return;
-    }
-
+    if (!ctpId || !LEAD_SELECCIONADO) { alert('Selecciona un CTP'); return; }
+    if (ES_REASIGNACION && !comentario) { alert('Por favor escribe el motivo del cambio'); return; }
     fetch(`/crm/leads/${LEAD_SELECCIONADO}/asignar-ctp`, {
         method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': window.CSRF_TOKEN,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            ctp_id: ctpId,
-            comentario: ES_REASIGNACION ? comentario : null
-        })
+        headers: { 'X-CSRF-TOKEN': window.CSRF_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ctp_id: ctpId, comentario: ES_REASIGNACION ? comentario : null })
     })
     .then(() => location.reload());
 });
+
 </script>
 
 @endsection

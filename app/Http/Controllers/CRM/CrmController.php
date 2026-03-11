@@ -10,8 +10,13 @@ use App\Models\Users\User;
 class CRMController extends Controller
 {
     public function leads()
+<<<<<<< HEAD
     {
         $query = Lead::with('seguimientos');
+=======
+{
+    $query = Lead::with(['seguimientos', 'ctp']);
+>>>>>>> origin/Josseline
 
         $rol = session('active_role_name');
         $userId = auth()->id();
@@ -286,9 +291,37 @@ class CRMController extends Controller
 
 
     public function destroy(Lead $lead)
+
+{
+    $lead->delete();
+    return response()->json(['success' => true]);
+}
+
+    public function guardarSeguimiento(Request $request, Lead $lead)
     {
-        $lead->delete();
-        return response()->json(['success' => true]);
+        $lead->seguimientos()->create([
+            'estado'     => $request->estado,
+            'fecha'      => now()->toDateString(),
+            'hora'       => now()->toTimeString(),
+            'comentario' => $request->comentario ?? null,
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
+        ]);
+    }
+        
+    public function prospectos(Request $request)
+    {
+        $query = Lead::query();
+
+        $rol = session('active_role_name');
+        $userId = auth()->id();
+
+        // CTP solo ve SUS prospectos
+        if ($rol === 'ctp') {
+            $query->where('ctp_id', $userId);
     }
 
     public function guardarSeguimiento(Request $request, Lead $lead)
