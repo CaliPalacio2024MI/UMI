@@ -248,6 +248,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             // =======================
             // MÓDULO CRM (INDEPENDIENTE)
             // =======================
+
             Route::prefix('crm')
             ->name('crm.')
             ->middleware(['role:master,coordinador_ctp,ctp'])
@@ -258,20 +259,22 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
                 Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
 
-                // SOLO Master y Coordinador
-                    Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+                // 📊 ESTADÍSTICAS → TODOS
+                Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
+
+
+                // 🔒 SOLO Master y Coordinador
+                Route::middleware(['role:master,coordinador_ctp'])->group(function () {
 
                     Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
-                    Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
 
-
-
-                    // 🟢 NUEVA RUTA → ASIGNAR CTP
+                    // ASIGNAR CTP
                     Route::post('/leads/{lead}/asignar-ctp', [CRMController::class, 'asignarCTP'])
                         ->name('leads.asignar_ctp');
 
                     Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])
                         ->name('leads.destroy');
+
                 });
 
             });
