@@ -503,9 +503,132 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+
 <script>
+// ====== CONFIGURACIÓN ELEVENLABS ======
+const ELEVENLABS_API_KEY = '';
+
+// VOCES ALTERNADAS - Una para cada tortuguita
+const ELEVENLABS_VOICES = [
+    'qjk0ggayMrstLVWqGMaV', // Voz para tortuguita 0 (tortuguita-hablando.webm)
+    'akHMa5INOPN1uVFL2h4o'  // Voz para tortuguita 1 (tortuguita1-hablando.webm)
+];
+
 // Variable global para controlar el estado de lectura
 window.isReading = false;
+window.currentTurtleIndex = 0;
+window.currentAudio = null;
+
+// Función para convertir texto a audio con ElevenLabs
+async function speakWithElevenLabs(text, onStart, onEnd) {
+    // Obtener la voz según la tortuguita actual
+    const currentVoiceId = ELEVENLABS_VOICES[window.currentTurtleIndex];
+    
+    console.log('🎤 INICIANDO ElevenLabs...');
+    console.log('📝 API Key:', ELEVENLABS_API_KEY ? 'Presente ✓' : 'FALTA ✗');
+    console.log(`🐢 Tortuguita ${window.currentTurtleIndex} - Voice ID:`, currentVoiceId);
+    console.log('📝 Texto length:', text.length);
+    
+    try {
+        const textToSpeak = text.substring(0, 5000);
+        
+        console.log('📡 Haciendo fetch a ElevenLabs...');
+        
+        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'audio/mpeg',
+                'Content-Type': 'application/json',
+                'xi-api-key': ELEVENLABS_API_KEY
+            },
+            body: JSON.stringify({
+                text: textToSpeak,
+                model_id: 'eleven_multilingual_v2',
+                voice_settings: {
+                    stability: 0.5,
+                    similarity_boost: 0.75
+                }
+            })
+        });
+        
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response OK:', response.ok);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error HTTP:', response.status, response.statusText);
+            console.error('❌ Error body:', errorText);
+            throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+        
+        console.log('✅ Respuesta OK de ElevenLabs');
+        
+        const audioBlob = await response.blob();
+        console.log('✅ Audio blob recibido, tamaño:', audioBlob.size, 'bytes');
+        
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        window.currentAudio = audio;
+        
+        audio.onloadeddata = () => {
+            console.log('✅ Audio cargado, duración:', audio.duration, 'segundos');
+        };
+        
+        audio.onplay = () => {
+            console.log(`▶️ REPRODUCIENDO ELEVENLABS - Voz ${window.currentTurtleIndex}`);
+            if (onStart) onStart();
+        };
+        
+        audio.onended = () => {
+            console.log('✅ Audio ElevenLabs completado');
+            URL.revokeObjectURL(audioUrl);
+            window.currentAudio = null;
+            if (onEnd) onEnd();
+        };
+        
+        audio.onerror = (e) => {
+            console.error('❌ Error reproduciendo audio:', e);
+            console.error('❌ Audio error details:', audio.error);
+            URL.revokeObjectURL(audioUrl);
+            window.currentAudio = null;
+            
+            alert('Error reproduciendo audio de ElevenLabs. Ver consola.');
+            if (onEnd) onEnd();
+        };
+        
+        console.log('▶️ Intentando reproducir audio...');
+        
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    console.log('✅ Reproducción iniciada exitosamente');
+                })
+                .catch(error => {
+                    console.error('❌ Error al iniciar reproducción:', error);
+                    alert('Error: No se pudo iniciar el audio. Ver consola.');
+                });
+        }
+        
+    } catch (error) {
+        console.error('❌❌❌ ERROR CRÍTICO CON ELEVENLABS ❌❌❌');
+        console.error('Error:', error);
+        console.error('Error stack:', error.stack);
+        
+        alert(`Error ElevenLabs: ${error.message}\n\nRevisa la consola (F12) para más detalles.`);
+        
+        console.log('⚠️ Usando voz genérica como FALLBACK TEMPORAL');
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'es-MX';
+        msg.rate = 1;
+        msg.pitch = 1;
+        if (onStart) msg.onstart = onStart;
+        if (onEnd) msg.onend = onEnd;
+        window.speechSynthesis.speak(msg);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -517,6 +640,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
     panels.forEach(p => p.style.display = 'none');
     showIndex(0);
+    
+    // IMPORTANTE: Pausar todos los videos al cargar para evitar reproducción automática
+    setTimeout(() => {
+        console.log('🎬 Pausando todos los videos del curso...');
+        document.querySelectorAll('video').forEach(video => {
+            video.pause();
+            video.currentTime = 0;
+        });
+        
+        // También pausar videos dentro de iframes (si es posible)
+        document.querySelectorAll('iframe').forEach(iframe => {
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                if (iframeDoc) {
+                    iframeDoc.querySelectorAll('video').forEach(video => {
+                        video.pause();
+                        video.currentTime = 0;
+                    });
+                }
+            } catch (e) {
+                // CORS - no se puede acceder
+            }
+        });
+        console.log('✅ Videos pausados');
+    }, 100);
     
     // Inicializar todas las sopas de letras al cargar
     setTimeout(() => {
@@ -569,6 +717,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showIndex(i){
         if(i < 0 || i >= links.length) return;
+
+        // PAUSAR todos los videos antes de cambiar de panel
+        document.querySelectorAll('video').forEach(video => {
+            if (!video.classList.contains('turtle-video')) { // No pausar la tortuguita
+                video.pause();
+            }
+        });
 
         panels.forEach(p => p.style.display = 'none');
         links.forEach(l => l.classList.remove('active'));
@@ -635,7 +790,13 @@ document.addEventListener('DOMContentLoaded', function () {
             btnAutoplay.textContent = '▶️ Autoplay';
             btnAutoplay.style.background = '';
             console.log('⏸ Autoplay DESACTIVADO');
+            
             window.speechSynthesis.cancel();
+            if (window.currentAudio) {
+                window.currentAudio.pause();
+                window.currentAudio = null;
+            }
+            
             hideTurtle();
         }
     };
@@ -720,28 +881,21 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (textToRead.length > 10) {
             console.log('📝 Leyendo descripción del video...');
-            const msg = new SpeechSynthesisUtterance(textToRead);
-            msg.lang = 'es-MX';
-            msg.rate = 1;
-            msg.pitch = 1;
             
-            msg.onstart = () => {
-                showTurtle();
-            };
-            
-            msg.onend = () => {
-                hideTurtle();
-                console.log('✅ Descripción completada');
-                
-                // Después de leer, intentar acceder al video dentro del iframe
-                if (autoplayActive) {
-                    setTimeout(() => {
-                        tryPlayIframeVideo(iframe);
-                    }, 1000);
+            speakWithElevenLabs(
+                textToRead,
+                () => showTurtle(),
+                () => {
+                    hideTurtle();
+                    console.log('✅ Descripción completada');
+                    
+                    if (autoplayActive) {
+                        setTimeout(() => {
+                            tryPlayIframeVideo(iframe);
+                        }, 1000);
+                    }
                 }
-            };
-            
-            window.speechSynthesis.speak(msg);
+            );
         } else {
             tryPlayIframeVideo(iframe);
         }
@@ -814,30 +968,22 @@ document.addEventListener('DOMContentLoaded', function () {
         if (textToRead.length > 10) {
             // Leer el texto primero
             console.log('📝 Leyendo descripción del video...');
-            const msg = new SpeechSynthesisUtterance(textToRead);
-            msg.lang = 'es-MX';
-            msg.rate = 1;
-            msg.pitch = 1;
             
-            msg.onstart = () => {
-                showTurtle();
-            };
-            
-            msg.onend = () => {
-                hideTurtle();
-                console.log('✅ Descripción completada, reproduciendo video...');
-                
-                // Después de leer, reproducir el video
-                if (autoplayActive) {
-                    setTimeout(() => {
-                        playVideoAndWait(video);
-                    }, 1000);
+            speakWithElevenLabs(
+                textToRead,
+                () => showTurtle(),
+                () => {
+                    hideTurtle();
+                    console.log('✅ Descripción completada, reproduciendo video...');
+                    
+                    if (autoplayActive) {
+                        setTimeout(() => {
+                            playVideoAndWait(video);
+                        }, 1000);
+                    }
                 }
-            };
-            
-            window.speechSynthesis.speak(msg);
+            );
         } else {
-            // Si no hay texto, reproducir video directamente
             playVideoAndWait(video);
         }
     }
@@ -845,22 +991,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function playVideoAndWait(video) {
         console.log('🎥 Reproduciendo video...');
         
-        // IMPORTANTE: Reiniciar el video al inicio
         video.currentTime = 0;
         console.log('⏪ Video reiniciado al inicio');
         
-        // Reproducir video
         video.play().catch(err => {
             console.log('Error al reproducir video:', err);
-            // Si no se puede reproducir, avanzar
             if (autoplayActive) {
                 advanceToNext();
             }
         });
         
-        // Esperar a que termine el video
         video.onended = () => {
             console.log('✅ Video completado');
+            
+            hideTurtle();
             
             if (autoplayActive) {
                 setTimeout(() => {
@@ -871,27 +1015,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function speakText(text) {
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'es-MX';
-        msg.rate = 1;
-        msg.pitch = 1;
-        
-        msg.onstart = () => {
-            showTurtle();
-        };
-        
-        msg.onend = () => {
-            hideTurtle();
-            console.log('✅ Lectura completada');
-            
-            if (autoplayActive) {
-                setTimeout(() => {
-                    advanceToNext();
-                }, 1000);
+        speakWithElevenLabs(
+            text,
+            () => showTurtle(),
+            () => {
+                hideTurtle();
+                console.log('✅ Lectura completada');
+                
+                if (autoplayActive) {
+                    setTimeout(() => {
+                        advanceToNext();
+                    }, 1000);
+                }
             }
-        };
-        
-        window.speechSynthesis.speak(msg);
+        );
     }
     
     async function readPdfAutoplay(url) {
@@ -908,29 +1045,22 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             fullText = fullText.replace(/\s+/g, ' ').trim();
-            const textToRead = fullText.substring(0, 12000);
+            const textToRead = fullText.substring(0, 5000);
             
-            const msg = new SpeechSynthesisUtterance(textToRead);
-            msg.lang = 'es-MX';
-            msg.rate = 1;
-            msg.pitch = 1;
-            
-            msg.onstart = () => {
-                showTurtle();
-            };
-            
-            msg.onend = () => {
-                hideTurtle();
-                console.log('✅ PDF completado');
-                
-                if (autoplayActive) {
-                    setTimeout(() => {
-                        advanceToNext();
-                    }, 1000);
+            speakWithElevenLabs(
+                textToRead,
+                () => showTurtle(),
+                () => {
+                    hideTurtle();
+                    console.log('✅ PDF completado');
+                    
+                    if (autoplayActive) {
+                        setTimeout(() => {
+                            advanceToNext();
+                        }, 1000);
+                    }
                 }
-            };
-            
-            window.speechSynthesis.speak(msg);
+            );
             
         } catch (error) {
             console.error('Error leyendo PDF:', error);
@@ -942,6 +1072,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!autoplayActive) return;
         
         console.log('➡️ Avanzando al siguiente...');
+        
+        window.currentTurtleIndex = (window.currentTurtleIndex + 1) % 2;
+        console.log(`🐢 Próxima tortuguita: ${window.currentTurtleIndex}`);
+        
         showIndex(index + 1);
         
         // Esperar un momento y leer el nuevo contenido
@@ -964,11 +1098,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {{-- ========== FUNCIONES DE LA TORTUGUITA ========== --}}
 <script>
-// Funciones para mostrar/ocultar la tortuguita
 function showTurtle() {
     let turtle = document.getElementById('turtle-mascot');
     
-    // Si no existe, crearla
+    const turtleVideo = window.currentTurtleIndex === 0 
+        ? "{{ asset('videos/tortuguita-hablando.webm') }}"
+        : "{{ asset('videos/tortuguita1-hablando.webm') }}";
+    
+    console.log(`🐢 Mostrando tortuguita ${window.currentTurtleIndex}`);
+    
     if (!turtle) {
         turtle = document.createElement('div');
         turtle.id = 'turtle-mascot';
@@ -976,21 +1114,21 @@ function showTurtle() {
         turtle.innerHTML = `
             <div class="turtle-wrapper">
                 <video autoplay loop muted playsinline class="turtle-video">
-                    <source src="{{ asset('videos/tortuguita-hablando.mp4') }}" type="video/mp4">
+                    <source src="${turtleVideo}" type="video/webm">
                 </video>
-                <button class="turtle-close" onclick="hideTurtle()">✕</button>
             </div>
         `;
         document.body.appendChild(turtle);
-        
-        // Hacer la tortuguita arrastrable
-        makeTurtleDraggable(turtle);
+    } else {
+        const video = turtle.querySelector('.turtle-video source');
+        if (video) {
+            video.src = turtleVideo;
+            turtle.querySelector('.turtle-video').load();
+        }
     }
     
-    // Mostrar con animación
     turtle.classList.add('active');
     
-    // Reproducir el video
     const video = turtle.querySelector('.turtle-video');
     if (video) {
         video.play();
@@ -1001,12 +1139,7 @@ function hideTurtle() {
     const turtle = document.getElementById('turtle-mascot');
     if (turtle) {
         turtle.classList.remove('active');
-        turtle.classList.remove('dragging');
         
-        // IMPORTANTE: Resetear la posición cuando se oculta
-        turtle.style.transform = 'translate3d(0px, 0px, 0)';
-        
-        // Pausar el video
         const video = turtle.querySelector('.turtle-video');
         if (video) {
             video.pause();
@@ -1014,81 +1147,10 @@ function hideTurtle() {
     }
 }
 
-// Función para hacer la tortuguita arrastrable
-function makeTurtleDraggable(element) {
-    let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
-    let xOffset = 0;
-    let yOffset = 0;
-
-    element.addEventListener('mousedown', dragStart);
-    element.addEventListener('touchstart', dragStart);
-    
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('touchmove', drag);
-    
-    document.addEventListener('mouseup', dragEnd);
-    document.addEventListener('touchend', dragEnd);
-
-    function dragStart(e) {
-        // No arrastrar si se hace clic en el botón de cerrar
-        if (e.target.classList.contains('turtle-close')) {
-            return;
-        }
-        
-        if (e.type === 'touchstart') {
-            initialX = e.touches[0].clientX - xOffset;
-            initialY = e.touches[0].clientY - yOffset;
-        } else {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-        }
-
-        isDragging = true;
-        element.classList.add('dragging');
-    }
-
-    function drag(e) {
-        if (isDragging) {
-            e.preventDefault();
-            
-            if (e.type === 'touchmove') {
-                currentX = e.touches[0].clientX - initialX;
-                currentY = e.touches[0].clientY - initialY;
-            } else {
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
-            }
-
-            xOffset = currentX;
-            yOffset = currentY;
-
-            setTranslate(currentX, currentY, element);
-        }
-    }
-
-    function dragEnd(e) {
-        initialX = currentX;
-        initialY = currentY;
-
-        isDragging = false;
-        element.classList.remove('dragging');
-    }
-
-    function setTranslate(xPos, yPos, el) {
-        el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
-    }
-}
-
-// También actualizar la función de lectura de PDFs
 async function readPdf(url) {
     const speakBtn = document.getElementById('btnSpeak');
     
     try {
-        // Cambiar estado del botón inmediatamente
         window.isReading = true;
         if (speakBtn) {
             speakBtn.textContent = '⏸ Detener';
@@ -1109,26 +1171,18 @@ async function readPdf(url) {
 
         fullText = fullText.replace(/\s+/g, ' ').trim();
 
-        const msg = new SpeechSynthesisUtterance(fullText.substring(0, 12000));
-        msg.lang = 'es-MX';
-        msg.rate = 1;
-        msg.pitch = 1;
-        
-        // Mostrar tortuga solo cuando REALMENTE empiece
-        msg.onstart = () => {
-            showTurtle();
-        };
-        
-        msg.onend = () => {
-            hideTurtle();
-            window.isReading = false;
-            if (speakBtn) {
-                speakBtn.textContent = '🔊 Leer';
-                speakBtn.style.background = '';
+        speakWithElevenLabs(
+            fullText.substring(0, 5000),
+            () => showTurtle(),
+            () => {
+                hideTurtle();
+                window.isReading = false;
+                if (speakBtn) {
+                    speakBtn.textContent = '🔊 Leer';
+                    speakBtn.style.background = '';
+                }
             }
-        };
-        
-        window.speechSynthesis.speak(msg);
+        );
 
     } catch (error) {
         console.error(error);
@@ -1150,9 +1204,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!btn) return;
 
     btn.addEventListener('click', async () => {
-        // Si está leyendo, detener
         if (window.isReading) {
             window.speechSynthesis.cancel();
+            if (window.currentAudio) {
+                window.currentAudio.pause();
+                window.currentAudio = null;
+            }
             hideTurtle();
             window.isReading = false;
             btn.textContent = '🔊 Leer';
@@ -1166,11 +1223,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Buscar todos los iframes en el panel actual
         const iframes = panel.querySelectorAll('iframe');
         console.log('🔍 Iframes encontrados:', iframes.length);
         
-        // Buscar si algún iframe contiene un PDF
         for (let iframe of iframes) {
             console.log('📄 Revisando iframe:', iframe.src);
             if (iframe.src && iframe.src.toLowerCase().includes('.pdf')) {
@@ -1180,7 +1235,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Si no hay PDF, leer el texto del panel
         let text = panel.innerText.replace(/\s+/g, ' ').trim();
 
         if (!text || text.length < 10) {
@@ -1195,33 +1249,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function speak(text) {
     const speakBtn = document.getElementById('btnSpeak');
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = 'es-MX';
-    msg.rate = 1;
-    msg.pitch = 1;
     
-    // Cambiar estado del botón inmediatamente
     window.isReading = true;
     if (speakBtn) {
         speakBtn.textContent = '⏸ Detener';
         speakBtn.style.background = '#ff5252';
     }
     
-    // Mostrar tortuga solo cuando REALMENTE empiece
-    msg.onstart = () => {
-        showTurtle();
-    };
-    
-    msg.onend = () => {
-        hideTurtle();
-        window.isReading = false;
-        if (speakBtn) {
-            speakBtn.textContent = '🔊 Leer';
-            speakBtn.style.background = '';
+    speakWithElevenLabs(
+        text,
+        () => showTurtle(),
+        () => {
+            hideTurtle();
+            window.isReading = false;
+            if (speakBtn) {
+                speakBtn.textContent = '🔊 Leer';
+                speakBtn.style.background = '';
+            }
         }
-    };
-    
-    window.speechSynthesis.speak(msg);
+    );
 }
 
 }
@@ -1239,7 +1285,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultDiv = this.parentElement.querySelector('.result-message');
             const submitBtn = this.querySelector('button[type="submit"]');
             
-            // Deshabilitar botón mientras se envía
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enviando...';
             
@@ -1267,7 +1312,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.querySelectorAll('input').forEach(input => input.disabled = true);
                     submitBtn.textContent = 'Respuesta Enviada';
                     
-                    // NO recargamos la página
                     if (data.created) {
                         updateProgressBar();
                     }
@@ -1303,18 +1347,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const questions = form.querySelectorAll('.question-item');
         
         function updateNavigation() {
-            // Actualizar contador
             counter.querySelector('.current').textContent = currentQuestion + 1;
             
-            // Mostrar/ocultar preguntas
             questions.forEach((q, idx) => {
                 q.style.display = idx === currentQuestion ? 'block' : 'none';
             });
             
-            // Habilitar/deshabilitar botones
             prevBtn.disabled = currentQuestion === 0;
             
-            // Si es la última pregunta, mostrar botón finalizar
             if (currentQuestion === totalQuestions - 1) {
                 nextBtn.style.display = 'none';
                 submitBtn.style.display = 'inline-block';
@@ -1332,7 +1372,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         nextBtn.onclick = () => {
-            // Verificar si la pregunta actual fue respondida
             const currentQ = questions[currentQuestion];
             const answered = currentQ.querySelector('input[type="radio"]:checked');
             
@@ -1360,7 +1399,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultDiv = this.parentElement.querySelector('.result-message');
             const submitBtn = this.querySelector('#submitExam-' + activityId);
             
-            // Verificar que todas las preguntas estén respondidas
             const answers = [];
             let allAnswered = true;
             
@@ -1376,7 +1414,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!allAnswered) return;
             
-            // Deshabilitar botón mientras se envía
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enviando...';
             
@@ -1406,17 +1443,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                     
-                    // Deshabilitar todas las opciones del examen
                     this.querySelectorAll('input').forEach(input => input.disabled = true);
                     submitBtn.textContent = 'Examen Enviado';
                     
-                    // Ocultar navegación
                     const nav = this.previousElementSibling;
                     if (nav && nav.classList.contains('exam-navigation')) {
                         nav.style.display = 'none';
                     }
                     
-                    // Mostrar todas las preguntas con sus respuestas
                     this.querySelectorAll('.question-item').forEach(q => {
                         q.style.display = 'block';
                     });
@@ -1439,12 +1473,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Función para actualizar la barra de progreso sin recargar
 function updateProgressBar() {
     console.log('✅ Progreso actualizado');
 }
 
-// Funciones del modal de validación
 function showQuestionModal() {
     document.getElementById('questionModal').style.display = 'flex';
 }
@@ -1487,12 +1519,10 @@ function initSopaDeLetras(gridContainer) {
         return;
     }
     
-    // Crear la grilla
     const grid = createEmptyGrid(size);
     placeWords(grid, words, size);
     fillEmptySpaces(grid, size);
     
-    // Renderizar
     renderGrid(gridContainer, grid, size, activityId);
     console.log('✅ Sopa de Letras renderizada exitosamente');
 }
@@ -1503,10 +1533,10 @@ function createEmptyGrid(size) {
 
 function placeWords(grid, words, size) {
     const directions = [
-        [0, 1],   // horizontal
-        [1, 0],   // vertical
-        [1, 1],   // diagonal derecha
-        [1, -1]   // diagonal izquierda
+        [0, 1],
+        [1, 0],
+        [1, 1],
+        [1, -1]
     ];
     
     words.forEach(word => {
@@ -1575,20 +1605,16 @@ function renderGrid(container, grid, size, activityId) {
     html += '</table>';
     container.innerHTML = html;
     
-    // NUEVA INTERACTIVIDAD - Selección por clics
     let firstClick = null;
     let selectedCells = [];
     
     container.querySelectorAll('.sopa-cell').forEach(cell => {
         cell.addEventListener('click', () => {
-            // Si ya está encontrada, ignorar
             if (cell.classList.contains('found')) {
                 return;
             }
             
-            // Primer clic - seleccionar inicio
             if (!firstClick) {
-                // Limpiar selección anterior
                 container.querySelectorAll('.sopa-cell').forEach(c => c.classList.remove('selected', 'selecting'));
                 
                 firstClick = cell;
@@ -1596,28 +1622,24 @@ function renderGrid(container, grid, size, activityId) {
                 selectedCells = [cell];
                 console.log('🎯 Primera letra seleccionada:', cell.textContent);
             } 
-            // Segundo clic - seleccionar final y verificar
             else {
                 const row1 = parseInt(firstClick.dataset.row);
                 const col1 = parseInt(firstClick.dataset.col);
                 const row2 = parseInt(cell.dataset.row);
                 const col2 = parseInt(cell.dataset.col);
                 
-                // Obtener todas las celdas entre los dos clics
                 const path = getCellsBetween(container, row1, col1, row2, col2);
                 
                 if (path.length > 0) {
                     selectedCells = path;
                     selectedCells.forEach(c => c.classList.add('selected'));
                     
-                    // Verificar la palabra
                     setTimeout(() => {
                         checkWord(selectedCells, activityId);
                         firstClick = null;
                         selectedCells = [];
                     }, 300);
                 } else {
-                    // No es una línea válida, resetear
                     firstClick.classList.remove('selecting');
                     firstClick = null;
                     selectedCells = [];
@@ -1625,10 +1647,8 @@ function renderGrid(container, grid, size, activityId) {
             }
         });
         
-        // Hover para preview
         cell.addEventListener('mouseenter', () => {
             if (firstClick && !cell.classList.contains('found')) {
-                // Limpiar preview anterior
                 container.querySelectorAll('.preview').forEach(c => c.classList.remove('preview'));
                 
                 const row1 = parseInt(firstClick.dataset.row);
@@ -1645,29 +1665,24 @@ function renderGrid(container, grid, size, activityId) {
     });
 }
 
-// Función para obtener todas las celdas entre dos puntos (línea recta)
 function getCellsBetween(container, row1, col1, row2, col2) {
     const cells = [];
     
-    // Calcular dirección
     const rowDiff = row2 - row1;
     const colDiff = col2 - col1;
     
-    // Verificar si es una línea válida (horizontal, vertical o diagonal)
     const isHorizontal = rowDiff === 0;
     const isVertical = colDiff === 0;
     const isDiagonal = Math.abs(rowDiff) === Math.abs(colDiff);
     
     if (!isHorizontal && !isVertical && !isDiagonal) {
-        return []; // No es una línea válida
+        return [];
     }
     
-    // Calcular pasos
     const steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
     const rowStep = steps === 0 ? 0 : rowDiff / steps;
     const colStep = steps === 0 ? 0 : colDiff / steps;
     
-    // Recopilar celdas
     for (let i = 0; i <= steps; i++) {
         const row = row1 + Math.round(rowStep * i);
         const col = col1 + Math.round(colStep * i);
@@ -1698,7 +1713,6 @@ function checkWord(cells, activityId) {
             found = true;
             console.log('✅ Palabra encontrada:', targetWord);
             
-            // Efecto de celebración
             cells.forEach((c, i) => {
                 setTimeout(() => {
                     c.style.transform = 'scale(1.2)';
@@ -1712,7 +1726,6 @@ function checkWord(cells, activityId) {
     
     if (!found) {
         console.log('❌ Palabra incorrecta:', word);
-        // Efecto de error
         cells.forEach(c => {
             c.classList.add('wrong');
             setTimeout(() => {
@@ -1721,7 +1734,6 @@ function checkWord(cells, activityId) {
         });
     }
     
-    // Limpiar selección
     cells.forEach(c => c.classList.remove('selected', 'selecting', 'preview'));
 }
 
@@ -1734,11 +1746,9 @@ function checkSopaCompletion(activityId) {
     const submitBtn = document.querySelector(`#grid-${activityId}`).parentElement.querySelector('.btn-submit');
     
     if (foundWords === totalWords) {
-        // Deshabilitar botón mientras se envía
         submitBtn.disabled = true;
         submitBtn.textContent = 'Enviando...';
         
-        // Enviar completado al servidor
         fetch(`/activities/${activityId}/submit`, {
             method: 'POST',
             headers: {
@@ -1764,7 +1774,6 @@ function checkSopaCompletion(activityId) {
                 `;
                 submitBtn.textContent = 'Completado ✓';
                 
-                // NO recargamos la página
                 if (data.created) {
                     updateProgressBar();
                 }
@@ -1804,14 +1813,11 @@ function initAhorcado(gameContainer) {
     let guessedLetters = [];
     let wordArray = word.split('');
     
-    // Mostrar pista
     document.getElementById(`hint-${activityId}`).textContent = hint || 'Sin pista';
     document.getElementById(`attempts-${activityId}`).textContent = maxAttempts;
     
-    // Crear display de palabra
     updateWordDisplay();
     
-    // Crear teclado
     const keyboard = document.getElementById(`keyboard-${activityId}`);
     const letters = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
     
@@ -1871,10 +1877,8 @@ function initAhorcado(gameContainer) {
                 </div>
             `;
             
-            // Deshabilitar teclado
             keyboard.querySelectorAll('.letter-btn').forEach(btn => btn.disabled = true);
             
-            // Enviar al servidor
             submitAhorcado(activityId, true);
         }
     }
@@ -1889,10 +1893,8 @@ function initAhorcado(gameContainer) {
                 </div>
             `;
             
-            // Deshabilitar teclado
             keyboard.querySelectorAll('.letter-btn').forEach(btn => btn.disabled = true);
             
-            // Mostrar palabra completa
             const display = document.getElementById(`word-display-${activityId}`);
             display.innerHTML = wordArray.map(letter => 
                 `<span class="letter revealed">${letter}</span>`
@@ -1964,7 +1966,6 @@ function initCrucigrama(gameContainer) {
     
     console.log('🔨 Creando grilla del crucigrama...');
     
-    // Crear grilla y colocar palabras
     const { grid, placements } = createCrucigramaGrid(size, words);
     
     console.log('📊 Grilla creada. Placements:', placements.length);
@@ -1979,14 +1980,12 @@ function initCrucigrama(gameContainer) {
 }
 
 function createCrucigramaGrid(size, words) {
-    // Inicializar grilla vacía
     const grid = Array(size).fill(null).map(() => 
         Array(size).fill(null).map(() => ({ letter: '', editable: false, wordIndex: -1 }))
     );
     
     const placements = [];
     
-    // Colocar palabras de forma más inteligente
     words.forEach((wordData, index) => {
         const word = wordData.word.toUpperCase();
         const direction = wordData.direction;
@@ -2003,7 +2002,6 @@ function createCrucigramaGrid(size, words) {
                 row = Math.floor(Math.random() * size);
                 col = Math.floor(Math.random() * (size - wordLength + 1));
                 
-                // Verificar si hay espacio
                 let canPlace = true;
                 for (let i = 0; i < wordLength; i++) {
                     if (grid[row][col + i].editable && grid[row][col + i].letter !== word[i]) {
@@ -2013,7 +2011,6 @@ function createCrucigramaGrid(size, words) {
                 }
                 
                 if (canPlace) {
-                    // Colocar la palabra
                     for (let i = 0; i < wordLength; i++) {
                         grid[row][col + i] = {
                             letter: word[i],
@@ -2026,11 +2023,10 @@ function createCrucigramaGrid(size, words) {
                     placed = true;
                     console.log(`✅ Palabra "${word}" colocada en (${row}, ${col}) horizontal`);
                 }
-            } else { // vertical
+            } else {
                 row = Math.floor(Math.random() * (size - wordLength + 1));
                 col = Math.floor(Math.random() * size);
                 
-                // Verificar si hay espacio
                 let canPlace = true;
                 for (let i = 0; i < wordLength; i++) {
                     if (grid[row + i][col].editable && grid[row + i][col].letter !== word[i]) {
@@ -2040,7 +2036,6 @@ function createCrucigramaGrid(size, words) {
                 }
                 
                 if (canPlace) {
-                    // Colocar la palabra
                     for (let i = 0; i < wordLength; i++) {
                         grid[row + i][col] = {
                             letter: word[i],
@@ -2081,7 +2076,6 @@ function renderCrucigramaGrid(activityId, grid, size, placements) {
         for (let j = 0; j < size; j++) {
             const cell = grid[i][j];
             if (cell.editable) {
-                // Verificar si es el inicio de una palabra para poner número
                 let wordNumber = '';
                 const placement = placements.find(p => p.row === i && p.col === j);
                 if (placement) {
@@ -2105,17 +2099,14 @@ function renderCrucigramaGrid(activityId, grid, size, placements) {
     gridContainer.innerHTML = html;
     console.log('✅ Grilla renderizada');
     
-    // Agregar eventos a los inputs
     gridContainer.querySelectorAll('.cell-input').forEach(input => {
         input.addEventListener('input', function() {
             this.value = this.value.toUpperCase();
             
-            // Auto-avanzar al siguiente input
             if (this.value.length === 1) {
                 const row = parseInt(this.dataset.row);
                 const col = parseInt(this.dataset.col);
                 
-                // Buscar el siguiente input
                 const nextInput = gridContainer.querySelector(
                     `.cell-input[data-row="${row}"][data-col="${col + 1}"]`
                 ) || gridContainer.querySelector(
@@ -2131,7 +2122,6 @@ function renderCrucigramaGrid(activityId, grid, size, placements) {
                 const row = parseInt(this.dataset.row);
                 const col = parseInt(this.dataset.col);
                 
-                // Buscar el input anterior
                 const prevInput = gridContainer.querySelector(
                     `.cell-input[data-row="${row}"][data-col="${col - 1}"]`
                 ) || gridContainer.querySelector(
@@ -2156,7 +2146,6 @@ function renderCrucigramaClues(activityId, words, placements) {
         return;
     }
     
-    // Limpiar listas
     horizontalList.innerHTML = '';
     verticalList.innerHTML = '';
     
@@ -2183,7 +2172,6 @@ function checkCrucigramaCompletion(activityId) {
     let correct = 0;
     let total = cells.length;
     
-    // Limpiar clases previas
     cells.forEach(cell => {
         cell.classList.remove('correct', 'incorrect');
     });
@@ -2214,7 +2202,6 @@ function checkCrucigramaCompletion(activityId) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Completado ✓';
         
-        // Enviar al servidor
         fetch(`/activities/${activityId}/submit`, {
             method: 'POST',
             headers: {
