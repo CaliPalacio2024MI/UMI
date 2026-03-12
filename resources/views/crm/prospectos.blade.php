@@ -50,7 +50,7 @@
             <div class="col-curp">CURP</div>
             <div class="col-nombre">Nombre</div>
             <div class="col-paterno">Apellido<br>Paterno</div>
-            <div class="col-materno">Apellido<br>Materno</div>
+            <div class="col-materno">Carrera</div>
             <div class="col-ctp">CTP</div>
             <div class="col-tipo">Estatus</div>
             <div class="col-fecha">Fecha</div>
@@ -72,14 +72,15 @@
         data-alumno-paterno="{{ $lead->alumno_paterno }}"
         data-alumno-materno="{{ $lead->alumno_materno }}"
         data-alumno-curp="{{ $lead->alumno_curp }}"
-        data-ctp="{{ $lead->ctp?->name ?? 'Sin asignar' }}"
+        data-ctp="{{ $lead->ctp ? $lead->ctp->nombre.' '.$lead->ctp->apellido_paterno : 'Sin asignar' }}"
+        data-carrera="{{ $lead->carrera->nombre ?? 'Sin carrera' }}"
         data-seguimientos='@json($lead->seguimientos)'
     >
         <div class="col-curp">{{ $lead->alumno_curp }}</div>
         <div class="col-nombre">{{ $lead->alumno_nombre }}</div>
         <div class="col-paterno">{{ $lead->alumno_paterno }}</div>
-        <div class="col-materno">{{ $lead->alumno_materno }}</div>
-        <div class="col-ctp">{{ $lead->ctp?->name ?? 'Sin asignar' }}</div>
+        <div class="col-materno">{{ $lead->carrera->nombre ?? 'Sin carrera'}}</div>
+        <div class="col-ctp">{{ $lead->ctp ? $lead->ctp->nombre.' '.$lead->ctp->apellido_paterno : 'Sin asignar' }}</div>
         <div class="col-tipo">
             @if($lead->ctp_id)
                 {{ $lead->seguimientos()->orderBy('id', 'desc')->first()?->estado ?? 'Prospecto frío' }}
@@ -147,8 +148,12 @@
         <div class="modal-campo"><label>Apellido Materno</label><p id="m-alumno-materno"></p></div>
     </div>
     <div class="modal-fila-centro">
-        <div class="modal-campo"><label>CURP</label><p id="m-alumno-curp"></p></div>
-    </div>
+    <div class="modal-campo"><label>CURP</label><p id="m-alumno-curp"></p></div>
+</div>
+<div class="carrera-panel mt-2">
+    <label>Plan de estudios / Carrera:</label>
+    <p id="m-carrera"></p>
+</div>
 </div>
 
 </div>
@@ -323,7 +328,7 @@ const drawField = (label, value, x, fy) => {
 
             // ── CARD ASPIRANTE ───────────────────────────
             y += 58;
-            const cardAspH = 38;
+            const cardAspH = 55;
             doc.setFillColor(...grisF);
             doc.roundedRect(M, y, W - M * 2, cardAspH, 2, 2, 'F');
             doc.setDrawColor(220, 225, 235);
@@ -349,8 +354,21 @@ const drawField = (label, value, x, fy) => {
             doc.line(M + 4, a1y + 8, W - M - 4, a1y + 8);
 
             // CURP centrado
-            const a2y = a1y + 14;
-            drawField('CURP', d.alumnoCurp, W / 2 - 15, a2y);
+const a2y = a1y + 14;
+drawField('CURP', d.alumnoCurp, W / 2 - 15, a2y);
+
+// Carrera
+const a3y = a2y + 14;
+doc.setFillColor(230, 241, 251);
+doc.roundedRect(M, a3y - 4, W - M * 2, 14, 2, 2, 'F');
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(7.5);
+doc.setTextColor(100, 100, 100);
+doc.text('Plan de estudios / Carrera:', W / 2, a3y + 1, { align: 'center' });
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(9);
+doc.setTextColor(24, 95, 165);
+doc.text(d.carrera || '---', W / 2, a3y + 7, { align: 'center' });
 
         // ── FOOTER ───────────────────────────────────
         doc.setFillColor(...azul);
@@ -422,6 +440,7 @@ document.querySelectorAll('.icon-calendar').forEach(icon => {
             document.getElementById('m-alumno-paterno').textContent = d.alumnoPaterno || '---';
             document.getElementById('m-alumno-materno').textContent = d.alumnoMaterno || '---';
             document.getElementById('m-alumno-curp').textContent    = d.alumnoCurp    || '---';
+            document.getElementById('m-carrera').textContent = d.carrera || '---';
 
             // Seguimiento
             const seguimientos = JSON.parse(d.seguimientos || '[]');
@@ -471,7 +490,7 @@ btnExportar.addEventListener('click', () => {
         "CURP",
         "Nombre",
         "Apellido Paterno",
-        "Apellido Materno",
+        "Carrera",
         "CTP",
         "Estatus",
         "Fecha"

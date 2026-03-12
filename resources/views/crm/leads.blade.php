@@ -37,8 +37,7 @@
                 <div class="encabezado-fila">
                     <span>Nombre</span>
                     <span>Apellido Paterno</span>
-                    <span>Apellido Materno</span>
-                    <span>Teléfono 1</span>
+                    <span>Carrera</span>
                     <span>Estado</span>
                     <span>Acciones</span>
                 </div>
@@ -66,11 +65,11 @@
                             data-tutor-email="{{ $lead->tutor_email }}"
                             data-alumno-curp="{{ $lead->alumno_curp }}"
                             data-comentario-reasignacion="{{ $lead->comentario_reasignacion }}"
+                            data-carrera="{{ $lead->carrera->nombre ?? 'Sin carrera' }}"
                         >
                             <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
-                            <div>{{ $lead->alumno_materno ?? 'N/A' }}</div>
-                            <div>{{ $lead->telefono1 ?? 'N/A' }}</div>
+                            <div>{{ $lead->carrera->nombre ?? 'Sin carrera' }}</div>
                             <div>
                             @if($lead->ctp_id)
                                 {{ $lead->seguimientos->sortByDesc('id')->first()?->estado ?? 'Prospecto frío' }}
@@ -174,9 +173,9 @@
             <select id="ctp-select" class="form-control mt-2">
                 <option value="">Selecciona un CTP</option>
                 @foreach($ctps as $ctp)
-                    <option value="{{ $ctp->id }}" data-nombre="{{ $ctp->name }}">
-                        {{ $ctp->name }}
-                    </option>
+                <option value="{{ $ctp->id }}" data-nombre="{{ $ctp->nombre }} {{ $ctp->apellido_paterno }}">
+    {{ $ctp->nombre }} {{ $ctp->apellido_paterno }}
+</option>
                 @endforeach
             </select>
 
@@ -386,10 +385,14 @@ function renderizarDatos(fila) {
             <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno || '---'}</p></div>
         </div>
         <div class="datos-curp-centrado mt-3">
-            <label>CURP:</label>
-            <p style="font-weight:400;letter-spacing:0;">${d.alumnoCurp || '---'}</p>
-        </div>
-    </div>`;
+    <label>CURP:</label>
+    <p style="font-weight:400;letter-spacing:0;">${d.alumnoCurp || '---'}</p>
+</div>
+<div class="carrera-panel mt-2">
+    <label>Plan de estudios / Carrera:</label>
+    <p>${d.carrera || '---'}</p>
+</div>
+</div>`;
 }
 
 // ← IMPORTANTE: estas funciones deben ser globales para que el modal pueda usarlas
@@ -536,14 +539,32 @@ document.getElementById('cerrar-ctp').addEventListener('click', () => {
 document.getElementById('guardar-ctp').addEventListener('click', () => {
     const ctpId      = document.getElementById('ctp-select').value;
     const comentario = document.getElementById('ctp-comentario').value.trim();
-    if (!ctpId || !LEAD_SELECCIONADO) { alert('Selecciona un CTP'); return; }
-    if (ES_REASIGNACION && !comentario) { alert('Por favor escribe el motivo del cambio'); return; }
+    
+    console.log('CTP ID:', ctpId);
+    console.log('LEAD:', LEAD_SELECCIONADO);
+    
+    if (!ctpId || !LEAD_SELECCIONADO) { 
+        console.error('Falta CTP o Lead');
+        return; 
+    }
+    if (ES_REASIGNACION && !comentario) { 
+        console.error('Falta comentario');
+        return; 
+    }
     fetch(`/crm/leads/${LEAD_SELECCIONADO}/asignar-ctp`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': window.CSRF_TOKEN, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ctp_id: ctpId, comentario: ES_REASIGNACION ? comentario : null })
     })
-    .then(() => location.reload());
+    .then(res => {
+        console.log('Status:', res.status);
+        return res.json();
+    })
+    .then(data => {
+        console.log('Respuesta:', data);
+        location.reload();
+    })
+    .catch(err => console.error('Error fetch:', err));
 });
 
 </script>

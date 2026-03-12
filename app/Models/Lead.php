@@ -35,6 +35,9 @@ public function ctp()
 {
     return $this->belongsTo(User::class, 'ctp_id');
 }
-
+public function carrera()
+{
+    return $this->belongsTo(\App\Models\Carrera::class);
+}
 
 }
