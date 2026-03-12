@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use Illuminate\Http\Request;
+use App\Models\Carrera;
 
 class LeadPublicController extends Controller
 {
     // Muestra el formulario público
     public function create()
     {
-        return view('public.inscripcion');
+        $carreras = Carrera::orderBy('nombre')->get();
+
+        return view('public.inscripcion', compact('carreras'));
     }
 
     // Guarda el lead que viene del formulario
@@ -46,6 +49,7 @@ public function store(Request $request)
         'alumno_nombre' => $request->alumno_nombre,
         'alumno_paterno' => $request->alumno_paterno,
         'alumno_materno' => $request->alumno_materno,
+        'carrera_id' => $request->carrera_id,
 
         'origen' => 'formulario_publico',
         'clasificacion' => 'Prospecto'

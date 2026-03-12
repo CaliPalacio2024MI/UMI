@@ -268,134 +268,65 @@ class CRMController extends Controller
         ));
     }
 
+    /* ===========================
+    DATA AJAX (CORREGIDO)
+    =========================== */
+
     public function data(Request $request)
     {
+
         $estatus = $request->estatus;
         $fechaInicio = $request->fecha_inicio;
         $fechaFin = $request->fecha_fin;
 
-        $leads = Lead::query();
+        $query = Lead::with('seguimientos');
 
-        if($estatus){
-            $leads->whereHas('seguimientos', function($q) use ($estatus){
-                $q->where('estatus', $estatus);
+        if ($estatus) {
+            $query->whereHas('seguimientos', function ($q) use ($estatus) {
+                $q->where('estado', $estatus);
             });
         }
 
-        if($fechaInicio){
-            $leads->whereDate('created_at','>=',$fechaInicio);
-        }
+        if ($fechaInicio || $fechaFin) {
 
-        if($fechaFin){
-            $leads->whereDate('created_at','<=',$fechaFin);
-        }
+            $query->whereHas('seguimientos', function ($q) use ($fechaInicio, $fechaFin) {
 
-        $totalLeads = $leads->count();
+                if ($fechaInicio) {
+                    $q->whereDate('fecha', '>=', $fechaInicio);
+                }
 
-        return response()->json([
-            'totalLeads'=>$totalLeads,
-            'totalFrio'=>$totalFrio,
-            'totalCaliente'=>$totalCaliente,
-            'totalAspirante'=>$totalAspirante,
-            'totalAlumno'=>$totalAlumno
-        ]);
-    }
+                if ($fechaFin) {
+                    $q->whereDate('fecha', '<=', $fechaFin);
+                }
 
-    /* ===========================
-    ELIMINAR LEAD
-    =========================== */
-
-    public function destroy(Lead $lead)
-    {
-        $lead->delete();
-
-        return response()->json([
-            'success' => true
-        ]);
-    }
-
-    /* ===========================
-    GUARDAR SEGUIMIENTO
-    =========================== */
-
-    public function guardarSeguimiento(Request $request, Lead $lead)
-    {
-        $lead->seguimientos()->create([
-            'estado' => $request->estado,
-            'fecha' => now()->toDateString(),
-            'hora' => now()->toTimeString(),
-            'comentario' => $request->comentario ?? null,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'seguimientos' => $lead->seguimientos()->orderBy('id')->get()
-        ]);
-    }
-
-    /* ===========================
-    PROSPECTOS
-    =========================== */
-
-    public function prospectos(Request $request)
-    {
-        $query = Lead::query();
-
-        $rol = session('active_role_name');
-        $userId = auth()->id();
-
-        if ($rol === 'ctp') {
-            $query->where('ctp_id', $userId);
-        }
-
-        if ($request->filled('search')) {
-
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-
-                $q->where('rfc', 'like', "%$search%")
-                    ->orWhere('alumno_nombre', 'like', "%$search%")
-                    ->orWhere('alumno_paterno', 'like', "%$search%")
-                    ->orWhere('alumno_materno', 'like', "%$search%")
-                    ->orWhere('clasificacion', 'like', "%$search%");
             });
         }
 
-        $leads = $query->orderBy('created_at', 'desc')->get();
+        $leads = $query->get();
 
-        return view('crm.prospectos', compact('leads'));
-    }
+        $estados = $leads->map(function ($lead) {
 
-    /* ===========================
-    ASIGNAR CTP
-    =========================== */
+            $ultimoSeguimiento = $lead->seguimientos->sortByDesc('fecha')->first();
 
-    public function asignarCTP(Request $request, Lead $lead)
-    {
-        $lead->ctp_id = $request->ctp_id;
+            return $ultimoSeguimiento
+                ? $ultimoSeguimiento->estado
+                : 'Prospecto frío';
+        });
 
-        if ($request->filled('comentario')) {
-            $lead->comentario_reasignacion = $request->comentario;
-        }
+        $conteos = $estados->countBy();
 
-        $lead->save();
-
-        $yaExiste = $lead->seguimientos()
-            ->where('estado', 'Prospecto frío')
-            ->exists();
-
-        if (!$yaExiste) {
-
-            $lead->seguimientos()->create([
-                'estado' => 'Prospecto frío',
-                'fecha' => now()->toDateString(),
-                'hora' => now()->toTimeString(),
-            ]);
-        }
+        $totalFrio = $conteos['Prospecto frío'] ?? 0;
+        $totalCaliente = $conteos['Prospecto caliente'] ?? 0;
+        $totalAspirante = $conteos['Aspirante'] ?? 0;
+        $totalAlumno = $conteos['Alumno'] ?? 0;
 
         return response()->json([
-            'success' => true
+            'totalLeads' => $leads->count(),
+            'totalFrio' => $totalFrio,
+            'totalCaliente' => $totalCaliente,
+            'totalAspirante' => $totalAspirante,
+            'totalAlumno' => $totalAlumno
         ]);
     }
+
 }

@@ -259,7 +259,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
                 Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
 
-                // 📊 ESTADÍSTICAS → TODOS
+                // ESTADÍSTICAS → TODOS
                 Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
 
 

@@ -21,6 +21,8 @@ class Lead extends Model
         'alumno_nombre',
         'alumno_paterno',
         'alumno_materno',
+        
+        'carrera_id',
 
         'origen',
         'clasificacion'

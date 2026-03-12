@@ -122,6 +122,22 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Plan de Estudio/Carrera:</label>
+                        <div class="form-input-container">
+                            <select name="carrera_id" class="form-control" required>
+
+                                <option value="">Seleccione una carrera</option>
+
+                                @foreach($carreras as $carrera)
+                                    <option value="{{ $carrera->id }}">
+                                        {{ $carrera->nombre }}
+                                    </option>
+                                @endforeach
+
+                            </select>
+                        </div>
+                    </div>
 
                 </div>
 
