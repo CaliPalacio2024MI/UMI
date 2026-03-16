@@ -313,7 +313,18 @@ const ESTADOS = [
 ];
 
 function puedeEditarSeguimiento() {
-    return ['ctp', 'master'].includes(window.ROLE_ACTIVO);
+    const filaActiva = document.querySelector('.fila-lead.activo');
+    if (!filaActiva) return false;
+
+    // Solo el CTP asignado a ese lead puede marcar seguimiento
+    if (window.ROLE_ACTIVO === 'ctp') {
+        const ctpAsignado = filaActiva.dataset.ctp;
+        const userId = "{{ auth()->id() }}";
+        return ctpAsignado == userId;
+    }
+
+    // Master y coordinador NO pueden marcar seguimiento
+    return false;
 }
 
 function renderizarSeguimiento(fila) {

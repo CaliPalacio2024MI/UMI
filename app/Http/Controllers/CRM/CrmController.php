@@ -284,7 +284,6 @@ class CRMController extends Controller
     {
         $query = Lead::query();
 
-    return response()->json(['success' => true]);
 
         $rol = session('active_role_name');
         $userId = auth()->id();
@@ -335,8 +334,21 @@ class CRMController extends Controller
         return response()->json(['success' => true]);
     }
     
-public function comisiones()
-{
-    return view('crm.comisiones');
-}
+    public function comisiones()
+    {
+        $ctps = User::whereHas('roles', function ($q) {
+            $q->where('name', 'ctp');
+        })->get();
+    
+        $ctps->each(function ($ctp) {
+    
+            // AHORA: solo cuenta los que llegaron a "Alumno"
+            $ctp->num_conversiones = Lead::where('ctp_id', $ctp->id)
+                ->whereHas('seguimientos', function ($q) {
+                    $q->where('estado', 'Alumno');
+                })->count();
+        });
+    
+        return view('crm.comisiones', compact('ctps'));
+    }
 }
