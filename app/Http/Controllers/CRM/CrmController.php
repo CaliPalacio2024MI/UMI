@@ -267,6 +267,10 @@ class CRMController extends Controller
 
     public function guardarSeguimiento(Request $request, Lead $lead)
     {
+        // El CRM no puede registrar "Alumno", eso le toca a Control Escolar
+    if ($request->estado === 'Alumno') {
+        return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+    }
         $lead->seguimientos()->create([
             'estado'     => $request->estado,
             'fecha'      => now()->toDateString(),

@@ -355,7 +355,7 @@ function renderizarSeguimiento(fila) {
                      data-hora="${registro.hora ?? ''}"
                      data-comentario="${encodeURIComponent(registro.comentario ?? '')}">` : ''}
             `;
-        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
+        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío' && estado !== 'Alumno') {
             accion = `<i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>`;
         } else {
             accion = `<i class="bi bi-circle icon-disabled"></i>`;
