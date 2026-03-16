@@ -71,7 +71,65 @@
       @yield('content')
     </main>
   </div>
+<<<<<<< HEAD
   @stack('scripts')
+=======
+
+  {{-- Modal Ver docente (en layout para que exista siempre con SPA) --}}
+  <div id="teacherViewModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherViewModalTitle" class="modal-view-career__title">Información del docente</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherViewModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Editar docente (en layout para que exista siempre con SPA) --}}
+  <div id="teacherEditModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherEditModalTitle" class="modal-view-career__title">Edición de Docente</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherEditModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Horario Docente/Alumno (lista de Docentes enlace directo; lista de Alumnos abre este modal) --}}
+  <div id="teacherHorariosModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherHorariosModalTitle" class="modal-view-career__title">Horario</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherHorariosModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Registro de docente (en layout para que funcione con SPA sin refrescar) --}}
+  @if(Auth::user()->hasAnyRole(['master']))
+  <div id="modalRegistroDocente" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10001;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide" role="dialog" aria-labelledby="modalRegistroDocenteTitle" aria-modal="true">
+      <div class="modal-view-career__header">
+        <h5 id="modalRegistroDocenteTitle" class="modal-view-career__title">Registro de Docente</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body" style="max-height: 70vh; overflow-y: auto;">
+        <div id="modalRegistroDocenteContent" style="min-height: 80px;"></div>
+      </div>
+    </div>
+  </div>
+  @endif
+
+>>>>>>> origin/Gulmaro
 {{-- ======================= SCRIPT MAESTRO ======================= --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
