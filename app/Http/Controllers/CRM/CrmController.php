@@ -189,6 +189,9 @@ public function asignarCTP(Request $request, Lead $lead)
 
     return response()->json(['success' => true]);
 }
-    
+public function comisiones()
+{
+    return view('crm.comisiones');
+}
 
 }

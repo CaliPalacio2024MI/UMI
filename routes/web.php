@@ -268,6 +268,12 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
                     Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
 
+                        // Comisiones: solo Master (ya está dentro del middleware master,coordinador_ctp,
+                        // pero la vista solo la usa master
+                        Route::middleware(['role:master'])->group(function () {
+                            Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
+                        });
+
                     // ASIGNAR CTP
                     Route::post('/leads/{lead}/asignar-ctp', [CRMController::class, 'asignarCTP'])
                         ->name('leads.asignar_ctp');

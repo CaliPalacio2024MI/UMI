@@ -292,6 +292,13 @@
                 </li>
             @endif
 
+            {{-- Comisiones: solo Master --}}
+            @if($isMaster)
+                <li class="{{ request()->routeIs('crm.comisiones') ? 'active-submenu' : '' }}">
+                    <a href="{{ route('crm.comisiones') }}">Comisiones</a>
+                </li>
+            @endif
+
             {{-- Estadísticas: Master, Coordinador y CTP --}}
     @if($isMaster || $isCoordinatorCTP || $isCTP)
         <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
