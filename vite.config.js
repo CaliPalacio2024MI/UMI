@@ -5,9 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-<<<<<<< HEAD
+
             input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/facturacion.js','resources/css/CRM/leads.css','resources/css/CRM/prospectos.css','resources/css/CRM/comisiones.css'],
-=======
+
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
@@ -15,7 +15,6 @@ export default defineConfig({
                 'resources/css/Control Admin/horario-edit.css',
                 'resources/js/horario-edit.js',
             ],
->>>>>>> origin/Gulmaro
             refresh: true,
         }),
         tailwindcss(),
