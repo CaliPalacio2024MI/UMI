@@ -69,13 +69,13 @@ body:has(.crm-estadisticas) .main-content {
     min-width: 160px;
 }
 
-.input-group-custom i,
-.input-group-custom img {
-    width: 18px;
-    height: 18px;
-    margin-right: 12px;
-    flex-shrink: 0;
+.filtro-carrera{
+    max-width:280px;
+    padding-right:10px;
+    
 }
+
+
 
 .input-custom {
     height: 100%;
@@ -84,16 +84,14 @@ body:has(.crm-estadisticas) .main-content {
     font-size: 15px;
     color: #666;
     outline: none;
-    display: flex;
     align-items: center;
+    appearance: auto;
 }
 
-/* Buscador */
-.search-wrapper {
-    height: 48px;
-    min-width: 200px;
-    max-width: 240px;
+select.input-custom{
+    cursor: pointer;
 }
+
 
 /* Boton Exportar */
 .btn-exportar {

@@ -12,9 +12,19 @@
         {{-- Header --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <div class="header-top">
-            <h1>ESTADÍSTICOS</h1>
-        </div>
 
+            <h1>ESTADÍSTICOS</h1>
+
+        <button class="btn-exportar"
+        onclick="window.location='{{ route('crm.estadisticas.exportar', request()->query()) }}'">
+            
+            <img src="{{ asset('images/icons/export.svg') }}" alt="Exportar" width="16">
+            <i class="fa fa-file-excel-o"></i> 
+            Exportar
+
+        </button>
+
+        </div>
         {{-- Filters Bar --}}
         <form method="GET" action="{{ route('crm.estadisticas') }}">
             <div class="toolbar mb-8">
@@ -33,13 +43,25 @@
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom">
                     </div>
+                    
+                    <!-- Filtro CTP -->
+                   @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
 
-                    <!-- Buscador -->
-                    @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
+                    <div class="input-group-custom select-wrapper">
 
-                    <div class="input-group-custom search-wrapper">
-                        <img src="{{ asset('images/icons/search.svg') }}" width="16">
-                        <input type="text" name="buscar" value="{{ request('buscar') }}" class="input-custom" placeholder="Buscar por CTP">
+                        <select name="ctp_id" class="input-custom" onchange="this.form.submit()">
+
+                            <option value="">Todos los CTP</option>
+
+                            @foreach($ctps as $ctp)
+                                <option value="{{ $ctp->id }}"
+                                    {{ request('ctp_id') == $ctp->id ? 'selected' : '' }}>
+                                    {{ $ctp->nombre }}
+                                </option>
+                            @endforeach
+
+                        </select>
+
                     </div>
 
                     @endif
@@ -73,12 +95,28 @@
                         </select>
                     </div>
 
-                </div>
+                    <!-- Filtro Carrera -->
+                    <div class="input-group-custom select-wrapper filtro-carrera">
 
-                <button type="submit" class="btn-exportar">
-                    <i class="fa fa-file-excel-o"></i>
-                    Exportar
-                </button>
+                        <select name="carrera_id" class="input-custom" onchange="this.form.submit()">
+
+                            <option value="">Todas las carreras</option>
+
+                            @foreach($carreras as $carrera)
+                                <option value="{{ $carrera->id }}"
+                                    {{ request('carrera_id') == $carrera->id ? 'selected' : '' }}>
+
+                                    {{ \Illuminate\Support\Str::limit($carrera->nombre, 30) }}
+
+
+                                </option>
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+                </div>
 
             </div>
         </form>

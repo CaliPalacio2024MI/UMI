@@ -279,6 +279,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
                 Route::get('/crm/estadisticas/data', [EstadisticasController::class, 'data'])->name('crm.estadisticas.data');
 
+                Route::get('/estadisticas/exportar', [CRMController::class, 'exportar'])->name('estadisticas.exportar');
+
             });
 
 }); // Fin Middleware Auth + Ajax + SPA
