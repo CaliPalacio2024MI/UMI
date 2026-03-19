@@ -30,6 +30,15 @@
     font-weight: bold;
 }
 
+.content-title h3 {
+    text-transform: uppercase;
+    margin: 0.5em 0;
+}
+
+.content-title--horarios h3 {
+    margin-left: 1rem;
+}
+
 /* 1. Estilos del Layout (Flexbox) */
 .list-header-toolbar {
     /* Define un contenedor flexible */
@@ -39,7 +48,7 @@
     /* Centra verticalmente los elementos */
     align-items: center;
     padding: 15px 0;
-    border-bottom: 1px solid #eee; /* Línea separadora sutil */
+    border: 1px solid #fff;
 }
 
 .toolbar__section {
@@ -52,6 +61,62 @@
 /* Espacio entre el campo de búsqueda y los botones de acción */
 .toolbar__search {
     margin-right: 15px;
+    margin-top: -6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 340px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.toolbar__search:has(.toolbar__search-icon) {
+    padding-left: 12px;
+}
+
+.toolbar__search-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    filter: brightness(0) saturate(100%) invert(15%) sepia(55%) saturate(3000%) hue-rotate(195deg) brightness(0.85) contrast(95%);
+}
+
+.toolbar__search-select {
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 10px;
+    margin: 0 4px 0 0;
+    border: none;
+    border-left: 1px solid #ccc;
+    border-radius: 0 20px 20px 0;
+    background: #f8f9fa;
+    font-size: 0.9rem;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+}
+.toolbar__search-select:hover,
+.toolbar__search-select:focus {
+    background: #eee;
+}
+
+.toolbar__search-select--materias {
+    background-color: #223f70;
+    color: #fff;
+    border-left-color: rgba(255, 255, 255, 0.25);
+    min-width: 168px;
+    border-radius: 0 10px 10px 0;
+}
+.toolbar__search-select--materias:hover,
+.toolbar__search-select--materias:focus {
+    background-color: #1a3360;
+    color: #fff;
+}
+.toolbar__search-select--materias option {
+    background: #fff;
+    color: #333;
 }
 
 /* Espacio entre botones */
@@ -89,11 +154,83 @@
     background-color: #315a9e; /* Un tono ligeramente más claro */
 }
 
-/* Estilo del campo de búsqueda */
+/* Botón Agregar Docente: cuadrado ovalado (bordes redondeados), azul marino, letras blancas */
+.toolbar__actions .btn--primary,
+.toolbar__actions button.btn--primary,
+.toolbar__actions a.btn.btn--primary {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-right: 2px;
+    background-color: #223f70;
+    color: #fff;
+    border: 2px solid #223f70;
+    border-radius: 24px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 1rem;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.toolbar__actions .btn--primary:hover,
+.toolbar__actions button.btn--primary:hover,
+.toolbar__actions a.btn.btn--primary:hover {
+    background-color: #1a3360;
+    color: #fff;
+    border-color: #1a3360;
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.4);
+    transform: none;
+}
+
+/* Botón Exportar: azul, letras blancas, aspecto de botón */
+.toolbar__actions a.btn.btn--secondary,
+.toolbar__actions button.btn.btn--secondary {
+    background-color: #223f70;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.toolbar__actions button.btn.btn--secondary {
+    text-decoration: none;
+}
+.toolbar__actions a.btn.btn--secondary:hover,
+.toolbar__actions button.btn.btn--secondary:hover {
+    background-color: #1a3360;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: none;
+}
+/* Icono del botón Exportar a la izquierda, blanco total */
+.toolbar__export-form {
+    display: inline-block;
+}
+/* Icono export dentro del botón: usa currentColor, blanco por defecto y dorado anaranjado al hover */
+.toolbar__actions button.btn.btn--secondary .btn-exportar__icon {
+    margin-right: 6px;
+    vertical-align: middle;
+    transition: fill 0.2s ease, color 0.2s ease;
+}
+
+/* Estilo del campo de búsqueda (icono a la izquierda en .toolbar__search) */
 .toolbar__search input[type="text"] {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 8px 12px 8px 0;
+    border: none;
+    border-radius: 0 12px 12px 0;
+    background: transparent;
+    flex: 1;
+    min-width: 0;
+}
+.toolbar__search input[type="text"]:focus {
+    outline: none;
 }
 
 /* 2. Estilos de Botón (Apariencia y Efecto) */
@@ -132,11 +269,15 @@
     padding: 10px 20px;
     font-size: 16px;
     font-weight: 500;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .option-carrer button:hover {
-    transform: translateY(-1px);
-    color: var(--accent);
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
 }
 
 .empty-carrers{
@@ -155,19 +296,63 @@
 }
 
 .carrers-container{
-    display: flex;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 32px;
+    align-items: stretch;
+    width: 100%;
+    min-height: 560px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .carrer-card {
-    width: 300px;
+    width: 100%;
+    min-width: 320px;
+    max-width: 409px;
+    height: 196px;
+    min-height: 196px;
     padding: 15px;
+    margin: 0 auto;
     border-radius: 8px;
     background-color: #ecf0f1;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.carrer-card:hover {
+    background-color: #dfe4e8;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+/* Carreras: responsive */
+@media (max-width: 900px) {
+    .carrers-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        min-height: auto;
+    }
+    .carrer-card {
+        max-width: 100%;
+    }
+}
+@media (max-width: 480px) {
+    .carrers-container {
+        gap: 10px;
+        padding: 0 4px;
+    }
+    .carrer-card {
+        min-height: 180px;
+        padding: 12px;
+    }
+    .carrer-name {
+        font-size: 16px;
+    }
 }
 
 .carrer-name{
@@ -175,7 +360,12 @@
     font-weight: 600;
     color: #333;
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 0;
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
 }
 .carrer-name a{
     text-decoration: none;
@@ -187,12 +377,74 @@
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+    flex: 1;
+    margin-top: 0;
+    padding-top: 8px;
+}
+
+/* Botón Ver: borde blanco, fondo blanco, icono siempre dorado (#BC8A55) */
+.carrer-card .btn-view {
+    border: 1px solid white;
+    background-color: white;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.carrer-card .btn-view svg path {
+    fill: #BC8A55;
+}
+.carrer-card .btn-view:hover {
+    background-color: white;
+    border-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.carrer-card .btn-view:hover svg path {
+    fill: #BC8A55;
+}
+
+/* Botón Editar: blanco por defecto, al hover sombreado */
+.carrer-card .btn-edit {
+    border: 1px solid white;
+    background-color: white;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.carrer-card .btn-edit:hover {
+    background-color: white;
+    border-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón Eliminar: blanco por defecto, al hover sombreado */
+.carrer-card .btn-delete {
+    border: 1px solid white;
+    background-color: white;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.carrer-card .btn-delete:hover {
+    background-color: white;
+    border-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* En tarjetas de Carreras: no aplicar filtros/escala al hover del icono (reglas globales de otras vistas) */
+.carrer-card .btn-delete img,
+.carrer-card .btn-delete svg,
+.carrer-card .btn-delete:hover img,
+.carrer-card .btn-delete:hover svg {
+    filter: none !important;
+    transform: none !important;
 }
 
 .carrer-info{
     font-size: 14px;
     color: #333;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.carrer-info span:first-child{
+    white-space: nowrap;
 }
 
 .carrer-btn-section{
@@ -201,9 +453,12 @@
     gap: 8px;
 }
 
-.line-separator{
+/* Línea roja siempre en el centro vertical de todas las tarjetas */
+.carrer-card .line-separator{
     border-top: 3px solid #db5865;
-    margin: 10px 0;
+    margin: 0;
+    flex-shrink: 0;
+    height: 0;
 }
 
 /* --- Contenedor Principal de la Tabla --- */
@@ -222,12 +477,20 @@
 
 /* 0. Contenedor de la Vista (Table-view) */
 .Table-view {
-    /* Fondo Gris */
-    background-color: #f8f9fa; 
-    padding: 1rem;
-    /* Borde redondeado */
-    border-radius: 0.5rem; 
-    overflow-x: auto; 
+    /* Fondo gris clarito, sombreado */
+    background-color: #f2f3f5; 
+    padding: 0 6px 6px 6px;
+    margin-left: 12px;
+    margin-right: 12px;
+    border-radius: 16px;
+    overflow-x: auto;
+    border: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Solo el div tiene contorno; la tabla interior sin borde exterior */
+.Table-view .tabla-base.tabla-bordes {
+    border: none;
 }
 
 /* 1. Estilos Base de la Tabla */
@@ -236,22 +499,21 @@
     border-collapse: collapse; 
     margin-bottom: 0; /* Quitar margen inferior si está dentro de Table-view con padding */
     color: #212529; 
-    /* Borde redondeado */
-    border-radius: 0.5rem;
+    /* Bordes ovalados */
+    border-radius: 16px;
     overflow: hidden; /* Asegura que los bordes redondeados se apliquen a los contenidos */
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
 }
 
 .tabla-base th, .tabla-base td {
     padding: 0.75rem; 
     vertical-align: top;
-    /* Borde horizontal estándar */
-    border-top: 1px solid #dee2e6; 
+    border: none;
 }
 
-/* 2. Estilos para Bordes de Tabla (tabla-bordes) */
+/* 2. Estilos para Bordes de Tabla (tabla-bordes) - sin bordes */
 .tabla-bordes, .tabla-bordes th, .tabla-bordes td {
-    /* Borde exterior e interior horizontal estándar */
-    border: 1px solid #dee2e6;
+    border: none;
 }
 
 /* -----------------------------------------
@@ -262,7 +524,20 @@
 .tabla-base thead, .tabla-base th {
     background-color: #223f70; /* Azul de Bootstrap */
     color: #ffffff; /* Texto Blanco */
-    border-color: #223f70; /* Borde del encabezado del mismo color */
+    border: none;
+    text-transform: none; /* Mostrar como en el HTML: "Carrera", no "CARRERA" */
+}
+.tabla-base thead tr:first-child th:first-child {
+    border-top-left-radius: 16px;
+}
+.tabla-base thead tr:first-child th:last-child {
+    border-top-right-radius: 16px;
+}
+.tabla-base tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 16px;
+}
+.tabla-base tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 16px;
 }
 
 /* Estilo para el Cuerpo (tbody) - Color Blanco y bordes verticales rojos */
@@ -271,27 +546,307 @@
 }
 
 .tabla-base tbody td {
-    /* Bordes verticales interiores Rojos */
-    border-left: 1px solid #dc3545; /* Rojo */
-    border-right: 1px solid #dc3545; /* Rojo */
-    /* Asegurar que el borde superior (horizontal) no sea rojo */
-    border-top: 1px solid #dee2e6;
-    text-align: center; 
+    border: none;
+    border-left: 3px solid #dc3545;
+    border-right: 3px solid #dc3545;
+    text-align: center;
 }
-
-/* Opcional: Eliminar el borde vertical en la primera y última celda si no se desea */
 .tabla-base tbody tr td:first-child {
-    border-left: none; 
+    border-left: none;
 }
 .tabla-base tbody tr td:last-child {
     border-right: none;
 }
 
+/* Primera columna (Carrera) un poco más ancha */
+.tabla-base thead th:first-child,
+.tabla-base tbody td:first-child {
+    min-width: 200px;
+    width: 200px;
+}
+/* Solo en lista de Materias: primera columna (Carrera) un poco más ancha */
+.tabla-materias thead th:first-child,
+.tabla-materias tbody td:first-child {
+    min-width: 200px;
+    width: 200px;
+}
+
+/* Módulo Materias: más ancho a izquierda y derecha (menos padding/márgenes laterales) */
+.container--materias {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+.container--materias .content-header {
+    margin-bottom: 0;
+}
+.container--materias .content-title h3 {
+    margin-bottom: 0.25em;
+}
+.container--materias .list-header-toolbar {
+    padding-top: 6px;
+    padding-bottom: 15px;
+}
+.container--materias .Table-view {
+    margin-left: 4px;
+    margin-right: 4px;
+}
+.container--materias .toolbar__search {
+    margin-left: 12px;
+    width: fit-content;
+    min-width: 380px;
+    max-width: 100%;
+    padding-right: 0;
+}
+.container--materias .toolbar__search .toolbar__search-select--materias {
+    margin-right: 0;
+}
+.container--materias .toolbar__search input[type="text"] {
+    flex: 1;
+    min-width: 0;
+}
+/* Barra de búsqueda en módulo Horarios: menos ancho a los lados y poco espacio hasta la tabla */
+.schedule-table .toolbar__search {
+    margin-left: 19px;
+    margin-right: 19px;
+    margin-bottom: 8px;
+    width: 680px;
+    max-width: 680px;
+}
+.schedule-table .toolbar__search form,
+.schedule-table .toolbar__search .mb-4 {
+    margin-bottom: 0 !important;
+}
+.schedule-table .Table-view {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    max-width: 780px;
+    min-width: 680px;
+    flex: 0 1 auto;
+    min-height: 0;
+    align-self: flex-start;
+    padding: 0 0 6px 0;
+    margin-left: 12px;
+    margin-right: 12px;
+    max-height: 380px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-color: #223f70 #e8eaed;
+    scrollbar-width: thin;
+}
+.schedule-table .Table-view::-webkit-scrollbar {
+    width: 10px;
+}
+.schedule-table .Table-view::-webkit-scrollbar-track {
+    background: #e8eaed;
+    border-radius: 10px;
+}
+.schedule-table .Table-view::-webkit-scrollbar-thumb {
+    background: #223f70;
+    border-radius: 10px;
+}
+.schedule-table .Table-view::-webkit-scrollbar-thumb:hover {
+    background: #1a3360;
+}
+.schedule-table .Table-view .tabla-base.tabla-bordes {
+    flex: 0 0 auto;
+    min-height: 0;
+    min-width: 680px;
+    width: 100%;
+}
+#horarios-tbody td.text-center {
+    font-style: normal;
+    text-align: left;
+}
+#horarios-tbody .btn-view svg,
+#horarios-tbody .btn-edit svg,
+#horarios-tbody .btn-delete svg {
+    width: 20px;
+    height: 20px;
+}
+#horarios-tbody .btn-view,
+#horarios-tbody .btn-edit,
+#horarios-tbody .btn-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 4px;
+    cursor: pointer;
+}
+#horarios-tbody .btn-view:focus-visible,
+#horarios-tbody .btn-edit:focus-visible,
+#horarios-tbody .btn-delete:focus-visible {
+    outline: 2px solid rgba(34, 63, 112, 0.5);
+    outline-offset: 2px;
+}
+#horarios-tbody .btn-view:hover,
+#horarios-tbody .btn-edit:hover,
+#horarios-tbody .btn-delete:hover {
+    background: transparent !important;
+}
+#horarios-tbody .btn-delete:hover svg,
+#horarios-tbody .btn-delete:hover img {
+    transform: none !important;
+    filter: invert(28%) sepia(51%) saturate(2755%) hue-rotate(340deg) brightness(92%) contrast(93%) !important;
+}
+.schedule-table .tabla-base thead th:first-child,
+.schedule-table #horarios-tbody td:first-child {
+    width: 26%;
+    max-width: 240px;
+    min-width: 140px;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.875rem;
+}
+.schedule-table .tabla-base thead th:nth-child(2),
+.schedule-table #horarios-tbody td:nth-child(2) {
+    width: 28%;
+    min-width: 160px;
+}
+.schedule-table .tabla-base thead th:nth-child(3),
+.schedule-table #horarios-tbody td:nth-child(3) {
+    width: 22%;
+    min-width: 140px;
+}
+.schedule-table .tabla-base thead th:nth-child(4),
+.schedule-table #horarios-tbody td:nth-child(4) {
+    width: 24%;
+    min-width: 150px;
+}
+.schedule-table {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-height: 280px;
+}
+/* Al editar un horario: ocultar barra de búsqueda y tabla; solo se ve el formulario */
+.creator-container.is-editing .schedule-table {
+    display: none !important;
+}
+/* Formulario de edición al estilo imagen: tarjeta blanca, título centrado, tacha, líneas rojas, botón Actualizar */
+.creator-container.is-editing .schedule-lists {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem 2rem 2rem;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+/* Cabecera de edición: título centrado, tacha a la derecha */
+.schedule-edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 1.5rem;
+    padding: 0 0 1rem;
+    border: 1px solid #fff;
+}
+.creator-container.is-editing .schedule-edit-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+}
+.schedule-edit-header__title {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #223f70;
+}
+.schedule-edit-close {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    background: #fff;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.schedule-edit-close:hover {
+    background: #fff;
+    color: #333;
+}
+/* En modo edición: etiquetas naranja-marrón y campos con línea roja (estilo Editar Materia) */
+.creator-container.is-editing .schedule-list-select label,
+.creator-container.is-editing .schedule-form-section-label {
+    color: #c17d3a !important;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+.creator-container.is-editing .schedule-list-select select {
+    background-color: #f8f9fa;
+    border: none;
+    border-bottom: 1px solid #c62828;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 8px 12px 8px 6px;
+    text-align: left;
+}
+.creator-container.is-editing .schedule-list-select {
+    margin-bottom: 1.25rem;
+}
+.creator-container.is-editing .schedule-submit {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+.creator-container.is-editing #save_schedule_btn {
+    background-color: #223f70;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(34, 63, 112, 0.35);
+    min-width: 180px;
+}
+.creator-container.is-editing #save_schedule_btn:hover {
+    background-color: #1a3360;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(34, 63, 112, 0.4);
+}
+/* Horario y vista previa en modo edición: misma línea roja */
+.creator-container.is-editing .schedule-select-title,
+.creator-container.is-editing .schedule-resume__title {
+    color: #b5b5b5;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+.creator-container.is-editing .schedule-settings {
+    border-bottom: 1px solid #c62828;
+    padding-bottom: 1rem;
+    margin-bottom: 0.5rem;
+}
+.creator-container.is-editing .schedule-resume.schedule-resume--cards {
+    border: none;
+    border-bottom: 1px solid #c62828;
+    border-radius: 0;
+    box-shadow: none;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.container--materias .content-title h3 {
+    margin-left: 12px;
+}
 
 /* 3. Estilos para Filas Rayadas (equivalente a table-striped) */
 .tabla-rayas > .cuerpo-tabla > tr:nth-of-type(odd) {
-    /* Mantener las rayas pero sobre el fondo blanco */
-    background-color: rgba(0, 0, 0, 0.05); /* Gris muy claro para filas impares */
+    /* Todas las filas blancas */
+    background-color: #fff;
 }
 
 /* =========================================
@@ -413,14 +968,39 @@
     white-space: nowrap; /* Mantiene los botones en una sola línea */
 }
 
+/* Encabezados tabla docentes: todos alineados al centro (una o dos líneas) */
+.tabla-docentes thead th {
+    vertical-align: middle;
+}
+/* Columna Carrera en tabla docentes: texto en 2 líneas */
+.tabla-docentes thead th:nth-child(2),
+.tabla-docentes tbody td:nth-child(2) {
+    max-width: 180px;
+    width: 180px;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
+/* Columna Acciones en tabla docentes: ancho reducido */
+.tabla-docentes thead th:last-child,
+.tabla-docentes .data-actions-cell {
+    max-width: 190px;
+    width: 190px;
+    box-sizing: border-box;
+}
+
 .data-action-form {
     display: inline;
     margin-left: 0.5rem;
 }
 
 .data-action-btn {
-    display: inline-block;
-    padding: 0.375rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.5rem;
     font-size: 0.875rem;
     font-weight: 400;
     text-align: center;
@@ -429,25 +1009,113 @@
     border: 1px solid transparent;
     border-radius: 0.25rem;
     text-decoration: none;
+    outline: none;
+    box-shadow: none;
     transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.data-action-btn:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.data-action-btn img {
+    width: 18px;
+    height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    object-fit: contain;
+    display: block;
 }
 
 .data-btn-view {
     color: #fff;
-    background-color: var(--primary-color);
+    background-color: #fff;
+    border: 1px solid #fff;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .data-btn-view:hover {
-    background-color: #0056b3;
+    background-color: #223f70;
+    border-color: #223f70;
+}
+
+/* Icono ojo en tabla Materias: dorado oscurito */
+.tabla-materias .data-btn-view img {
+    filter: brightness(0) saturate(100%) invert(55%) sepia(45%) saturate(700%) hue-rotate(358deg) brightness(0.85);
+}
+
+/* Iconos de acción en tabla Materias */
+.tabla-materias .data-action-btn img {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+}
+
+/* En tabla Materias: sin cambio de color al pasar el mouse */
+.tabla-materias .data-btn-view:hover {
+    background-color: #fff;
+    border-color: #fff;
+}
+.tabla-materias .data-btn-edit:hover {
+    background-color: var(--secondary-color);
+}
+.tabla-materias .data-btn-delete:hover {
+    background-color: var(--danger-color);
+}
+
+/* Icono ojo en tabla Lista de docentes: dorado oscurito */
+.tabla-docentes .data-btn-view img {
+    filter: brightness(0) saturate(100%) invert(55%) sepia(45%) saturate(700%) hue-rotate(358deg) brightness(0.85);
+}
+
+/* Botón reloj en Lista de docentes: blanco, hover gris plata */
+.tabla-docentes .data-btn-clock {
+    background-color: #ffffff;
+    border-color: #ffffff;
+}
+.tabla-docentes .data-btn-clock:hover {
+    background-color: #c0c0c0;
+    border-color: #c0c0c0;
+}
+
+/* Iconos de acción en Lista de docentes: mismo tamaño para todos (reloj, ver, editar, eliminar) */
+.tabla-docentes .data-actions-cell .data-action-btn img,
+.tabla-docentes .data-actions-cell .data-action-btn svg,
+.tabla-docentes .data-action-btn img {
+    width: 24px !important;
+    height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    object-fit: contain;
+}
+
+.tabla-docentes .data-btn-delete {
+    margin-left: -14px;
+}
+
+/* En tabla Docentes: sin cambio de color al pasar el mouse */
+.tabla-docentes .data-btn-view:hover,
+.tabla-docentes .data-btn-clock:hover {
+    background-color: #fff;
+    border-color: #fff;
+}
+.tabla-docentes .data-btn-edit:hover {
+    background-color: var(--secondary-color);
+    border-color: transparent;
+}
+.tabla-docentes .data-btn-delete:hover {
+    background-color: var(--danger-color);
 }
 
 .data-btn-edit {
     color: #212529;
     background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    border: 1px solid transparent;
 }
 .data-btn-edit:hover {
     background-color: #e0a800;
-    border-color: #d39e00;
+    border-color: transparent;
 }
 
 .data-btn-delete {
@@ -473,6 +1141,32 @@
     /* Nota: Si ya estás usando .schedule-container, podrías renombrarlo a .creator-container */
 }
 
+/* Columna del formulario: ancho estable y un solo scroll para todo el menú (Carrera, Materia, Docente, Horario, Vista previa, Aula) */
+.schedule-lists {
+    min-width: 380px;
+    flex: 0 1 auto;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-color: #223f70 #e8eaed;
+    scrollbar-width: thin;
+}
+.schedule-lists::-webkit-scrollbar {
+    width: 10px;
+}
+.schedule-lists::-webkit-scrollbar-track {
+    background: #e8eaed;
+    border-radius: 10px;
+}
+.schedule-lists::-webkit-scrollbar-thumb {
+    background: #223f70;
+    border-radius: 10px;
+}
+.schedule-lists::-webkit-scrollbar-thumb:hover {
+    background: #1a3360;
+}
+
 .schedule-list-select{
     /* Mantiene el apilamiento vertical (label sobre select) */
     display: flex;
@@ -491,34 +1185,117 @@
 .schedule-list-select select {
     /* 1. Bordes Redondeados */
     border-radius: 20px; 
-    /* 2. Padding para dar espacio y forma redondeada */
-    padding: 8px 15px; 
-    /* 3. Centrar el texto seleccionado (funciona en muchos navegadores) */
-    text-align: center; 
-    
-    /* Borde azul para destacar el select */
+    /* 2. Padding: menos a la izquierda para que la frase quede más a la izquierda */
+    padding: 8px 15px 8px 6px; 
+    /* 3. Texto del select alineado a la izquierda */
+    text-align: left; 
+    background-color: #f8f9fa;
     width: 100%;
     border: none;
     box-sizing: border-box;
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+/* Placeholder "Seleccione una Carrera" en gris solo cuando está cerrado; el menú en color normal */
+#carrera_select {
+    text-align: center;
+}
+#carrera_select:invalid:not(:focus) {
+    color: #6c6c6c;
+}
+#carrera_select:valid,
+#carrera_select:focus {
+    color: #212529;
+}
+/* Placeholder "Seleccione una Materia" en gris solo cuando está cerrado; el menú en color normal */
+#materia_select {
+    text-align: center;
+}
+#materia_select:invalid:not(:focus) {
+    color: #888;
+}
+#materia_select:valid,
+#materia_select:focus {
+    color: #212529;
+}
+/* Placeholder "Seleccione un Docente" en gris solo cuando está cerrado; el menú en color normal */
+#docente_select {
+    text-align: center;
+}
+#docente_select:invalid:not(:focus) {
+    color: #888;
+}
+#docente_select:valid,
+#docente_select:focus {
+    color: #212529;
+}
+/* Placeholder "Seleccione Aula" en gris (aula opcional: se usa clase .select-placeholder vía JS) */
+#aula_select {
+    text-align: center;
+}
+#aula_select.select-placeholder {
+    color: #888;
+}
+#aula_select:not(.select-placeholder),
+#aula_select:focus {
+    color: #212529;
+}
+
+/* Módulo Clases: "Seleccione el nombre de la carrera" en #ACACAC solo cuando el select está cerrado; menú abierto en color normal */
+#form-filtros select#carrera_id.carrera-placeholder:not(:focus),
+#form-filtros select#carrera_id.placeholder:not(:focus) {
+    color: #ACACAC !important;
+}
+#form-filtros select#carrera_id:focus,
+#form-filtros select#carrera_id:not(.carrera-placeholder):not(.placeholder) {
+    color: #212529;
+}
+
+/* Módulo Clases: "Seleccione el número del semestre" en #ACACAC solo cuando el select está cerrado; menú abierto en color normal */
+#form-filtros select#semestre_id.semestre-placeholder:not(:focus),
+#form-filtros select#semestre_id.placeholder:not(:focus) {
+    color: #ACACAC !important;
+}
+#form-filtros select#semestre_id:focus,
+#form-filtros select#semestre_id:not(.semestre-placeholder):not(.placeholder) {
+    color: #212529;
+}
+
+/* Módulo Clases: "Seleccione el nombre de la materia" en #ACACAC solo cuando el select está cerrado; menú abierto en color normal */
+#form-filtros select#materia_id.materia-placeholder:not(:focus),
+#form-filtros select#materia_id.placeholder:not(:focus) {
+    color: #ACACAC !important;
+}
+#form-filtros select#materia_id:focus,
+#form-filtros select#materia_id:not(.materia-placeholder):not(.placeholder) {
+    color: #212529;
+}
+
+/* Módulo Clases: "Seleccione el horario" en #ACACAC solo cuando el select está cerrado; menú abierto en color normal */
+#form-filtros select#clase_id.clase-placeholder:not(:focus),
+#form-filtros select#clase_id.placeholder:not(:focus) {
+    color: #ACACAC !important;
+}
+#form-filtros select#clase_id:focus,
+#form-filtros select#clase_id:not(.clase-placeholder):not(.placeholder) {
+    color: #212529;
 }
 
 .schedule-settings {
     display: flex;
     flex-direction: column; /* Apila los elementos internos (botones, time-inputs) verticalmente */
     align-items: center; /* 💡 Alinea los elementos hijos al centro horizontal */
-    /* Fondo de color gris claro */
-    background-color: #f5f5f5; 
+    /* Fondo gris claro */
+    background-color: #ECF0F1; 
     
     /* Relleno interno para dar espacio entre el contenido y el borde */
     padding: 15px; 
     
-    /* Bordes suaves */
-    border-radius: 8px; 
-    
-    /* Pequeña sombra para destacar el cuadro del fondo */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
-    
+    /* Cuadrado ovalado: esquinas muy redondeadas */
+    border-radius: 24px;
+
+    /* Sombra para destacar el cuadro del fondo */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.1);
+
     margin-bottom: 20px; /* Mantiene la separación con la sección siguiente */
 }
 
@@ -534,30 +1311,30 @@
 }
 
 .day-selection-buttons button {
-    /* 2. DISEÑO REDONDEADO Y BASE GRIS */
+    /* 2. DISEÑO REDONDEADO Y FONDO BLANCO */
     flex-grow: 1; /* Permite que los botones se expandan para llenar el espacio */
-    padding: 8px 12px;
+    padding: 8px 14px;
     border: 1px solid #ccc;
-    background-color: #e0e0e0; /* Fondo gris claro (estado normal) */
-    color: #333;
+    background-color: #fff; /* Fondo blanco (estado normal) */
+    color: #ACACAC;
     border-radius: 25px; /* Forma redondeada (alto valor para simular pastilla) */
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s, border-color 0.3s; /* Transición suave */
     font-size: 0.9em;
-    min-width: 40px; /* Ancho mínimo para letras cortas (Ej: 'L') */
+    min-width: 46px; /* Ancho mínimo para letras cortas (Ej: 'L') */
     white-space: nowrap;
 }
 
-/* 3. ESTADO SELECCIONADO (CLASE '.selected') */
+/* 3. ESTADO SELECCIONADO (CLASE '.selected') - Azul marino */
 .day-selection-buttons button.selected {
-    background-color: #0b2b3b; /* Azul fuerte para el estado seleccionado */
+    background-color: #001f3f;
     color: white;
-    border-color: #0b2b3b; /* Borde del mismo color */
+    border-color: #001f3f;
 }
 
 /* Estilo al pasar el mouse (hover) para dar feedback */
 .day-selection-buttons button:hover:not(.selected) {
-    background-color: #d0d0d0; /* Gris ligeramente más oscuro al pasar el mouse */
+    background-color: #f0f0f0; /* Gris muy claro al pasar el mouse */
 }
 
 .time-inputs {
@@ -576,30 +1353,310 @@
     white-space: nowrap; 
 }
 
+.time-input-sep {
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: #b8b8b8;
+    line-height: 36px;
+    padding: 0 4px;
+    user-select: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25), 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Wrapper: icono de reloj + 00:00 y menú desplegable hacia abajo */
+.time-input-wrap {
+    position: relative;
+    flex-grow: 0;
+    width: 72px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.time-input-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 6px 12px;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    background-color: #fff;
+    color: #ACACAC;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    box-sizing: border-box;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.08);
+}
 .time-inputs input[type="time"] {
-    /* 1. CONTROL DE ANCHO */
-    flex-grow: 0; /* Desactiva el crecimiento para que no llenen el espacio */
-    width: 120px; /* Asignamos un ancho fijo o máximo reducido (puedes ajustar este valor) */
-    
-    /* 2. DISEÑO BASE (Mantenemos la reducción de tamaño) */
+    flex-grow: 0;
+    width: 120px;
     padding: 6px 12px; 
-    font-size: 0.9em; 
+    font-size: 1rem; 
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
     background-color: #ffffff; 
     color: #333;
     border: 1px solid #ccc;
     border-radius: 25px; 
     box-sizing: border-box; 
-    
-    /* Mantenemos la eliminación de la apariencia nativa */
+    text-align: center;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
 }
+/* Input dentro del wrap: overlay transparente para abrir menú de hora; vista 00:00 en .time-input-display */
+.time-inputs .time-input-wrap input[type="time"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 16px;
+}
+/* El input dentro del wrap se sobreescribe arriba; estos pseudos no aplican al overlay */
+.time-input-wrap input[type="time"]::-webkit-datetime-edit,
+.time-inputs input[type="time"]::-webkit-datetime-edit {
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 4ch;
+}
+.time-inputs input[type="time"]::-webkit-datetime-edit-ampm-field,
+.time-inputs input[type="time"]::-webkit-datetime-edit-hour-field,
+.time-inputs input[type="time"]::-webkit-datetime-edit-minute-field {
+    color: #333;
+    visibility: visible;
+    padding: 0 1px;
+}
+.time-inputs input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+    cursor: pointer;
+}
 
-.time-inputs input[type="time"]:focus {
+.time-inputs input:focus {
     border-color: #007bff;
     box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
     outline: none;
+}
+.time-input-wrap:focus-within .time-input-display {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+/* Menú desplegable de horario hacia abajo */
+.time-input-wrap {
+    position: relative;
+}
+.time-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    width: 100%;
+    min-width: 120px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: none;
+}
+.time-picker-dropdown.is-open {
+    display: block;
+}
+/* Menú de reloj: fila seleccionada + columnas desplazables */
+.time-picker-clock {
+    min-width: 200px;
+    max-height: 220px;
+    overflow: hidden;
+    padding: 0;
+}
+.time-picker-selected {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+.time-picker-selected-cell {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #333;
+}
+.time-picker-columns {
+    display: flex;
+    max-height: 180px;
+    overflow: hidden;
+}
+.time-picker-col {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 6px 0;
+    text-align: center;
+}
+.time-picker-col[data-col="hour"] { min-width: 48px; }
+.time-picker-col[data-col="min"] { min-width: 48px; }
+.time-picker-col[data-col="ampm"] { min-width: 56px; }
+.time-picker-option {
+    padding: 8px 6px;
+    font-size: 0.9rem;
+    color: #555;
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 0 4px;
+}
+.time-picker-option:hover {
+    background: #f0f0f0;
+}
+.time-picker-option.selected {
+    color: #333;
+}
+/* Un solo cuadro: dentro dividido en Hora | Min */
+.time-picker-inner {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 10px 12px;
+}
+.time-picker-dropdown .time-picker-part {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.time-picker-dropdown .time-picker-part + .time-picker-part {
+    border-left: 1px solid #e0e0e0;
+    padding-left: 10px;
+}
+.time-picker-dropdown .time-picker-label {
+    font-size: 0.75rem;
+    color: #666;
+    margin: 0;
+}
+.time-picker-dropdown .time-picker-hour,
+.time-picker-dropdown .time-picker-min {
+    width: 100%;
+    max-width: 56px;
+    padding: 6px 4px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+}
+.time-picker-dropdown .time-option {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    font-size: 0.95rem;
+    text-align: center;
+    cursor: pointer;
+    color: #333;
+}
+.time-picker-dropdown .time-option:hover {
+    background: #f0f0f0;
+}
+
+/* Botón circular con check (añadir franja horaria): azul menos fuerte */
+.add-time-slot-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: #2d4a6f;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
+    align-self: flex-end;
+    margin-top: 4px;
+}
+.add-time-slot-btn:hover {
+    background-color: #2d4a6f;
+    box-shadow: none;
+}
+.add-time-slot-btn:active {
+    transform: none;
+}
+.add-time-slot-btn.active {
+    background-color: #2d4a6f;
+    box-shadow: none;
+}
+.add-time-slot-btn__icon {
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+}
+
+/* Clases: botón seleccionar clase en gris; al clic o seleccionado, azul marino */
+#form-filtros .add-time-slot-btn {
+    background-color: #c0c0c0 !important;
+    color: #333 !important;
+}
+#form-filtros .add-time-slot-btn:hover {
+    background-color: #c0c0c0 !important;
+}
+#form-filtros .add-time-slot-btn:active,
+#form-filtros .add-time-slot-btn.add-time-slot-btn--selected {
+    background-color: #001f3f !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(0, 31, 63, 0.45);
+}
+#form-filtros .add-time-slot-btn .add-time-slot-btn__icon,
+#form-filtros .add-time-slot-btn svg {
+    stroke: #fff;
+}
+
+/* Tabla filtros Clases: nombre del alumno (col-materia) sin negrita */
+#form-filtros #clases-tabla-filtros td.col-materia {
+    font-weight: normal;
+}
+
+.schedule-submit {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+#save_schedule_btn:hover {
+    color: #fff;
+    background-color: #1a3360;
+    box-shadow: 0 4px 14px rgba(34, 63, 112, 0.5);
+}
+
+.schedule-resume__title {
+    color: #ACACAC;
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin: 0 0 10px 0;
+}
+
+.schedule-select-title {
+    color: #b5b5b5;
+    font-size: 0.875rem;
+    font-weight: normal;
+    margin: 0 0 8px 0;
 }
 
 .schedule-resume {
@@ -612,12 +1669,32 @@
     /* 2. SOMBRA INFERIOR SUTIL */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra enfocada en la parte inferior */
 }
+/* Vista previa horario: ovalado, con líneas laterales y abajo, y sombra */
+.schedule-resume.schedule-resume--cards {
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    border-top: 1px solid transparent;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    background: #fff;
+    padding: 15px 15px 58px 15px;
+}
 /* Estilos para la tabla dentro del contenedor */
 #time-slots-table {
     width: 100%;
     border-collapse: collapse; /* Bordes unidos */
     font-size: 0.9em;
     margin-top: 10px;
+}
+
+/* Sin color azul en el encabezado */
+#time-slots-table thead,
+#time-slots-table thead tr,
+#time-slots-table thead th {
+    background-color: transparent !important;
+    color: #ACACAC !important;
+    border-color: #dee2e6;
 }
 
 #time-slots-table tbody tr:last-child td {
@@ -636,17 +1713,31 @@
     z-index: 1000; /* Asegura que esté por encima de otros elementos */
 }
 
+/* Variante: overlay centrado para modales tipo "view" */
+.modal-overlay--center {
+    display: none; /* por defecto */
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
 /* Estilo del Contenido del Modal (Global)*/
 .modal-content-container {
     background-color: #fff;
-    margin: 10% auto; /* Centrarlo verticalmente y horizontalmente */
+    margin: 10% auto;
     margin-left: auto;
     margin-right: auto;
-    padding: 20px;
+    padding: 12px 20px;
     border-radius: 8px;
-    width: 70%; /* Ancho deseado del modal */
+    width: 70%;
     max-width: 600px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal Agregar Materia: un poco más estrecho */
+#createMateriaModal .modal-content-container {
+    width: 65%;
+    max-width: 460px;
 }
 
 /* Clases para mostrar/ocultar con JavaScript */
@@ -654,23 +1745,75 @@
     display: block; /* Muestra el modal */
 }
 
-.modal-header-custom {
-    /* Usa Flexbox para controlar la alineación de los elementos internos */
+/* Para los overlays centrados, mostrar con flex */
+.modal-overlay--center.is-visible {
     display: flex;
-    
-    /* Alinear elementos a lo largo del eje vertical (centro) */
-    align-items: center; 
-    
-    /* Distribuir el espacio: empuja el botón de cerrar (right) y el título (center) */
-    justify-content: space-between; 
-    
-    padding: 15px; /* Ejemplo de padding */
+}
 
+/* Modal Informe de Horario: subir un poco el contenido */
+#scheduleModal .schedule-modal-content {
+    transform: translateY(-80px);
+}
+
+/* Modal Detalle horario (módulo Horarios): subir un poco y reducir ancho */
+#horarioDetalleModal .modal-view-career__container,
+#horarioVerModal .modal-view-career__container {
+    transform: translateY(-70px);
+    max-width: 520px;
+    width: calc(100% - 2rem);
+}
+
+/* Modal Editar horario (módulo Horarios): subir un poco y reducir ancho */
+#horarioEditModal .modal-view-career__container {
+    transform: translateY(-70px);
+    max-width: 540px;
+    width: calc(100% - 2rem);
+    /* Un solo scroll: el del contenido del iframe; no otro en el modal */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+#horarioEditModal .modal-view-career__body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+/* Un solo scroll en el modal: solo el body; el .schedule-lists interno no hace scroll */
+#horarioEditModal .schedule-lists {
+    overflow: visible;
+    max-height: none;
+}
+/* Contenido del modal Editar horario: formulario centrado y texto de selects centrado */
+#horarioEditContent .horario-edit-wrap {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+#horarioEditContent .schedule-list-select select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    text-align-last: center;
+}
+#horarioEditContent .schedule-list-select select option {
+    text-align: center;
+}
+
+.modal-header-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 15px;
 }
 
 /* 1. Centrar el título (H5) */
 /* El 'margin-right: auto' en el H5 empuja el botón de cierre a la derecha */
-.modal-header-custom h5 {
+.modal-header-custom h5,
+#createCareerModalLabel {
+    color: #223f70; /* Letras azules (azul marino) */
     /* Ocupa el espacio necesario, pero se centra por el truco del flexbox */
     flex-grow: 1; 
     /* Alinea el texto del título en el centro de su propio espacio */
@@ -697,24 +1840,27 @@
 
 /* 1. Las etiquetas (labels) encima de los inputs */
 .form-field {
-    /* Establece el contenedor de campo como un contenedor flexible */
     display: flex;
-    /* Apila la etiqueta y el input verticalmente */
-    flex-direction: column; 
-    /* Agrega un poco de espacio entre campos */
-    margin-bottom: 15px; 
+    flex-direction: column;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+
+/* Labels del modal de crear carrera */
+#createCareerModal .form-field:nth-of-type(1) label,
+#createCareerModal .form-field:nth-of-type(2) label,
+#createCareerModal .form-field:nth-of-type(3) label,
+#createCareerModal .form-field:nth-of-type(4) label,
+#createCareerModal .form-field:nth-of-type(5) label {
+    color: #BC8A55;
 }
 
 /* 2. Disposición de las opciones (Modalidad y Semestres) */
 .options {
-    /* Convierte el contenedor de 'options' en una fila flexible */
     display: flex;
-    /* Distribuye el espacio entre los dos elementos */
-    justify-content: space-between; 
-    /* Asegura que los campos llenen el ancho disponible */
+    justify-content: space-between;
     width: 100%;
-    /* Agrega un pequeño margen superior para separarlo de los campos anteriores */
-    margin-top: 15px;
+    margin-top: 8px;
 }
 
 /* 3. Ajuste de ancho para Checkboxes y Lists */
@@ -725,16 +1871,294 @@
     flex-basis: 48%; 
 }
 
-/* 4. Estilos básicos para inputs y selects (para una mejor apariencia) */
-.form-field input[type="text"],
-.form-field select {
-    padding: 8px 12px;
+/* Radios Modalidad en modal crear carrera: cuadrado color #DB5865 */
+#createCareerModal .form-field.Checkboxes input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #DB5865;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    vertical-align: middle;
+}
+#createCareerModal .form-field.Checkboxes input[type="radio"]:checked {
+    background-color: #DB5865;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' d='M3 8l3 3 7-7'/%3E%3C/svg%3E");
+    background-size: 16px 16px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* 4. Estilos básicos para inputs y selects */
+.form-field input[type="text"] {
+    padding: 5px 8px;
     border: none;
     border-bottom: 2px solid red;
     border-radius: 4px;
-    /* Asegura que ocupen todo el ancho de su contenedor */
-    width: 100%; 
-    box-sizing: border-box; /* Importante para incluir padding en el ancho total */
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+/* Inputs del modal crear carrera: sin cuadro, solo línea roja #DB5865 */
+#createCareerModal .form-field input[type="text"],
+#createCareerModal .form-field select {
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+/* Label "No. de semestres" centrado */
+#createCareerModal .form-field.lists label[for="semesters"] {
+    text-align: center;
+    width: 100%;
+}
+
+/* Select semestres: valor en gris */
+#createCareerModal #semesters {
+    color: #6c757d;
+}
+
+/* Labels Modalidad (Presencial / En linea) en gris claro, fuente Poppins */
+#createCareerModal .form-field.Checkboxes label[for="type_presencial"],
+#createCareerModal .form-field.Checkboxes label[for="type_enlinea"] {
+    color: #ACACAC;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Placeholders un poco más a la izquierda */
+#createCareerModal #name,
+#createCareerModal #official_id,
+#createCareerModal #description1,
+#createCareerModal #description2,
+#createCareerModal #description3 {
+    padding-left: 4px;
+}
+
+.form-field select {
+    padding: 5px 8px;
+    border: none;
+    border-bottom: 2px solid red;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Select carrera en modal Agregar Materia: solo "Seleccione una Carrera" en #ACACAC, el resto negro */
+#createMateriaModal #carrera_id,
+#createMateriaModal #nombre,
+#createMateriaModal #creditos,
+#createMateriaModal #semestre {
+    color: #212529;
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+}
+#createMateriaModal #nombre {
+    text-align: left;
+    padding-left: 0;
+}
+#createMateriaModal #nombre::placeholder {
+    color: #ACACAC;
+}
+/* Select cerrado: texto a la izquierda; menú desplegable: opciones centradas */
+#createMateriaModal #creditos {
+    text-align-last: left;
+    padding-left: 0;
+}
+#createMateriaModal #creditos option {
+    text-align: center;
+}
+#createMateriaModal #carrera_id {
+    text-align: left;
+    text-align-last: left;
+    padding-left: 0;
+}
+#createMateriaModal #carrera_id.placeholder {
+    color: #ACACAC;
+}
+#createMateriaModal #carrera_id option.placeholder-option {
+    color: #ACACAC;
+}
+#createMateriaModal #carrera_id option:not(.placeholder-option) {
+    color: #000;
+}
+
+/* Labels del modal Agregar Materia: color #BC8A55 */
+#createMateriaModal .form-field label {
+    color: #BC8A55;
+}
+
+/* Label "No. de semestres:" centrado en modal Agregar Materia */
+#createMateriaModal .form-field.lists label[for="semestre"] {
+    text-align: center;
+    width: 100%;
+}
+
+/* Labels Presencial / En linea en el modal Agregar Materia: gris claro */
+#createMateriaModal .form-field.Checkboxes label[for="type_presencial"],
+#createMateriaModal .form-field.Checkboxes label[for="type_enlinea"] {
+    color: #ACACAC;
+}
+
+/* Radios Modalidad en modal Agregar Materia: cuadrados con ✓ al marcar */
+#createMateriaModal .form-field.Checkboxes input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #DB5865;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    vertical-align: middle;
+}
+#createMateriaModal .form-field.Checkboxes input[type="radio"]:checked {
+    background-color: #DB5865;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' d='M3 8l3 3 7-7'/%3E%3C/svg%3E");
+    background-size: 16px 16px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Select semestres: valor centrado */
+/* Select semestres: valor centrado (crear y editar) */
+#semesters,
+select[name="semesters"],
+[id^="semesters_"] {
+    text-align: center;
+    text-align-last: center;
+}
+
+/* Select semestre (materias): valor centrado */
+#semestre,
+select[name="semestre"] {
+    text-align: center;
+    text-align-last: center;
+}
+
+/* Modal Editar Materia: línea roja recta #DB5865 en inputs y selects */
+[id^="editMateriaModal"] .form-field input[type="text"],
+[id^="editMateriaModal"] .form-field select {
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+}
+[id^="editMateriaModal"] .form-field label {
+    color: #BC8A55;
+    font-size: 1.05rem;
+}
+[id^="editMateriaModal"] .form-field label[for="semestre"] {
+    text-align: center;
+    width: 100%;
+}
+[id^="editMateriaModal"] #carrera_id {
+    text-align: left;
+    text-align-last: left;
+    padding-left: 0;
+}
+[id^="editMateriaModal"] #nombre {
+    text-align: left;
+    padding-left: 0;
+}
+[id^="editMateriaModal"] #creditos {
+    text-align: left;
+    text-align-last: left;
+    padding-left: 0;
+}
+[id^="editMateriaModal"] #creditos option {
+    text-align: center;
+}
+[id^="editMateriaModal"] .modal-body-custom,
+[id^="editMateriaModal"] #modalBodyContent {
+    overflow: visible;
+    padding-bottom: 1.5rem;
+}
+[id^="editMateriaModal"] .modal-content-container {
+    overflow: visible;
+    width: 65%;
+    max-width: 460px;
+}
+/* Radios Modalidad en modal Editar Materia: cuadrado ovalado con icono ✓ */
+[id^="editMateriaModal"] .form-field.Checkboxes input[type="radio"],
+[id^="editMateriaModal"] .Checkboxes.form-field input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #DB5865;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    vertical-align: middle;
+}
+[id^="editMateriaModal"] .form-field.Checkboxes input[type="radio"]:checked,
+[id^="editMateriaModal"] .Checkboxes.form-field input[type="radio"]:checked {
+    background-color: #DB5865;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' d='M3 8l3 3 7-7'/%3E%3C/svg%3E");
+    background-size: 16px 16px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Labels del modal Editar carrera: color #BC8A55 */
+[id^="editCareerModal"] .form-field label {
+    color: #BC8A55;
+}
+
+/* Label "No. de semestres:" centrado en modal Editar carrera */
+[id^="editCareerModal"] .form-field.lists label[for^="semesters_"] {
+    text-align: center;
+    width: 100%;
+}
+
+/* Inputs y selects del modal Editar carrera: línea roja #DB5865, texto a la izquierda */
+[id^="editCareerModal"] .form-field input[type="text"],
+[id^="editCareerModal"] .form-field select {
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    text-align: left;
+    text-align-last: left;
+    padding-left: 0;
+}
+
+/* Select semestres en modal Editar carrera: centrado */
+[id^="editCareerModal"] select[id^="semesters_"] {
+    text-align: center;
+    text-align-last: center;
+}
+
+/* Radios Presencial/En línea en modal Editar carrera: cuadrado ovalado con ✓ */
+[id^="editCareerModal"] .form-field.Checkboxes input[type="radio"],
+[id^="editCareerModal"] .Checkboxes.form-field input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #DB5865;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    vertical-align: middle;
+}
+[id^="editCareerModal"] .form-field.Checkboxes input[type="radio"]:checked,
+[id^="editCareerModal"] .Checkboxes.form-field input[type="radio"]:checked {
+    background-color: #DB5865;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' d='M3 8l3 3 7-7'/%3E%3C/svg%3E");
+    background-size: 16px 16px;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* Estilos para los botones (opcional, para que se vean decentes) */
@@ -755,22 +2179,932 @@
     padding: 10px 20px;
     font-size: 16px;
     font-weight: 500;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
 }
 
 .submit-button:hover {
-    transform: translateY(-1px);
-    color: var(--accent);
+    transform: none;
+    color: #e6a337;
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.4);
 }
+
+/* Botón "+ Agregar" del modal crear carrera: un poco más largo */
+#createCareerModal .submit-button {
+    min-width: 150px;
+    padding-left: 24px;
+    padding-right: 24px;
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Al pasar el mouse: azul más oscuro, sin cambio de color de texto */
+#createCareerModal .submit-button:hover {
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Botón "+ Actualizar" en Editar carrera: al pasar el mouse no cambia el color de las letras */
+[id^="editCareerModal"] .submit-button:hover {
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Botón "+ Agregar" del modal Agregar Materia: al pasar el mouse no cambia el color */
+#createMateriaModal .submit-button:hover {
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Botón "+ Actualizar" del modal Editar Materia: al pasar el mouse no cambia el color */
+[id^="editMateriaModal"] .submit-button:hover {
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Botón "Actualizar" del modal Editar horario: al pasar el mouse no cambia el color de las letras */
+#horarioEditModal .submit-button:hover {
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Módulo Clases: botones "+ Agregar clase" y "Guardar" — al pasar el mouse solo se resalta el azul más fuerte */
+#form-filtros #btn-guardar-carrera:hover,
+#form-filtros #btn-guardar:hover {
+    background-color: #1a3360;
+    color: white;
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.45);
+}
+
 /* Estilo para centrar los botones en el footer */
 .modal-footer-custom {
-    /* Convierte el footer en un contenedor flexible */
     display: flex;
-    /* Centra los elementos flexibles (los botones) horizontalmente */
     justify-content: center;
-    /* Agrega el margen superior que tenías en el HTML */
-    margin-top: 15px; 
-    /* Si tienes más estilos para el footer, agrégalos aquí */
-    padding: 15px 0; /* Opcional: añade padding interno */
+    margin-top: 10px;
+    padding: 8px 0;
+}
+
+/* Modal visualizar carrera (solo lectura) */
+.career-view-dl {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px 16px;
+}
+.career-view-dl dt {
+    font-weight: 600;
+    color: #223f70;
+    margin: 0;
+}
+.career-view-dl dd {
+    margin: 0 0 10px 0;
+    padding: 0;
+    color: #333;
+}
+
+/* Modal Ver materia — solo lectura, estilo mejorado */
+.modal-view-materia__container {
+    max-width: 440px;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(34, 63, 112, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.modal-view-materia__header {
+    background: transparent;
+    padding: 1rem 1.25rem;
+}
+
+.modal-view-materia__title {
+    color: #223f70 !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
+
+.modal-view-materia__close {
+    color: #333 !important;
+    font-size: 1.5rem !important;
+    line-height: 1;
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.modal-view-materia__close:hover {
+    background: transparent;
+    color: #333;
+}
+
+.modal-view-materia__body {
+    padding: 1.5rem 1.25rem 1.5rem 0.25rem;
+    background: #fff;
+}
+
+.materia-view-dl {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.materia-view-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e8ecf2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.materia-view-dl .materia-view-row {
+    grid-template-columns: 1fr;
+    padding: 0.5rem 1rem 0.5rem 0.25rem;
+    border: 1px solid #fff;
+    border-bottom: 2px solid #DB5865;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.materia-view-row dt {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #BC8A55;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    text-align: left;
+}
+
+.materia-view-row dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: #333;
+    font-weight: 500;
+    text-align: left;
+}
+
+.modal-view-materia__footer {
+    padding: 1rem 1.25rem 1.25rem;
+    background: #f8f9fc;
+    margin-top: 0;
+}
+
+.modal-view-materia__btn-close {
+    min-width: 120px;
+    padding: 0.6rem 1.25rem;
+    background: linear-gradient(135deg, #223f70 0%, #2d4a7c 100%) !important;
+    color: #fff !important;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(34, 63, 112, 0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.modal-view-materia__btn-close:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.35);
+}
+
+/* Modal Ver carrera (Información de la carrera) — mismo estilo que Ver materia */
+.modal-view-career__container {
+    width: calc(100% - 2rem);
+    max-height: 90vh;
+    max-width: 560px;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(34, 63, 112, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #fff;
+}
+
+.modal-view-career__container--wide {
+    max-width: 980px;
+    width: calc(100% - 2rem);
+}
+
+.modal-view-career__header {
+    background: transparent;
+    padding: 0.6rem 1rem;
+    padding-right: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.modal-view-career__title {
+    color: #223f70 !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-align: center;
+}
+
+.modal-view-career__close {
+    color: #333 !important;
+    font-size: 1.5rem !important;
+    line-height: 1;
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+    position: absolute;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.modal-view-career__close:hover {
+    background: transparent;
+    box-shadow: none;
+    filter: none;
+    color: #333;
+}
+
+.modal-view-career__close:focus-visible {
+    outline: 2px solid rgba(34, 63, 112, 0.35);
+    outline-offset: 2px;
+}
+
+.modal-view-career__body {
+    padding: 0.75rem 1rem;
+    background: #fff;
+}
+
+/* Modal registro docente: desplazado un poco a la derecha */
+#modalRegistroDocente .modal-view-career__container {
+    margin-left: 12%;
+}
+
+/* Formulario registro docente en modal */
+#modalRegistroDocente .form-group-triple {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+#modalRegistroDocente .form-group-double {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+#modalRegistroDocente .form-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+#modalRegistroDocente .form-field label { margin-bottom: 4px; font-weight: 500; color: #333; }
+#modalRegistroDocente .form-field input,
+#modalRegistroDocente .form-field select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+#modalRegistroDocente .form-field .field-error { color: #c00; font-size: 0.875rem; margin-top: 2px; }
+#modalRegistroDocente .submit-button {
+    background-color: #223f70;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+#modalRegistroDocente .submit-button:hover {
+    background-color: #1a3360;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.4);
+}
+
+/* Formulario editar docente en modal: mismos colores que la vista original (letras y líneas rojas) */
+#teacherEditModal .error-message {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+#teacherEditModal .error-message ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+#teacherEditModal .error-message li {
+    margin: 5px 0;
+}
+#teacherEditModal .form-group-triple {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+#teacherEditModal .form-group-double {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+#teacherEditModal .form-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+#teacherEditModal .form-field label { margin-bottom: 4px; font-weight: 500; color: #BC8A55; }
+#teacherEditModal .form-field input,
+#teacherEditModal .form-field select {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    font-size: 1rem;
+    outline: none;
+    box-shadow: none;
+    color: #333;
+}
+#teacherEditModal .form-field input.validation-error,
+#teacherEditModal .form-field select.validation-error {
+    border-bottom-color: #c00;
+}
+#teacherEditModal .form-field .field-error { color: #c00; font-size: 0.875rem; margin-top: 2px; }
+#teacherEditModal .submit-button {
+    background-color: #223f70;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+#teacherEditModal .submit-button:hover {
+    background-color: #1a3360;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.4);
+}
+#teacherEditModal .form-action-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+#teacherEditModal form h3 {
+    color: #BC8A55;
+}
+#teacherEditModal .modal-view-career__container {
+    margin-left: 12%;
+}
+
+/* Modal Ver docente: mismo aspecto que modal Editar (título azul marino), desplazado a la derecha */
+#teacherViewModal .modal-view-career__container {
+    margin-left: 12%;
+}
+#teacherHorariosModal .modal-view-career__container {
+    margin-left: 12%;
+}
+/* Días de la semana en grilla: Lunes, Martes, etc. (no mayúsculas) */
+#teacherHorariosModal .teacher-horarios-grilla thead th:not(.grilla-col-hora) {
+    text-transform: none;
+}
+/* Diseño igual a página HORARIOS (Mi Información): cabecera + período + Exportar */
+.teacher-horario-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 0 10px;
+    gap: 1rem;
+}
+.teacher-horario-modal-header-text {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.teacher-horario-modal-career {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05em;
+    color: #1E1E1E;
+    font-weight: 600;
+    margin-bottom: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+}
+.teacher-horario-modal-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8em;
+    color: #1E1E1E;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.teacher-horario-modal-period {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1em;
+    color: #ACACAC;
+    font-weight: 500;
+}
+.teacher-horario-modal-export-btn {
+    width: 200px;
+    height: 43px;
+    background-color: #223F70;
+    border-radius: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border: none;
+    outline: none;
+    text-decoration: none;
+    margin-left: auto;
+}
+.teacher-horario-modal-export-btn:hover {
+    background-color: #1a3159;
+}
+/* Grilla semanal de horarios del docente (botón reloj): 8 columnas HORA + Lunes..Domingo, filas 07:00-21:00 */
+.teacher-horarios-grilla-wrapper {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+#teacherHorariosModal .teacher-horarios-grilla-wrapper {
+    background: #ECF0F1;
+    box-shadow: 0px 4px 4px 0px rgba(0,0,0,0.25);
+}
+.teacher-horarios-grilla-scroll {
+    overflow: auto;
+    max-height: 70vh;
+    border-radius: 20px;
+}
+.teacher-horarios-grilla {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 0.875rem;
+    background: #e8eef3;
+}
+#teacherHorariosModal .teacher-horarios-grilla {
+    min-width: calc(5.5rem + 7 * 246px);
+}
+.teacher-horarios-grilla thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+.teacher-horarios-grilla thead tr:first-child th:first-child {
+    border-top-left-radius: 20px;
+}
+.teacher-horarios-grilla thead tr:first-child th:last-child {
+    border-top-right-radius: 20px;
+}
+.teacher-horarios-grilla tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 20px;
+}
+.teacher-horarios-grilla tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 20px;
+}
+.teacher-horarios-grilla thead th {
+    background: #223f70;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.6rem 0.5rem;
+    text-align: center;
+    border: none;
+    border-right: 0.5px solid #d0d8e0;
+    border-bottom: 0.5px solid #d0d8e0;
+}
+.teacher-horarios-grilla thead th:last-child {
+    border-right: none;
+}
+.teacher-horarios-grilla thead th.grilla-col-hora {
+    text-transform: uppercase;
+}
+.teacher-horarios-grilla thead th:not(.grilla-col-hora) {
+    text-transform: none;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    box-sizing: border-box;
+}
+.teacher-horarios-grilla .grilla-col-hora {
+    width: 5.5rem;
+    min-width: 5.5rem;
+    max-width: 5.5rem;
+    text-align: center;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+.teacher-horarios-grilla .grilla-hora-line {
+    display: block;
+    line-height: 1.4;
+}
+.teacher-horarios-grilla .grilla-hora-line:first-child {
+    margin-bottom: 0.25rem;
+}
+.teacher-horarios-grilla tbody td {
+    background: #e8eef3;
+    border: none;
+    padding: 0.35rem;
+    vertical-align: top;
+    min-width: 6rem;
+}
+.teacher-horarios-grilla tbody td.grilla-cell {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    height: 95px;
+    min-height: 95px;
+    max-height: 95px;
+    box-sizing: border-box;
+}
+.teacher-horarios-grilla tbody td.grilla-col-hora {
+    background: #223f70;
+    color: #fff;
+    font-weight: 500;
+    white-space: nowrap;
+    border-right: 0.5px solid #d0d8e0;
+    border-bottom: 0.5px solid #d0d8e0;
+    padding: 0.5rem 0.35rem;
+    vertical-align: middle;
+    line-height: 1.4;
+    height: 95px;
+    min-height: 95px;
+}
+.teacher-horarios-grilla tbody tr:last-child td.grilla-col-hora {
+    border-bottom: none;
+}
+.teacher-horarios-grilla .grilla-cell {
+    height: 95px;
+    min-height: 95px;
+    max-height: 95px;
+    overflow: hidden;
+}
+.teacher-horarios-grilla .grilla-clase-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.6rem 0.5rem;
+    min-height: 2.5rem;
+    margin-bottom: 0.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-left: 4px solid #223F70;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.teacher-horarios-grilla .grilla-clase-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.teacher-horarios-grilla .grilla-clase-card:last-child {
+    margin-bottom: 0;
+}
+.teacher-horarios-grilla .grilla-clase-nombre {
+    font-weight: 600;
+    color: #223F70;
+    font-size: 0.8125rem;
+    text-align: center;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    overflow: visible;
+    line-height: 1.25;
+    min-height: 2.5em;
+    max-width: 7.5rem;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+.teacher-horarios-grilla .grilla-clase-aula {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.15rem;
+    text-align: center;
+}
+.teacher-horarios-grilla-empty {
+    text-align: center;
+    padding: 1.5rem;
+    color: #666;
+    margin: 0;
+}
+#teacherHorariosModal .modal-view-career__body {
+    padding: 0.75rem 1rem;
+    background: #fff;
+}
+
+/* Al imprimir (Exportar → Guardar como PDF): solo cuando se imprime desde el modal Horario de Docente.
+   Si no, en Mi Información > Horario al exportar se ocultaba todo y solo se veía "Cargando...". */
+@media print {
+    @page {
+        size: landscape;
+    }
+    /* Ocultar todo excepto el modal de horario del docente SOLO si body tiene esta clase (puesta al hacer clic en Exportar del modal) */
+    body.print-teacher-horario > *:not(#teacherHorariosModal) {
+        display: none !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal {
+        display: block !important;
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .modal-view-career__container {
+        margin: 0 !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .modal-view-career__body {
+        max-height: none !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horario-modal-export-btn {
+        display: none !important;
+    }
+    /* Nombre completo de la carrera en cabecera al exportar: usar todo el ancho y permitir wrap */
+    body.print-teacher-horario #teacherHorariosModal .teacher-horario-modal-header {
+        align-items: flex-start !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horario-modal-header-text {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horario-modal-career {
+        overflow: visible !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    /* Nombres completos en celdas (materia/carrera): sin recorte al exportar */
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla tbody td.grilla-cell {
+        overflow: visible !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla .grilla-clase-card {
+        overflow: visible !important;
+        min-height: auto !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla .grilla-clase-nombre {
+        overflow: visible !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla-wrapper {
+        max-height: none !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla-scroll {
+        max-height: none !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla .grilla-col-hora {
+        width: 10% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla thead th:not(.grilla-col-hora),
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla tbody td.grilla-cell {
+        width: 12.85% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla thead {
+        position: static !important;
+        display: table-header-group;
+    }
+    body.print-teacher-horario #teacherHorariosModal .teacher-horarios-grilla tbody tr {
+        page-break-inside: avoid;
+    }
+}
+
+/* Botón Exportar en vista Horario: ovalado azul marino */
+.horario-export-pdf-btn {
+    background-color: #2c5282;
+    color: #fff;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.65rem 2.25rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.horario-export-pdf-btn:hover {
+    background-color: #2a4365;
+}
+
+/* Imprimir desde la vista completa de Horario de Docente (no modal) */
+@media print {
+    body.print-teacher-horario-page .mobile-menu-toggle,
+    body.print-teacher-horario-page .sidebar,
+    body.print-teacher-horario-page .main-content > .header {
+        display: none !important;
+    }
+    body.print-teacher-horario-page .teacher-horario-modal-export-btn,
+    body.print-teacher-horario-page .horario-export-pdf-btn,
+    body.print-teacher-horario-page .horario-close-btn {
+        display: none !important;
+    }
+}
+
+#teacherViewModal .modal-view-career__body {
+    padding: 0.75rem 1rem;
+    background: #fff;
+}
+/* Vista docente: misma estructura que editar (form-group-triple, form-field) solo lectura - aplica en modal y en página show */
+.modal-view-career__body .form-body--view-only .form-group-triple,
+#teacherViewModal .form-body--view-only .form-group-triple {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.modal-view-career__body .form-body--view-only .form-group-double,
+#teacherViewModal .form-body--view-only .form-group-double {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.modal-view-career__body .form-body--view-only .form-field,
+#teacherViewModal .form-body--view-only .form-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+.modal-view-career__body .form-body--view-only .form-field label,
+#teacherViewModal .form-body--view-only .form-field label {
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #BC8A55;
+}
+.modal-view-career__body .form-body--view-only .form-field input,
+#teacherViewModal .form-body--view-only .form-field input {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    font-size: 1rem;
+    background: #f5f5f5;
+    cursor: default;
+    color: #333;
+}
+.modal-view-career__body .form-body--view-only h3,
+#teacherViewModal .form-body--view-only h3 {
+    margin: 1rem 0 0.25rem;
+    font-size: 1.1rem;
+    color: #BC8A55;
+}
+.modal-view-career__body .form-body--view-only h3:first-child,
+#teacherViewModal .form-body--view-only h3:first-child {
+    margin-top: 0;
+}
+.modal-view-career__body .form-body--view-only hr,
+#teacherViewModal .form-body--view-only hr {
+    margin: 0.5rem 0 1rem;
+    border: none;
+    border-top: 1px solid #eee;
+}
+#teacherViewModal .career-view-row {
+    border-bottom: 2px solid #DB5865;
+    padding: 0.5rem 0.25rem;
+    background: #fff;
+}
+#teacherViewModal .career-view-row dt {
+    color: #BC8A55;
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+#teacherViewModal .career-view-row dd {
+    color: #333;
+    font-size: 0.9375rem;
+}
+
+.career-view-dl--styled {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.career-view-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 0.2rem;
+    padding: 0.35rem 0.5rem 0.3rem 0.25rem;
+    background: #fff;
+    border-radius: 0;
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    box-shadow: none;
+    text-align: left;
+}
+.career-view-row.career-view-row--no-border {
+    border-bottom: none;
+}
+
+.career-view-row dt {
+    margin: 0;
+    padding-left: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #BC8A55;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    text-align: left;
+    justify-self: start;
+}
+.career-view-row dt.career-view-dt--gold {
+    color: #B8860B;
+}
+
+.career-view-row dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: #333;
+    font-weight: 500;
+    padding-left: 0;
+    text-align: left;
+}
+
+.modal-view-career__footer {
+    padding: 1rem 1.25rem 1.25rem;
+    background: #f8f9fc;
+    margin-top: 0;
+}
+
+.modal-view-career__btn-close {
+    min-width: 120px;
+    padding: 0.6rem 1.25rem;
+    background: linear-gradient(135deg, #223f70 0%, #2d4a7c 100%) !important;
+    color: #fff !important;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(34, 63, 112, 0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.modal-view-career__btn-close:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 63, 112, 0.35);
 }
 
 /* ... Mantener el resto de los estilos .cancel-button, .submit-button, etc. ... */

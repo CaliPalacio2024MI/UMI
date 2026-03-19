@@ -1,11 +1,28 @@
-@extends('layouts.app')
+@extends(request('modal') ? 'layouts.iframe_content' : 'layouts.app')
 
 @section('title', isset($alumno) ? 'Proceso de Reinscripción' : 'Registro de Aspirante')
 
+@if(!request('modal'))
 @vite(['resources/css/ControlEsc/base.css','resources/js/app.js'])
+@endif
 
 @section('content')
 
+    {{-- 0. ÉXITO EN MODAL: cerrar modal y refrescar lista en el padre --}}
+    @if(request('modal') && request('success') && session('success'))
+        <div class="form-container" style="padding: 2rem; text-align: center;">
+            <p style="font-size: 1.1rem; color: #27ae60; margin-bottom: 1rem;">{{ session('success') }}</p>
+            <p style="color: #666;">Cerrando ventana...</p>
+        </div>
+        <script>
+            (function() {
+                if (window.parent && window.parent.cerrarModalInscripcion) {
+                    window.parent.cerrarModalInscripcion();
+                    window.parent.location.reload();
+                }
+            })();
+        </script>
+    @else
     {{-- 1. BLOQUE DE ERROR (CANDADO) --}}
     @if(session('error'))
         <div class="umi-error-card">
@@ -30,8 +47,9 @@
     @else
     <div class="form-container">
         <div class="header-section">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 class="form-title">
+            <div style="display: grid; grid-template-columns: 32px 1fr 32px; align-items: center;">
+                <span aria-hidden="true"></span>
+                <h2 class="form-title" style="text-align: center; margin: 0;">
                     {{-- Título Dinámico --}}
                     @if(isset($alumno))
                          Reinscripción de Alumno <span style="font-size: 0.8em; opacity: 0.8;">(Al Semestre {{ $alumno->semestre + 1 }})</span>
@@ -39,9 +57,21 @@
                          Nuevo Registro de Aspirante
                     @endif
                 </h2>
-                <a href="{{ route('escolar.students.index') }}" class="btn-back" style="text-decoration: none; color: #666;">
-                    <i class="fa-solid fa-arrow-left"></i> Volver a Lista
+                @if(request('modal'))
+                <a href="#" onclick="if(window.parent && window.parent.cerrarModalInscripcion) window.parent.cerrarModalInscripcion(); return false;"
+                   class="btn-back"
+                   aria-label="Cerrar"
+                   style="text-decoration: none; color: #666; font-size: 1.8rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; justify-self: end;">
+                    &times;
                 </a>
+                @else
+                <a href="{{ route('escolar.students.index') }}"
+                   class="btn-back"
+                   aria-label="Cerrar"
+                   style="text-decoration: none; color: #666; font-size: 1.8rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; justify-self: end;">
+                    &times;
+                </a>
+                @endif
             </div>
 
             {{-- Badge de Status para Reinscripciones --}}
@@ -57,13 +87,27 @@
         </div>
         
         <div class="form-body">
+            <style>
+                #inscriptionForm .submit-button,
+                #inscriptionForm .submit-button:hover {
+                    box-shadow: none;
+                }
+                #inscriptionForm .submit-button:hover {
+                    background-color: #1a3055;
+                    color: white;
+                }
+            </style>
             {{-- Formulario Único: Maneja tanto STORE (Nuevo) como UPDATE (Reinscripción) --}}
             <form method="POST" 
                   action="{{ isset($alumno) ? route('escolar.inscripcion.update', $alumno->id) : route('escolar.inscripcion.store') }}" 
                   class="registration-form" 
                   id="inscriptionForm"
-                  enctype="multipart/form-data">
-                
+                  enctype="multipart/form-data"
+                  target="_self"
+                  data-es-nuevo-registro="{{ isset($alumno) ? '0' : '1' }}">
+                @if(request('modal'))
+                <input type="hidden" name="modal" value="1">
+                @endif
                 @csrf
                 @if(isset($alumno))
                     @method('PUT')
@@ -78,76 +122,7 @@
                     </div>
                 @endif
 
-                {{-- 1. TIPO DE REGISTRO --}}
-                <h3> Clasificación del Ingreso</h3>
-                <hr>
-                <div class="form-group-double" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
-                    <div class="form-field" style="flex-direction: row; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="is_anfitrion" name="is_anfitrion" value="1" 
-                               style="width: 20px; height: 20px; cursor: pointer;"
-                               {{ old('is_anfitrion', $alumno->is_anfitrion ?? false) ? 'checked' : '' }}>
-                        <label for="is_anfitrion" style="margin: 0; cursor: pointer; font-weight: 600; color: #2c3e50;">
-                            ¿Es Anfitrión? (Colaborador de Mundo Imperial)
-                        </label>
-                    </div>
-
-                    {{-- SELECTOR DE USUARIOS EXISTENTES (Solo visible si es anfitrión) --}}
-                    <div id="container-buscador-usuarios" class="form-field" style="display: none;">
-                        <label style="color: #2980b9; font-weight: bold;"><i class="fa-solid fa-magnifying-glass"></i> Buscar Anfitrión Existente</label>
-                        <select id="user_selector" class="select2" style="width: 100%; padding: 8px;">
-                            <option value="">-- Seleccionar para Autocompletar --</option>
-                            @if(isset($usuariosAnfitriones))
-                                @foreach($usuariosAnfitriones as $u)
-                                    <option value="{{ $u->id }}" 
-                                        data-nombre="{{ $u->nombre }}" 
-                                        data-apellido_p="{{ $u->apellido_paterno }}" 
-                                        data-apellido_m="{{ $u->apellido_materno }}"
-                                        data-email="{{ $u->email }}"
-                                        data-telefono="{{ $u->telefono }}"
-                                        data-workstation="{{ $u->workstation_id }}"
-                                        data-department="{{ $u->department_id }}"
-                                        data-rfc="{{ $u->RFC }}"> {{ $u->nombre }} {{ $u->apellido_paterno }} - ({{ $u->email }})
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <small style="color: #666;">Selecciona un usuario para cargar sus datos automáticamente y vincularlo.</small>
-                        
-                        {{-- INPUT OCULTO: Aquí guardaremos el ID si seleccionan a alguien --}}
-                        <input type="hidden" name="existing_user_id" id="existing_user_id" value="">
-                    </div>
-                </div>
-
-                {{-- SECCIÓN LABORAL (Dinámica) --}}
-                <div id="seccion-laboral" style="display: none; background-color: #e8f6f3; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 5px solid #27ae60; margin-top: 15px;">
-                    <h4 style="color: #27ae60; margin-top: 0; margin-bottom: 15px;"><i class="fa-solid fa-briefcase"></i> Datos Laborales</h4>
-                    <div class="form-group-double">
-                        <div class="form-field">
-                            <label>Departamento</label>
-                            <select name="department_id" id="department_id">
-                                <option value="">Seleccione Departamento...</option>
-                                @foreach($departamentos as $dep)
-                                    <option value="{{ $dep->id }}" {{ old('department_id', $alumno->department_id ?? '') == $dep->id ? 'selected' : '' }}>
-                                        {{ $dep->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label>Puesto</label>
-                            <select name="workstation_id" id="workstation_id">
-                                <option value="">Seleccione Puesto...</option>
-                                @foreach($puestos as $pto)
-                                    <option value="{{ $pto->id }}" {{ old('workstation_id', $alumno->workstation_id ?? '') == $pto->id ? 'selected' : '' }}>
-                                        {{ $pto->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- 2. DATOS PERSONALES --}}
+                {{-- DATOS PERSONALES --}}
                 <h3> Datos Personales</h3>
                 <hr>
                 <div class="form-group-triple">
@@ -176,13 +151,10 @@
                         <input type="text" name="telefono" id="telefono" value="{{ old('telefono', $alumno->telefono ?? '') }}" required>
                     </div>
                     <div class="form-field">
-                        <label>RFC <small>(Opcional)</small></label>
-                        <input type="text" name="RFC" id="inputRFC" 
-                            value="{{ old('RFC', $alumno->RFC ?? '') }}" 
-                            placeholder="Generación automática si vacío"
-                            {{-- Agrega 'readonly' si ya existe un RFC para el alumno actual --}}
-                            {{ isset($alumno) && !empty($alumno->RFC) ? 'readonly' : '' }}
-                            style="{{ isset($alumno) && !empty($alumno->RFC) ? 'background-color: #f0f0f0;' : '' }}">
+                        <label>CURP</label>
+                        <input type="text" name="curp" id="inputCurp" 
+                            value="{{ old('curp', $alumno->curp ?? '') }}" 
+                            placeholder="Clave Única de Registro de Población">
                     </div>
                 </div>
 
@@ -232,10 +204,12 @@
                 <div class="form-group-double">
                     <div class="form-field">
                         <label>Carrera a Cursar</label>
-                        <select name="carrera_id" required>
+                        <select name="carrera_id" id="carrera_id" required>
                             <option value="">Seleccione una carrera...</option>
                             @foreach ($carreras as $carrera)
-                                <option value="{{ $carrera->id }}" {{ old('carrera_id', $alumno->carrera_id ?? '') == $carrera->id ? 'selected' : '' }}>
+                                <option value="{{ $carrera->id }}"
+                                        data-semesters="{{ (int) ($carrera->semesters ?? 1) }}"
+                                        {{ old('carrera_id', $alumno->carrera_id ?? '') == $carrera->id ? 'selected' : '' }}>
                                     {{ $carrera->name }}
                                 </option>
                             @endforeach
@@ -243,7 +217,7 @@
                     </div>
                     <div class="form-field">
                         <label>Semestre a Inscribir</label>
-                        <input type="number" name="semestre" 
+                        <input type="number" id="semestre" name="semestre" 
                                value="{{ old('semestre', isset($alumno) ? ($alumno->semestre + 1) : 1) }}" 
                                readonly style="background-color: #e9ecef; font-weight: bold; border-color: #ced4da;">
                         @if(isset($alumno))
@@ -334,10 +308,11 @@
                                 <label for="modal_concepto" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</label>
                                 <select id="modal_concepto" name="concepto" class="filter-select" style="width: 100%; padding: 8px;">
                                     <option value="" data-amount="">-- Seleccione un concepto --</option>
-                                    @if(isset($conceptosDisponibles))
+                                    <option value="Inscripción de nuevo ingreso" data-amount="80000">Inscripción de nuevo ingreso</option>
+                                    @if(isset($conceptosDisponibles) && $conceptosDisponibles->isNotEmpty())
                                         @foreach($conceptosDisponibles as $c)
                                             <option value="{{ $c->concept }}" data-amount="{{ $c->amount }}">
-                                                {{ $c->concept }}
+                                                {{ $c->concept }} — $ {{ number_format((float)$c->amount, 2) }}
                                             </option>
                                         @endforeach
                                     @endif
@@ -429,23 +404,8 @@
 
 <script>
     function ejecutarLogicaInscripcion() {
-        // ELEMENTOS GENERALES
-        const checkAnfitrion = document.getElementById('is_anfitrion');
-        const seccionLaboral = document.getElementById('seccion-laboral');
-        const containerBuscador = document.getElementById('container-buscador-usuarios');
-        const selectorUsuario = document.getElementById('user_selector');
-        const hiddenUserId = document.getElementById('existing_user_id');
+        // ELEMENTOS PERSONALES
         const emailHelper = document.getElementById('email_helper');
-        
-        // ELEMENTOS PERSONALES Y LABORALES
-        const inputNombre = document.getElementById('nombre');
-        const inputPat = document.getElementById('apellido_paterno');
-        const inputMat = document.getElementById('apellido_materno');
-        const inputEmail = document.getElementById('email');
-        const inputTel = document.getElementById('telefono');
-        const inputRFC = document.getElementById('inputRFC');
-        const inputDepto = document.getElementById('department_id');
-        const inputPuesto = document.getElementById('workstation_id');
         const inputFechaNac = document.getElementById('fecha_nacimiento');
         const inputEdad = document.getElementById('edad');
 
@@ -455,51 +415,6 @@
         const conceptoSelect = document.getElementById('modal_concepto');
         const montoVisible = document.getElementById('modal_monto_visible');
         const montoHidden = document.getElementById('modal_monto');
-
-
-        // --- FUNCIONES AUXILIARES ---
-
-        // 1. CONTROL DE SOLO LECTURA/BLOQUEO
-        const setReadOnly = (inputElement, isReadOnly) => {
-            if (inputElement) {
-                if (inputElement.tagName === 'SELECT') {
-                    inputElement.disabled = isReadOnly;
-                } else {
-                    inputElement.readOnly = isReadOnly;
-                }
-                inputElement.style.backgroundColor = isReadOnly ? "#e9ecef" : "";
-            }
-        };
-
-        // 2. LIMPIEZA DE CAMPOS PERSONALES Y LABORALES
-        function limpiarCamposPersonales() {
-            // Aplicar desbloqueo a todos los campos
-            setReadOnly(inputNombre, false);
-            setReadOnly(inputPat, false);
-            setReadOnly(inputMat, false);
-            setReadOnly(inputRFC, false);
-            setReadOnly(inputEmail, false);
-            setReadOnly(inputDepto, false);
-            setReadOnly(inputPuesto, false);
-            
-            // Limpiar valores (solo si no estamos en modo edición o si no hay old data)
-            if(!checkAnfitrion.checked || (checkAnfitrion.checked && selectorUsuario.value === "")) {
-                if(inputNombre) inputNombre.value = "";
-                if(inputPat) inputPat.value = "";
-                if(inputMat) inputMat.value = "";
-                if(inputDepto) inputDepto.value = "";
-                if(inputPuesto) inputPuesto.value = "";
-                if(inputRFC) inputRFC.value = "";
-                if(inputEmail) inputEmail.value = "";
-            }
-
-            if(inputEmail && emailHelper) emailHelper.style.display = 'none';
-            if(hiddenUserId) hiddenUserId.value = "";
-
-            // Limpiar campos laborales si se oculta la sección
-            if(inputDepto) inputDepto.value = "";
-            if(inputPuesto) inputPuesto.value = "";
-        }
 
 
         // --- LÓGICA DE FACTURACIÓN (DESPLIEGUE DEL MENÚ) ---
@@ -542,110 +457,32 @@
         }
 
 
-        // --- LÓGICA ANFITRION (TOGGLE PRINCIPAL) ---
-        if (checkAnfitrion && seccionLaboral) {
-            function toggleAnfitrion() {
-                if (checkAnfitrion.checked) {
-                    // Caso Anfitrión: Mostrar datos laborales y buscador
-                    seccionLaboral.style.display = 'block';
-                    if (containerBuscador) containerBuscador.style.display = 'block';
-                    
-                    // Si es trabajador, desmarcamos factura por defecto y la habilitamos
-                    if (checkFactura) {
-                        checkFactura.disabled = false; // Habilitar para que pueda desmarcarla
-                        
-                        // Si el usuario no la ha cambiado manualmente, la desmarcamos (por defecto)
-                        if (!checkFactura.dataset.userChanged) {
-                            checkFactura.checked = false;
-                            toggleFactura(); 
-                        }
-                    }
-                    
-                } else {
-                    // Caso Estudiante Regular: Ocultar y Forzar Factura OBLIGATORIA
-                    seccionLaboral.style.display = 'none';
-                    if (containerBuscador) containerBuscador.style.display = 'none';
-                    
-                    //  FORZAR FACTURA OBLIGATORIA Y BLOQUEAR 
-                    if (checkFactura) {
-                        checkFactura.checked = true; // Se marca obligatoriamente
-                        checkFactura.dataset.userChanged = 'false'; // Reseteamos, esto no es cambio de usuario
-                        toggleFactura(); //  Esto despliega el menú de detalles de facturación 🚨
-                    }
-
-                    // Limpieza y desbloqueo de campos personales/laborales
-                    limpiarCamposPersonales();
-                }
-            }
-
-            // Listener Anfitrión
-            checkAnfitrion.addEventListener('change', toggleAnfitrion);
-            
-            // Ejecución inicial para aplicar el estado al cargar la página
-            toggleAnfitrion();
+        // Factura obligatoria por defecto al cargar
+        if (checkFactura && billingDetails) {
+            checkFactura.checked = true;
+            billingDetails.style.display = 'block';
         }
-
-
-        // --- LÓGICA AUTOCOMPLETADO (Solo si es Anfitrión y selecciona) ---
-        if (selectorUsuario) {
-            selectorUsuario.addEventListener('change', function() {
-                const opt = this.options[this.selectedIndex];
-                const rfcValue = opt.getAttribute('data-rfc'); 
-                
-                if (this.value) {
-                    // 1. APLICACIÓN DE VALORES
-                    hiddenUserId.value = this.value;
-                    if(inputNombre) inputNombre.value = opt.getAttribute('data-nombre');
-                    if(inputPat) inputPat.value = opt.getAttribute('data-apellido_p');
-                    if(inputMat) inputMat.value = opt.getAttribute('data-apellido_m');
-                    if(inputTel) inputTel.value = opt.getAttribute('data-telefono');
-                    if(inputDepto) inputDepto.value = opt.getAttribute('data-department');
-                    if(inputPuesto) inputPuesto.value = opt.getAttribute('data-workstation');
-
-                    // RFC
-                    if (inputRFC) { 
-                        inputRFC.value = rfcValue || ""; 
-                    }
-                    
-                    // Email y Helper
-                    if(inputEmail) {
-                        inputEmail.value = opt.getAttribute('data-email');
-                        if(emailHelper) emailHelper.style.display = 'block';
-                    }
-                    
-                    // 2. APLICAR BLOQUEO
-                    setReadOnly(inputNombre, true);
-                    setReadOnly(inputPat, true);
-                    setReadOnly(inputMat, true);
-                    setReadOnly(inputRFC, true);
-                    setReadOnly(inputEmail, true);
-                    setReadOnly(inputDepto, true);
-                    setReadOnly(inputPuesto, true);
-
-                } else {
-                    // Deselección: Limpia y desbloquea
-                    limpiarCamposPersonales(); 
-                    // Necesitamos re-aplicar el toggleAnfitrion para asegurar que los campos laborales se oculten/muestren correctamente.
-                    toggleAnfitrion();
-                }
-            });
-        }
-
 
         // --- LÓGICA CÁLCULO DE EDAD ---
         if (inputFechaNac && inputEdad) {
             function calcularEdad() {
                 const fechaNac = inputFechaNac.value;
                 if (fechaNac) {
-                    const birthDate = new Date(fechaNac);
+                    // Parseo LOCAL para evitar desfase por zona horaria (YYYY-MM-DD)
+                    const parts = fechaNac.split('-').map(Number);
+                    const birthDate = (parts.length === 3) ? new Date(parts[0], parts[1] - 1, parts[2]) : null;
+                    if (!birthDate || Number.isNaN(birthDate.getTime())) {
+                        inputEdad.value = '';
+                        return;
+                    }
+
                     const today = new Date();
                     let age = today.getFullYear() - birthDate.getFullYear();
-                    const monthDifference = today.getMonth() - birthDate.getMonth();
-                    
-                    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-                        age--;
-                    }
-                    inputEdad.value = age;
+                    const hasHadBirthday =
+                        (today.getMonth() > birthDate.getMonth()) ||
+                        (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+                    if (!hasHadBirthday) age--;
+                    inputEdad.value = age >= 0 ? age : 0;
                 } else {
                     inputEdad.value = '';
                 }
@@ -656,10 +493,38 @@
             calcularEdad();
         }
 
+        // --- LÓGICA: semestre a inscribir ---
+        // En nuevo registro de aspirante siempre semestre 1; en reinscripción se mantiene el valor del servidor
+        const carreraSelect = document.getElementById('carrera_id');
+        const inputSemestre = document.getElementById('semestre');
+        const formInscripcion = document.getElementById('inscriptionForm');
+        const esNuevoRegistro = formInscripcion && formInscripcion.getAttribute('data-es-nuevo-registro') === '1';
+
+        function actualizarSemestreSegunCarrera() {
+            if (!inputSemestre) return;
+            if (esNuevoRegistro) {
+                inputSemestre.value = '1';
+                return;
+            }
+            // Reinscripción: mantener valor actual (viene del servidor)
+            const opt = carreraSelect && carreraSelect.options[carreraSelect.selectedIndex];
+            const totalSemestres = opt ? parseInt(opt.getAttribute('data-semesters') || '0', 10) : 0;
+            if (totalSemestres > 0) {
+                const actual = parseInt(inputSemestre.value || '1', 10) || 1;
+                inputSemestre.value = Math.min(actual, totalSemestres);
+            }
+        }
+
+        if (carreraSelect && inputSemestre) {
+            carreraSelect.addEventListener('change', actualizarSemestreSegunCarrera);
+            actualizarSemestreSegunCarrera();
+        }
+
     }
     ejecutarLogicaInscripcion();
 
 </script>
     
+@endif
 @endif
 @endsection

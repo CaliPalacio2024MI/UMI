@@ -9,6 +9,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class MateriaController extends Controller
 {
@@ -56,24 +58,43 @@ class MateriaController extends Controller
 
     public function store(Request $request)
     {
-        // 1. VALIDACIÓN DE DATOS
+        // 1. VALIDACIÓN DE DATOS (nombre único por carrera, no global)
         $validatedData = $request->validate([
-            // ¡CORRECCIÓN AQUÍ! Se usa 'carrers' como nombre de la tabla
-            'carrera_id' => ['required', 'integer', 'exists:carrers,id'], 
-            'nombre' => ['required', 'string', 'max:100'],
+            'carrera_id' => ['required', 'integer', 'exists:careers,id'],
+            'nombre' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('materias', 'nombre')->where('career_id', $request->input('carrera_id')),
+            ],
             'creditos' => ['required', 'integer', 'min:1'],
-            'semestre' => ['required', 'integer', 'min:1', 'max:15'], 
-            'type' => ['required', 'in:Presencial,En linea'], 
+            'semestre' => ['required', 'integer', 'min:1', 'max:15'],
+            'type' => ['required', 'in:Presencial,En linea'],
+            'descripcion' => ['nullable', 'string', 'max:500'],
+        ], [
+            'carrera_id.required' => 'Te falta un campo por rellenar.',
+            'carrera_id.integer' => 'Te falta un campo por rellenar.',
+            'carrera_id.exists' => 'Te falta un campo por rellenar.',
+            'nombre.required' => 'Te falta un campo por rellenar.',
+            'nombre.max' => 'Te falta un campo por rellenar.',
+            'nombre.unique' => 'Ya existe una materia con ese nombre. Elija otro.',
+            'creditos.required' => 'Te falta un campo por rellenar.',
+            'creditos.min' => 'Te falta un campo por rellenar.',
+            'semestre.required' => 'Te falta un campo por rellenar.',
+            'semestre.min' => 'Te falta un campo por rellenar.',
+            'semestre.max' => 'Te falta un campo por rellenar.',
+            'type.required' => 'Te falta un campo por rellenar.',
+            'type.in' => 'Te falta un campo por rellenar.',
         ]);
-        
-        // 2. RENOMBRAR Y PREPARAR DATOS
-        // Mapeamos los nombres del formulario a los nombres de las columnas en la DB
+
+        // 2. PREPARAR DATOS (la tabla materias exige descripcion NOT NULL)
         $dataToSave = [
-            'career_id' => $validatedData['carrera_id'], // Mapeo de input 'carrera_id' a DB 'career_id'
+            'career_id' => $validatedData['carrera_id'],
             'nombre' => $validatedData['nombre'],
             'creditos' => $validatedData['creditos'],
             'semestre' => $validatedData['semestre'],
             'type' => $validatedData['type'],
+            'descripcion' => $validatedData['descripcion'] ?? '',
         ];
         
         // 3. CREACIÓN DEL REGISTRO
@@ -81,32 +102,67 @@ class MateriaController extends Controller
         Materia::create($dataToSave); 
 
         // 4. REDIRECCIÓN
-        return Redirect::route('Listas.materias.index') 
+        return Redirect::route('control.subjects.index') 
             ->with('success', '¡Materia creada exitosamente!');
     }
     public function update(Request $request, Materia $registro)
     {
-        // 1. VALIDACIÓN
-        $validatedData = $request->validate([
-            'carrera_id' => ['required', 'integer', 'exists:carrers,id'],
-            'nombre' => ['required', 'string', 'max:100'],
+        // 1. VALIDACIÓN (nombre único por carrera; mismo nombre permitido en otra carrera)
+        $validator = Validator::make($request->all(), [
+            'carrera_id' => ['required', 'integer', 'exists:careers,id'],
+            'nombre' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('materias', 'nombre')
+                    ->where('career_id', $request->input('carrera_id'))
+                    ->ignore($registro->id),
+            ],
             'creditos' => ['required', 'integer', 'min:1'],
-            'semestre' => ['required', 'integer', 'min:1', 'max:15'], 
-            'type' => ['required', 'in:Presencial,En linea'], 
-            'descripcion' => ['nullable', 'string', 'max:500'], // Validamos la descripción
+            'semestre' => ['required', 'integer', 'min:1', 'max:15'],
+            'type' => ['required', 'in:Presencial,En linea'],
+            'descripcion' => ['nullable', 'string', 'max:500'],
+        ], [
+            'carrera_id.required' => 'Te falta un campo por rellenar.',
+            'carrera_id.integer' => 'Te falta un campo por rellenar.',
+            'carrera_id.exists' => 'Te falta un campo por rellenar.',
+            'nombre.required' => 'Te falta un campo por rellenar.',
+            'nombre.max' => 'Te falta un campo por rellenar.',
+            'nombre.unique' => 'Ya existe una materia con ese nombre. Elija otro.',
+            'creditos.required' => 'Te falta un campo por rellenar.',
+            'creditos.min' => 'Te falta un campo por rellenar.',
+            'semestre.required' => 'Te falta un campo por rellenar.',
+            'semestre.min' => 'Te falta un campo por rellenar.',
+            'semestre.max' => 'Te falta un campo por rellenar.',
+            'type.required' => 'Te falta un campo por rellenar.',
+            'type.in' => 'Te falta un campo por rellenar.',
         ]);
-        
-        // 2. PRESERVAR LA CLAVE (¡USANDO $registro!)
-        // Añadimos la clave actual al array de datos validados
-        // Esto asume que 'clave' no se está actualizando desde este formulario.
-        $validatedData['clave'] = $registro->clave ?? null;
 
-        // 3. ACTUALIZACIÓN (Directo y limpio)
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('edit_materia_id', $registro->id);
+        }
+
+        $validatedData = $validator->validated();
+
+        // 2. PRESERVAR CLAVE Y DESCRIPCIÓN (la columna descripcion no acepta NULL)
+        $validatedData['clave'] = $registro->clave ?? null;
+        $validatedData['descripcion'] = $validatedData['descripcion'] ?? $registro->descripcion ?? '';
+
+        // 3. ACTUALIZACIÓN
         $registro->update($validatedData); 
 
         // 4. REDIRECCIÓN
-        return Redirect::route('Listas.materias.index') 
+        return Redirect::route('control.subjects.index')
             ->with('success', '¡Materia actualizada exitosamente!');
     }
-    
+
+    public function destroy(Materia $registro)
+    {
+        $registro->delete();
+        return Redirect::route('control.subjects.index')
+            ->with('success', 'Materia eliminada correctamente.');
+    }
 }

@@ -26,17 +26,12 @@ class MiInformacionController extends Controller
     }
 
     /**
-     * Muestra las Clases del alumno o docente.
+     * Muestra las Clases del alumno (horarios en los que está inscrito).
      */
     public function showClases()
     {
-        // 1. Obtener usuario
-        $user = Auth::user(); 
-
-        // 2. Obtener clases (simulado o real)
-        $clases = []; // O $user->courses;
-        
-        // 3. Enviar AMBAS variables: usuario y clases
+        $user = Auth::user();
+        $clases = $user->horarioClases()->with(['materia', 'carrera', 'user'])->get();
         return view('layouts.MiInformacion.clases', compact('user', 'clases'));
     }
 

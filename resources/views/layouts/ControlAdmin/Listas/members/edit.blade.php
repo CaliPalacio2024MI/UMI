@@ -9,12 +9,12 @@
     <div class="form-container">
         {{-- Encabezado --}}
         <div class="header-section">
-            <h2 class="form-title">✨ Edición de Docente</h2>
+            <h2 class="form-title">Edición de Docente</h2>
         </div>
         
         {{-- Cuerpo del formulario --}}
         <div class="form-body">
-            <form method="POST" action="{{ route('escolar.students.update',$user->id) }}" class="registration-form">
+            <form method="POST" action="{{ route('control.teachers.update', $user->id) }}" class="registration-form">
                 @csrf
                 @method('PUT')
                 {{-- Manejo de Errores de Validación --}}
@@ -29,7 +29,7 @@
                 @endif
 
                 {{-- Sección: Datos Personales --}}
-                <h3>👤 Datos Personales</h3>
+                <h3><img src="{{ asset('images/icons/circle-user-solid-full.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Datos Personales</h3>
                 <hr>
                 <div class="form-group-triple">
                     {{-- Nombre(s) --}}
@@ -69,7 +69,10 @@
                     {{-- RFC --}}
                     <div class="form-field">
                         <label for="RFC">RFC</label>
-                        <input type="text" id="RFC" name="RFC" value="{{ old('RFC',$user->RFC) }}">
+                        <input type="text" id="RFC" name="RFC" value="{{ old('RFC',$user->RFC) }}" required maxlength="13">
+                        @error('RFC')
+                            <span class="field-error">Falta rellenar el RFC.</span>
+                        @enderror
                     </div>
 
                     {{-- Fecha de Nacimiento --}}
@@ -81,12 +84,12 @@
                     {{-- Edad --}}
                     <div class="form-field">
                         <label for="edad">Edad</label>
-                        <input type="number" id="edad" name="edad" value="{{ old('edad',$user->edad) }}" readonly>
+                        <input type="number" id="edad" name="edad" value="{{ old('edad',$user->edad) }}" min="1" max="70" step="1">
                     </div>
                 </div>
                 
                 {{-- Sección: Dirección --}}
-                <h3>📍 Dirección</h3>
+                <h3><img src="{{ asset('images/icons/address-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Dirección</h3>
                 <hr>
 
                 {{-- Dirección (se asume que hay 6 campos, agrupados en dos filas de 3) --}}
@@ -117,7 +120,7 @@
                 </div>
 
                 {{-- Sección: Contraseña y Carrera --}}
-                <h3>🔒 Acceso e Inscripción</h3>
+                <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Acceso</h3>
                 <hr>
 
                 <div class="form-group-triple">
@@ -127,14 +130,14 @@
                         <select id="carrera" name="carrera" required>
                             <option value="">Seleccione una Carrera</option>
                             @foreach ($carreras as $carrera)
-                                <option value="{{ $carrera->id }}"{{ old('carrera') == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
+                                <option value="{{ $carrera->id }}"{{ old('carrera', $user->academicProfile?->career_id) == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
 
                 <div class="form-action-buttons">
-                    <button type="submit" class="submit-button">Registrar Alumno</button>
+                    <button type="submit" class="submit-button">+ Actualizar</button>
                 </div>
             </form>
         </div>

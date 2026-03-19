@@ -226,20 +226,17 @@
                                     <li class="{{ request()->routeIs('control.subjects.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('control.subjects.index') }}">Materias</a>
                                     </li>
-                                    <li class="{{ request()->routeIs('control.teachers.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.teachers.index') }}">Lista de Docentes</a>
-                                    </li>
                                     <li class="{{ request()->routeIs('control.schedules.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('control.schedules.index') }}">Horarios</a>
                                     </li>
                                     <li class="{{ request()->routeIs('control.classes.*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Clases</a> 
+                                        <a href="{{ route('control.classes.index') }}">Clases</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('control.teachers.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.teachers.index') }}">Docentes</a>
                                     </li>
                                     <li class="{{ request()->routeIs('control.students.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.students.index') }}">Lista de Alumnos</a>
-                                    </li>
-                                    <li class="{{ request()->is('control/academico/reticula') ? 'active-submenu' : '' }}">
-                                        <a href="#">Retícula Escolar</a>
+                                        <a href="{{ route('control.students.index') }}">Alumnos</a>
                                     </li>
                                     <li class="{{ request()->is('control/academico/planeacion') ? 'active-submenu' : '' }}">
                                         <a href="#">Planeación Escolar</a>
@@ -289,6 +286,13 @@
             @if($isMaster || $isCoordinatorCTP)
                 <li class="{{ request()->routeIs('crm.prospectos') ? 'active-submenu' : '' }}">
                     <a href="{{ route('crm.prospectos') }}">Prospectos</a>
+                </li>
+            @endif
+
+            {{-- Comisiones: solo Master --}}
+            @if($isMaster)
+                <li class="{{ request()->routeIs('crm.comisiones') ? 'active-submenu' : '' }}">
+                    <a href="{{ route('crm.comisiones') }}">Comisiones</a>
                 </li>
             @endif
 

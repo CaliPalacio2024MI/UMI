@@ -9,171 +9,70 @@
 
     {{-- TÍTULO (Fijo) --}}
     <div class="umi-header">
-        <h1>LISTA DE ALUMNOS</h1>
+        <h5 style="font-size: 2rem; font-weight: 700;">ALUMNOS</h5>
     </div>
 
     {{-- TOOLBAR (Fija) --}}
     <div class="umi-toolbar">
-        <div class="umi-search-wrapper">
-            <i class="fa-solid fa-magnifying-glass umi-search-icon"></i>
-            {{-- Formulario de búsqueda funcional --}}
-            <form action="{{ request()->url() }}" method="GET" style="width: 100%;">
-                <input type="text" name="search" id="search" class="umi-search-input" 
-                        placeholder="Buscar por Nombre, Matrícula o Correo..." 
+        <form action="{{ request()->url() }}" method="GET" class="umi-toolbar-search-form" id="umi-search-form" style="display: flex; align-items: center; gap: 12px; flex-grow: 1; max-width: 580px;">
+            <div class="umi-search-wrapper umi-search-wrapper--icon-left" style="flex: 1; max-width: none;">
+                <span class="umi-search-icon umi-search-icon--left" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.91" stroke-miterlimit="10"><circle cx="9.14" cy="9.14" r="7.64"/><line x1="22.5" y1="22.5" x2="14.39" y2="14.39"/></svg>
+                </span>
+                <input type="text" name="search" id="search" class="umi-search-input"
+                        placeholder="Buscar por..."
                         value="{{ request('search') }}">
-            </form>
-        </div>
+            </div>
+            <div class="umi-status-filter-wrapper" style="display: flex; align-items: center; border-radius: 50px; border: 1px solid #e0e0e0; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08); min-width: 200px; overflow: hidden;">
+                <span class="umi-status-filter-icon-wrap" style="display: flex; align-items: center; justify-content: center; padding-left: 12px; flex-shrink: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#002A4E" stroke-miterlimit="10" stroke-width="1.91"><circle cx="9.14" cy="9.14" r="7.64"/><line x1="22.5" y1="22.5" x2="14.39" y2="14.39"/></svg>
+                </span>
+                <select name="filter_status" id="filter_status" class="umi-filter-select" style="flex: 1; padding: 6px 12px 6px 6px; border: none; background: transparent; color: #555; font-size: 0.9rem; cursor: pointer; outline: none; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23555%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center;">
+                    <option value="" {{ (request('filter_status') ?? '') === '' ? 'selected' : '' }}>Estatus</option>
+                    <option value="activos" {{ request('filter_status') === 'activos' ? 'selected' : '' }}>Alumno activo</option>
+                    <option value="inactivos" {{ request('filter_status') === 'inactivos' ? 'selected' : '' }}>Alumno inactivo</option>
+                </select>
+            </div>
+        </form>
 
-        {{-- Botones de Acción (Con estilos corregidos) --}}
-        <button class="umi-btn-secondary">
-            <i class="fa-solid fa-file-export"></i> Exportar
-        </button>
-
-        <button class="umi-btn-secondary">
-            <i class="fa-solid fa-file-import"></i> Importar
-        </button>
-
-        @if(request()->routeIs('control.*'))
-            <button class="umi-btn-secondary">
-                <i class="fa-solid fa-file-import"></i> Importar
+        {{-- Exportar a Excel (CSV) con filtros actuales --}}
+        <form action="{{ request()->routeIs('control.*') ? route('control.students.export') : route('escolar.students.export') }}" method="GET" style="display: inline;">
+            @if(request('search'))
+                <input type="hidden" name="search" value="{{ request('search') }}">
+            @endif
+            @if(request('filter_status'))
+                <input type="hidden" name="filter_status" value="{{ request('filter_status') }}">
+            @endif
+            <button type="submit" class="umi-btn-secondary">
+                <img src="{{ asset('images/icons/export-icon.svg') }}" alt="" width="20" height="20" style="vertical-align: middle;"> Exportar
             </button>
-        @endif
-        
-        {{-- Botón directo a Inscripción --}}
-        <a href="{{ route('escolar.inscripcion.create') }}" class="umi-btn" >
-            <i class="fa-solid fa-plus"></i> Nuevo Registro
-        </a>
+        </form>
+
+        {{-- Botón abre modal Nuevo Registro de Aspirante (data-action para app.js SPA) --}}
+        <button type="button" class="umi-btn" style="margin-left: auto;"
+                data-action="open-modal-inscripcion"
+                data-inscription-url="{{ route('escolar.inscripcion.create', ['modal' => 1]) }}">
+            <i class="fa-solid fa-plus"></i> +Agregar alumnos
+        </button>
     </div>
 
     {{-- CARD QUE CONTIENE LA TABLA (Área de crecimiento flexible) --}}
     <div class="umi-table-card">
         <div class="umi-table-scroll">
-            <table>
+            <table style="width: 100%; table-layout: fixed;">
                 <thead>
                     <tr>
-                        <th>Carrera</th>
-                        <th style="text-align:center">Matrícula</th>
+                        <th>Curp</th>
                         <th>Nombre</th>
-                        <th>Apellido Paterno</th>
-                        <th>Apellido Materno</th>
-                        <th style="text-align:center">Status / Progreso</th>
+                        <th>Apellido<br>Paterno</th>
+                        <th>Apellido<br>Materno</th>
+                        <th style="text-align:center">Estatus</th>
+                        <th style="min-width: 180px;">Carrera</th>
                         <th style="text-align:center">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="data-table-body">
-                    @forelse ($dataList as $user)
-                        <tr>
-                            <td style="font-weight: 600; color: #555;">
-                                {{ $user->academicProfile?->career?->name ?? 'Sin Asignar' }}
-                            </td>
-                            
-                            {{-- Columna Matrícula --}}
-                            <td style="text-align:center">
-                                @if(!empty($user->academicProfile->matricula))
-                                    <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; border: 1px solid #c8e6c9;">
-                                        {{ $user->academicProfile->matricula }}
-                                    </span>
-                                @else
-                                    <span style="color: #999; font-style: italic; background: #f5f5f5; padding: 2px 6px; border-radius: 4px;">
-                                        Pendiente
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td style="font-weight: 700;">
-                                {{ $user->nombre }}
-                            </td>
-                            <td style="font-weight: 700;">{{ $user->apellido_paterno }}</td>
-                            <td style="font-weight: 700;">{{ $user->apellido_materno }}</td>
-                            
-                            {{-- Status con Lógica de Negocio Visual --}}
-                            <td style="text-align:center">
-                                @php
-                                    $status = $user->academicProfile->status ?? 'Aspirante';
-                                    $matricula = $user->academicProfile->matricula ?? null;
-                                    
-                                    $statusColor = match($status) {
-                                        'Alumno Activo' => '#27ae60', // Verde
-                                        'Alumno Inactivo' => '#e74c3c', // Rojo
-                                        'Baja' => '#7f8c8d', // Gris
-                                        'Egresado' => '#3498db', // Azul
-                                        default => '#f39c12', // Naranja (Aspirante)
-                                    };
-                                @endphp
-
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                                    <span style="color: {{ $statusColor }}; font-weight: bold; border: 1px solid {{ $statusColor }}; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; width: fit-content;">
-                                        {{ $status }}
-                                    </span>
-
-                                    {{-- INDICADORES DE FLUJO --}}
-                                    @if($status === 'Aspirante')
-                                        @if($matricula)
-                                            <small style="color: #d35400; font-weight: 600;">
-                                                <i class="fa-solid fa-key"></i> Falta Contraseña
-                                            </small>
-                                        @else
-                                            <small style="color: #7f8c8d; font-size: 0.75rem;">
-                                                Esperando Matrícula
-                                            </small>
-                                        @endif
-                                    @elseif($status === 'Alumno Inactivo')
-                                        <small style="color: #c0392b;">Requiere Pago</small>
-                                    @endif
-                                </div>
-                            </td>
-
-                            <td style="text-align:center">
-                                <div class="actions-row" style="justify-content: center;">
-                                    
-                    
-                                {{-- 1. BOTÓN OJO (CORREGIDO) --}}
-                                <button type="button" class="btn-icon" title="Ver Expediente" style="border:none; background:none;"
-                                    data-action="open-expediente" 
-                                    data-name="{{ $user->nombre }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}"
-                                    data-email="{{ $user->email }}"
-                                    data-phone="{{ $user->telefono ?? 'N/A' }}"
-                                    data-career="{{ $user->academicProfile->career->name ?? 'Sin Carrera' }}"
-                                    data-semester="{{ $user->academicProfile->semestre ?? '1' }}"
-                                    data-status="{{ $user->academicProfile->status ?? 'Pendiente' }}"
-                                    data-matricula="{{ $user->academicProfile->matricula ?? 'No Asignada' }}"
-                                    data-doc-acta="{{ $user->academicProfile->doc_acta_nacimiento ? Storage::url($user->academicProfile->doc_acta_nacimiento) : '' }}"
-                                    data-doc-cert="{{ $user->academicProfile->doc_certificado_prepa ? Storage::url($user->academicProfile->doc_certificado_prepa) : '' }}"
-                                    data-doc-curp="{{ $user->academicProfile->doc_curp ? Storage::url($user->academicProfile->doc_curp) : '' }}"
-                                    data-doc-ine="{{ $user->academicProfile->doc_ine ? Storage::url($user->academicProfile->doc_ine) : '' }}">
-                                    <img src="{{ asset('images/icons/eye-solid-full.svg') }}" alt="Ver">
-                                    </button>
-                                    
-                                    {{-- 2. EDITAR --}}
-                                    <a href="{{ request()->routeIs('control.*') ? route('control.students.edit', $user->id) : route('escolar.students.edit', $user->id) }}" 
-                                        class="btn-icon"
-                                        title="Editar / Asignar Contraseña">
-                                        <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="Editar">
-                                    </a>
-                                    
-                                    {{-- 3. ELIMINAR --}}
-                                    <form 
-                                        method="POST" 
-                                        action="{{ route(request()->routeIs('control.*') ? 'control.students.destroy' : 'escolar.students.destroy', $user->id) }}" 
-                                        onsubmit="return confirm('¿Estás seguro de que quieres eliminar a {{ $user->nombre }}? Esta acción es irreversible.');" 
-                                        class="inline-form" style="display:inline;"
-                                    >
-                                        @csrf 
-                                        @method('DELETE')
-                                        <button type="submit" class="btn-icon btn-icon--danger" title="Eliminar Alumno">
-                                            <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar">
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 20px; color: #666;">
-                                No se encontraron alumnos registrados.
-                            </td>
-                        </tr>
-                    @endforelse
+                <tbody class="data-table-body" id="students-table-body">
+                    @include('layouts.ControlAdmin.Listas.students.partials.table_body', ['dataList' => $dataList])
                 </tbody>
             </table>
         </div>
@@ -182,6 +81,16 @@
 
 {{-- ========================================================= --}}
 {{-- MODAL 1: DETALLES DEL ALUMNO (EXPEDIENTE)                 --}}
+{{-- ========================================================= --}}
+<div id="modalInscripcion" class="modal-overlay" style="display: none; z-index: 10000;">
+    <div class="modal-container" style="max-width: 95%; width: 900px; height: 90vh; display: flex; flex-direction: column;">
+        <div style="flex: 1; min-height: 0;">
+            <iframe id="iframeInscripcion" src="about:blank" style="width: 100%; height: 100%; min-height: 75vh; border: none;"></iframe>
+        </div>
+    </div>
+</div>
+{{-- ========================================================= --}}
+{{-- MODAL 1: DETALLES DEL ALUMNO (EXPEDIENTE)                 --}}
 {{-- ========================================================= --}}
 <div id="studentDetailsModal" class="modal-overlay" style="display: none; z-index: 9999;">
     <div class="modal-container expediente-modal"> 
@@ -207,11 +116,11 @@
             <div class="details-grid">
                 {{-- Columna Izquierda: Datos --}}
                 <div class="details-column">
-                    <h4 style="color:#666; border-bottom:1px solid #eee; padding-bottom:5px; margin-bottom:15px;">
+                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px;">
                         <i class="fa-solid fa-id-card"></i> Información Personal
                     </h4>
                     <div class="detail-item">
-                        <label>Matrícula:</label> <span id="modalMatricula" style="font-weight: bold; color: #2c3e50;">-</span>
+                        <label>Matrícula:</label> <span id="modalMatricula" style="font-weight: normal; color: #000;">-</span>
                     </div>
                     <div class="detail-item">
                         <label>Email:</label> <span id="modalEmail">-</span>
@@ -220,7 +129,7 @@
                         <label>Teléfono:</label> <span id="modalPhone">-</span>
                     </div>
                     
-                    <h4 style="color:#666; border-bottom:1px solid #eee; padding-bottom:5px; margin-bottom:15px; margin-top:20px;">
+                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px; margin-top:20px;">
                         <i class="fa-solid fa-graduation-cap"></i> Académico
                     </h4>
                     <div class="detail-item">
@@ -233,7 +142,7 @@
 
                 {{-- Columna Derecha: Documentos --}}
                 <div class="details-column">
-                    <h4 style="color:#666; border-bottom:1px solid #eee; padding-bottom:5px; margin-bottom:15px;">
+                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px;">
                         <i class="fa-solid fa-folder-open"></i> Documentación
                     </h4>
                     <div class="docs-list">
@@ -269,6 +178,100 @@
 
 {{-- ESTILOS Y SCRIPTS --}}
 <style>
+    /* Input de búsqueda: borde, sombra, altura menor, icono a la izquierda */
+    #umi-app-view .umi-search-wrapper--icon-left { position: relative; }
+    #umi-app-view .umi-search-icon--left {
+        position: absolute;
+        left: 14px;
+        right: auto;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #223F70;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+    #umi-app-view .umi-search-icon--left svg { display: block; }
+    #umi-app-view .umi-search-input {
+        border: 1px solid #ddd !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        padding: 5px 14px 5px 44px !important;
+    }
+    #umi-app-view .umi-search-input:focus {
+        box-shadow: 0 4px 12px rgba(34, 63, 112, 0.2) !important;
+    }
+    /* Encabezado tabla: una sola barra ovalada, sin separación entre celdas */
+    #umi-app-view table thead th {
+        padding: 10px 10px !important;
+        border-radius: 0 !important;
+        border: none !important;
+        text-transform: none !important;
+    }
+    #umi-app-view table thead tr:first-child th:first-child {
+        border-top-left-radius: 12px !important;
+        border-bottom-left-radius: 12px !important;
+    }
+    #umi-app-view table thead tr:first-child th:last-child {
+        border-top-right-radius: 12px !important;
+        border-bottom-right-radius: 12px !important;
+    }
+    /* Columna CURP (primera): nowrap para no partir el código */
+    #umi-app-view table thead th:nth-child(1) { white-space: nowrap; }
+    /* Columna Carrera (6ª): texto completo visible */
+    #umi-app-view table thead th:nth-child(6) { white-space: nowrap; }
+    #umi-app-view table tbody td:nth-child(6) {
+        white-space: normal;
+        line-height: 1.2;
+        word-break: break-word;
+    }
+    #umi-app-view table tbody td:nth-child(6) .career-cell{
+        word-break: break-word;
+        white-space: normal;
+    }
+    /* Altura automática: que la card se achique según contenido */
+    #umi-app-view { height: auto !important; }
+    #umi-app-view .umi-table-card { flex: 0 0 auto !important; min-height: unset !important; }
+    #umi-app-view .umi-table-scroll { height: auto !important; overflow-y: visible !important; }
+    /* Fondo blanco y líneas rojas gruesas en la tabla */
+    #umi-app-view table tbody td {
+        background: #fff !important;
+        border: none !important;
+    }
+    #umi-app-view table tbody td:not(:last-child) {
+        border-right: 2px solid var(--umi-red-danger, #E74C3C) !important;
+    }
+
+    /* Columna Acciones: alinear iconos en fila */
+    #umi-app-view .umi-actions-icons {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px;
+        min-height: 32px;
+    }
+    #umi-app-view .umi-actions-icons img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        vertical-align: middle;
+    }
+    #umi-app-view .umi-actions-icons .btn-icon {
+        padding: 4px;
+        line-height: 0;
+        min-width: 28px;
+        min-height: 28px;
+    }
+    /* Botones de acción: sin cambio de color al pasar el mouse */
+    #umi-app-view button.btn-icon[data-action="open-expediente"]{
+        border-radius: 12px;
+        padding: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+    }
     /* Botones Toolbar (Estilo corregido) */
     .umi-btn-secondary{
     display: inline-flex;
@@ -289,7 +292,9 @@
     box-shadow: 0 4px 6px rgba(34, 63, 112, 0.2);
     white-space: nowrap; 
 }
-.umi-btn-secondary:hover { background-color: #1a3055; transform: translateY(-1px); }
+.umi-btn-secondary:hover { background-color: #1a3055; color: #FFFFFF; }
+    /* Botón +Agregar alumnos: sin elevación ni cambio de color al pasar el mouse */
+    #umi-app-view .umi-btn:hover { color: #FFFFFF !important; transform: none; }
 
     /* Estilos generales de los modales (overlay, cerrar, etc.) */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
@@ -318,6 +323,8 @@
         color: var(--umi-blue-dark, #223F70); /* Usa la variable si existe, sino un azul oscuro seguro */
         font-weight: 700;
         margin: 0;
+        flex: 1;
+        text-align: center;
     }
     
     /* Media Query para pantallas pequeñas */
@@ -344,13 +351,13 @@
     .doc-btn:hover { background: #e3f2fd; border-color: #3498db; color: #223F70; transform: translateX(5px); }
     .doc-btn i { margin-right: 12px; font-size: 1.2rem; color: #e74c3c; }
     .hidden { display: none !important; }
-    .no-docs { text-align: center; color: #aaa; font-style: italic; padding: 15px; border: 1px dashed #eee; border-radius: 8px; }
+    .no-docs { text-align: center; color: #aaa; padding: 15px; border: none; }
 
     /* Badges Status */
     .badge-status { border: 1px solid; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 0.8rem; }
     .badge-green { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
     .badge-orange { background: #fff3e0; color: #ef6c00; border-color: #ffe0b2; }
-    .badge-gray { background: #f5f5f5; color: #616161; border-color: #e0e0e0; }
+    .badge-gray { background: #223F70; color: #fff; border-color: #223F70; }
 
     .student-summary { display: flex; align-items: center; gap: 15px; }
     .avatar-placeholder { width: 50px; height: 50px; background: #e0e0e0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; color: white; }
@@ -361,13 +368,14 @@
         align-items: center; 
         gap: 15px; 
     }
+    .student-info-header .badge-status { margin-left: 20px; }
     .student-info-header h2 {
-        margin: 0; font-size: 1.4rem; color: #2c3e50;
+        margin: 0; font-size: 1.4rem; color: #223F70;
     }
 
     .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
     .detail-item { margin-bottom: 12px; }
-    .detail-item label { font-weight: 600; color: #7f8c8d; width: 80px; display: inline-block; }
+    .detail-item label { font-weight: 600; color: #BC8A55; width: 80px; display: inline-block; }
     
 </style>
 {{-- SCRIPTS --}}
@@ -439,6 +447,15 @@
         document.getElementById('studentDetailsModal').style.display = 'none';
     }
 
+    function openModalInscripcion() {
+        document.getElementById('iframeInscripcion').src = '{{ route('escolar.inscripcion.create', ['modal' => 1]) }}';
+        document.getElementById('modalInscripcion').style.display = 'flex';
+    }
+    function cerrarModalInscripcion() {
+        document.getElementById('modalInscripcion').style.display = 'none';
+        document.getElementById('iframeInscripcion').src = 'about:blank';
+    }
+
     // =============================================================
     // 2. EL SUPER LISTENER (Controla TODO: Abrir y Cerrar)
     // =============================================================
@@ -458,7 +475,10 @@
         }
 
         // --- CASO B: CERRAR (Botón X) ---
-        // Si clic en algo que tenga la clase "modal-close"
+        if (event.target.closest('#modalInscripcion .modal-close')) {
+            cerrarModalInscripcion();
+            return;
+        }
         if (event.target.closest('.modal-close')) {
             closeStudentDetails();
             closeDocViewer();
@@ -466,13 +486,56 @@
         }
 
         // --- CASO C: CERRAR (Clic afuera / Fondo oscuro) ---
-        // Si el elemento clickeado es EXACTAMENTE el fondo (overlay) y no el contenido blanco
         if (event.target.classList.contains('modal-overlay')) {
-            closeStudentDetails();
-            closeDocViewer();
+            if (event.target.id === 'modalInscripcion') cerrarModalInscripcion();
+            else { closeStudentDetails(); closeDocViewer(); }
             return;
         }
     });
+
+    // =============================================================
+    // 3. BÚSQUEDA EN VIVO: actualizar solo la tabla por AJAX (sin recargar la página)
+    // =============================================================
+    (function() {
+        const form = document.getElementById('umi-search-form');
+        const input = document.getElementById('search');
+        const filterSelect = form ? form.querySelector('select[name="filter_status"]') : null;
+        const tbody = document.getElementById('students-table-body');
+        if (!form || !input || !tbody) return;
+
+        let debounceTimer;
+        function refreshTable() {
+            const search = input.value.trim();
+            const filterStatus = filterSelect ? filterSelect.value : '';
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            if (filterStatus) params.set('filter_status', filterStatus);
+            const url = form.action + (params.toString() ? '?' + params.toString() : '');
+
+            fetch(url, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
+            })
+            .then(function(r) { if (!r.ok) throw new Error('Error'); return r.text(); })
+            .then(function(html) {
+                tbody.innerHTML = html;
+                if (typeof history !== 'undefined' && history.replaceState) {
+                    history.replaceState(null, '', url);
+                }
+            })
+            .catch(function() {
+                form.submit();
+            });
+        }
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(refreshTable, 400);
+        });
+        if (filterSelect) {
+            filterSelect.addEventListener('change', refreshTable);
+        }
+    })();
 
 </script>
 

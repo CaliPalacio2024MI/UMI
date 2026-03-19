@@ -4,8 +4,9 @@ namespace App\Models\AdmonCont;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\AdmonCont\HorarioFranja;
-use App\Models\AdmonCont\Career;
+use App\Models\Users\Career;
 use App\Models\AdmonCont\Materia;
 use App\Models\AdmonCont\Facility;
 use App\Models\Users\User;
@@ -15,7 +16,7 @@ class HorarioClase extends Model
     //
     protected $fillable = [
         'materia_id',
-        'carrera_id',
+        'career_id',
         'user_id',
         'aula_id'
     ];
@@ -27,7 +28,7 @@ class HorarioClase extends Model
     public function carrera(): BelongsTo
     {
         // Asegúrate de que 'carrera_id' sea el nombre de la columna FK en tu tabla 'horarios_clases'
-        return $this->belongsTo(Career::class, 'carrera_id'); 
+        return $this->belongsTo(Career::class, 'career_id'); 
     }
     public function materia(): BelongsTo
     {
@@ -41,7 +42,15 @@ class HorarioClase extends Model
     }
     public function aula(): BelongsTo
     {
-        // La columna FK en horarios_clases es 'user_id'
-        return $this->belongsTo(Facility::class, 'aula_id'); 
+        return $this->belongsTo(Facility::class, 'aula_id');
+    }
+
+    /**
+     * Alumnos inscritos en esta clase (pivot horario_clase_user).
+     */
+    public function alumnos(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'horario_clase_user', 'horario_clase_id', 'user_id')
+            ->withTimestamps();
     }
 }

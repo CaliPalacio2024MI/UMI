@@ -313,7 +313,18 @@ const ESTADOS = [
 ];
 
 function puedeEditarSeguimiento() {
-    return ['ctp', 'master'].includes(window.ROLE_ACTIVO);
+    const filaActiva = document.querySelector('.fila-lead.activo');
+    if (!filaActiva) return false;
+
+    // Solo el CTP asignado a ese lead puede marcar seguimiento
+    if (window.ROLE_ACTIVO === 'ctp') {
+        const ctpAsignado = filaActiva.dataset.ctp;
+        const userId = "{{ auth()->id() }}";
+        return ctpAsignado == userId;
+    }
+
+    // Master y coordinador NO pueden marcar seguimiento
+    return false;
 }
 
 function renderizarSeguimiento(fila) {
@@ -344,7 +355,7 @@ function renderizarSeguimiento(fila) {
                      data-hora="${registro.hora ?? ''}"
                      data-comentario="${encodeURIComponent(registro.comentario ?? '')}">` : ''}
             `;
-        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío') {
+        } else if (habilitado && puedeEditarSeguimiento() && estado !== 'Prospecto frío' && estado !== 'Alumno') {
             accion = `<i class="bi bi-check-circle icon-check clickeable" data-estado="${estado}" title="Marcar como ${estado}"></i>`;
         } else {
             accion = `<i class="bi bi-circle icon-disabled"></i>`;

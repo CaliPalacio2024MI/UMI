@@ -442,6 +442,10 @@ class CRMController extends Controller
 
     public function guardarSeguimiento(Request $request, Lead $lead)
     {
+        // El CRM no puede registrar "Alumno", eso le toca a Control Escolar
+    if ($request->estado === 'Alumno') {
+        return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+    }
         $lead->seguimientos()->create([
             'estado'     => $request->estado,
             'fecha'      => now()->toDateString(),
@@ -458,6 +462,7 @@ class CRMController extends Controller
     public function prospectos(Request $request)
     {
         $query = Lead::query();
+
 
         $rol = session('active_role_name');
         $userId = auth()->id();
@@ -508,5 +513,21 @@ class CRMController extends Controller
         return response()->json(['success' => true]);
     }
     
-
+    public function comisiones()
+    {
+        $ctps = User::whereHas('roles', function ($q) {
+            $q->where('name', 'ctp');
+        })->get();
+    
+        $ctps->each(function ($ctp) {
+    
+            // AHORA: solo cuenta los que llegaron a "Alumno"
+            $ctp->num_conversiones = Lead::where('ctp_id', $ctp->id)
+                ->whereHas('seguimientos', function ($q) {
+                    $q->where('estado', 'Alumno');
+                })->count();
+        });
+    
+        return view('crm.comisiones', compact('ctps'));
+    }
 }
