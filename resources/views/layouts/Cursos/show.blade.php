@@ -75,51 +75,151 @@
         </div>
 
         @foreach ($course->topics as $topic)
-            <section class="content-panel" id="content-topic-{{ $topic->id }}">
-                <h2>{{ $topic->title }}</h2>
+            <section class="content-panel" id="content-topic-{{ $topic->id }}" 
+                     data-show-turtle="{{ $topic->show_turtle ? '1' : '0' }}"
+                     data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}">
+                @if($topic->show_title)
+                    <h2>{{ $topic->title }}</h2>
+                @endif
                 <p>{{ $topic->description }}</p>
 
                 @if ($topic->file_path)
-                    <div class="file-viewer">
-                        <iframe src="{{ asset('storage/'.$topic->file_path) }}#toolbar=0&navpanes=0&scrollbar=0" class="pdf-frame"></iframe>
-                    </div>
+                    @if (Str::endsWith($topic->file_path, '.pdf'))
+                        {{-- VISOR PDF CON NAVEGACIÓN --}}
+                        <div class="file-viewer">
+                            <div class="exam-navigation" style="margin-bottom: 15px;">
+                                <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="topic-{{ $topic->id }}" data-action="prev" disabled>
+                                    ⬅ Anterior
+                                </button>
+                                <span class="question-counter">
+                                    Página <span class="pdf-current-page" data-pdf-id="topic-{{ $topic->id }}">1</span> de <span class="pdf-total-pages" data-pdf-id="topic-{{ $topic->id }}">...</span>
+                                </span>
+                                <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="topic-{{ $topic->id }}" data-action="next">
+                                    Siguiente ➡
+                                </button>
+                            </div>
+                            <div style="overflow: auto; max-height: 800px; border: 1px solid #ddd; background: #f5f5f5;">
+                                <canvas id="pdf-canvas-topic-{{ $topic->id }}" 
+                                        data-pdf-id="topic-{{ $topic->id }}"
+                                        data-pdf-url="{{ asset('storage/'.$topic->file_path) }}"
+                                        style="display: block; margin: 0 auto;"></canvas>
+                            </div>
+                        </div>
+                    @else
+                        {{-- OTROS ARCHIVOS --}}
+                        <div class="file-viewer">
+                            <iframe src="{{ asset('storage/'.$topic->file_path) }}" class="pdf-frame"></iframe>
+                        </div>
+                    @endif
                 @endif
             </section>
 
             @foreach ($topic->subtopics as $subtopic)
-                <section class="content-panel" id="content-subtopic-{{ $subtopic->id }}">
-                    <h2>{{ $subtopic->title }}</h2>
+                <section class="content-panel" id="content-subtopic-{{ $subtopic->id }}"
+                         data-show-turtle="{{ $subtopic->show_turtle ? '1' : '0' }}"
+                         data-turtle-voice="{{ $subtopic->turtle_voice ?? '0' }}">
+                    @if($subtopic->show_title)
+                        <h2>{{ $subtopic->title }}</h2>
+                    @endif
                     <p>{{ $subtopic->description }}</p>
 
                     @if ($subtopic->file_path)
-                        <div class="file-viewer">
-                            <iframe src="{{ asset('storage/'.$subtopic->file_path) }}#toolbar=0&navpanes=0&scrollbar=0" class="pdf-frame"></iframe>
-                        </div>
+                        @if (Str::endsWith($subtopic->file_path, '.pdf'))
+                            {{-- VISOR PDF CON NAVEGACIÓN --}}
+                            <div class="file-viewer">
+                                <div class="exam-navigation" style="margin-bottom: 15px;">
+                                    <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="subtopic-{{ $subtopic->id }}" data-action="prev" disabled>
+                                        ⬅ Anterior
+                                    </button>
+                                    <span class="question-counter">
+                                        Página <span class="pdf-current-page" data-pdf-id="subtopic-{{ $subtopic->id }}">1</span> de <span class="pdf-total-pages" data-pdf-id="subtopic-{{ $subtopic->id }}">...</span>
+                                    </span>
+                                    <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="subtopic-{{ $subtopic->id }}" data-action="next">
+                                        Siguiente ➡
+                                    </button>
+                                </div>
+                                <div style="overflow: auto; max-height: 800px; border: 1px solid #ddd; background: #f5f5f5;">
+                                    <canvas id="pdf-canvas-subtopic-{{ $subtopic->id }}" 
+                                            data-pdf-id="subtopic-{{ $subtopic->id }}"
+                                            data-pdf-url="{{ asset('storage/'.$subtopic->file_path) }}"
+                                            style="display: block; margin: 0 auto;"></canvas>
+                                </div>
+                            </div>
+                        @else
+                            {{-- OTROS ARCHIVOS --}}
+                            <div class="file-viewer">
+                                <iframe src="{{ asset('storage/'.$subtopic->file_path) }}" class="pdf-frame"></iframe>
+                            </div>
+                        @endif
                     @endif
                 </section>
 
                 @foreach ($subtopic->activities as $activity)
                     <section class="content-panel" id="content-activity-{{ $activity->id }}" data-activity-type="{{ $activity->type }}">
-                        <h2>{{ $activity->title }}</h2>
+                        @if($activity->show_title)
+                            <h2>{{ $activity->title }}</h2>
+                        @endif
                         <p>{{ $activity->description }}</p>
 
                         {{-- CUESTIONARIO --}}
                         @if ($activity->type === 'Cuestionario')
                             <div class="game-container cuestionario-container">
-                                <div class="question-box">
-                                    <h3>{{ $activity->content['question'] ?? '' }}</h3>
-                                    <form class="cuestionario-form" data-activity-id="{{ $activity->id }}">
-                                        @csrf
-                                        @foreach ($activity->content['options'] ?? [] as $index => $option)
-                                            <label class="option-label">
-                                                <input type="radio" name="answer" value="{{ $index }}" required>
-                                                <span>{{ $option }}</span>
-                                            </label>
-                                        @endforeach
+                                @php
+                                    // Soportar tanto formato antiguo (una pregunta) como nuevo (múltiples preguntas)
+                                    $questions = [];
+                                    if (isset($activity->content['question'])) {
+                                        // Formato antiguo: una sola pregunta
+                                        $questions = [[
+                                            'question' => $activity->content['question'],
+                                            'options' => $activity->content['options'] ?? []
+                                        ]];
+                                    } elseif (isset($activity->content['questions'])) {
+                                        // Formato nuevo: múltiples preguntas
+                                        $questions = $activity->content['questions'];
+                                    }
+                                    $totalQuestions = count($questions);
+                                @endphp
+                                
+                                @if ($totalQuestions > 1)
+                                    {{-- NAVEGACIÓN PARA MÚLTIPLES PREGUNTAS --}}
+                                    <div class="exam-navigation">
+                                        <button type="button" class="exam-nav-btn" id="prevQuizQuestion-{{ $activity->id }}" disabled>
+                                            ⬅ Anterior
+                                        </button>
+                                        <span class="question-counter" id="quiz-counter-{{ $activity->id }}">
+                                            Pregunta <span class="current">1</span> de <span class="total">{{ $totalQuestions }}</span>
+                                        </span>
+                                        <button type="button" class="exam-nav-btn" id="nextQuizQuestion-{{ $activity->id }}">
+                                            Siguiente ➡
+                                        </button>
+                                    </div>
+                                @endif
+                                
+                                <form class="cuestionario-form" data-activity-id="{{ $activity->id }}" data-total="{{ $totalQuestions }}">
+                                    @csrf
+                                    @foreach ($questions as $qIndex => $question)
+                                        <div class="question-item" data-question="{{ $qIndex }}" style="{{ $qIndex === 0 ? '' : 'display: none;' }}">
+                                            <h3>{{ $qIndex + 1 }}. {{ $question['question'] }}</h3>
+                                            <div class="options-container">
+                                                @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                                    <label class="option-label">
+                                                        <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                        <span>{{ $option }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    
+                                    @if ($totalQuestions > 1)
+                                        <button type="submit" class="btn-submit" id="submitQuiz-{{ $activity->id }}" style="display: none;">
+                                            Enviar Cuestionario
+                                        </button>
+                                    @else
                                         <button type="submit" class="btn-submit">Enviar Respuesta</button>
-                                    </form>
-                                    <div class="result-message"></div>
-                                </div>
+                                    @endif
+                                </form>
+                                <div class="result-message"></div>
                             </div>
                         @endif
 
@@ -197,7 +297,6 @@
                                     </div>
                                 </div>
                                 
-                                <button class="btn-submit" onclick="checkSopaCompletion({{ $activity->id }})">Verificar Completado</button>
                                 <div class="result-message"></div>
                             </div>
                         @endif
@@ -277,9 +376,33 @@
 
                         {{-- ARCHIVOS MULTIMEDIA --}}
                         @if ($activity->file_path)
-                            <div class="file-viewer">
-                                <iframe src="{{ asset('storage/'.$activity->file_path) }}#toolbar=0&navpanes=0&scrollbar=0" class="pdf-frame"></iframe>
-                            </div>
+                            @if (Str::endsWith($activity->file_path, '.pdf'))
+                                {{-- VISOR PDF CON NAVEGACIÓN --}}
+                                <div class="file-viewer">
+                                    <div class="exam-navigation" style="margin-bottom: 15px;">
+                                        <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="activity-{{ $activity->id }}" data-action="prev" disabled>
+                                            ⬅ Anterior
+                                        </button>
+                                        <span class="question-counter">
+                                            Página <span class="pdf-current-page" data-pdf-id="activity-{{ $activity->id }}">1</span> de <span class="pdf-total-pages" data-pdf-id="activity-{{ $activity->id }}">...</span>
+                                        </span>
+                                        <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="activity-{{ $activity->id }}" data-action="next">
+                                            Siguiente ➡
+                                        </button>
+                                    </div>
+                                    <div style="overflow: auto; max-height: 800px; border: 1px solid #ddd; background: #f5f5f5;">
+                                        <canvas id="pdf-canvas-activity-{{ $activity->id }}" 
+                                                data-pdf-id="activity-{{ $activity->id }}"
+                                                data-pdf-url="{{ asset('storage/'.$activity->file_path) }}"
+                                                style="display: block; margin: 0 auto;"></canvas>
+                                    </div>
+                                </div>
+                            @else
+                                {{-- OTROS ARCHIVOS (videos, imágenes, etc) --}}
+                                <div class="file-viewer">
+                                    <iframe src="{{ asset('storage/'.$activity->file_path) }}" class="pdf-frame"></iframe>
+                                </div>
+                            @endif
                         @endif
 
                         {{-- JUEGOS EXTERNOS --}}
@@ -300,26 +423,70 @@
 
             @foreach ($topic->activities as $activity)
                 <section class="content-panel" id="content-activity-{{ $activity->id }}" data-activity-type="{{ $activity->type }}">
-                    <h2>{{ $activity->title }}</h2>
+                    @if($activity->show_title)
+                        <h2>{{ $activity->title }}</h2>
+                    @endif
                     <p>{{ $activity->description }}</p>
 
                     {{-- CUESTIONARIO --}}
                     @if ($activity->type === 'Cuestionario')
                         <div class="game-container cuestionario-container">
-                            <div class="question-box">
-                                <h3>{{ $activity->content['question'] ?? '' }}</h3>
-                                <form class="cuestionario-form" data-activity-id="{{ $activity->id }}">
-                                    @csrf
-                                    @foreach ($activity->content['options'] ?? [] as $index => $option)
-                                        <label class="option-label">
-                                            <input type="radio" name="answer" value="{{ $index }}" required>
-                                            <span>{{ $option }}</span>
-                                        </label>
-                                    @endforeach
+                            @php
+                                // Soportar tanto formato antiguo (una pregunta) como nuevo (múltiples preguntas)
+                                $questions = [];
+                                if (isset($activity->content['question'])) {
+                                    // Formato antiguo: una sola pregunta
+                                    $questions = [[
+                                        'question' => $activity->content['question'],
+                                        'options' => $activity->content['options'] ?? []
+                                    ]];
+                                } elseif (isset($activity->content['questions'])) {
+                                    // Formato nuevo: múltiples preguntas
+                                    $questions = $activity->content['questions'];
+                                }
+                                $totalQuestions = count($questions);
+                            @endphp
+                            
+                            @if ($totalQuestions > 1)
+                                {{-- NAVEGACIÓN PARA MÚLTIPLES PREGUNTAS --}}
+                                <div class="exam-navigation">
+                                    <button type="button" class="exam-nav-btn" id="prevQuizQuestion2-{{ $activity->id }}" disabled>
+                                        ⬅ Anterior
+                                    </button>
+                                    <span class="question-counter" id="quiz-counter2-{{ $activity->id }}">
+                                        Pregunta <span class="current">1</span> de <span class="total">{{ $totalQuestions }}</span>
+                                    </span>
+                                    <button type="button" class="exam-nav-btn" id="nextQuizQuestion2-{{ $activity->id }}">
+                                        Siguiente ➡
+                                    </button>
+                                </div>
+                            @endif
+                            
+                            <form class="cuestionario-form" data-activity-id="{{ $activity->id }}" data-total="{{ $totalQuestions }}">
+                                @csrf
+                                @foreach ($questions as $qIndex => $question)
+                                    <div class="question-item" data-question="{{ $qIndex }}" style="{{ $qIndex === 0 ? '' : 'display: none;' }}">
+                                        <h3>{{ $qIndex + 1 }}. {{ $question['question'] }}</h3>
+                                        <div class="options-container">
+                                            @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                                <label class="option-label">
+                                                    <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                    <span>{{ $option }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                                
+                                @if ($totalQuestions > 1)
+                                    <button type="submit" class="btn-submit" id="submitQuiz2-{{ $activity->id }}" style="display: none;">
+                                        Enviar Cuestionario
+                                    </button>
+                                @else
                                     <button type="submit" class="btn-submit">Enviar Respuesta</button>
-                                </form>
-                                <div class="result-message"></div>
-                            </div>
+                                @endif
+                            </form>
+                            <div class="result-message"></div>
                         </div>
                     @endif
 
@@ -397,7 +564,6 @@
                                 </div>
                             </div>
                             
-                            <button class="btn-submit" onclick="checkSopaCompletion({{ $activity->id }})">Verificar Completado</button>
                             <div class="result-message"></div>
                         </div>
                     @endif
@@ -476,9 +642,33 @@
 
                     {{-- ARCHIVOS MULTIMEDIA --}}
                     @if ($activity->file_path)
-                        <div class="file-viewer">
-                            <iframe src="{{ asset('storage/'.$activity->file_path) }}#toolbar=0&navpanes=0&scrollbar=0" class="pdf-frame"></iframe>
-                        </div>
+                        @if (Str::endsWith($activity->file_path, '.pdf'))
+                            {{-- VISOR PDF CON NAVEGACIÓN --}}
+                            <div class="file-viewer">
+                                <div class="exam-navigation" style="margin-bottom: 15px;">
+                                    <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="activity2-{{ $activity->id }}" data-action="prev" disabled>
+                                        ⬅ Anterior
+                                    </button>
+                                    <span class="question-counter">
+                                        Página <span class="pdf-current-page" data-pdf-id="activity2-{{ $activity->id }}">1</span> de <span class="pdf-total-pages" data-pdf-id="activity2-{{ $activity->id }}">...</span>
+                                    </span>
+                                    <button type="button" class="exam-nav-btn pdf-nav-btn" data-pdf-id="activity2-{{ $activity->id }}" data-action="next">
+                                        Siguiente ➡
+                                    </button>
+                                </div>
+                                <div style="overflow: auto; max-height: 800px; border: 1px solid #ddd; background: #f5f5f5;">
+                                    <canvas id="pdf-canvas-activity2-{{ $activity->id }}" 
+                                            data-pdf-id="activity2-{{ $activity->id }}"
+                                            data-pdf-url="{{ asset('storage/'.$activity->file_path) }}"
+                                            style="display: block; margin: 0 auto;"></canvas>
+                                </div>
+                            </div>
+                        @else
+                            {{-- OTROS ARCHIVOS (videos, imágenes, etc) --}}
+                            <div class="file-viewer">
+                                <iframe src="{{ asset('storage/'.$activity->file_path) }}" class="pdf-frame"></iframe>
+                            </div>
+                        @endif
                     @endif
 
                     {{-- JUEGOS EXTERNOS --}}
@@ -503,15 +693,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-
 <script>
 // ====== CONFIGURACIÓN ELEVENLABS ======
-const ELEVENLABS_API_KEY = '';
+const ELEVENLABS_API_KEY = 'sk_3a57692aeb3596c6239645c368591f3c751b3c173c76324d';
 
 // VOCES ALTERNADAS - Una para cada tortuguita
 const ELEVENLABS_VOICES = [
-    'qjk0ggayMrstLVWqGMaV', // Voz para tortuguita 0 (tortuguita-hablando.webm)
-    'akHMa5INOPN1uVFL2h4o'  // Voz para tortuguita 1 (tortuguita1-hablando.webm)
+    'akHMa5INOPN1uVFL2h4o',  // Voz 0 (MASCULINA - tortuguita-hablando.webm)
+    'qjk0ggayMrstLVWqGMaV'   // Voz 1 (FEMENINA - tortuguita1-hablando.webm)
 ];
 
 // Variable global para controlar el estado de lectura
@@ -641,13 +830,39 @@ document.addEventListener('DOMContentLoaded', function () {
     panels.forEach(p => p.style.display = 'none');
     showIndex(0);
     
-    // IMPORTANTE: Pausar todos los videos al cargar para evitar reproducción automática
-    setTimeout(() => {
-        console.log('🎬 Pausando todos los videos del curso...');
-        document.querySelectorAll('video').forEach(video => {
-            video.pause();
-            video.currentTime = 0;
-        });
+    // CRÍTICO: Pausar videos INMEDIATAMENTE y REPETIDAMENTE
+function pauseAllVideos() {
+    document.querySelectorAll('video:not(.turtle-video)').forEach(video => {
+        video.pause();
+        video.currentTime = 0;
+        video.removeAttribute('autoplay');
+    });
+    
+    document.querySelectorAll('iframe[data-autoplay-blocked]').forEach(iframe => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+                iframeDoc.querySelectorAll('video').forEach(video => {
+                    video.pause();
+                    video.currentTime = 0;
+                    video.removeAttribute('autoplay');
+                });
+            }
+        } catch (e) {}
+    });
+}
+
+pauseAllVideos();
+setTimeout(() => pauseAllVideos(), 100);
+setTimeout(() => pauseAllVideos(), 500);
+setTimeout(() => pauseAllVideos(), 1000);
+setTimeout(() => pauseAllVideos(), 2000);
+
+const observer = new MutationObserver(() => pauseAllVideos());
+observer.observe(document.body, { childList: true, subtree: true });
+
+setTimeout(() => {
+    console.log('🎬 Videos pausados');
         
         // También pausar videos dentro de iframes (si es posible)
         document.querySelectorAll('iframe').forEach(iframe => {
@@ -825,40 +1040,163 @@ document.addEventListener('DOMContentLoaded', function () {
         const panel = document.querySelector('.content-panel:not([style*="display: none"])');
         if (!panel) return;
         
-        // 1. BUSCAR VIDEOS (tag video directo)
-        let video = panel.querySelector('video');
-        if (video) {
-            console.log('🎥 Video <video> detectado');
-            handleVideoAutoplay(video, panel);
+// 1. BUSCAR VIDEOS (tag video directo)
+let video = panel.querySelector('video:not(.turtle-video)');
+if (video) {
+    console.log('🎥 Video detectado');
+    
+    // Detectar configuración de tortuguita
+    const showTurtle = panel.dataset.showTurtle === '1';
+    const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+    
+    console.log('🐢 Config desde panel:', { showTurtle, turtleVoice });
+    
+    // Si debe mostrar tortuguita, mostrarla SILENCIOSA durante el video
+    if (showTurtle) {
+        console.log('✅ Mostrando tortuguita silenciosa');
+        showTurtleWithVoice(turtleVoice);
+        
+        // IMPORTANTE: Solo escuchar el evento 'ended' del VIDEO DEL CURSO, no de la tortuguita
+        video.addEventListener('play', () => {
+            console.log('▶️ Video del curso reproduciendo');
+        });
+        
+        video.addEventListener('ended', () => {
+            console.log('✅ Video del CURSO completado - ocultando tortuguita');
+            hideTurtle();
+            
+            if (autoplayActive) {
+                setTimeout(() => advanceToNext(), 1000);
+            }
+        });
+        
+        video.addEventListener('pause', () => {
+            console.log('⏸️ Video del curso pausado');
+        });
+    }
+    
+    // Leer descripción con voz si hay autoplay activo
+    if (autoplayActive) {
+        const title = panel.querySelector('h2');
+        const description = panel.querySelector('p');
+        
+        let textToRead = '';
+        if (title) textToRead += title.textContent + '. ';
+        if (description) textToRead += description.textContent;
+        
+        textToRead = textToRead.trim();
+        
+        if (textToRead.length > 10) {
+            console.log('📝 Leyendo descripción del video...');
+            
+            speakWithElevenLabs(
+                textToRead,
+                () => {}, // No mostrar tortuguita aquí (ya está mostrada arriba)
+                () => {
+                    console.log('✅ Descripción completada');
+                    // Reproducir video después de leer descripción
+                    if (autoplayActive) {
+                        setTimeout(() => {
+                            video.play().catch(err => {
+                                console.log('Error al reproducir video:', err);
+                                if (autoplayActive) {
+                                    advanceToNext();
+                                }
+                            });
+                        }, 1000);
+                    }
+                }
+            );
+        } else {
+            // Sin descripción, reproducir directamente
+            video.play();
+        }
+    }
+    return;
+}
+        
+       // 2. BUSCAR VIDEOS en iframes (archivos .mp4, .webm, .ogg)
+const allIframes = panel.querySelectorAll('iframe');
+for (let iframe of allIframes) {
+    if (iframe.src && 
+        (iframe.src.toLowerCase().includes('.mp4') || 
+         iframe.src.toLowerCase().includes('.webm') ||
+         iframe.src.toLowerCase().includes('.ogg') ||
+         iframe.src.toLowerCase().includes('video'))) {
+        
+        console.log('🎥 Video en iframe detectado:', iframe.src);
+        
+        // Detectar configuración de tortuguita
+        const showTurtle = panel.dataset.showTurtle === '1';
+        const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+        
+        console.log('🐢 Config iframe:', { showTurtle, turtleVoice });
+        
+        // Si debe mostrar tortuguita, mostrarla SILENCIOSA
+        if (showTurtle) {
+            console.log('✅ Mostrando tortuguita para iframe video');
+            showTurtleWithVoice(turtleVoice);
+        }
+        
+        if (autoplayActive) {
+            const title = panel.querySelector('h2');
+            const description = panel.querySelector('p');
+            
+            let textToRead = '';
+            if (title) textToRead += title.textContent + '. ';
+            if (description) textToRead += description.textContent;
+            
+            textToRead = textToRead.trim();
+            
+            if (textToRead.length > 10) {
+                console.log('📝 Leyendo descripción del video iframe...');
+                
+                speakWithElevenLabs(
+                    textToRead,
+                    () => {},
+                    () => {
+                        console.log('✅ Descripción completada');
+                        
+                        // Intentar detectar duración del video en iframe
+                        tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+                    }
+                );
+            } else {
+                tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+            }
+        }
+        return;
+    }
+}
+        
+        // 3. BUSCAR PDFs CON CANVAS
+        const pdfCanvas = panel.querySelector('canvas[data-pdf-id]');
+        if (pdfCanvas) {
+            const pdfId = pdfCanvas.dataset.pdfId;
+            console.log('📄 PDF con canvas detectado:', pdfId);
+            readPdfCanvasAutoplay(pdfId, panel);
             return;
         }
         
-        // 2. BUSCAR VIDEOS en iframes (archivos .mp4, .webm, .ogg)
-        const allIframes = panel.querySelectorAll('iframe');
-        for (let iframe of allIframes) {
-            if (iframe.src && 
-                (iframe.src.toLowerCase().includes('.mp4') || 
-                 iframe.src.toLowerCase().includes('.webm') ||
-                 iframe.src.toLowerCase().includes('.ogg') ||
-                 iframe.src.toLowerCase().includes('video'))) {
-                
-                console.log('🎥 Video en iframe detectado:', iframe.src);
-                handleIframeVideoAutoplay(iframe, panel);
-                return;
-            }
-        }
-        
-        // 3. Buscar PDFs
+        // 4. BUSCAR PDFs en iframes (legacy)
         for (let iframe of allIframes) {
             if (iframe.src && iframe.src.toLowerCase().includes('.pdf')) {
-                console.log('📄 PDF detectado');
+                console.log('📄 PDF en iframe detectado');
                 readPdfAutoplay(iframe.src);
                 return;
             }
         }
         
-        // 4. Si no hay video ni PDF, leer texto
-        const text = panel.innerText.replace(/\s+/g,' ').trim();
+        // 5. Si no hay video ni PDF, leer texto (EXCLUYENDO navegación)
+        // Clonar panel y eliminar elementos de navegación
+        const panelClone = panel.cloneNode(true);
+        
+        // Eliminar navegaciones de PDF, exámenes, quiz
+        panelClone.querySelectorAll('.exam-navigation').forEach(nav => nav.remove());
+        panelClone.querySelectorAll('.pdf-nav-btn').forEach(btn => btn.remove());
+        panelClone.querySelectorAll('.course-controls').forEach(ctrl => ctrl.remove());
+        
+        const text = panelClone.innerText.replace(/\s+/g,' ').trim();
         if (text && text.length > 10) {
             console.log('📝 Leyendo texto...');
             speakText(text);
@@ -955,6 +1293,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function handleVideoAutoplay(video, panel) {
+        // Detectar si debe mantener la tortuguita visible
+        const showTurtle = panel.dataset.showTurtle === '1';
+        const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+        
+        console.log('🐢 Configuración tortuguita:', { showTurtle, turtleVoice });
+        
         // Primero leer el título y descripción del tema/subtema
         const title = panel.querySelector('h2');
         const description = panel.querySelector('p');
@@ -966,30 +1310,39 @@ document.addEventListener('DOMContentLoaded', function () {
         textToRead = textToRead.trim();
         
         if (textToRead.length > 10) {
-            // Leer el texto primero
+            // Leer el texto primero (usando la voz configurada si show_turtle está activo)
             console.log('📝 Leyendo descripción del video...');
             
             speakWithElevenLabs(
                 textToRead,
-                () => showTurtle(),
+                () => showTurtle ? showTurtleWithVoice(turtleVoice) : showTurtle(),
                 () => {
-                    hideTurtle();
+                    // Si NO debe mantener tortuguita, ocultarla después de leer
+                    if (!showTurtle) {
+                        hideTurtle();
+                    }
                     console.log('✅ Descripción completada, reproduciendo video...');
                     
                     if (autoplayActive) {
                         setTimeout(() => {
-                            playVideoAndWait(video);
+                            playVideoAndWait(video, showTurtle, turtleVoice);
                         }, 1000);
                     }
-                }
+                },
+                turtleVoice // Pasar la voz seleccionada
             );
         } else {
-            playVideoAndWait(video);
+            playVideoAndWait(video, showTurtle, turtleVoice);
         }
     }
     
-    function playVideoAndWait(video) {
+    function playVideoAndWait(video, keepTurtleVisible = false, turtleVoice = 0) {
         console.log('🎥 Reproduciendo video...');
+        
+        // Si debe mantener tortuguita visible, mostrarla
+        if (keepTurtleVisible) {
+            showTurtleWithVoice(turtleVoice);
+        }
         
         video.currentTime = 0;
         console.log('⏪ Video reiniciado al inicio');
@@ -1001,17 +1354,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         
-        video.onended = () => {
-            console.log('✅ Video completado');
-            
-            hideTurtle();
-            
-            if (autoplayActive) {
-                setTimeout(() => {
-                    advanceToNext();
-                }, 1000);
-            }
-        };
+        
     }
     
     function speakText(text) {
@@ -1068,6 +1411,111 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
+    // NUEVA FUNCIÓN: Leer PDF con canvas página por página
+    async function readPdfCanvasAutoplay(pdfId, panel) {
+        console.log('📖 Iniciando lectura de PDF canvas:', pdfId);
+        
+        // Primero leer título y descripción
+        const title = panel.querySelector('h2');
+        const description = panel.querySelector('p');
+        
+        let introText = '';
+        if (title) introText += title.textContent + '. ';
+        if (description) introText += description.textContent;
+        
+        introText = introText.trim();
+        
+        // Obtener info del PDF
+        const pdfInfo = window.getPdfInfo(pdfId);
+        if (!pdfInfo) {
+            console.error('❌ No se pudo obtener info del PDF');
+            advanceToNext();
+            return;
+        }
+        
+        console.log(`📄 PDF tiene ${pdfInfo.totalPages} páginas`);
+        
+        // Función recursiva para leer cada página
+        let currentPdfPage = 1;
+        
+        async function readNextPage() {
+            if (!autoplayActive) return;
+            
+            if (currentPdfPage > pdfInfo.totalPages) {
+                console.log('✅ PDF completado, avanzando al siguiente tema');
+                hideTurtle();
+                setTimeout(() => {
+                    advanceToNext();
+                }, 1000);
+                return;
+            }
+            
+            console.log(`📖 Leyendo página ${currentPdfPage} de ${pdfInfo.totalPages}`);
+            
+            // Navegar a la página (si no es la primera)
+            if (currentPdfPage > 1) {
+                window.navigatePdfPage(pdfId, 'next');
+            }
+            
+            // Esperar un momento para que se renderice
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Obtener texto de la página actual usando PDF.js
+            const canvas = document.querySelector(`canvas[data-pdf-id="${pdfId}"]`);
+            const pdfUrl = canvas.dataset.pdfUrl;
+            
+            try {
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(currentPdfPage);
+                const content = await page.getTextContent();
+                const pageText = content.items.map(item => item.str).join(' ');
+                
+                let textToRead = '';
+                
+                // Si es la primera página, incluir intro
+                if (currentPdfPage === 1 && introText.length > 10) {
+                    textToRead = introText + '. ' + pageText;
+                } else {
+                    textToRead = pageText;
+                }
+                
+                textToRead = textToRead.replace(/\s+/g, ' ').trim().substring(0, 5000);
+                
+                if (textToRead.length > 10) {
+                    speakWithElevenLabs(
+                        textToRead,
+                        () => showTurtle(),
+                        () => {
+                            hideTurtle();
+                            console.log(`✅ Página ${currentPdfPage} completada`);
+                            
+                            currentPdfPage++;
+                            
+                            if (autoplayActive) {
+                                setTimeout(() => {
+                                    readNextPage();
+                                }, 1000);
+                            }
+                        }
+                    );
+                } else {
+                    // Página vacía, continuar
+                    currentPdfPage++;
+                    readNextPage();
+                }
+                
+            } catch (error) {
+                console.error('Error leyendo página del PDF:', error);
+                currentPdfPage++;
+                readNextPage();
+            }
+        }
+        
+        // Iniciar lectura
+        readNextPage();
+    }
+    
     function advanceToNext() {
         if (!autoplayActive) return;
         
@@ -1085,6 +1533,71 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }, 500);
     }
+
+    function tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice) {
+    console.log('🔍 Intentando detectar duración del video en iframe...');
+    
+    try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+            const video = iframeDoc.querySelector('video');
+            
+            if (video) {
+                console.log('✅ Video encontrado dentro del iframe');
+                
+                // Reproducir video
+                video.currentTime = 0;
+                video.play().then(() => {
+                    console.log('▶️ Video en iframe reproduciéndose');
+                    
+                    // Escuchar cuando termine
+                    video.addEventListener('ended', () => {
+                        console.log('✅ Video del iframe completado');
+                        
+                        if (showTurtle) {
+                            hideTurtle();
+                        }
+                        
+                        if (autoplayActive) {
+                            setTimeout(() => advanceToNext(), 1000);
+                        }
+                    });
+                    
+                }).catch(err => {
+                    console.log('❌ Error al reproducir video en iframe:', err);
+                    // Si no se puede reproducir, usar tiempo estimado
+                    useEstimatedTime(showTurtle);
+                });
+                
+            } else {
+                console.log('⚠️ No se encontró tag <video> dentro del iframe');
+                useEstimatedTime(showTurtle);
+            }
+        } else {
+            console.log('⚠️ No se puede acceder al iframe (CORS)');
+            useEstimatedTime(showTurtle);
+        }
+    } catch (err) {
+        console.log('⚠️ Error accediendo al iframe:', err);
+        useEstimatedTime(showTurtle);
+    }
+}
+
+function useEstimatedTime(showTurtle) {
+    console.log('⏱️ Usando tiempo estimado de 30 segundos...');
+    
+    setTimeout(() => {
+        console.log('⏱️ Tiempo estimado cumplido');
+        
+        if (showTurtle) {
+            hideTurtle();
+        }
+        
+        if (autoplayActive) {
+            advanceToNext();
+        }
+    }, 30000); // 30 segundos
+}
     
     function showGameModal() {
         const modal = document.getElementById('gameModal');
@@ -1101,9 +1614,10 @@ document.addEventListener('DOMContentLoaded', function () {
 function showTurtle() {
     let turtle = document.getElementById('turtle-mascot');
     
+    // CORREGIDO: 0 = masculina, 1 = femenina
     const turtleVideo = window.currentTurtleIndex === 0 
-        ? "{{ asset('videos/tortuguita-hablando.webm') }}"
-        : "{{ asset('videos/tortuguita1-hablando.webm') }}";
+        ? "{{ asset('videos/tortuguita-hablando.webm') }}"      // MASCULINA
+        : "{{ asset('videos/tortuguita1-hablando.webm') }}";    // FEMENINA
     
     console.log(`🐢 Mostrando tortuguita ${window.currentTurtleIndex}`);
     
@@ -1133,6 +1647,41 @@ function showTurtle() {
     if (video) {
         video.play();
     }
+}
+
+// NUEVA FUNCIÓN: Mostrar tortuguita SILENCIOSA específica durante videos
+function showTurtleWithVoice(voiceIndex) {
+    let turtle = document.getElementById('turtle-mascot');
+    
+    // CORREGIDO: 0 = masculina, 1 = femenina
+    const turtleVideo = voiceIndex === 0 
+        ? "{{ asset('videos/tortuguita-hablando.webm') }}"      // MASCULINA
+        : "{{ asset('videos/tortuguita1-hablando.webm') }}";    // FEMENINA
+    
+    console.log(`🐢 Mostrando tortuguita SILENCIOSA: voz ${voiceIndex}`);
+    
+    if (!turtle) {
+        turtle = document.createElement('div');
+        turtle.id = 'turtle-mascot';
+        turtle.className = 'turtle-container';
+        turtle.innerHTML = `
+            <div class="turtle-wrapper">
+                <video autoplay loop muted playsinline class="turtle-video">
+                    <source src="${turtleVideo}" type="video/webm">
+                </video>
+            </div>
+        `;
+        document.body.appendChild(turtle);
+    } else {
+        const video = turtle.querySelector('.turtle-video source');
+        if (video) {
+            video.src = turtleVideo;
+            turtle.querySelector('.turtle-video').load();
+        }
+    }
+    
+    turtle.classList.add('active');
+    turtle.querySelector('.turtle-video')?.play();
 }
 
 function hideTurtle() {
@@ -1281,36 +1830,110 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const activityId = this.dataset.activityId;
-            const formData = new FormData(this);
+            const totalQuestions = parseInt(this.dataset.total);
             const resultDiv = this.parentElement.querySelector('.result-message');
             const submitBtn = this.querySelector('button[type="submit"]');
             
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Enviando...';
+            let requestData;
             
-            try {
-                const response = await fetch(`/activities/${activityId}/submit`, {
+            if (totalQuestions > 1) {
+                // Múltiples preguntas - validar que todas estén respondidas
+                const answers = [];
+                let allAnswered = true;
+                
+                for (let i = 0; i < totalQuestions; i++) {
+                    const radio = this.querySelector(`input[name="question_${i}"]:checked`);
+                    if (!radio) {
+                        showQuestionModal();
+                        allAnswered = false;
+                        break;
+                    }
+                    answers.push({ q: i, a: radio.value });
+                }
+                
+                if (!allAnswered) return;
+                
+                requestData = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ answers })
+                };
+            } else {
+                // Una sola pregunta - enviar con nombre "answer"
+                const radio = this.querySelector(`input[name="question_0"]:checked`);
+                
+                if (!radio) {
+                    showQuestionModal();
+                    return;
+                }
+                
+                // Crear FormData manualmente con el nombre correcto
+                const formData = new FormData();
+                formData.append('answer', radio.value);
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                
+                requestData = {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     },
                     body: formData
-                });
-                
+                };
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
+            try {
+                const response = await fetch(`/activities/${activityId}/submit`, requestData);
                 const data = await response.json();
                 
                 if (data.success) {
-                    resultDiv.innerHTML = `
-                        <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
-                            <h3>✅ ${data.message}</h3>
-                            <small style="display: block; margin-top: 10px; opacity: 0.8;">
-                                La respuesta ha sido guardada correctamente.
-                            </small>
-                        </div>
-                    `;
+                    let message = `✅ ${data.message}`;
+                    if (data.score !== undefined) {
+                        message = `
+                            <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                                <h3>✅ ${data.message}</h3>
+                                <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">
+                                    Calificación: ${data.score}%
+                                </p>
+                                <small style="display: block; margin-top: 10px; opacity: 0.8;">
+                                    El cuestionario ha sido guardado.
+                                </small>
+                            </div>
+                        `;
+                    } else {
+                        message = `
+                            <div class="alert alert-success" style="font-size: 18px; padding: 20px; margin: 20px 0;">
+                                <h3>✅ ${data.message}</h3>
+                                <small style="display: block; margin-top: 10px; opacity: 0.8;">
+                                    La respuesta ha sido guardada correctamente.
+                                </small>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDiv.innerHTML = message;
                     this.querySelectorAll('input').forEach(input => input.disabled = true);
                     submitBtn.textContent = 'Respuesta Enviada';
+                    
+                    // Ocultar navegación si existe
+                    const nav = this.previousElementSibling;
+                    if (nav && nav.classList.contains('exam-navigation')) {
+                        nav.style.display = 'none';
+                    }
+                    
+                    // Mostrar todas las preguntas si es multi-pregunta
+                    if (totalQuestions > 1) {
+                        this.querySelectorAll('.question-item').forEach(q => {
+                            q.style.display = 'block';
+                        });
+                    }
                     
                     if (data.created) {
                         updateProgressBar();
@@ -1318,16 +1941,299 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Enviar Respuesta';
+                    submitBtn.textContent = totalQuestions > 1 ? 'Enviar Cuestionario' : 'Enviar Respuesta';
                 }
             } catch (error) {
                 resultDiv.innerHTML = `<div class="alert alert-danger">❌ Error al enviar la respuesta</div>`;
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Enviar Respuesta';
+                submitBtn.textContent = totalQuestions > 1 ? 'Enviar Cuestionario' : 'Enviar Respuesta';
                 console.error(error);
             }
         });
     });
+    
+    // ===== NAVEGACIÓN PARA CUESTIONARIOS CON MÚLTIPLES PREGUNTAS =====
+    document.querySelectorAll('.cuestionario-form').forEach(form => {
+        const activityId = form.dataset.activityId;
+        const totalQuestions = parseInt(form.dataset.total);
+        
+        // Solo agregar navegación si hay más de una pregunta
+        if (totalQuestions > 1) {
+            let currentQuestion = 0;
+            
+            const prevBtn = document.getElementById(`prevQuizQuestion-${activityId}`) || 
+                           document.getElementById(`prevQuizQuestion2-${activityId}`);
+            const nextBtn = document.getElementById(`nextQuizQuestion-${activityId}`) || 
+                           document.getElementById(`nextQuizQuestion2-${activityId}`);
+            const submitBtn = document.getElementById(`submitQuiz-${activityId}`) || 
+                             document.getElementById(`submitQuiz2-${activityId}`);
+            const counter = document.getElementById(`quiz-counter-${activityId}`) || 
+                           document.getElementById(`quiz-counter2-${activityId}`);
+            const questions = form.querySelectorAll('.question-item');
+            
+            if (!prevBtn || !nextBtn || !submitBtn || !counter) return;
+            
+            function updateQuizNavigation() {
+                counter.querySelector('.current').textContent = currentQuestion + 1;
+                
+                questions.forEach((q, idx) => {
+                    q.style.display = idx === currentQuestion ? 'block' : 'none';
+                });
+                
+                prevBtn.disabled = currentQuestion === 0;
+                
+                if (currentQuestion === totalQuestions - 1) {
+                    nextBtn.style.display = 'none';
+                    submitBtn.style.display = 'inline-block';
+                } else {
+                    nextBtn.style.display = 'inline-block';
+                    submitBtn.style.display = 'none';
+                }
+            }
+            
+            prevBtn.onclick = () => {
+                if (currentQuestion > 0) {
+                    currentQuestion--;
+                    updateQuizNavigation();
+                }
+            };
+            
+            nextBtn.onclick = () => {
+                const currentQ = questions[currentQuestion];
+                const answered = currentQ.querySelector('input[type="radio"]:checked');
+                
+                if (!answered) {
+                    showQuestionModal();
+                    return;
+                }
+                
+                if (currentQuestion < totalQuestions - 1) {
+                    currentQuestion++;
+                    updateQuizNavigation();
+                }
+            };
+            
+            updateQuizNavigation();
+        }
+    });
+});
+</script>
+
+{{-- ========== PDF VIEWER CON NAVEGACIÓN (CANVAS) ========== --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔍 Inicializando visores PDF con canvas...');
+    
+    // Objeto para almacenar PDFs cargados
+    const pdfViewers = {};
+    
+    // Inicializar todos los canvas PDF
+    document.querySelectorAll('canvas[data-pdf-id]').forEach(canvas => {
+        const pdfId = canvas.dataset.pdfId;
+        const pdfUrl = canvas.dataset.pdfUrl;
+        
+        console.log(`📄 Cargando PDF: ${pdfId}`);
+        
+        // Cargar PDF
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        loadingTask.promise.then(pdf => {
+            console.log(`✅ PDF ${pdfId} cargado: ${pdf.numPages} páginas`);
+            
+            // Guardar referencia
+            pdfViewers[pdfId] = {
+                pdf: pdf,
+                currentPage: 1,
+                totalPages: pdf.numPages,
+                canvas: canvas,
+                rendering: false
+            };
+            
+            // Actualizar total de páginas
+            const totalPagesSpan = document.querySelector(`.pdf-total-pages[data-pdf-id="${pdfId}"]`);
+            if (totalPagesSpan) {
+                totalPagesSpan.textContent = pdf.numPages;
+            }
+            
+            // Renderizar primera página con múltiples intentos
+            console.log(`🎨 Iniciando render del PDF ${pdfId}`);
+            
+            // Intento 1: Inmediato
+            setTimeout(() => {
+                console.log(`📄 Intento 1 de render para ${pdfId}`);
+                renderPage(pdfId, 1);
+            }, 100);
+            
+            // Intento 2: Si el canvas sigue vacío
+            setTimeout(() => {
+                const viewer = pdfViewers[pdfId];
+                if (viewer && viewer.canvas.width === 0) {
+                    console.log(`📄 Intento 2 de render para ${pdfId} (canvas estaba vacío)`);
+                    viewer.rendering = false;
+                    renderPage(pdfId, 1);
+                }
+            }, 500);
+            
+            // Intento 3: Forzado agresivo
+            setTimeout(() => {
+                const viewer = pdfViewers[pdfId];
+                if (viewer && viewer.canvas.width === 0) {
+                    console.log(`📄 Intento 3 FORZADO para ${pdfId}`);
+                    viewer.rendering = false;
+                    
+                    // Forzar render con detección de orientación
+                    viewer.pdf.getPage(1).then(page => {
+                        const viewport = page.getViewport({ scale: 1 });
+                        const width = viewport.width;
+                        const height = viewport.height;
+                        
+                        // Detectar orientación: horizontal = 0.75, vertical = 1.3
+                        const scale = width > height ? 0.75 : 1.3;
+                        
+                        const scaledViewport = page.getViewport({ scale: scale });
+                        viewer.canvas.height = scaledViewport.height;
+                        viewer.canvas.width = scaledViewport.width;
+                        
+                        const renderContext = {
+                            canvasContext: viewer.canvas.getContext('2d'),
+                            viewport: scaledViewport
+                        };
+                        
+                        page.render(renderContext).promise.then(() => {
+                            viewer.rendering = false;
+                            viewer.currentPage = 1;
+                            console.log(`✅ PDF ${pdfId} renderizado en intento 3`);
+                            updateButtons(pdfId);
+                        });
+                    });
+                }
+            }, 1000);
+            
+        }).catch(error => {
+            console.error(`❌ Error cargando PDF ${pdfId}:`, error);
+        });
+    });
+    
+    // Función para renderizar una página
+    function renderPage(pdfId, pageNum) {
+        const viewer = pdfViewers[pdfId];
+        if (!viewer || viewer.rendering) return;
+        
+        viewer.rendering = true;
+        
+        viewer.pdf.getPage(pageNum).then(page => {
+            // Obtener dimensiones de la página
+            const viewport = page.getViewport({ scale: 1 });
+            const width = viewport.width;
+            const height = viewport.height;
+            
+            // Detectar orientación y aplicar escala apropiada
+            let scale;
+            if (width > height) {
+                // PDF HORIZONTAL (landscape) - perfecto como está
+                scale = 0.75;
+                console.log(`📄 PDF ${pdfId} página ${pageNum} - HORIZONTAL - Escala: 0.75`);
+            } else {
+                // PDF VERTICAL (portrait) - escala mayor para mejor legibilidad
+                scale = 1.3;
+                console.log(`📄 PDF ${pdfId} página ${pageNum} - VERTICAL - Escala: 1.3`);
+            }
+            
+            const scaledViewport = page.getViewport({ scale: scale });
+            
+            viewer.canvas.height = scaledViewport.height;
+            viewer.canvas.width = scaledViewport.width;
+            
+            const renderContext = {
+                canvasContext: viewer.canvas.getContext('2d'),
+                viewport: scaledViewport
+            };
+            
+            page.render(renderContext).promise.then(() => {
+                viewer.rendering = false;
+                viewer.currentPage = pageNum;
+                
+                console.log(`📄 PDF ${pdfId}: Renderizada página ${pageNum}`);
+                
+                // Actualizar contador
+                const currentPageSpan = document.querySelector(`.pdf-current-page[data-pdf-id="${pdfId}"]`);
+                if (currentPageSpan) {
+                    currentPageSpan.textContent = pageNum;
+                }
+                
+                // Actualizar botones
+                updateButtons(pdfId);
+            });
+        });
+    }
+    
+    // Función para actualizar estado de botones
+    function updateButtons(pdfId) {
+        const viewer = pdfViewers[pdfId];
+        if (!viewer) return;
+        
+        const prevBtn = document.querySelector(`.pdf-nav-btn[data-pdf-id="${pdfId}"][data-action="prev"]`);
+        const nextBtn = document.querySelector(`.pdf-nav-btn[data-pdf-id="${pdfId}"][data-action="next"]`);
+        
+        if (prevBtn) prevBtn.disabled = viewer.currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = viewer.currentPage >= viewer.totalPages;
+    }
+    
+    // Manejar clics en botones
+    document.querySelectorAll('.pdf-nav-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pdfId = this.dataset.pdfId;
+            const action = this.dataset.action;
+            const viewer = pdfViewers[pdfId];
+            
+            if (!viewer) return;
+            
+            let newPage = viewer.currentPage;
+            
+            if (action === 'next' && viewer.currentPage < viewer.totalPages) {
+                newPage = viewer.currentPage + 1;
+            } else if (action === 'prev' && viewer.currentPage > 1) {
+                newPage = viewer.currentPage - 1;
+            }
+            
+            if (newPage !== viewer.currentPage) {
+                renderPage(pdfId, newPage);
+            }
+        });
+    });
+    
+    // Exponer función global para autoplay
+    window.navigatePdfPage = function(pdfId, direction) {
+        const viewer = pdfViewers[pdfId];
+        if (!viewer) return false;
+        
+        let newPage = viewer.currentPage;
+        
+        if (direction === 'next' && viewer.currentPage < viewer.totalPages) {
+            newPage = viewer.currentPage + 1;
+        } else if (direction === 'prev' && viewer.currentPage > 1) {
+            newPage = viewer.currentPage - 1;
+        } else {
+            return false; // No se puede avanzar más
+        }
+        
+        renderPage(pdfId, newPage);
+        return true;
+    };
+    
+    // Función para obtener info del PDF
+    window.getPdfInfo = function(pdfId) {
+        const viewer = pdfViewers[pdfId];
+        if (!viewer) return null;
+        
+        return {
+            currentPage: viewer.currentPage,
+            totalPages: viewer.totalPages,
+            hasNextPage: viewer.currentPage < viewer.totalPages,
+            hasPrevPage: viewer.currentPage > 1
+        };
+    };
+    
+    console.log('✅ Visores PDF inicializados');
 });
 </script>
 
@@ -1610,9 +2516,7 @@ function renderGrid(container, grid, size, activityId) {
     
     container.querySelectorAll('.sopa-cell').forEach(cell => {
         cell.addEventListener('click', () => {
-            if (cell.classList.contains('found')) {
-                return;
-            }
+            // Permitir seleccionar cualquier celda, incluso las encontradas
             
             if (!firstClick) {
                 container.querySelectorAll('.sopa-cell').forEach(c => c.classList.remove('selected', 'selecting'));
@@ -1648,7 +2552,7 @@ function renderGrid(container, grid, size, activityId) {
         });
         
         cell.addEventListener('mouseenter', () => {
-            if (firstClick && !cell.classList.contains('found')) {
+            if (firstClick) {
                 container.querySelectorAll('.preview').forEach(c => c.classList.remove('preview'));
                 
                 const row1 = parseInt(firstClick.dataset.row);

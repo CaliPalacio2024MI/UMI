@@ -30,32 +30,37 @@ class TopicsController extends Controller
     /**
      * Guardar un nuevo tema
      */
-public function store(Request $request): RedirectResponse
-{
-    $validatedData = $request->validate([
-        'course_id'   => 'required|exists:courses,id',
-        'title'       => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
-    ]);
+    public function store(Request $request): RedirectResponse
+    {
+        $validatedData = $request->validate([
+            'course_id'   => 'required|exists:courses,id',
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
+        ]);
 
-    if ($request->hasFile('file')) {
-        $path = $request->file('file')->store('topic_files', 'public');
-        $validatedData['file_path'] = $path;
+        if ($request->hasFile('file')) {
+            $path = $request->file('file')->store('topic_files', 'public');
+            $validatedData['file_path'] = $path;
+        }
+
+        unset($validatedData['file']);
+
+        // ✅ NUEVO: Guardar show_title
+        $validatedData['show_title'] = $request->has('show_title');
+        
+        // ✅ NUEVO: Guardar show_turtle y turtle_voice
+        $validatedData['show_turtle'] = $request->has('show_turtle');
+        $validatedData['turtle_voice'] = $request->input('turtle_voice', null);
+
+        // ✅ NUEVO: Asignar orden automáticamente
+        $maxOrder = Topics::where('course_id', $validatedData['course_id'])->max('order');
+        $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
+
+        Topics::create($validatedData);
+
+        return back()->with('success', 'Tema creado exitosamente.');
     }
-
-    unset($validatedData['file']);
-
-    Topics::create($validatedData);
-
-    return back()->with('success', 'Tema creado exitosamente.');
-}
-
-
-
-
-
-
 
     /**
      * Muestra el formulario para editar un tema existente.
@@ -67,7 +72,10 @@ public function store(Request $request): RedirectResponse
             'title' => $topic->title,
             'description' => $topic->description,
             'file_path' => $topic->file_path,
-            'course_id' => $topic->course_id
+            'course_id' => $topic->course_id,
+            'show_title' => $topic->show_title, // ✅
+            'show_turtle' => $topic->show_turtle, // ✅ NUEVO
+            'turtle_voice' => $topic->turtle_voice // ✅ NUEVO
         ]);
     }
 
@@ -77,43 +85,44 @@ public function store(Request $request): RedirectResponse
     public function update(Request $request, Topics $topic)
     {
         $validatedData = $request->validate([
-    'title' => 'required|string|max:255',
-    'description' => 'nullable|string',
-    'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
-]);
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
+        ]);
 
-if ($request->hasFile('file_path')) {
-
-    if ($topic->file_path) {
-        Storage::disk('public')->delete($topic->file_path);
-    }
-
-    $topic->file_path = $request->file('file_path')->store('topic_files', 'public');
-}
-
-$topic->title = $request->title;
-$topic->description = $request->description;
-$topic->save();
-
-        // Actualizar tema
+        // Actualizar campos básicos
         $topic->title = $request->title;
         $topic->description = $request->description;
+        $topic->show_title = $request->has('show_title'); // ✅
+        $topic->show_turtle = $request->has('show_turtle'); // ✅ NUEVO
+        $topic->turtle_voice = $request->input('turtle_voice', null); // ✅ NUEVO
 
         // Manejar archivo si se subió uno nuevo
         if ($request->hasFile('file_path')) {
-
             // Eliminar archivo anterior si existe
             if ($topic->file_path) {
                 Storage::disk('public')->delete($topic->file_path);
-
             }
-            $topic->file_path = $request->file('file_path')->store('topics', 'public');
-
+            $topic->file_path = $request->file('file_path')->store('topic_files', 'public');
         }
 
         $topic->save();
 
         return redirect()->back()->with('success', 'Tema actualizado correctamente.');
+    }
+
+    /**
+     * ✅ NUEVO: Actualizar orden de temas (Drag & Drop)
+     */
+    public function updateOrder(Request $request)
+    {
+        $topics = $request->topics;
+        
+        foreach ($topics as $topic) {
+            Topics::where('id', $topic['id'])->update(['order' => $topic['order']]);
+        }
+        
+        return response()->json(['success' => true]);
     }
 
     public function destroy(Topics $topic)
@@ -125,4 +134,3 @@ $topic->save();
         return back()->with('success', '¡Tema eliminado exitosamente!');
     }
 }
-    

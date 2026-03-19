@@ -26,16 +26,21 @@ class ActivitiesController extends Controller
 
             'title' => 'required|string|max:255',
             'type' => 'required|string', 
-            'content' => 'required|array',
+            'content' => 'nullable|array', // ✅ Cambié a nullable porque Video no necesita content
+            
+            // ✅ NUEVO: Campos para videos con tortuguita
+            'video_file' => 'nullable|file|mimes:mp4,webm,ogg,avi,mov|max:163840',
+            'show_turtle' => 'nullable|boolean',
+            'turtle_voice' => 'nullable|integer|in:0,1',
         ]);
 
-        if ($validatedData['type']==='Cuestionario'){
+        // Validaciones específicas por tipo
+        if ($validatedData['type'] === 'Cuestionario'){
             $request->validate([
                 'content.question' => 'required|string',
                 'content.options' => 'required|array|min:4', 
                 'content.options.*' => 'required|string',
                 'content.correct_answer' => 'required', 
-
             ]);
         }
 
@@ -49,20 +54,52 @@ class ActivitiesController extends Controller
             ]);
         }
         
-        // Lógica para 'SopaDeLetras' o 'Crucigrama'
         elseif ($validatedData['type'] === 'SopaDeLetras') {
             $request->validate([
-                'content.words' => 'required|array|min:1', // Debe tener al menos una palabra
-                'content.words.*' => 'required|string|distinct', // Palabras deben ser únicas
-                'content.grid_size' => 'required|integer|min:5|max:20', // Tamaño de 5x5 a 20x20
+                'content.words' => 'required|array|min:1',
+                'content.words.*' => 'required|string|distinct',
+                'content.grid_size' => 'required|integer|min:5|max:20',
             ]);
         }
 
+        elseif ($validatedData['type'] === 'Ahorcado') {
+            $request->validate([
+                'content.word' => 'required|string',
+                'content.hint' => 'nullable|string',
+                'content.max_attempts' => 'required|integer|min:3|max:10',
+            ]);
+        }
+
+        elseif ($validatedData['type'] === 'Crucigrama') {
+            $request->validate([
+                'content.grid_size' => 'required|integer|min:5|max:15',
+                'content.words' => 'required|array|min:1',
+                'content.words.*.word' => 'required|string',
+                'content.words.*.clue' => 'required|string',
+                'content.words.*.direction' => 'required|string|in:horizontal,vertical',
+            ]);
+        }
+
+        // ✅ NUEVO: Manejar videos con tortuguita
+        elseif ($validatedData['type'] === 'Video') {
+            if ($request->hasFile('video_file')) {
+                $validatedData['file_path'] = $request->file('video_file')->store('videos', 'public');
+            }
+            
+            $validatedData['show_turtle'] = $request->has('show_turtle');
+            $validatedData['turtle_voice'] = $request->turtle_voice ?? null;
+            
+            // Video no necesita content
+            $validatedData['content'] = [];
+        }
+
+        // ✅ NUEVO: Guardar show_title
+        $validatedData['show_title'] = $request->has('show_title');
         
         $courseId = $validatedData['course_id'];
         $validatedData['is_final_exam'] = $request->has('is_final_exam');
 
-        // 2. LÓGICA DE LIMPIEZA DE ID (Asegurar que solo uno se guarde)
+        // LÓGICA DE LIMPIEZA DE ID (Asegurar que solo uno se guarde)
         if ($validatedData['is_final_exam']) {
             // Es un examen final, pertenece al CURSO. Anular temas.
             $validatedData['topic_id'] = null;
@@ -93,6 +130,18 @@ class ActivitiesController extends Controller
             // Fallo de seguridad: No se seleccionó nada
             return redirect()->back()->withErrors(['parent' => 'Debe seleccionar un Tema o un Subtema para la actividad.']);
         }
+
+        // ✅ NUEVO: Asignar orden automáticamente
+        if ($validatedData['subtopic_id']) {
+            $maxOrder = Activities::where('subtopic_id', $validatedData['subtopic_id'])->max('order');
+        } elseif ($validatedData['topic_id']) {
+            $maxOrder = Activities::where('topic_id', $validatedData['topic_id'])->max('order');
+        } else {
+            $maxOrder = Activities::where('course_id', $validatedData['course_id'])
+                                  ->where('is_final_exam', true)
+                                  ->max('order');
+        }
+        $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
 
         Activities::create($validatedData);
         return back()->with('success', 'Actividad creada exitosamente.');

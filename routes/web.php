@@ -105,6 +105,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     Route::get('/cursos/{course}', [CourseController::class, 'show'])->name('course.show');
     Route::get('/cursos/{course}/certificado', [CourseController::class, 'showCertificate'])->name('courses.certificate');
     Route::get('/mis-certificados', [CourseController::class, 'myCertificates'])->name('courses.certificates.index');
+    Route::post('/topics/update-order', [TopicController::class, 'updateOrder'])->name('topics.updateOrder');
+    
+
     
     // Acciones del Alumno
     Route::post('/cursos/{course}/inscribir', [CourseController::class, 'enroll'])->name('courses.enroll');

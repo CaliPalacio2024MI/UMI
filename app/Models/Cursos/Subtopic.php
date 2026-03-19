@@ -39,6 +39,10 @@ class Subtopic extends Model
         'description',
         'file_path',
         'order',
+        'show_title',     // ✅ AGREGAR
+    'show_turtle',    // ✅ AGREGAR
+    'turtle_voice',   // ✅ AGREGAR
+    'order',          // ✅ AGREGAR
     ];
 
     public function topic()

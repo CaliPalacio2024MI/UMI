@@ -46,9 +46,21 @@ class SubtopicsController extends Controller
 
         if ($request->hasFile('file')){
             $path = $request->file('file')->store('subtopic', 'public');
-
-            $validatedData['file_path']=$path;
+            $validatedData['file_path'] = $path;
             unset($validatedData['file']);
+        }
+
+        // ✅ NUEVO: Guardar show_title
+        $validatedData['show_title'] = $request->has('show_title');
+        
+        // ✅ NUEVO: Guardar show_turtle y turtle_voice
+        $validatedData['show_turtle'] = $request->has('show_turtle');
+        $validatedData['turtle_voice'] = $request->input('turtle_voice', null);
+
+        // ✅ NUEVO: Asignar orden automáticamente si no viene
+        if (!isset($validatedData['order'])) {
+            $maxOrder = Subtopic::where('topic_id', $topic->id)->max('order');
+            $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
         }
 
         $subtopic = $topic->subtopics()->create($validatedData);
@@ -85,11 +97,11 @@ class SubtopicsController extends Controller
      */
     public function destroy(Subtopic $subtopic)
     {
-        $subtopic->delete();
-
         if ($subtopic->file_path) {
             Storage::disk('public')->delete($subtopic->file_path);
         }
+
+        $subtopic->delete();
 
         return back()->with('success', '¡Subtema eliminado exitosamente!');
     }
