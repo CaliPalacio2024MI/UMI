@@ -170,7 +170,7 @@ async loadPage(url, updateHistory = true) {
         const cacheKey = this.getCacheKey(url);
         
         // LISTA NEGRA: Estas páginas NUNCA se guardan en memoria
-        const noCachePaths = ['/facturacion']; 
+        const noCachePaths = ['/facturacion','/crm']; 
         const currentPath = new URL(url, window.location.origin).pathname;
         
         // Si la URL contiene algo de la lista negra, NO usamos caché

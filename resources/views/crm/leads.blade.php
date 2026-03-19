@@ -2,10 +2,6 @@
 
 @section('title', 'CRM - Leads')
 
-@push('css')
-    @vite('resources/css/CRM/leads.css')
-@endpush
-
 @section('content')
 
 <div class="crm-leads">

@@ -1,8 +1,5 @@
 @extends('layouts.app')
 @section('title', 'CRM - Comisiones')
-@push('css')
-    @vite('resources/css/CRM/comisiones.css')
-@endpush
 @section('content')
 <div class="crm-comisiones">
 
@@ -157,180 +154,142 @@
 
     </div>
 </div>
-@endsection
 
-@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+(function initComisiones() {
+    // Evitar doble init
+    const tabla = document.getElementById('tabla-comisiones');
+    if (!tabla || tabla.dataset.init) return;
+    tabla.dataset.init = 'true';
 
-// ===== BUSCADOR =====
-const buscadorCTP  = document.querySelector('.buscador-ctp');
-const fechaInicio  = document.getElementById('fecha-inicio');
-const fechaFin     = document.getElementById('fecha-fin');
+    // ===== BUSCADOR =====
+    const buscadorCTP = document.querySelector('.buscador-ctp');
+    const fechaInicio = document.getElementById('fecha-inicio');
+    const fechaFin    = document.getElementById('fecha-fin');
 
-function aplicarFiltros() {
-    const texto  = buscadorCTP?.value.toLowerCase().trim() ?? '';
-    const inicio = fechaInicio.value;
-    const fin    = fechaFin.value;
-
-    document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
-        const ctp       = (fila.getAttribute('data-ctp')   || '').toLowerCase();
-        const fechaFila = (fila.getAttribute('data-fecha') || '');
-
-        let visible = true;
-
-        if (texto  && !ctp.includes(texto))      visible = false;
-        if (inicio && fechaFila < inicio)         visible = false;
-        if (fin    && fechaFila > fin)            visible = false;
-
-        fila.style.display = visible ? '' : 'none';
-    });
-}
-
-buscadorCTP?.addEventListener('input',  aplicarFiltros);
-fechaInicio.addEventListener('change',  aplicarFiltros);
-fechaFin.addEventListener('change',     aplicarFiltros);
-
-// Abrir calendario al click en ícono
-document.querySelectorAll('.icon-calendar').forEach(icon => {
-    icon.addEventListener('click', function () {
-        this.nextElementSibling.showPicker();
-    });
-});
-
-// ===== BOTÓN OJO =====
-document.querySelectorAll('.btn-ver-ctp').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const id = this.getAttribute('data-id');
-        console.log('Ver CTP id:', id);
-    });
-});
-
-// ===== EXPORTAR EXCEL =====
-const btnExportar = document.querySelector('.btn-exportar');
-
-btnExportar.addEventListener('click', () => {
-
-    const datos = [];
-    const fechaExport = new Date().toLocaleDateString('es-MX');
-
-    datos.push([`Reporte de Comisiones`]);
-    datos.push([`Generado el: ${fechaExport}`]);
-    datos.push([]);
-
-    datos.push(["CTP", "Número de Conversiones", "Total de Comisiones"]);
-
-    document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
-        if (fila.style.display === 'none') return;
-
-        const ctp          = fila.querySelector('.col-ctp')?.innerText.trim();
-        const conversiones = fila.querySelector('.col-conversiones')?.innerText.trim();
-        const total        = fila.querySelector('.col-total')?.innerText.trim();
-
-        datos.push([ctp, conversiones, total]);
-    });
-
-    const hoja = XLSX.utils.aoa_to_sheet(datos);
-    hoja['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 22 }];
-
-    const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, "Comisiones");
-
-    const fechaArchivo = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(libro, `comisiones_${fechaArchivo}.xlsx`);
-});
-// ===== MODAL % COMISIÓN =====
-const modalComision = document.getElementById('modal-comision');
-const btnComision   = document.querySelector('.btn-comision');
-const cerrarComision = document.getElementById('cerrar-modal-comision');
-const mcTablaBody   = document.getElementById('mc-tabla-body');
-
-let filaEditando = null; // referencia a la fila en edición
-
-// Abrir
-btnComision.addEventListener('click', () => {
-    modalComision.classList.remove('d-none');
-});
-
-// Cerrar
-cerrarComision.addEventListener('click', () => {
-    modalComision.classList.add('d-none');
-});
-
-modalComision.addEventListener('click', function(e) {
-    if (e.target === this) this.classList.add('d-none');
-});
-
-// Agregar / Guardar edición
-document.getElementById('mc-btn-agregar').addEventListener('click', () => {
-    const clasificacion = document.getElementById('mc-clasificacion').value;
-    const productoSel   = document.getElementById('mc-producto');
-    const producto      = productoSel.options[productoSel.selectedIndex]?.text || '';
-    const precio        = parseFloat(document.getElementById('mc-precio').value) || 0;
-    const porcentaje    = parseFloat(document.getElementById('mc-porcentaje').value) || 0;
-
-    if (!clasificacion || !producto || producto === 'Seleccione el producto') {
-        alert('Por favor selecciona Clasificación y Producto.');
-        return;
-    }
-
-    const total = ((precio * porcentaje) / 100).toFixed(2);
-
-    if (filaEditando) {
-        // Modo edición: actualizar fila existente
-        const celdas = filaEditando.querySelectorAll('.mc-celda');
-        celdas[0].textContent = clasificacion;
-        celdas[1].textContent = producto;
-        celdas[2].textContent = `$${precio.toLocaleString('es-MX')}`;
-        celdas[3].textContent = `${porcentaje}%`;
-        celdas[4].textContent = `$${parseFloat(total).toLocaleString('es-MX')}`;
-        filaEditando = null;
-        document.getElementById('mc-btn-agregar').textContent = '+ Agregar';
-    } else {
-        // Modo agregar: nueva fila
-        const fila = document.createElement('div');
-        fila.className = 'mc-table-row';
-        fila.innerHTML = `
-            <div class="mc-celda">${clasificacion}</div>
-            <div class="mc-celda">${producto}</div>
-            <div class="mc-celda">$${precio.toLocaleString('es-MX')}</div>
-            <div class="mc-celda">${porcentaje}%</div>
-            <div class="mc-celda">$${parseFloat(total).toLocaleString('es-MX')}</div>
-            <div class="mc-celda">
-                <span class="icon-editar" title="Editar">&#9998;</span>
-            </div>
-        `;
-
-        // Listener del lápiz
-        fila.querySelector('.icon-editar').addEventListener('click', () => {
-            const celdas = fila.querySelectorAll('.mc-celda');
-
-            // Rellenar formulario con datos de la fila
-            document.getElementById('mc-clasificacion').value = celdas[0].textContent;
-            document.getElementById('mc-precio').value        = celdas[2].textContent.replace(/[$,]/g, '');
-            document.getElementById('mc-porcentaje').value    = celdas[3].textContent.replace('%', '');
-
-            // Seleccionar producto por texto
-            const selectProducto = document.getElementById('mc-producto');
-            Array.from(selectProducto.options).forEach(opt => {
-                if (opt.text === celdas[1].textContent) selectProducto.value = opt.value;
-            });
-
-            filaEditando = fila;
-            document.getElementById('mc-btn-agregar').textContent = '💾 Guardar';
+    function aplicarFiltros() {
+        const texto  = buscadorCTP?.value.toLowerCase().trim() ?? '';
+        const inicio = fechaInicio?.value ?? '';
+        const fin    = fechaFin?.value ?? '';
+        document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
+            const ctp       = (fila.getAttribute('data-ctp') || '').toLowerCase();
+            const fechaFila = (fila.getAttribute('data-fecha') || '');
+            let visible = true;
+            if (texto  && !ctp.includes(texto))  visible = false;
+            if (inicio && fechaFila < inicio)     visible = false;
+            if (fin    && fechaFila > fin)         visible = false;
+            fila.style.display = visible ? '' : 'none';
         });
-
-        mcTablaBody.appendChild(fila);
     }
 
-    // Limpiar formulario
-    document.getElementById('mc-clasificacion').value = '';
-    document.getElementById('mc-producto').value      = '';
-    document.getElementById('mc-precio').value        = 0;
-    document.getElementById('mc-porcentaje').value    = 0;
-});
+    buscadorCTP?.addEventListener('input',  aplicarFiltros);
+    fechaInicio?.addEventListener('change', aplicarFiltros);
+    fechaFin?.addEventListener('change',    aplicarFiltros);
 
-});
+    // Abrir calendario al click en ícono
+    document.querySelectorAll('.icon-calendar').forEach(icon => {
+        icon.addEventListener('click', function () {
+            this.nextElementSibling?.showPicker();
+        });
+    });
+
+    // ===== BOTÓN OJO =====
+    document.querySelectorAll('.btn-ver-ctp').forEach(btn => {
+        btn.addEventListener('click', function () {
+            console.log('Ver CTP id:', this.getAttribute('data-id'));
+        });
+    });
+
+    // ===== EXPORTAR EXCEL =====
+    document.querySelector('.btn-exportar')?.addEventListener('click', () => {
+        const datos = [];
+        datos.push([`Reporte de Comisiones`]);
+        datos.push([`Generado el: ${new Date().toLocaleDateString('es-MX')}`]);
+        datos.push([]);
+        datos.push(["CTP", "Número de Conversiones", "Total de Comisiones"]);
+        document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
+            if (fila.style.display === 'none') return;
+            datos.push([
+                fila.querySelector('.col-ctp')?.innerText.trim(),
+                fila.querySelector('.col-conversiones')?.innerText.trim(),
+                fila.querySelector('.col-total')?.innerText.trim(),
+            ]);
+        });
+        const hoja = XLSX.utils.aoa_to_sheet(datos);
+        hoja['!cols'] = [{ wch: 30 }, { wch: 25 }, { wch: 22 }];
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, hoja, "Comisiones");
+        XLSX.writeFile(libro, `comisiones_${new Date().toISOString().slice(0,10)}.xlsx`);
+    });
+
+    // ===== MODAL % COMISIÓN =====
+    const modalComision  = document.getElementById('modal-comision');
+    const btnComision    = document.querySelector('.btn-comision');
+    const cerrarComision = document.getElementById('cerrar-modal-comision');
+    const mcTablaBody    = document.getElementById('mc-tabla-body');
+    let filaEditando     = null;
+
+    btnComision?.addEventListener('click', () => modalComision.classList.remove('d-none'));
+    cerrarComision?.addEventListener('click', () => modalComision.classList.add('d-none'));
+    modalComision?.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.add('d-none');
+    });
+
+    document.getElementById('mc-btn-agregar')?.addEventListener('click', () => {
+        const clasificacion = document.getElementById('mc-clasificacion').value;
+        const productoSel   = document.getElementById('mc-producto');
+        const producto      = productoSel.options[productoSel.selectedIndex]?.text || '';
+        const precio        = parseFloat(document.getElementById('mc-precio').value) || 0;
+        const porcentaje    = parseFloat(document.getElementById('mc-porcentaje').value) || 0;
+
+        if (!clasificacion || !producto || producto === 'Seleccione el producto') {
+            alert('Por favor selecciona Clasificación y Producto.');
+            return;
+        }
+
+        const total = ((precio * porcentaje) / 100).toFixed(2);
+
+        if (filaEditando) {
+            const celdas = filaEditando.querySelectorAll('.mc-celda');
+            celdas[0].textContent = clasificacion;
+            celdas[1].textContent = producto;
+            celdas[2].textContent = `$${precio.toLocaleString('es-MX')}`;
+            celdas[3].textContent = `${porcentaje}%`;
+            celdas[4].textContent = `$${parseFloat(total).toLocaleString('es-MX')}`;
+            filaEditando = null;
+            document.getElementById('mc-btn-agregar').textContent = '+ Agregar';
+        } else {
+            const fila = document.createElement('div');
+            fila.className = 'mc-table-row';
+            fila.innerHTML = `
+                <div class="mc-celda">${clasificacion}</div>
+                <div class="mc-celda">${producto}</div>
+                <div class="mc-celda">$${precio.toLocaleString('es-MX')}</div>
+                <div class="mc-celda">${porcentaje}%</div>
+                <div class="mc-celda">$${parseFloat(total).toLocaleString('es-MX')}</div>
+                <div class="mc-celda"><span class="icon-editar" title="Editar">&#9998;</span></div>
+            `;
+            fila.querySelector('.icon-editar').addEventListener('click', () => {
+                const celdas = fila.querySelectorAll('.mc-celda');
+                document.getElementById('mc-clasificacion').value = celdas[0].textContent;
+                document.getElementById('mc-precio').value        = celdas[2].textContent.replace(/[$,]/g, '');
+                document.getElementById('mc-porcentaje').value    = celdas[3].textContent.replace('%', '');
+                Array.from(document.getElementById('mc-producto').options).forEach(opt => {
+                    if (opt.text === celdas[1].textContent) document.getElementById('mc-producto').value = opt.value;
+                });
+                filaEditando = fila;
+                document.getElementById('mc-btn-agregar').textContent = '💾 Guardar';
+            });
+            mcTablaBody.appendChild(fila);
+        }
+
+        document.getElementById('mc-clasificacion').value = '';
+        document.getElementById('mc-producto').value      = '';
+        document.getElementById('mc-precio').value        = 0;
+        document.getElementById('mc-porcentaje').value    = 0;
+    });
+
+})(); // <-- IIFE: se ejecuta inmediatamente
 </script>
-@endpush
+@endsection
