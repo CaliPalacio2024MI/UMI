@@ -267,3 +267,165 @@ body:has(.crm-comisiones) .main-content {
     gap: 10px;
     align-items: center;
 }
+/* ===== MODAL COMISIÓN ===== */
+.modal-comision {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-comision.d-none { display: none; }
+
+.modal-comision-content {
+    background: #fff;
+    border-radius: 16px;
+    width: 620px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px 36px 24px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.modal-comision-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.modal-comision-header h5 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin: 0;
+}
+
+.btn-cerrar-modal {
+    position: absolute;
+    right: 0;
+    top: -8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.btn-cerrar-modal:hover { color: #333; }
+
+/* Campos */
+.mc-campo { margin-bottom: 20px; }
+
+.mc-label {
+    display: block;
+    font-weight: 600;
+    color: #C18B54;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.mc-select-wrapper { position: relative; }
+
+.mc-select {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #d9534f;
+    background: transparent;
+    font-size: 15px;
+    color: #aaa;
+    padding: 6px 0;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.mc-select:focus { border-bottom-color: #1e3a5f; color: #333; }
+
+/* Fila precio + porcentaje */
+.mc-fila-2 {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 24px;
+}
+
+.mc-campo-inline { flex: 1; text-align: center; }
+
+.mc-input-number {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #d9534f;
+    background: transparent;
+    font-size: 18px;
+    text-align: center;
+    color: #aaa;
+    outline: none;
+    padding: 4px 0;
+}
+
+.mc-input-number:focus { border-bottom-color: #1e3a5f; color: #333; }
+
+/* Tabla interna */
+.mc-table-container {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e0e4ea;
+    margin-bottom: 20px;
+}
+
+.mc-table-card { background: #fff; }
+
+.mc-table-header {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 0.6fr;
+    background: #1e3a5f;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 10px 10px 0 0;
+    text-align: center;
+}
+
+.mc-table-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 0.6fr;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f2f5;
+    font-size: 13px;
+    text-align: center;
+    align-items: center;
+}
+
+.mc-table-row:last-child { border-bottom: none; }
+.mc-table-row:nth-child(even) { background: #f8f9fb; }
+
+.mc-table-row .icon-editar {
+    cursor: pointer;
+    font-size: 16px;
+    color: #333;
+}
+
+/* Footer botón */
+.mc-footer { text-align: center; padding-top: 8px; }
+
+.mc-btn-agregar {
+    background: #1e3a5f;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 48px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.mc-btn-agregar:hover { background: #162d4a; }

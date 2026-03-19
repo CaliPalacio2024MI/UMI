@@ -75,6 +75,88 @@
     </div>
 
 </div>
+<!-- MODAL % COMISIÓN -->
+<div id="modal-comision" class="modal-comision d-none">
+    <div class="modal-comision-content">
+
+        <div class="modal-comision-header">
+            <h5>% Comisión</h5>
+            <button id="cerrar-modal-comision" class="btn-cerrar-modal">&times;</button>
+        </div>
+
+        <div class="modal-comision-body">
+
+            <!-- Clasificación -->
+            <div class="mc-campo">
+                <label class="mc-label">Clasificación:</label>
+                <div class="mc-select-wrapper">
+                    <select id="mc-clasificacion" class="mc-select">
+                        <option value="">Seleccione el producto</option>
+                        <option value="Licenciatura">Licenciatura</option>
+                        <option value="Posgrado">Posgrado</option>
+                        <option value="Maestría">Maestría</option>
+                        <option value="Doctorado">Doctorado</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Producto -->
+            <div class="mc-campo">
+                <label class="mc-label">Producto:</label>
+                <div class="mc-select-wrapper">
+                    <select id="mc-producto" class="mc-select">
+                        <option value="">Seleccione el producto</option>
+                        @foreach($carreras as $carrera)
+                            <option value="{{ $carrera->id }}" data-nombre="{{ $carrera->nombre }}">
+                                {{ $carrera->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- Precio y % comisión -->
+            <div class="mc-fila-2">
+                <div class="mc-campo-inline">
+                    <label class="mc-label">Precio:</label>
+                    <div class="mc-number-wrapper">
+                        <input type="number" id="mc-precio" class="mc-input-number" value="0" min="0">
+                    </div>
+                </div>
+                <div class="mc-campo-inline">
+                    <label class="mc-label">% de comisión:</label>
+                    <div class="mc-number-wrapper">
+                        <input type="number" id="mc-porcentaje" class="mc-input-number" value="0" min="0" max="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="mc-table-container">
+                <div class="mc-table-card">
+                    <div class="mc-table-header">
+                        <div>Clasificación</div>
+                        <div>Producto</div>
+                        <div>Precio (Mes)</div>
+                        <div>% de Comisión</div>
+                        <div>Total</div>
+                        <div>Acciones</div>
+                    </div>
+                    <div class="mc-table-body" id="mc-tabla-body">
+                        <!-- filas dinámicas -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Botón Agregar -->
+        <div class="mc-footer">
+            <button id="mc-btn-agregar" class="mc-btn-agregar">+ Agregar</button>
+        </div>
+
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -157,6 +239,96 @@ btnExportar.addEventListener('click', () => {
 
     const fechaArchivo = new Date().toISOString().slice(0, 10);
     XLSX.writeFile(libro, `comisiones_${fechaArchivo}.xlsx`);
+});
+// ===== MODAL % COMISIÓN =====
+const modalComision = document.getElementById('modal-comision');
+const btnComision   = document.querySelector('.btn-comision');
+const cerrarComision = document.getElementById('cerrar-modal-comision');
+const mcTablaBody   = document.getElementById('mc-tabla-body');
+
+let filaEditando = null; // referencia a la fila en edición
+
+// Abrir
+btnComision.addEventListener('click', () => {
+    modalComision.classList.remove('d-none');
+});
+
+// Cerrar
+cerrarComision.addEventListener('click', () => {
+    modalComision.classList.add('d-none');
+});
+
+modalComision.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('d-none');
+});
+
+// Agregar / Guardar edición
+document.getElementById('mc-btn-agregar').addEventListener('click', () => {
+    const clasificacion = document.getElementById('mc-clasificacion').value;
+    const productoSel   = document.getElementById('mc-producto');
+    const producto      = productoSel.options[productoSel.selectedIndex]?.text || '';
+    const precio        = parseFloat(document.getElementById('mc-precio').value) || 0;
+    const porcentaje    = parseFloat(document.getElementById('mc-porcentaje').value) || 0;
+
+    if (!clasificacion || !producto || producto === 'Seleccione el producto') {
+        alert('Por favor selecciona Clasificación y Producto.');
+        return;
+    }
+
+    const total = ((precio * porcentaje) / 100).toFixed(2);
+
+    if (filaEditando) {
+        // Modo edición: actualizar fila existente
+        const celdas = filaEditando.querySelectorAll('.mc-celda');
+        celdas[0].textContent = clasificacion;
+        celdas[1].textContent = producto;
+        celdas[2].textContent = `$${precio.toLocaleString('es-MX')}`;
+        celdas[3].textContent = `${porcentaje}%`;
+        celdas[4].textContent = `$${parseFloat(total).toLocaleString('es-MX')}`;
+        filaEditando = null;
+        document.getElementById('mc-btn-agregar').textContent = '+ Agregar';
+    } else {
+        // Modo agregar: nueva fila
+        const fila = document.createElement('div');
+        fila.className = 'mc-table-row';
+        fila.innerHTML = `
+            <div class="mc-celda">${clasificacion}</div>
+            <div class="mc-celda">${producto}</div>
+            <div class="mc-celda">$${precio.toLocaleString('es-MX')}</div>
+            <div class="mc-celda">${porcentaje}%</div>
+            <div class="mc-celda">$${parseFloat(total).toLocaleString('es-MX')}</div>
+            <div class="mc-celda">
+                <span class="icon-editar" title="Editar">&#9998;</span>
+            </div>
+        `;
+
+        // Listener del lápiz
+        fila.querySelector('.icon-editar').addEventListener('click', () => {
+            const celdas = fila.querySelectorAll('.mc-celda');
+
+            // Rellenar formulario con datos de la fila
+            document.getElementById('mc-clasificacion').value = celdas[0].textContent;
+            document.getElementById('mc-precio').value        = celdas[2].textContent.replace(/[$,]/g, '');
+            document.getElementById('mc-porcentaje').value    = celdas[3].textContent.replace('%', '');
+
+            // Seleccionar producto por texto
+            const selectProducto = document.getElementById('mc-producto');
+            Array.from(selectProducto.options).forEach(opt => {
+                if (opt.text === celdas[1].textContent) selectProducto.value = opt.value;
+            });
+
+            filaEditando = fila;
+            document.getElementById('mc-btn-agregar').textContent = '💾 Guardar';
+        });
+
+        mcTablaBody.appendChild(fila);
+    }
+
+    // Limpiar formulario
+    document.getElementById('mc-clasificacion').value = '';
+    document.getElementById('mc-producto').value      = '';
+    document.getElementById('mc-precio').value        = 0;
+    document.getElementById('mc-porcentaje').value    = 0;
 });
 
 });

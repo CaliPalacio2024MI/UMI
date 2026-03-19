@@ -528,6 +528,9 @@ class CRMController extends Controller
                 })->count();
         });
     
-        return view('crm.comisiones', compact('ctps'));
+        return view('crm.comisiones', [
+            'ctps'     => $ctps,
+            'carreras' => \App\Models\Carrera::all(),
+        ]);
     }
 }
