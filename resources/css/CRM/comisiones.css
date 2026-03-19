@@ -247,3 +247,23 @@ body:has(.crm-comisiones) .main-content {
         min-width: 600px;
     }
 }
+.btn-comision {
+    background-color: #C18B54;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-comision:hover {
+    background-color: #a8743f;
+}
+
+.toolbar-acciones {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
