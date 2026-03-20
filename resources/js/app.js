@@ -170,11 +170,11 @@ async loadPage(url, updateHistory = true) {
         const cacheKey = this.getCacheKey(url);
         
         // LISTA NEGRA: Estas páginas NUNCA se guardan en memoria
-        const noCachePaths = ['/facturacion','/crm']; 
+        const noCachePaths = ['/facturacion', '/crm', '/crm/leads', '/crm/prospectos', '/crm/comisiones', '/crm/estadisticas'];
         const currentPath = new URL(url, window.location.origin).pathname;
         
         // Si la URL contiene algo de la lista negra, NO usamos caché
-        const shouldUseCache = !noCachePaths.some(path => currentPath.includes(path));
+        const shouldUseCache = !noCachePaths.some(path => currentPath === path || currentPath.startsWith('/crm'));
 
         if (shouldUseCache && this.cache.has(cacheKey)) {
             const cached = this.cache.get(cacheKey);
@@ -218,31 +218,32 @@ async loadPage(url, updateHistory = true) {
     }
 
     parsePageContent(html) {
+        
+        const scripts = [];
+        const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+        let match;
+        while ((match = scriptRegex.exec(html)) !== null) {
+            const attrs = match[1];
+            const content = match[2].trim();
+            const srcMatch = attrs.match(/src=["']([^"']+)["']/);
+            if (srcMatch) {
+                scripts.push({ type: 'external', src: srcMatch[1] });
+            } else if (content) {
+                scripts.push({ type: 'inline', content: content });
+            }
+        }
+    
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         const mainContent = doc.querySelector('#main-content, .main-content');
         const title = doc.querySelector('title')?.textContent || '';
-        if (!mainContent) {
-            return null;
-        }
+        if (!mainContent) return null;
+    
         return {
             main: mainContent.innerHTML,
             title: title,
-            scripts: this.extractScripts(mainContent)
+            scripts: scripts  // ✅ scripts extraídos del HTML crudo
         };
-    }
-
-    extractScripts(container) {
-        const scripts = [];
-        const scriptElements = container.querySelectorAll('script');
-        scriptElements.forEach(script => {
-            if (script.src) {
-                scripts.push({ type: 'external', src: script.src });
-            } else if (script.textContent.trim()) {
-                scripts.push({ type: 'inline', content: script.textContent });
-            }
-        });
-        return scripts;
     }
 
     updatePage(content, url) {
@@ -253,7 +254,24 @@ async loadPage(url, updateHistory = true) {
             setTimeout(() => {
                 mainElement.innerHTML = content.main;
                 mainElement.style.opacity = '1';
-                this.executeScripts(content.scripts);
+    
+                // Ejecutar scripts creando elementos reales en el DOM
+                content.scripts.forEach(script => {
+                    if (script.type === 'external') {
+                        if (!document.querySelector(`script[src="${script.src}"]`)) {
+                            const el = document.createElement('script');
+                            el.src = script.src;
+                            el.async = true;
+                            document.head.appendChild(el);
+                        }
+                    } else {
+                        const el = document.createElement('script');
+                        el.textContent = script.content;
+                        document.body.appendChild(el);
+                        document.body.removeChild(el);
+                    }
+                });
+    
                 if (typeof window.initScheduleFormIfNeeded === 'function') window.initScheduleFormIfNeeded();
                 if (mainElement.querySelector('#schedule_form') && typeof window.initScheduleClockPickersForContainer === 'function') {
                     window.initScheduleClockPickersForContainer(mainElement);
@@ -268,24 +286,6 @@ async loadPage(url, updateHistory = true) {
         this.currentPage = url;
     }
 
-    executeScripts(scripts) {
-        scripts.forEach(script => {
-            if (script.type === 'external') {
-                if (!document.querySelector(`script[src="${script.src}"]`)) {
-                    const newScript = document.createElement('script');
-                    newScript.src = script.src;
-                    newScript.async = true;
-                    document.head.appendChild(newScript);
-                }
-            } else {
-                try {
-                    new Function(script.content)();
-                } catch (e) {
-                    console.warn('Script execution failed:', e);
-                }
-            }
-        });
-    }
 
     updateActiveMenuItem() {
         const currentPath = new URL(window.location.href).pathname.replace(/\/+$/, '') || '/';

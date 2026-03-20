@@ -247,79 +247,49 @@
 {{-- ─────────────────────────────────────────────
      VARIABLES GLOBALES
 ────────────────────────────────────────────── --}}
-<script>
-    window.ROLE_ACTIVO  = "{{ session('active_role_name') }}";
-    window.CSRF_TOKEN   = "{{ csrf_token() }}";
-</script>
 
-
-{{-- ─────────────────────────────────────────────
-     ELIMINAR LEAD
-────────────────────────────────────────────── --}}
-<script>
-    document.querySelectorAll('.btn-eliminar').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const leadId = this.dataset.id;
-            if (!confirm('¿Eliminar este lead?')) return;
-            fetch(`/crm/leads/${leadId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': window.CSRF_TOKEN,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) this.closest('.fila-lead').remove();
-            })
-            .catch(() => alert('Error al eliminar el lead'));
-        });
-    });
-</script>
-
-
-{{-- ─────────────────────────────────────────────
-     BUSCADOR
-────────────────────────────────────────────── --}}
 <script>
 (function () {
-    const buscador = document.querySelector('.buscador');
-    if (!buscador) return;
 
+window.ROLE_ACTIVO = "{{ session('active_role_name') }}";
+window.CSRF_TOKEN  = "{{ csrf_token() }}";
+
+// ===== ESTADOS =====
+const ESTADOS = ['Prospecto frío','Prospecto caliente','Aspirante','Alumno'];
+
+// ===== ELIMINAR LEAD =====
+document.querySelectorAll('.btn-eliminar').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const leadId = this.dataset.id;
+        if (!confirm('¿Eliminar este lead?')) return;
+        fetch(`/crm/leads/${leadId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': window.CSRF_TOKEN, 'Accept': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => { if (data.success) this.closest('.fila-lead').remove(); })
+        .catch(() => alert('Error al eliminar el lead'));
+    });
+});
+
+// ===== BUSCADOR =====
+const buscador = document.querySelector('.buscador');
+if (buscador) {
     buscador.addEventListener('input', function () {
         const texto = this.value.toLowerCase().trim();
         document.querySelectorAll('.fila-lead').forEach(fila => {
             fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
         });
     });
-})();
-</script>
+}
 
-
-{{-- ─────────────────────────────────────────────
-     ESTADOS Y RENDERIZADO DEL PANEL
-────────────────────────────────────────────── --}}
-<script>
-
-const ESTADOS = [
-    'Prospecto frío',
-    'Prospecto caliente',
-    'Aspirante',
-    'Alumno',
-];
-
+// ===== RENDERIZADO =====
 function puedeEditarSeguimiento() {
     const filaActiva = document.querySelector('.fila-lead.activo');
     if (!filaActiva) return false;
-
-    // Solo el CTP asignado a ese lead puede marcar seguimiento
     if (window.ROLE_ACTIVO === 'ctp') {
-        const ctpAsignado = filaActiva.dataset.ctp;
-        const userId = "{{ auth()->id() }}";
-        return ctpAsignado == userId;
+        return filaActiva.dataset.ctp == "{{ auth()->id() }}";
     }
-
-    // Master y coordinador NO pueden marcar seguimiento
     return false;
 }
 
@@ -392,17 +362,16 @@ function renderizarDatos(fila) {
             <div class="dato-item"><label>Apellido Materno:</label><p>${d.alumnoMaterno || '---'}</p></div>
         </div>
         <div class="datos-curp-centrado mt-3">
-    <label>CURP:</label>
-    <p style="font-weight:400;letter-spacing:0;">${d.alumnoCurp || '---'}</p>
-</div>
-<div class="carrera-panel mt-2">
-    <label>Plan de estudios / Carrera:</label>
-    <p>${d.carrera || '---'}</p>
-</div>
-</div>`;
+            <label>CURP:</label>
+            <p style="font-weight:400;letter-spacing:0;">${d.alumnoCurp || '---'}</p>
+        </div>
+        <div class="carrera-panel mt-2">
+            <label>Plan de estudios / Carrera:</label>
+            <p>${d.carrera || '---'}</p>
+        </div>
+    </div>`;
 }
 
-// ← IMPORTANTE: estas funciones deben ser globales para que el modal pueda usarlas
 window.renderizarSeguimiento = renderizarSeguimiento;
 
 document.querySelectorAll('.fila-lead').forEach(fila => {
@@ -415,13 +384,8 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
         renderizarDatos(fila);
     });
 });
-</script>
 
-
-{{-- ─────────────────────────────────────────────
-     CLICK EN CHECK → ABRIR MODAL DE COMENTARIO
-────────────────────────────────────────────── --}}
-<script>
+// ===== CLICK EN CHECK → MODAL SEGUIMIENTO =====
 let _pendienteEstado = null;
 
 document.addEventListener('click', function (e) {
@@ -478,15 +442,7 @@ document.getElementById('cerrar-ver-comentario').addEventListener('click', () =>
     document.getElementById('modal-ver-comentario').classList.add('d-none');
 });
 
-</script>
-
-
-
-{{-- ─────────────────────────────────────────────
-     ASIGNAR CTP
-────────────────────────────────────────────── --}}
-<script>
-
+// ===== ASIGNAR CTP =====
 let LEAD_SELECCIONADO = null;
 let ES_REASIGNACION   = false;
 
@@ -546,34 +502,19 @@ document.getElementById('cerrar-ctp').addEventListener('click', () => {
 document.getElementById('guardar-ctp').addEventListener('click', () => {
     const ctpId      = document.getElementById('ctp-select').value;
     const comentario = document.getElementById('ctp-comentario').value.trim();
-    
-    console.log('CTP ID:', ctpId);
-    console.log('LEAD:', LEAD_SELECCIONADO);
-    
-    if (!ctpId || !LEAD_SELECCIONADO) { 
-        console.error('Falta CTP o Lead');
-        return; 
-    }
-    if (ES_REASIGNACION && !comentario) { 
-        console.error('Falta comentario');
-        return; 
-    }
+    if (!ctpId || !LEAD_SELECCIONADO) return;
+    if (ES_REASIGNACION && !comentario) return;
     fetch(`/crm/leads/${LEAD_SELECCIONADO}/asignar-ctp`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': window.CSRF_TOKEN, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ctp_id: ctpId, comentario: ES_REASIGNACION ? comentario : null })
     })
-    .then(res => {
-        console.log('Status:', res.status);
-        return res.json();
-    })
-    .then(data => {
-        console.log('Respuesta:', data);
-        location.reload();
-    })
+    .then(res => res.json())
+    .then(() => location.reload())
     .catch(err => console.error('Error fetch:', err));
 });
 
+})();
 </script>
 
 @endsection
