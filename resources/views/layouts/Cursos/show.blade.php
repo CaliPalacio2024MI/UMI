@@ -31,12 +31,40 @@
 <div class="course-layout">
 
     {{-- ===== MENU ===== --}}
-    <aside class="course-menu">
-        <h3>📚 {{ $course->title }}</h3>
+<aside class="course-menu">
+    <h3>📚 {{ $course->title }}</h3>
 
-        @foreach ($course->topics as $topic)
+    @php
+        // Obtener topics y actividades independientes
+        $independentActivities = \App\Models\Cursos\Activities::where('course_id', $course->id)
+            ->whereNull('topic_id')
+            ->whereNull('subtopic_id')
+            ->where('is_final_exam', false)
+            ->get();
+        
+        // Mezclar todos los items por orden
+        $allItems = collect();
+        foreach ($course->topics as $topic) {
+            $allItems->push(['type' => 'topic', 'order' => $topic->order, 'data' => $topic]);
+        }
+        foreach ($independentActivities as $activity) {
+            $allItems->push(['type' => 'activity', 'order' => $activity->order, 'data' => $activity]);
+        }
+        $allItems = $allItems->sortBy('order')->values();
+        
+        // ✅ Contador para numerar SOLO los temas
+        $topicNumber = 0;
+    @endphp
+
+    @foreach ($allItems as $item)
+        @if($item['type'] === 'topic')
+            @php 
+                $topic = $item['data'];
+                $topicNumber++; // Incrementar contador solo para temas
+            @endphp
+            
             <div class="syllabus-link" data-target="#content-topic-{{ $topic->id }}">
-                {{ $loop->iteration }}. {{ $topic->title }}
+                {{ $topicNumber }}. {{ $topic->title }}
             </div>
 
             @foreach ($topic->subtopics as $subtopic)
@@ -56,8 +84,16 @@
                     ▶ {{ $activity->title }}
                 </div>
             @endforeach
-        @endforeach
-    </aside>
+            
+        @else
+            {{-- ACTIVIDAD INDEPENDIENTE (sin número) --}}
+            @php $activity = $item['data']; @endphp
+            <div class="syllabus-link" data-target="#content-activity-{{ $activity->id }}" data-activity-id="{{ $activity->id }}">
+                🎮 {{ $activity->title }}
+            </div>
+        @endif
+    @endforeach
+</aside>
 
     {{-- ===== VIEWER ===== --}}
     <main class="course-viewer">
@@ -687,6 +723,177 @@
             @endforeach
         @endforeach
 
+    {{-- ===== ACTIVIDADES INDEPENDIENTES ===== --}}
+    @foreach ($independentActivities as $activity)
+        <section class="content-panel" id="content-activity-{{ $activity->id }}" data-activity-type="{{ $activity->type }}">
+            @if($activity->show_title ?? true)
+                <h2>{{ $activity->title }}</h2>
+            @endif
+
+            @if($activity->type === 'Cuestionario')
+                <div class="game-container">
+                    <form class="quiz-form" data-activity-id="{{ $activity->id }}">
+                        @csrf
+                        <div class="question-box">
+                            <h3>{{ $activity->content['question'] ?? 'Sin pregunta' }}</h3>
+                            @if(isset($activity->content['options']))
+                                @foreach($activity->content['options'] as $i => $option)
+                                    <label class="option-label">
+                                        <input type="radio" name="answer" value="{{ $i }}" required>
+                                        <span>{{ $option }}</span>
+                                    </label>
+                                @endforeach
+                            @endif
+                        </div>
+                        <button type="submit" class="btn-submit">Enviar Respuesta</button>
+                        <div class="result-message"></div>
+                    </form>
+                </div>
+            @endif
+
+            @if($activity->type === 'SopaDeLetras')
+                <div class="game-container sopa-container">
+                    <div class="sopa-instructions">
+                        <h4>📝 Instrucciones:</h4>
+                        <ol>
+                            <li><strong>Primer clic:</strong> Selecciona la primera letra de la palabra</li>
+                            <li><strong>Segundo clic:</strong> Selecciona la última letra de la palabra</li>
+                            <li>Las palabras pueden estar en <strong>cualquier dirección</strong></li>
+                            <li>Si la palabra es correcta, se marcará en <strong style="color: #4CAF50;">verde</strong></li>
+                        </ol>
+                    </div>
+                    
+                    <div class="sopa-game-area">
+                        <div class="words-to-find">
+                            <h4>🎯 Palabras a encontrar:</h4>
+                            <ul id="word-list-{{ $activity->id }}">
+                                @foreach ($activity->content['words'] ?? [] as $word)
+                                    <li data-word="{{ strtoupper(trim($word)) }}">
+                                        <span class="word-text">{{ strtoupper($word) }}</span>
+                                        <span class="word-checkmark">✓</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        
+                        <div class="grid-wrapper">
+                            <div class="grid-container" id="grid-{{ $activity->id }}" 
+                                 data-activity-id="{{ $activity->id }}"
+                                 data-words='@json(array_map(fn($w) => strtoupper(trim($w)), $activity->content['words'] ?? []))'
+                                 data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-message"></div>
+                </div>
+            @endif
+
+            @if($activity->type === 'Ahorcado')
+                <div class="game-container ahorcado-container">
+                    <div class="ahorcado-game" id="ahorcado-{{ $activity->id }}"
+                         data-activity-id="{{ $activity->id }}"
+                         data-word="{{ strtoupper($activity->content['word'] ?? '') }}"
+                         data-hint="{{ $activity->content['hint'] ?? '' }}"
+                         data-max-attempts="{{ $activity->content['max_attempts'] ?? 6 }}">
+                        
+                        <div class="hangman-drawing" id="hangman-drawing-{{ $activity->id }}">
+                            <svg width="200" height="250" class="hangman-svg">
+                                <line x1="10" y1="230" x2="150" y2="230" stroke="#333" stroke-width="4"/>
+                                <line x1="50" y1="230" x2="50" y2="20" stroke="#333" stroke-width="4"/>
+                                <line x1="50" y1="20" x2="130" y2="20" stroke="#333" stroke-width="4"/>
+                                <line x1="130" y1="20" x2="130" y2="50" stroke="#333" stroke-width="4"/>
+                                <circle cx="130" cy="70" r="20" class="hangman-part" data-part="0" style="display:none"/>
+                                <line x1="130" y1="90" x2="130" y2="150" class="hangman-part" data-part="1" style="display:none"/>
+                                <line x1="130" y1="110" x2="100" y2="130" class="hangman-part" data-part="2" style="display:none"/>
+                                <line x1="130" y1="110" x2="160" y2="130" class="hangman-part" data-part="3" style="display:none"/>
+                                <line x1="130" y1="150" x2="110" y2="190" class="hangman-part" data-part="4" style="display:none"/>
+                                <line x1="130" y1="150" x2="150" y2="190" class="hangman-part" data-part="5" style="display:none"/>
+                            </svg>
+                        </div>
+
+                        <div class="ahorcado-info">
+                            <p class="hint-text"><strong>Pista:</strong> <span id="hint-{{ $activity->id }}"></span></p>
+                            <p class="attempts-text">Intentos restantes: <span id="attempts-{{ $activity->id }}"></span></p>
+                        </div>
+
+                        <div class="word-display" id="word-display-{{ $activity->id }}"></div>
+                        <div class="keyboard" id="keyboard-{{ $activity->id }}"></div>
+                        <div class="result-message"></div>
+                    </div>
+                </div>
+            @endif
+
+            @if($activity->type === 'Crucigrama')
+                <div class="game-container crucigrama-container">
+                    <div class="crucigrama-game" id="crucigrama-{{ $activity->id }}"
+                         data-activity-id="{{ $activity->id }}"
+                         data-words='@json($activity->content['words'] ?? [])'
+                         data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                        
+                        <div class="crucigrama-layout">
+                            <div class="crucigrama-clues">
+                                <div class="clues-section">
+                                    <h4>Horizontales</h4>
+                                    <ul id="clues-horizontal-{{ $activity->id }}"></ul>
+                                </div>
+                                <div class="clues-section">
+                                    <h4>Verticales</h4>
+                                    <ul id="clues-vertical-{{ $activity->id }}"></ul>
+                                </div>
+                            </div>
+                            
+                            <div class="crucigrama-grid-wrapper">
+                                <div id="crossword-grid-{{ $activity->id }}"></div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn-submit" onclick="checkCrossword({{ $activity->id }})">Verificar Respuestas</button>
+                        <div class="result-message"></div>
+                    </div>
+                </div>
+            @endif
+
+            @if($activity->type === 'Examen')
+                <div class="game-container">
+                    <form class="exam-form" data-activity-id="{{ $activity->id }}">
+                        @csrf
+                        @php $questions = $activity->content['questions'] ?? []; @endphp
+                        
+                        <div class="exam-navigation">
+                            <button type="button" class="exam-nav-btn" id="prev-question-{{ $activity->id }}" disabled>⬅ Anterior</button>
+                            <span class="question-counter">
+                                Pregunta <span class="current" id="current-question-{{ $activity->id }}">1</span> de {{ count($questions) }}
+                            </span>
+                            <button type="button" class="exam-nav-btn" id="next-question-{{ $activity->id }}">Siguiente ➡</button>
+                        </div>
+
+                        <div class="exam-questions-container" id="exam-questions-{{ $activity->id }}">
+                            @foreach($questions as $index => $q)
+                                <div class="question-item" data-question-index="{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }}">
+                                    <h4>{{ $index + 1 }}. {{ $q['question'] ?? 'Sin pregunta' }}</h4>
+                                    @if(isset($q['options']))
+                                        @foreach($q['options'] as $i => $option)
+                                            <label class="option-label">
+                                                <input type="radio" name="question_{{ $index }}" value="{{ $i }}" required>
+                                                <span>{{ $option }}</span>
+                                            </label>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <button type="submit" class="btn-submit">Enviar Examen</button>
+                        <div class="result-message"></div>
+                    </form>
+                </div>
+            @endif
+
+        </section>
+    @endforeach
+
+
     </main>
 
 </div>
@@ -695,7 +902,7 @@
 
 <script>
 // ====== CONFIGURACIÓN ELEVENLABS ======
-const ELEVENLABS_API_KEY = 'sk_3a57692aeb3596c6239645c368591f3c751b3c173c76324d';
+const ELEVENLABS_API_KEY = 'sk_abdb547b1e48007a9557c9ee79f33b4c226d583598ada4db';
 
 // VOCES ALTERNADAS - Una para cada tortuguita
 const ELEVENLABS_VOICES = [

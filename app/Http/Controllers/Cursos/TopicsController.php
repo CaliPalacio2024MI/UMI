@@ -14,18 +14,19 @@ use Illuminate\Support\Facades\Storage;
 
 class TopicsController extends Controller
 {
-    /**
-     * Mostrar formulario de creación de temas para un curso específico
-     */
     public function create(Course $course): View
-    {
-        $course->load('topics.activities');
-        $formActions = route('topics.store');
-        return view('layouts.Cursos.topic.create', [
-            'course' => $course, 
-            'formActions' => $formActions
-        ]);
-    }
+{
+    // ✅ Cargar topics ORDENADOS por 'order'
+    $course->load(['topics' => function($query) {
+        $query->orderBy('order');
+    }, 'topics.activities', 'topics.subtopics']);
+    
+    $formActions = route('topics.store');
+    return view('layouts.Cursos.topic.create', [
+        'course' => $course, 
+        'formActions' => $formActions
+    ]);
+}
 
     /**
      * Guardar un nuevo tema
@@ -111,19 +112,16 @@ class TopicsController extends Controller
         return redirect()->back()->with('success', 'Tema actualizado correctamente.');
     }
 
-    /**
-     * ✅ NUEVO: Actualizar orden de temas (Drag & Drop)
-     */
-    public function updateOrder(Request $request)
-    {
-        $topics = $request->topics;
-        
-        foreach ($topics as $topic) {
-            Topics::where('id', $topic['id'])->update(['order' => $topic['order']]);
-        }
-        
-        return response()->json(['success' => true]);
+   public function updateOrder(Request $request)
+{
+    $topics = $request->topics;
+    
+    foreach ($topics as $topic) {
+        Topics::where('id', $topic['id'])->update(['order' => $topic['order']]);
     }
+    
+    return response()->json(['success' => true]);
+}
 
     public function destroy(Topics $topic)
     {

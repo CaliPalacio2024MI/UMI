@@ -155,8 +155,6 @@
                 <form id="activity-form" action="{{route('activities.store')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
-                    <input type="hidden" name="subtopic_id" id="activity-subtopic-id">
-                    <input type="hidden" name="topic_id" id="activity-topic-id">
 
                     <div class="header-activity" style="display:flex; justify-content: space-between; margin-bottom: 10px;">
                         <h5>Nueva Actividad</h5>
@@ -421,7 +419,36 @@
                         </div>
                     </div>
                 @endif
-                @forelse ($course->topics as $topic)
+                
+                {{-- ===== MEZCLAR TOPICS Y ACTIVITIES POR ORDEN ===== --}}
+                @php
+                    // Obtener actividades independientes
+                    $independentActivities = \App\Models\Cursos\Activities::where('course_id', $course->id)
+                        ->whereNull('topic_id')
+                        ->whereNull('subtopic_id')
+                        ->where('is_final_exam', false)
+                        ->orderBy('order')
+                        ->get();
+                    
+                    // Mezclar topics y activities ordenados por 'order'
+                    $allItems = collect();
+                    
+                    foreach ($course->topics as $topic) {
+                        $allItems->push(['type' => 'topic', 'order' => $topic->order, 'data' => $topic]);
+                    }
+                    
+                    foreach ($independentActivities as $activity) {
+                        $allItems->push(['type' => 'activity', 'order' => $activity->order, 'data' => $activity]);
+                    }
+                    
+                    // Ordenar TODO por 'order'
+                    $allItems = $allItems->sortBy('order')->values();
+                @endphp
+                
+                @forelse ($allItems as $item)
+                    @if($item['type'] === 'topic')
+                        @php $topic = $item['data']; @endphp
+                        
                 <div class="topic-card" data-topic-id="{{ $topic->id }}" data-topic-title="{{ $topic->title }}">
                     <div class="card-body">
 
@@ -570,6 +597,39 @@
                         </div>
                     @endif
                 </div>
+                
+                    @else
+                        {{-- ===== ACTIVIDAD INDEPENDIENTE ===== --}}
+                        @php $activity = $item['data']; @endphp
+                        
+                        <div class="topic-card" data-topic-id="activity-{{ $activity->id }}" style="border-left: 4px solid #4f46e5;">
+                            <div class="topic-header">
+                                <div class="drag-handle" style="cursor: grab; margin-right: 10px; color: #999;">⋮⋮</div>
+                                
+                                <div style="flex: 1;">
+                                    <h5 class="topic-title" style="color: #4f46e5; margin: 0;">
+                                        🎮 {{ $activity->title }}
+                                    </h5>
+                                    <span style="font-size: 12px; background: #4f46e5; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">
+                                        {{ ucfirst($activity->type) }}
+                                    </span>
+                                </div>
+
+                                <div style="display: flex; gap: 8px;">
+                                    <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
+                                        onsubmit="return confirm('¿Eliminar esta actividad?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-danger" title="Eliminar">
+                                            <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar" 
+                                                style="width:24px;height:24px" loading="lazy">
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
                 @empty
                     <div class="no-topics">
                         <p>Aún no has añadido ningún tema a este curso.</p>
@@ -612,29 +672,105 @@ document.addEventListener('DOMContentLoaded', function() {
             handle: '.drag-handle',
             ghostClass: 'sortable-ghost',
             onEnd: function (evt) {
-                // Recopilar nuevo orden
-                const topicIds = [];
+                console.log('🔄 Reordenando items...');
+                
+                // Recopilar nuevo orden de TODOS los items (topics y activities)
+                const items = [];
                 document.querySelectorAll('.topic-card[data-topic-id]').forEach((card, index) => {
                     const topicId = card.dataset.topicId;
-                    topicIds.push({ id: topicId, order: index });
+                    
+                    // Detectar si es actividad (empieza con "activity-")
+                    if (topicId.startsWith('activity-')) {
+                        const activityId = topicId.replace('activity-', '');
+                        items.push({ 
+                            type: 'activity',
+                            id: parseInt(activityId), 
+                            order: index 
+                        });
+                    } else {
+                        items.push({ 
+                            type: 'topic',
+                            id: parseInt(topicId), 
+                            order: index 
+                        });
+                    }
                 });
 
-                // Enviar AJAX para actualizar orden
-                fetch('{{ route("topics.updateOrder") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ topics: topicIds })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log('✅ Orden actualizado correctamente');
-                    }
-                })
-                .catch(error => console.error('❌ Error actualizando orden:', error));
+                console.log('📦 Items a guardar:', items);
+
+                // Separar topics y activities
+                const topics = items.filter(item => item.type === 'topic').map(item => ({
+                    id: item.id,
+                    order: item.order
+                }));
+                
+                const activities = items.filter(item => item.type === 'activity').map(item => ({
+                    id: item.id,
+                    order: item.order
+                }));
+
+                console.log('📦 Topics:', topics);
+                console.log('📦 Activities:', activities);
+
+                // Enviar AJAX para actualizar orden de TOPICS
+                if (topics.length > 0) {
+                    console.log('📤 Enviando topics:', topics);
+                    
+                    fetch('/topics/update-order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ topics: topics })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                console.error('❌ Error del servidor:', text);
+                                throw new Error('Error ' + response.status);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            console.log('✅ Orden de topics actualizado');
+                        }
+                    })
+                    .catch(error => console.error('❌ Error actualizando topics:', error));
+                }
+
+                // Enviar AJAX para actualizar orden de ACTIVITIES
+                if (activities.length > 0) {
+                    console.log('📤 Enviando activities:', activities);
+                    
+                    fetch('/activities/update-order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ activities: activities })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                console.error('❌ Error del servidor:', text);
+                                throw new Error('Error ' + response.status);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            console.log('✅ Orden de activities actualizado');
+                        }
+                    })
+                    .catch(error => console.error('❌ Error actualizando activities:', error));
+                }
             }
         });
     }

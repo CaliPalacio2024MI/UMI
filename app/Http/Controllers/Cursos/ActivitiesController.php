@@ -21,14 +21,15 @@ class ActivitiesController extends Controller
             'course_id' => 'required|exists:courses,id', 
             'is_final_exam' => 'nullable|boolean', 
             
-            'topic_id' => 'nullable|exists:topics,id|required_without_all:subtopic_id,is_final_exam',
-            'subtopic_id' => 'nullable|exists:subtopics,id|required_without_all:topic_id,is_final_exam',
+            // ✅ CORREGIDO: topic_id y subtopic_id son totalmente opcionales
+            // Las actividades pueden ser independientes (mismo nivel que temas)
+            'topic_id' => 'nullable|exists:topics,id',
+            'subtopic_id' => 'nullable|exists:subtopics,id',
 
             'title' => 'required|string|max:255',
             'type' => 'required|string', 
-            'content' => 'nullable|array', // ✅ Cambié a nullable porque Video no necesita content
+            'content' => 'nullable|array',
             
-            // ✅ NUEVO: Campos para videos con tortuguita
             'video_file' => 'nullable|file|mimes:mp4,webm,ogg,avi,mov|max:163840',
             'show_turtle' => 'nullable|boolean',
             'turtle_voice' => 'nullable|integer|in:0,1',
@@ -127,8 +128,10 @@ class ActivitiesController extends Controller
             }
             $courseId = $topic->course_id;
         } else {
-            // Fallo de seguridad: No se seleccionó nada
-            return redirect()->back()->withErrors(['parent' => 'Debe seleccionar un Tema o un Subtema para la actividad.']);
+            // ✅ CASO 3: Actividad INDEPENDIENTE (mismo nivel que temas)
+            // No pertenece a ningún tema ni subtema
+            $validatedData['topic_id'] = null;
+            $validatedData['subtopic_id'] = null;
         }
 
         // ✅ NUEVO: Asignar orden automáticamente
@@ -137,8 +140,10 @@ class ActivitiesController extends Controller
         } elseif ($validatedData['topic_id']) {
             $maxOrder = Activities::where('topic_id', $validatedData['topic_id'])->max('order');
         } else {
+            // Actividad independiente o examen final
             $maxOrder = Activities::where('course_id', $validatedData['course_id'])
-                                  ->where('is_final_exam', true)
+                                  ->whereNull('topic_id')
+                                  ->whereNull('subtopic_id')
                                   ->max('order');
         }
         $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
@@ -165,18 +170,16 @@ class ActivitiesController extends Controller
         $score = 0; 
         $message = '¡Actividad completada!';
 
-        // 1. Validar "Cuestionario" (1 pregunta)
         if ($activity->type === 'Cuestionario') {
-            $validated = $request->validate(['answer' => 'required']);
-            $userAnswer = $validated['answer'];
-            $correctAnswer = $activity->content['correct_answer'] ?? null;
-
-            if (strval($userAnswer) !== strval($correctAnswer)) {
-                return response()->json(['success' => false, 'message' => 'Respuesta incorrecta.'], 422);
-            }
-            $score = 100.00; // Si es correcta, 100
-        }
-
+    $validated = $request->validate(['answer' => 'required']);
+    $userAnswer = $validated['answer'];
+    $correctAnswer = $activity->content['correct_answer'] ?? null;
+    
+    if (strval($userAnswer) !== strval($correctAnswer)) {
+        return response()->json(['success' => false, 'message' => 'Respuesta incorrecta.'], 422);
+    }
+    $score = 100.00;
+}
         // 2. Validar "Examen" (múltiples preguntas)
         elseif ($activity->type === 'Examen') {
             $userAnswersData = $request->validate(['answers' => 'required|array']);
@@ -249,5 +252,23 @@ class ActivitiesController extends Controller
             'message' => $message
         ]);
     }
-
+    
+    /**
+     * Actualizar orden de actividades (Drag & Drop)
+     */
+    public function updateOrder(Request $request)
+    {
+        try {
+            $activities = $request->activities;
+            
+            foreach ($activities as $activity) {
+                Activities::where('id', intval($activity['id']))->update(['order' => intval($activity['order'])]);
+            }
+            
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Error en activities updateOrder: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

@@ -92,11 +92,14 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
+        Route::post('/topics/update-order', [TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
+        Route::post('/activities/update-order', [ActivitiesController::class, 'updateOrder'])->name('activities.updateOrder');
         
         // Actividades (Gestión)
         Route::post('/actividades', [ActivitiesController::class, 'store'])->name('activities.store');
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
         Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
+        
     });
 
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
@@ -105,7 +108,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     Route::get('/cursos/{course}', [CourseController::class, 'show'])->name('course.show');
     Route::get('/cursos/{course}/certificado', [CourseController::class, 'showCertificate'])->name('courses.certificate');
     Route::get('/mis-certificados', [CourseController::class, 'myCertificates'])->name('courses.certificates.index');
-    Route::post('/topics/update-order', [TopicController::class, 'updateOrder'])->name('topics.updateOrder');
+    
     
 
     
