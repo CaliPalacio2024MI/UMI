@@ -409,7 +409,7 @@ document.addEventListener('click', function (e) {
     }
 });
 
-document.getElementById('guardar-seguimiento-btn').addEventListener('click', () => {
+document.getElementById('guardar-seguimiento-btn')?.addEventListener('click', () => {
     const filaActiva = document.querySelector('.fila-lead.activo');
     const leadId     = filaActiva?.dataset.id;
     if (!leadId || !_pendienteEstado) return;
@@ -433,12 +433,12 @@ document.getElementById('guardar-seguimiento-btn').addEventListener('click', () 
     _pendienteEstado = null;
 });
 
-document.getElementById('cancelar-seguimiento-btn').addEventListener('click', () => {
+document.getElementById('cancelar-seguimiento-btn')?.addEventListener('click', () => {
     document.getElementById('modal-seguimiento').classList.add('d-none');
     _pendienteEstado = null;
 });
 
-document.getElementById('cerrar-ver-comentario').addEventListener('click', () => {
+document.getElementById('cerrar-ver-comentario')?.addEventListener('click', () => {
     document.getElementById('modal-ver-comentario').classList.add('d-none');
 });
 
@@ -487,7 +487,7 @@ document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
     });
 });
 
-document.getElementById('btn-reasignar').addEventListener('click', () => {
+document.getElementById('btn-reasignar')?.addEventListener('click', () => {
     ES_REASIGNACION = true;
     document.getElementById('modal-titulo').textContent = 'Reasignar CTP';
     document.getElementById('vista-asignado').classList.add('d-none');
@@ -495,11 +495,11 @@ document.getElementById('btn-reasignar').addEventListener('click', () => {
     document.getElementById('comentario-wrapper').classList.remove('d-none');
 });
 
-document.getElementById('cerrar-ctp').addEventListener('click', () => {
+document.getElementById('cerrar-ctp')?.addEventListener('click', () => {
     document.getElementById('modal-ctp').classList.add('d-none');
 });
 
-document.getElementById('guardar-ctp').addEventListener('click', () => {
+document.getElementById('guardar-ctp')?.addEventListener('click', () => {
     const ctpId      = document.getElementById('ctp-select').value;
     const comentario = document.getElementById('ctp-comentario').value.trim();
     if (!ctpId || !LEAD_SELECCIONADO) return;
