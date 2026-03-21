@@ -646,7 +646,7 @@
                     {{-- CRUCIGRAMA --}}
                     @if ($activity->type === 'Crucigrama')
                         <div class="game-container crucigrama-container">
-                            <div class="crucigrama-game" id="crucigrama-{{ $activity->id }}"
+                            <div class="crucigrama-game" id="crucigrama-grid-{{ $activity->id }}"
                                  data-activity-id="{{ $activity->id }}"
                                  data-words='@json($activity->content['words'] ?? [])'
                                  data-size="{{ $activity->content['grid_size'] ?? 10 }}">
@@ -730,26 +730,67 @@
                 <h2>{{ $activity->title }}</h2>
             @endif
 
-            @if($activity->type === 'Cuestionario')
-                <div class="game-container">
-                    <form class="quiz-form" data-activity-id="{{ $activity->id }}">
-                        @csrf
-                        <div class="question-box">
-                            <h3>{{ $activity->content['question'] ?? 'Sin pregunta' }}</h3>
-                            @if(isset($activity->content['options']))
-                                @foreach($activity->content['options'] as $i => $option)
-                                    <label class="option-label">
-                                        <input type="radio" name="answer" value="{{ $i }}" required>
-                                        <span>{{ $option }}</span>
-                                    </label>
-                                @endforeach
-                            @endif
-                        </div>
-                        <button type="submit" class="btn-submit">Enviar Respuesta</button>
-                        <div class="result-message"></div>
-                    </form>
-                </div>
-            @endif
+            {{-- CUESTIONARIO --}}
+                        @if ($activity->type === 'Cuestionario')
+                            <div class="game-container cuestionario-container">
+                                @php
+                                    // Soportar tanto formato antiguo (una pregunta) como nuevo (múltiples preguntas)
+                                    $questions = [];
+                                    if (isset($activity->content['question'])) {
+                                        // Formato antiguo: una sola pregunta
+                                        $questions = [[
+                                            'question' => $activity->content['question'],
+                                            'options' => $activity->content['options'] ?? []
+                                        ]];
+                                    } elseif (isset($activity->content['questions'])) {
+                                        // Formato nuevo: múltiples preguntas
+                                        $questions = $activity->content['questions'];
+                                    }
+                                    $totalQuestions = count($questions);
+                                @endphp
+                                
+                                @if ($totalQuestions > 1)
+                                    {{-- NAVEGACIÓN PARA MÚLTIPLES PREGUNTAS --}}
+                                    <div class="exam-navigation">
+                                        <button type="button" class="exam-nav-btn" id="prevQuizQuestion-{{ $activity->id }}" disabled>
+                                            ⬅ Anterior
+                                        </button>
+                                        <span class="question-counter" id="quiz-counter-{{ $activity->id }}">
+                                            Pregunta <span class="current">1</span> de <span class="total">{{ $totalQuestions }}</span>
+                                        </span>
+                                        <button type="button" class="exam-nav-btn" id="nextQuizQuestion-{{ $activity->id }}">
+                                            Siguiente ➡
+                                        </button>
+                                    </div>
+                                @endif
+                                
+                                <form class="cuestionario-form" data-activity-id="{{ $activity->id }}" data-total="{{ $totalQuestions }}">
+                                    @csrf
+                                    @foreach ($questions as $qIndex => $question)
+                                        <div class="question-item" data-question="{{ $qIndex }}" style="{{ $qIndex === 0 ? '' : 'display: none;' }}">
+                                            <h3>{{ $qIndex + 1 }}. {{ $question['question'] }}</h3>
+                                            <div class="options-container">
+                                                @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                                    <label class="option-label">
+                                                        <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                        <span>{{ $option }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    
+                                    @if ($totalQuestions > 1)
+                                        <button type="submit" class="btn-submit" id="submitQuiz-{{ $activity->id }}" style="display: none;">
+                                            Enviar Cuestionario
+                                        </button>
+                                    @else
+                                        <button type="submit" class="btn-submit">Enviar Respuesta</button>
+                                    @endif
+                                </form>
+                                <div class="result-message"></div>
+                            </div>
+                        @endif
 
             @if($activity->type === 'SopaDeLetras')
                 <div class="game-container sopa-container">
@@ -824,71 +865,76 @@
                 </div>
             @endif
 
-            @if($activity->type === 'Crucigrama')
-                <div class="game-container crucigrama-container">
-                    <div class="crucigrama-game" id="crucigrama-{{ $activity->id }}"
-                         data-activity-id="{{ $activity->id }}"
-                         data-words='@json($activity->content['words'] ?? [])'
-                         data-size="{{ $activity->content['grid_size'] ?? 10 }}">
-                        
-                        <div class="crucigrama-layout">
-                            <div class="crucigrama-clues">
-                                <div class="clues-section">
-                                    <h4>Horizontales</h4>
-                                    <ul id="clues-horizontal-{{ $activity->id }}"></ul>
-                                </div>
-                                <div class="clues-section">
-                                    <h4>Verticales</h4>
-                                    <ul id="clues-vertical-{{ $activity->id }}"></ul>
+            {{-- CRUCIGRAMA --}}
+                        @if ($activity->type === 'Crucigrama')
+                            <div class="game-container crucigrama-container">
+                                <div class="crucigrama-game" id="crucigrama-{{ $activity->id }}"
+                                     data-activity-id="{{ $activity->id }}"
+                                     data-words='@json($activity->content['words'] ?? [])'
+                                     data-size="{{ $activity->content['grid_size'] ?? 10 }}">
+                                    
+                                    <div class="crucigrama-layout">
+                                        <div class="crucigrama-clues">
+                                            <div class="clues-section">
+                                                <h4>Horizontales</h4>
+                                                <ul id="clues-horizontal-{{ $activity->id }}"></ul>
+                                            </div>
+                                            <div class="clues-section">
+                                                <h4>Verticales</h4>
+                                                <ul id="clues-vertical-{{ $activity->id }}"></ul>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="crucigrama-grid-wrapper">
+                                            <div class="crucigrama-grid" id="crucigrama-grid-{{ $activity->id }}">
+                                                <!-- La grilla se generará con JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn-submit" onclick="checkCrucigramaCompletion({{ $activity->id }})">Verificar Crucigrama</button>
+                                    <div class="result-message"></div>
                                 </div>
                             </div>
-                            
-                            <div class="crucigrama-grid-wrapper">
-                                <div id="crossword-grid-{{ $activity->id }}"></div>
-                            </div>
-                        </div>
-                        
-                        <button type="button" class="btn-submit" onclick="checkCrossword({{ $activity->id }})">Verificar Respuestas</button>
-                        <div class="result-message"></div>
-                    </div>
-                </div>
-            @endif
+                        @endif
 
-            @if($activity->type === 'Examen')
-                <div class="game-container">
-                    <form class="exam-form" data-activity-id="{{ $activity->id }}">
-                        @csrf
-                        @php $questions = $activity->content['questions'] ?? []; @endphp
-                        
-                        <div class="exam-navigation">
-                            <button type="button" class="exam-nav-btn" id="prev-question-{{ $activity->id }}" disabled>⬅ Anterior</button>
-                            <span class="question-counter">
-                                Pregunta <span class="current" id="current-question-{{ $activity->id }}">1</span> de {{ count($questions) }}
-                            </span>
-                            <button type="button" class="exam-nav-btn" id="next-question-{{ $activity->id }}">Siguiente ➡</button>
-                        </div>
-
-                        <div class="exam-questions-container" id="exam-questions-{{ $activity->id }}">
-                            @foreach($questions as $index => $q)
-                                <div class="question-item" data-question-index="{{ $index }}" style="display: {{ $index === 0 ? 'block' : 'none' }}">
-                                    <h4>{{ $index + 1 }}. {{ $q['question'] ?? 'Sin pregunta' }}</h4>
-                                    @if(isset($q['options']))
-                                        @foreach($q['options'] as $i => $option)
-                                            <label class="option-label">
-                                                <input type="radio" name="question_{{ $index }}" value="{{ $i }}" required>
-                                                <span>{{ $option }}</span>
-                                            </label>
-                                        @endforeach
-                                    @endif
+            {{-- EXAMEN --}}
+                        @if ($activity->type === 'Examen')
+                            <div class="game-container examen-container">
+                                <div class="exam-navigation">
+                                    <button type="button" class="exam-nav-btn" id="prevQuestion-{{ $activity->id }}" disabled>
+                                        ⬅ Anterior
+                                    </button>
+                                    <span class="question-counter" id="counter-{{ $activity->id }}">
+                                        Pregunta <span class="current">1</span> de <span class="total">{{ count($activity->content['questions'] ?? []) }}</span>
+                                    </span>
+                                    <button type="button" class="exam-nav-btn" id="nextQuestion-{{ $activity->id }}">
+                                        Siguiente ➡
+                                    </button>
                                 </div>
-                            @endforeach
-                        </div>
-
-                        <button type="submit" class="btn-submit">Enviar Examen</button>
-                        <div class="result-message"></div>
-                    </form>
-                </div>
-            @endif
+                                
+                                <form class="examen-form" data-activity-id="{{ $activity->id }}" data-total="{{ count($activity->content['questions'] ?? []) }}">
+                                    @csrf
+                                    @foreach ($activity->content['questions'] ?? [] as $qIndex => $question)
+                                        <div class="question-item" data-question="{{ $qIndex }}" style="{{ $qIndex === 0 ? '' : 'display: none;' }}">
+                                            <h4>{{ $qIndex + 1 }}. {{ $question['question'] }}</h4>
+                                            <div class="options-container">
+                                                @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                                    <label class="option-label">
+                                                        <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                        <span>{{ $option }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    <button type="submit" class="btn-submit" id="submitExam-{{ $activity->id }}" style="display: none;">
+                                        Finalizar Examen
+                                    </button>
+                                </form>
+                                <div class="result-message"></div>
+                            </div>
+                        @endif
 
         </section>
     @endforeach
@@ -1038,40 +1084,38 @@ document.addEventListener('DOMContentLoaded', function () {
     showIndex(0);
     
     // CRÍTICO: Pausar videos INMEDIATAMENTE y REPETIDAMENTE
-function pauseAllVideos() {
-    document.querySelectorAll('video:not(.turtle-video)').forEach(video => {
-        video.pause();
-        video.currentTime = 0;
-        video.removeAttribute('autoplay');
-    });
-    
-    document.querySelectorAll('iframe[data-autoplay-blocked]').forEach(iframe => {
-        try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-            if (iframeDoc) {
-                iframeDoc.querySelectorAll('video').forEach(video => {
-                    video.pause();
-                    video.currentTime = 0;
-                    video.removeAttribute('autoplay');
-                });
-            }
-        } catch (e) {}
-    });
-}
-
-pauseAllVideos();
-setTimeout(() => pauseAllVideos(), 100);
-setTimeout(() => pauseAllVideos(), 500);
-setTimeout(() => pauseAllVideos(), 1000);
-setTimeout(() => pauseAllVideos(), 2000);
-
-const observer = new MutationObserver(() => pauseAllVideos());
-observer.observe(document.body, { childList: true, subtree: true });
-
-setTimeout(() => {
-    console.log('🎬 Videos pausados');
+    function pauseAllVideos() {
+        document.querySelectorAll('video:not(.turtle-video)').forEach(video => {
+            video.pause();
+            video.currentTime = 0;
+            video.removeAttribute('autoplay');
+        });
         
-        // También pausar videos dentro de iframes (si es posible)
+        document.querySelectorAll('iframe[data-autoplay-blocked]').forEach(iframe => {
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (iframeDoc) {
+                    iframeDoc.querySelectorAll('video').forEach(video => {
+                        video.pause();
+                        video.currentTime = 0;
+                        video.removeAttribute('autoplay');
+                    });
+                }
+            } catch (e) {}
+        });
+    }
+
+    pauseAllVideos();
+    setTimeout(() => pauseAllVideos(), 100);
+    setTimeout(() => pauseAllVideos(), 500);
+    setTimeout(() => pauseAllVideos(), 1000);
+    setTimeout(() => pauseAllVideos(), 2000);
+
+    const observer = new MutationObserver(() => pauseAllVideos());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(() => {
+        console.log('🎬 Videos pausados');
         document.querySelectorAll('iframe').forEach(iframe => {
             try {
                 const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -1081,31 +1125,24 @@ setTimeout(() => {
                         video.currentTime = 0;
                     });
                 }
-            } catch (e) {
-                // CORS - no se puede acceder
-            }
+            } catch (e) {}
         });
         console.log('✅ Videos pausados');
     }, 100);
     
-    // Inicializar todas las sopas de letras al cargar
+    // Inicializar Sopa de Letras y Ahorcado al cargar (NO crucigrama)
     setTimeout(() => {
         console.log('🔍 Buscando juegos para inicializar...');
         
         const sopaGrids = document.querySelectorAll('.grid-container');
         console.log(`Encontrados ${sopaGrids.length} juegos de Sopa de Letras`);
-        sopaGrids.forEach((grid, index) => {
-            console.log(`Procesando sopa ${index + 1}, innerHTML length:`, grid.innerHTML.trim().length);
-            // Inicializar si está vacío o solo tiene comentario HTML
+        sopaGrids.forEach((grid) => {
             if(!grid.innerHTML.trim() || grid.innerHTML.trim().length < 100) {
                 console.log('✅ Inicializando Sopa de Letras...');
                 initSopaDeLetras(grid);
-            } else {
-                console.log('⚠️ Sopa ya inicializada');
             }
         });
         
-        // Inicializar Ahorcado
         const ahorcadoGames = document.querySelectorAll('.ahorcado-game');
         console.log(`Encontrados ${ahorcadoGames.length} juegos de Ahorcado`);
         ahorcadoGames.forEach(game => {
@@ -1114,27 +1151,10 @@ setTimeout(() => {
                 initAhorcado(game);
             }
         });
-        
-        // Inicializar Crucigrama
-        const crucigramaGames = document.querySelectorAll('.crucigrama-game');
-        console.log(`Encontrados ${crucigramaGames.length} juegos de Crucigrama`);
-        crucigramaGames.forEach((game, index) => {
-            console.log(`Procesando crucigrama ${index + 1}:`, game);
-            const grid = game.querySelector('.crucigrama-grid');
-            console.log('Grid encontrado:', grid);
-            console.log('Grid innerHTML:', grid ? grid.innerHTML : 'null');
-            console.log('Grid innerHTML length:', grid ? grid.innerHTML.length : 0);
-            
-            // Siempre inicializar si la grilla existe y está prácticamente vacía
-            if(grid && grid.innerHTML.trim().length < 50) {
-                console.log('✅ Iniciando inicialización de crucigrama...');
-                initCrucigrama(game);
-            } else if (!grid) {
-                console.error('❌ No se encontró .crucigrama-grid dentro del juego');
-            } else {
-                console.warn('⚠️ La grilla ya tiene contenido, saltando inicialización');
-            }
-        });
+
+        // ✅ Crucigrama NO se inicializa aquí, solo en showIndex
+        console.log('ℹ️ Crucigrama se inicializará cuando el usuario navegue a ese panel');
+
     }, 200);
 
     function showIndex(i){
@@ -1142,7 +1162,7 @@ setTimeout(() => {
 
         // PAUSAR todos los videos antes de cambiar de panel
         document.querySelectorAll('video').forEach(video => {
-            if (!video.classList.contains('turtle-video')) { // No pausar la tortuguita
+            if (!video.classList.contains('turtle-video')) {
                 video.pause();
             }
         });
@@ -1159,10 +1179,10 @@ setTimeout(() => {
             index = i;
             bar.style.width = ((i+1)/links.length)*100 + '%';
             
-            // Inicializar sopa de letras si existe en el panel actual
             setTimeout(() => {
+                // Inicializar Sopa de Letras si existe en el panel actual
                 const sopaGrid = panel.querySelector('.grid-container');
-                if(sopaGrid && (sopaGrid.innerHTML.trim().length < 100)) {
+                if(sopaGrid && sopaGrid.innerHTML.trim().length < 100) {
                     console.log('🎯 Inicializando sopa desde showIndex');
                     initSopaDeLetras(sopaGrid);
                 }
@@ -1174,12 +1194,13 @@ setTimeout(() => {
                     initAhorcado(ahorcadoGame);
                 }
                 
-                // Inicializar Crucigrama si existe
+                // ✅ Crucigrama: solo inicializar una vez con el flag data-initialized
                 const crucigramaGame = panel.querySelector('.crucigrama-game');
-                if(crucigramaGame) {
+                if(crucigramaGame && !crucigramaGame.dataset.initialized) {
                     const grid = crucigramaGame.querySelector('.crucigrama-grid');
                     if(grid && grid.innerHTML.trim().length < 50) {
                         console.log('🎯 Inicializando crucigrama desde showIndex');
+                        crucigramaGame.dataset.initialized = 'true'; // 🔒 Evitar doble init
                         initCrucigrama(crucigramaGame);
                     }
                 }
@@ -1229,7 +1250,6 @@ setTimeout(() => {
         const panel = document.querySelector('.content-panel:not([style*="display: none"])');
         if (!panel) return;
         
-        // Detectar si es un juego
         if (panel.querySelector('.game-container')) {
             console.log('🎮 Juego detectado - PAUSANDO autoplay');
             showGameModal();
@@ -1239,7 +1259,6 @@ setTimeout(() => {
             return;
         }
         
-        // Leer contenido del panel actual
         readCurrentPanel();
     }
     
@@ -1247,134 +1266,100 @@ setTimeout(() => {
         const panel = document.querySelector('.content-panel:not([style*="display: none"])');
         if (!panel) return;
         
-// 1. BUSCAR VIDEOS (tag video directo)
-let video = panel.querySelector('video:not(.turtle-video)');
-if (video) {
-    console.log('🎥 Video detectado');
-    
-    // Detectar configuración de tortuguita
-    const showTurtle = panel.dataset.showTurtle === '1';
-    const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
-    
-    console.log('🐢 Config desde panel:', { showTurtle, turtleVoice });
-    
-    // Si debe mostrar tortuguita, mostrarla SILENCIOSA durante el video
-    if (showTurtle) {
-        console.log('✅ Mostrando tortuguita silenciosa');
-        showTurtleWithVoice(turtleVoice);
-        
-        // IMPORTANTE: Solo escuchar el evento 'ended' del VIDEO DEL CURSO, no de la tortuguita
-        video.addEventListener('play', () => {
-            console.log('▶️ Video del curso reproduciendo');
-        });
-        
-        video.addEventListener('ended', () => {
-            console.log('✅ Video del CURSO completado - ocultando tortuguita');
-            hideTurtle();
+        // 1. BUSCAR VIDEOS (tag video directo)
+        let video = panel.querySelector('video:not(.turtle-video)');
+        if (video) {
+            console.log('🎥 Video detectado');
+            
+            const showTurtle = panel.dataset.showTurtle === '1';
+            const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+            
+            if (showTurtle) {
+                showTurtleWithVoice(turtleVoice);
+                
+                video.addEventListener('ended', () => {
+                    console.log('✅ Video del CURSO completado');
+                    hideTurtle();
+                    if (autoplayActive) {
+                        setTimeout(() => advanceToNext(), 1000);
+                    }
+                });
+            }
             
             if (autoplayActive) {
-                setTimeout(() => advanceToNext(), 1000);
-            }
-        });
-        
-        video.addEventListener('pause', () => {
-            console.log('⏸️ Video del curso pausado');
-        });
-    }
-    
-    // Leer descripción con voz si hay autoplay activo
-    if (autoplayActive) {
-        const title = panel.querySelector('h2');
-        const description = panel.querySelector('p');
-        
-        let textToRead = '';
-        if (title) textToRead += title.textContent + '. ';
-        if (description) textToRead += description.textContent;
-        
-        textToRead = textToRead.trim();
-        
-        if (textToRead.length > 10) {
-            console.log('📝 Leyendo descripción del video...');
-            
-            speakWithElevenLabs(
-                textToRead,
-                () => {}, // No mostrar tortuguita aquí (ya está mostrada arriba)
-                () => {
-                    console.log('✅ Descripción completada');
-                    // Reproducir video después de leer descripción
-                    if (autoplayActive) {
-                        setTimeout(() => {
-                            video.play().catch(err => {
-                                console.log('Error al reproducir video:', err);
-                                if (autoplayActive) {
-                                    advanceToNext();
-                                }
-                            });
-                        }, 1000);
-                    }
-                }
-            );
-        } else {
-            // Sin descripción, reproducir directamente
-            video.play();
-        }
-    }
-    return;
-}
-        
-       // 2. BUSCAR VIDEOS en iframes (archivos .mp4, .webm, .ogg)
-const allIframes = panel.querySelectorAll('iframe');
-for (let iframe of allIframes) {
-    if (iframe.src && 
-        (iframe.src.toLowerCase().includes('.mp4') || 
-         iframe.src.toLowerCase().includes('.webm') ||
-         iframe.src.toLowerCase().includes('.ogg') ||
-         iframe.src.toLowerCase().includes('video'))) {
-        
-        console.log('🎥 Video en iframe detectado:', iframe.src);
-        
-        // Detectar configuración de tortuguita
-        const showTurtle = panel.dataset.showTurtle === '1';
-        const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
-        
-        console.log('🐢 Config iframe:', { showTurtle, turtleVoice });
-        
-        // Si debe mostrar tortuguita, mostrarla SILENCIOSA
-        if (showTurtle) {
-            console.log('✅ Mostrando tortuguita para iframe video');
-            showTurtleWithVoice(turtleVoice);
-        }
-        
-        if (autoplayActive) {
-            const title = panel.querySelector('h2');
-            const description = panel.querySelector('p');
-            
-            let textToRead = '';
-            if (title) textToRead += title.textContent + '. ';
-            if (description) textToRead += description.textContent;
-            
-            textToRead = textToRead.trim();
-            
-            if (textToRead.length > 10) {
-                console.log('📝 Leyendo descripción del video iframe...');
+                const title = panel.querySelector('h2');
+                const description = panel.querySelector('p');
                 
-                speakWithElevenLabs(
-                    textToRead,
-                    () => {},
-                    () => {
-                        console.log('✅ Descripción completada');
-                        
-                        // Intentar detectar duración del video en iframe
+                let textToRead = '';
+                if (title) textToRead += title.textContent + '. ';
+                if (description) textToRead += description.textContent;
+                textToRead = textToRead.trim();
+                
+                if (textToRead.length > 10) {
+                    speakWithElevenLabs(
+                        textToRead,
+                        () => {},
+                        () => {
+                            if (autoplayActive) {
+                                setTimeout(() => {
+                                    video.play().catch(() => {
+                                        if (autoplayActive) advanceToNext();
+                                    });
+                                }, 1000);
+                            }
+                        }
+                    );
+                } else {
+                    video.play();
+                }
+            }
+            return;
+        }
+        
+        // 2. BUSCAR VIDEOS en iframes
+        const allIframes = panel.querySelectorAll('iframe');
+        for (let iframe of allIframes) {
+            if (iframe.src && 
+                (iframe.src.toLowerCase().includes('.mp4') || 
+                 iframe.src.toLowerCase().includes('.webm') ||
+                 iframe.src.toLowerCase().includes('.ogg') ||
+                 iframe.src.toLowerCase().includes('video'))) {
+                
+                console.log('🎥 Video en iframe detectado:', iframe.src);
+                
+                const showTurtle = panel.dataset.showTurtle === '1';
+                const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+                
+                if (showTurtle) {
+                    showTurtleWithVoice(turtleVoice);
+                }
+                
+                if (autoplayActive) {
+                    const title = panel.querySelector('h2');
+                    const description = panel.querySelector('p');
+                    
+                    let textToRead = '';
+                    if (title) textToRead += title.textContent + '. ';
+                    if (description) textToRead += description.textContent;
+                    textToRead = textToRead.trim();
+                    
+                    if (textToRead.length > 10) {
+                        speakWithElevenLabs(
+                            textToRead,
+                            () => {},
+                            () => {
+                                if (autoplayActive) {
+                                    tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+                                }
+                            }
+                        );
+                    } else {
                         tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
                     }
-                );
-            } else {
-                tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+                }
+                return;
             }
         }
-        return;
-    }
-}
         
         // 3. BUSCAR PDFs CON CANVAS
         const pdfCanvas = panel.querySelector('canvas[data-pdf-id]');
@@ -1394,11 +1379,8 @@ for (let iframe of allIframes) {
             }
         }
         
-        // 5. Si no hay video ni PDF, leer texto (EXCLUYENDO navegación)
-        // Clonar panel y eliminar elementos de navegación
+        // 5. Leer texto (excluyendo navegación)
         const panelClone = panel.cloneNode(true);
-        
-        // Eliminar navegaciones de PDF, exámenes, quiz
         panelClone.querySelectorAll('.exam-navigation').forEach(nav => nav.remove());
         panelClone.querySelectorAll('.pdf-nav-btn').forEach(btn => btn.remove());
         panelClone.querySelectorAll('.course-controls').forEach(ctrl => ctrl.remove());
@@ -1408,160 +1390,8 @@ for (let iframe of allIframes) {
             console.log('📝 Leyendo texto...');
             speakText(text);
         } else {
-            // No hay contenido, avanzar
             advanceToNext();
         }
-    }
-    
-    function handleIframeVideoAutoplay(iframe, panel) {
-        // Para videos en iframes, leer descripción y luego mostrar/activar el iframe
-        const title = panel.querySelector('h2');
-        const description = panel.querySelector('p');
-        
-        let textToRead = '';
-        if (title) textToRead += title.textContent + '. ';
-        if (description) textToRead += description.textContent;
-        
-        textToRead = textToRead.trim();
-        
-        if (textToRead.length > 10) {
-            console.log('📝 Leyendo descripción del video...');
-            
-            speakWithElevenLabs(
-                textToRead,
-                () => showTurtle(),
-                () => {
-                    hideTurtle();
-                    console.log('✅ Descripción completada');
-                    
-                    if (autoplayActive) {
-                        setTimeout(() => {
-                            tryPlayIframeVideo(iframe);
-                        }, 1000);
-                    }
-                }
-            );
-        } else {
-            tryPlayIframeVideo(iframe);
-        }
-    }
-    
-    function tryPlayIframeVideo(iframe) {
-        console.log('🎥 Intentando reproducir video en iframe...');
-        
-        try {
-            // Intentar acceder al contenido del iframe
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            const video = iframeDoc.querySelector('video');
-            
-            if (video) {
-                console.log('✅ Video encontrado dentro del iframe');
-                video.currentTime = 0;
-                video.play().then(() => {
-                    console.log('▶️ Video reproduciéndose');
-                    
-                    video.onended = () => {
-                        console.log('✅ Video completado');
-                        if (autoplayActive) {
-                            setTimeout(() => {
-                                advanceToNext();
-                            }, 1000);
-                        }
-                    };
-                }).catch(err => {
-                    console.log('❌ Error al reproducir:', err);
-                    // Si no se puede reproducir, avanzar
-                    if (autoplayActive) {
-                        setTimeout(() => {
-                            advanceToNext();
-                        }, 2000);
-                    }
-                });
-            } else {
-                console.log('⚠️ No se encontró tag <video> dentro del iframe');
-                // Si es un archivo de video directo en el iframe, esperar un tiempo estimado
-                console.log('⏱️ Esperando 10 segundos (tiempo estimado)...');
-                setTimeout(() => {
-                    if (autoplayActive) {
-                        advanceToNext();
-                    }
-                }, 10000);
-            }
-        } catch (err) {
-            console.log('⚠️ No se puede acceder al iframe (CORS):', err);
-            // Si hay error de CORS, esperar un tiempo estimado
-            console.log('⏱️ Esperando 10 segundos (tiempo estimado)...');
-            setTimeout(() => {
-                if (autoplayActive) {
-                    advanceToNext();
-                }
-            }, 10000);
-        }
-    }
-    
-    function handleVideoAutoplay(video, panel) {
-        // Detectar si debe mantener la tortuguita visible
-        const showTurtle = panel.dataset.showTurtle === '1';
-        const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
-        
-        console.log('🐢 Configuración tortuguita:', { showTurtle, turtleVoice });
-        
-        // Primero leer el título y descripción del tema/subtema
-        const title = panel.querySelector('h2');
-        const description = panel.querySelector('p');
-        
-        let textToRead = '';
-        if (title) textToRead += title.textContent + '. ';
-        if (description) textToRead += description.textContent;
-        
-        textToRead = textToRead.trim();
-        
-        if (textToRead.length > 10) {
-            // Leer el texto primero (usando la voz configurada si show_turtle está activo)
-            console.log('📝 Leyendo descripción del video...');
-            
-            speakWithElevenLabs(
-                textToRead,
-                () => showTurtle ? showTurtleWithVoice(turtleVoice) : showTurtle(),
-                () => {
-                    // Si NO debe mantener tortuguita, ocultarla después de leer
-                    if (!showTurtle) {
-                        hideTurtle();
-                    }
-                    console.log('✅ Descripción completada, reproduciendo video...');
-                    
-                    if (autoplayActive) {
-                        setTimeout(() => {
-                            playVideoAndWait(video, showTurtle, turtleVoice);
-                        }, 1000);
-                    }
-                },
-                turtleVoice // Pasar la voz seleccionada
-            );
-        } else {
-            playVideoAndWait(video, showTurtle, turtleVoice);
-        }
-    }
-    
-    function playVideoAndWait(video, keepTurtleVisible = false, turtleVoice = 0) {
-        console.log('🎥 Reproduciendo video...');
-        
-        // Si debe mantener tortuguita visible, mostrarla
-        if (keepTurtleVisible) {
-            showTurtleWithVoice(turtleVoice);
-        }
-        
-        video.currentTime = 0;
-        console.log('⏪ Video reiniciado al inicio');
-        
-        video.play().catch(err => {
-            console.log('Error al reproducir video:', err);
-            if (autoplayActive) {
-                advanceToNext();
-            }
-        });
-        
-        
     }
     
     function speakText(text) {
@@ -1571,11 +1401,8 @@ for (let iframe of allIframes) {
             () => {
                 hideTurtle();
                 console.log('✅ Lectura completada');
-                
                 if (autoplayActive) {
-                    setTimeout(() => {
-                        advanceToNext();
-                    }, 1000);
+                    setTimeout(() => advanceToNext(), 1000);
                 }
             }
         );
@@ -1595,44 +1422,34 @@ for (let iframe of allIframes) {
             }
             
             fullText = fullText.replace(/\s+/g, ' ').trim();
-            const textToRead = fullText.substring(0, 5000);
             
             speakWithElevenLabs(
-                textToRead,
+                fullText.substring(0, 5000),
                 () => showTurtle(),
                 () => {
                     hideTurtle();
-                    console.log('✅ PDF completado');
-                    
                     if (autoplayActive) {
-                        setTimeout(() => {
-                            advanceToNext();
-                        }, 1000);
+                        setTimeout(() => advanceToNext(), 1000);
                     }
                 }
             );
-            
         } catch (error) {
             console.error('Error leyendo PDF:', error);
             advanceToNext();
         }
     }
     
-    // NUEVA FUNCIÓN: Leer PDF con canvas página por página
     async function readPdfCanvasAutoplay(pdfId, panel) {
         console.log('📖 Iniciando lectura de PDF canvas:', pdfId);
         
-        // Primero leer título y descripción
         const title = panel.querySelector('h2');
         const description = panel.querySelector('p');
         
         let introText = '';
         if (title) introText += title.textContent + '. ';
         if (description) introText += description.textContent;
-        
         introText = introText.trim();
         
-        // Obtener info del PDF
         const pdfInfo = window.getPdfInfo(pdfId);
         if (!pdfInfo) {
             console.error('❌ No se pudo obtener info del PDF');
@@ -1642,32 +1459,24 @@ for (let iframe of allIframes) {
         
         console.log(`📄 PDF tiene ${pdfInfo.totalPages} páginas`);
         
-        // Función recursiva para leer cada página
         let currentPdfPage = 1;
         
         async function readNextPage() {
             if (!autoplayActive) return;
             
             if (currentPdfPage > pdfInfo.totalPages) {
-                console.log('✅ PDF completado, avanzando al siguiente tema');
+                console.log('✅ PDF completado');
                 hideTurtle();
-                setTimeout(() => {
-                    advanceToNext();
-                }, 1000);
+                setTimeout(() => advanceToNext(), 1000);
                 return;
             }
             
-            console.log(`📖 Leyendo página ${currentPdfPage} de ${pdfInfo.totalPages}`);
-            
-            // Navegar a la página (si no es la primera)
             if (currentPdfPage > 1) {
                 window.navigatePdfPage(pdfId, 'next');
             }
             
-            // Esperar un momento para que se renderice
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Obtener texto de la página actual usando PDF.js
             const canvas = document.querySelector(`canvas[data-pdf-id="${pdfId}"]`);
             const pdfUrl = canvas.dataset.pdfUrl;
             
@@ -1678,14 +1487,9 @@ for (let iframe of allIframes) {
                 const content = await page.getTextContent();
                 const pageText = content.items.map(item => item.str).join(' ');
                 
-                let textToRead = '';
-                
-                // Si es la primera página, incluir intro
-                if (currentPdfPage === 1 && introText.length > 10) {
-                    textToRead = introText + '. ' + pageText;
-                } else {
-                    textToRead = pageText;
-                }
+                let textToRead = currentPdfPage === 1 && introText.length > 10
+                    ? introText + '. ' + pageText
+                    : pageText;
                 
                 textToRead = textToRead.replace(/\s+/g, ' ').trim().substring(0, 5000);
                 
@@ -1695,23 +1499,16 @@ for (let iframe of allIframes) {
                         () => showTurtle(),
                         () => {
                             hideTurtle();
-                            console.log(`✅ Página ${currentPdfPage} completada`);
-                            
                             currentPdfPage++;
-                            
                             if (autoplayActive) {
-                                setTimeout(() => {
-                                    readNextPage();
-                                }, 1000);
+                                setTimeout(() => readNextPage(), 1000);
                             }
                         }
                     );
                 } else {
-                    // Página vacía, continuar
                     currentPdfPage++;
                     readNextPage();
                 }
-                
             } catch (error) {
                 console.error('Error leyendo página del PDF:', error);
                 currentPdfPage++;
@@ -1719,7 +1516,6 @@ for (let iframe of allIframes) {
             }
         }
         
-        // Iniciar lectura
         readNextPage();
     }
     
@@ -1727,90 +1523,56 @@ for (let iframe of allIframes) {
         if (!autoplayActive) return;
         
         console.log('➡️ Avanzando al siguiente...');
-        
         window.currentTurtleIndex = (window.currentTurtleIndex + 1) % 2;
-        console.log(`🐢 Próxima tortuguita: ${window.currentTurtleIndex}`);
         
         showIndex(index + 1);
         
-        // Esperar un momento y leer el nuevo contenido
         setTimeout(() => {
-            if (autoplayActive) {
-                startAutoplay();
-            }
+            if (autoplayActive) startAutoplay();
         }, 500);
     }
 
     function tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice) {
-    console.log('🔍 Intentando detectar duración del video en iframe...');
-    
-    try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (iframeDoc) {
-            const video = iframeDoc.querySelector('video');
-            
-            if (video) {
-                console.log('✅ Video encontrado dentro del iframe');
+        console.log('🔍 Intentando detectar duración del video en iframe...');
+        
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+                const video = iframeDoc.querySelector('video');
                 
-                // Reproducir video
-                video.currentTime = 0;
-                video.play().then(() => {
-                    console.log('▶️ Video en iframe reproduciéndose');
-                    
-                    // Escuchar cuando termine
-                    video.addEventListener('ended', () => {
-                        console.log('✅ Video del iframe completado');
-                        
-                        if (showTurtle) {
-                            hideTurtle();
-                        }
-                        
-                        if (autoplayActive) {
-                            setTimeout(() => advanceToNext(), 1000);
-                        }
+                if (video) {
+                    video.currentTime = 0;
+                    video.play().then(() => {
+                        video.addEventListener('ended', () => {
+                            if (showTurtle) hideTurtle();
+                            if (autoplayActive) setTimeout(() => advanceToNext(), 1000);
+                        });
+                    }).catch(() => {
+                        useEstimatedTime(showTurtle);
                     });
-                    
-                }).catch(err => {
-                    console.log('❌ Error al reproducir video en iframe:', err);
-                    // Si no se puede reproducir, usar tiempo estimado
+                } else {
                     useEstimatedTime(showTurtle);
-                });
-                
+                }
             } else {
-                console.log('⚠️ No se encontró tag <video> dentro del iframe');
                 useEstimatedTime(showTurtle);
             }
-        } else {
-            console.log('⚠️ No se puede acceder al iframe (CORS)');
+        } catch (err) {
+            console.log('⚠️ Error accediendo al iframe:', err);
             useEstimatedTime(showTurtle);
         }
-    } catch (err) {
-        console.log('⚠️ Error accediendo al iframe:', err);
-        useEstimatedTime(showTurtle);
     }
-}
 
-function useEstimatedTime(showTurtle) {
-    console.log('⏱️ Usando tiempo estimado de 30 segundos...');
-    
-    setTimeout(() => {
-        console.log('⏱️ Tiempo estimado cumplido');
-        
-        if (showTurtle) {
-            hideTurtle();
-        }
-        
-        if (autoplayActive) {
-            advanceToNext();
-        }
-    }, 30000); // 30 segundos
-}
+    function useEstimatedTime(showTurtle) {
+        console.log('⏱️ Usando tiempo estimado de 30 segundos...');
+        setTimeout(() => {
+            if (showTurtle) hideTurtle();
+            if (autoplayActive) advanceToNext();
+        }, 30000);
+    }
     
     function showGameModal() {
         const modal = document.getElementById('gameModal');
-        if (modal) {
-            modal.style.display = 'flex';
-        }
+        if (modal) modal.style.display = 'flex';
     }
 
 });
