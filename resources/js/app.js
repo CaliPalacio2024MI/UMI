@@ -169,7 +169,7 @@ class SimpleSPANavigation {
 async loadPage(url, updateHistory = true) {
         const cacheKey = this.getCacheKey(url);
         
-        // LISTA NEGRA: Estas páginas NUNCA se guardan en memoria
+        // Estas páginas NUNCA se guardan en memoria
         const noCachePaths = ['/facturacion', '/crm', '/crm/leads', '/crm/prospectos', '/crm/comisiones', '/crm/estadisticas'];
         const currentPath = new URL(url, window.location.origin).pathname;
         

@@ -140,7 +140,7 @@
 
     </div>
 
-</div>
+
 
 <!-- MODAL CTP -->
 <div id="modal-ctp" class="modal-ctp d-none">
@@ -254,7 +254,6 @@
 window.ROLE_ACTIVO = "{{ session('active_role_name') }}";
 window.CSRF_TOKEN  = "{{ csrf_token() }}";
 
-// ===== ESTADOS =====
 const ESTADOS = ['Prospecto frío','Prospecto caliente','Aspirante','Alumno'];
 
 // ===== ELIMINAR LEAD =====
@@ -385,20 +384,23 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
     });
 });
 
-// ===== CLICK EN CHECK → MODAL SEGUIMIENTO =====
-let _pendienteEstado = null;
+// ===== CLICK EN CHECK Y OJO — sin guard =====
+window._pendienteEstado = null;
 
-document.addEventListener('click', function (e) {
+document.addEventListener('click', function(e) {
     const check = e.target.closest('.icon-check.clickeable');
     if (check) {
-        _pendienteEstado = check.dataset.estado;
+        window._pendienteEstado = check.dataset.estado;
         document.getElementById('modal-seg-estado-label').textContent =
-            `Estás marcando este lead como: ${_pendienteEstado}`;
+            `Estás marcando este lead como: ${window._pendienteEstado}`;
         document.getElementById('seg-comentario').value = '';
         document.getElementById('modal-seguimiento').classList.remove('d-none');
         return;
     }
-    const ojo = e.target.closest('.icon-eye');
+
+    const ojo = e.target.classList.contains('icon-eye')
+        ? e.target
+        : e.target.closest('.icon-eye');
     if (ojo) {
         const comentario = decodeURIComponent(ojo.dataset.comentario || '');
         document.getElementById('modal-ver-estado').textContent = ojo.dataset.estado;
@@ -409,16 +411,17 @@ document.addEventListener('click', function (e) {
     }
 });
 
+// ===== GUARDAR SEGUIMIENTO =====
 document.getElementById('guardar-seguimiento-btn')?.addEventListener('click', () => {
     const filaActiva = document.querySelector('.fila-lead.activo');
     const leadId     = filaActiva?.dataset.id;
-    if (!leadId || !_pendienteEstado) return;
+    if (!leadId || !window._pendienteEstado) return;
     const comentario = document.getElementById('seg-comentario').value.trim();
     document.getElementById('modal-seguimiento').classList.add('d-none');
     fetch(`/crm/leads/${leadId}/seguimiento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.CSRF_TOKEN },
-        body: JSON.stringify({ estado: _pendienteEstado, comentario })
+        body: JSON.stringify({ estado: window._pendienteEstado, comentario })
     })
     .then(res => res.json())
     .then(data => {
@@ -430,12 +433,12 @@ document.getElementById('guardar-seguimiento-btn')?.addEventListener('click', ()
         }
     })
     .catch(() => alert('Error de conexión'));
-    _pendienteEstado = null;
+    window._pendienteEstado = null;
 });
 
 document.getElementById('cancelar-seguimiento-btn')?.addEventListener('click', () => {
     document.getElementById('modal-seguimiento').classList.add('d-none');
-    _pendienteEstado = null;
+    window._pendienteEstado = null;
 });
 
 document.getElementById('cerrar-ver-comentario')?.addEventListener('click', () => {
