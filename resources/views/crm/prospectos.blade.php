@@ -1,9 +1,10 @@
 @extends('layouts.app')
 @section('title', 'CRM - Prospectos')
-@push('css')
-    @vite('resources/css/CRM/prospectos.css')
-@endpush
 @section('content')
+
+
+<link rel="stylesheet" href="{{ Vite::asset('resources/css/CRM/prospectos.css') }}">
+
 <div class="crm-prospectos">
     
     <!-- Encabezado SUPERIOR -->
@@ -161,16 +162,18 @@
         </div>
     </div>
 </div>
-@endsection
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script>
-const ESTADOS = ['Prospecto frío','Prospecto caliente','Aspirante','Alumno'];
 
-document.addEventListener('DOMContentLoaded', () => {
+<script>
+
+(function() {
+    const ESTADOS = ['Prospecto frío','Prospecto caliente','Aspirante','Alumno'];
     // Descargar PDF
     document.querySelectorAll('.btn-descargar-pdf').forEach(btn => {
     btn.addEventListener('click', function () {
+        if (!window.jspdf) {
+            alert('Cargando librería, intenta de nuevo en un momento.');
+            return;
+        }
         const fila = this.closest('.table-row');
         const d    = fila.dataset;
         const seguimientos = JSON.parse(d.seguimientos || '[]');
@@ -475,6 +478,10 @@ document.querySelectorAll('.icon-calendar').forEach(icon => {
 const btnExportar = document.querySelector('.btn-exportar');
 
 btnExportar.addEventListener('click', () => {
+    if (!window.XLSX) {
+        alert('La librería de exportación aún no está lista, intenta de nuevo.');
+        return;
+    }
 
     const datos = [];
 
@@ -542,5 +549,7 @@ btnExportar.addEventListener('click', () => {
     XLSX.writeFile(libro, `prospectos_${fechaArchivo}.xlsx`);
 
 });
-});
+
+})();
 </script>
+@endsection
