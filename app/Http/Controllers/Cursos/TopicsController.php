@@ -15,18 +15,18 @@ use Illuminate\Support\Facades\Storage;
 class TopicsController extends Controller
 {
     public function create(Course $course): View
-{
-    // ✅ Cargar topics ORDENADOS por 'order'
-    $course->load(['topics' => function($query) {
-        $query->orderBy('order');
-    }, 'topics.activities', 'topics.subtopics']);
-    
-    $formActions = route('topics.store');
-    return view('layouts.Cursos.topic.create', [
-        'course' => $course, 
-        'formActions' => $formActions
-    ]);
-}
+    {
+        // ✅ Cargar topics ORDENADOS por 'order'
+        $course->load(['topics' => function($query) {
+            $query->orderBy('order');
+        }, 'topics.activities', 'topics.subtopics']);
+        
+        $formActions = route('topics.store');
+        return view('layouts.Cursos.topic.create', [
+            'course' => $course, 
+            'formActions' => $formActions
+        ]);
+    }
 
     /**
      * Guardar un nuevo tema
@@ -38,6 +38,11 @@ class TopicsController extends Controller
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
+            // ✅ VALIDACIÓN DE SEGMENTOS
+            'video_segments' => 'nullable|array',
+            'video_segments.*.start' => 'required_with:video_segments|string',
+            'video_segments.*.end' => 'required_with:video_segments|string',
+            'video_segments.*.turtle' => 'required_with:video_segments|integer|in:0,1',
         ]);
 
         if ($request->hasFile('file')) {
@@ -47,14 +52,22 @@ class TopicsController extends Controller
 
         unset($validatedData['file']);
 
-        // ✅ NUEVO: Guardar show_title
+        // ✅ Guardar show_title
         $validatedData['show_title'] = $request->has('show_title');
         
-        // ✅ NUEVO: Guardar show_turtle y turtle_voice
+        // ✅ Guardar show_turtle y turtle_voice
         $validatedData['show_turtle'] = $request->has('show_turtle');
         $validatedData['turtle_voice'] = $request->input('turtle_voice', null);
 
-        // ✅ NUEVO: Asignar orden automáticamente
+        // ✅ Guardar video_segments como array puro (no objeto con índices)
+        if ($request->has('video_segments') && !empty($request->video_segments)) {
+            // Convertir a array con índices consecutivos desde 0
+            $validatedData['video_segments'] = array_values($request->video_segments);
+        } else {
+            $validatedData['video_segments'] = null;
+        }
+
+        // ✅ Asignar orden automáticamente
         $maxOrder = Topics::where('course_id', $validatedData['course_id'])->max('order');
         $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
 
@@ -74,29 +87,39 @@ class TopicsController extends Controller
             'description' => $topic->description,
             'file_path' => $topic->file_path,
             'course_id' => $topic->course_id,
-            'show_title' => $topic->show_title, // ✅
-            'show_turtle' => $topic->show_turtle, // ✅ NUEVO
-            'turtle_voice' => $topic->turtle_voice // ✅ NUEVO
+            'show_title' => $topic->show_title,
+            'show_turtle' => $topic->show_turtle,
+            'turtle_voice' => $topic->turtle_voice,
+            'video_segments' => $topic->video_segments,
         ]);
     }
 
-    /**
-     * Actualiza el tema en la base de datos.
-     */
     public function update(Request $request, Topics $topic)
     {
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
+            'video_segments' => 'nullable|array',
+            'video_segments.*.start' => 'required_with:video_segments|string',
+            'video_segments.*.end' => 'required_with:video_segments|string',
+            'video_segments.*.turtle' => 'required_with:video_segments|integer|in:0,1',
         ]);
 
         // Actualizar campos básicos
-        $topic->title = $request->title;
-        $topic->description = $request->description;
-        $topic->show_title = $request->has('show_title'); // ✅
-        $topic->show_turtle = $request->has('show_turtle'); // ✅ NUEVO
-        $topic->turtle_voice = $request->input('turtle_voice', null); // ✅ NUEVO
+        $topic->title = $request->input('title');
+        $topic->description = $request->input('description');
+        $topic->show_title = $request->has('show_title');
+        $topic->show_turtle = $request->has('show_turtle');
+        $topic->turtle_voice = $request->input('turtle_voice', null);
+        
+        // ✅ CRÍTICO: Guardar video_segments como array puro
+        if ($request->has('video_segments') && !empty($request->video_segments)) {
+            // Convertir a array con índices consecutivos desde 0
+            $topic->video_segments = array_values($request->video_segments);
+        } else {
+            $topic->video_segments = null;
+        }
 
         // Manejar archivo si se subió uno nuevo
         if ($request->hasFile('file_path')) {
@@ -112,16 +135,16 @@ class TopicsController extends Controller
         return redirect()->back()->with('success', 'Tema actualizado correctamente.');
     }
 
-   public function updateOrder(Request $request)
-{
-    $topics = $request->topics;
-    
-    foreach ($topics as $topic) {
-        Topics::where('id', $topic['id'])->update(['order' => $topic['order']]);
+    public function updateOrder(Request $request)
+    {
+        $topics = $request->topics;
+        
+        foreach ($topics as $topic) {
+            Topics::where('id', $topic['id'])->update(['order' => $topic['order']]);
+        }
+        
+        return response()->json(['success' => true]);
     }
-    
-    return response()->json(['success' => true]);
-}
 
     public function destroy(Topics $topic)
     {

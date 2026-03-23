@@ -113,7 +113,8 @@
         @foreach ($course->topics as $topic)
             <section class="content-panel" id="content-topic-{{ $topic->id }}" 
                      data-show-turtle="{{ $topic->show_turtle ? '1' : '0' }}"
-                     data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}">
+                     data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}"
+                     @if($topic->video_segments) data-video-segments='@json($topic->video_segments)' @endif>
                 @if($topic->show_title)
                     <h2>{{ $topic->title }}</h2>
                 @endif
@@ -154,6 +155,9 @@
                 <section class="content-panel" id="content-subtopic-{{ $subtopic->id }}"
                          data-show-turtle="{{ $subtopic->show_turtle ? '1' : '0' }}"
                          data-turtle-voice="{{ $subtopic->turtle_voice ?? '0' }}">
+                         @if($subtopic->video_segments)
+             data-video-segments='@json($subtopic->video_segments)'
+         @endif
                     @if($subtopic->show_title)
                         <h2>{{ $subtopic->title }}</h2>
                     @endif
@@ -948,7 +952,7 @@
 
 <script>
 // ====== CONFIGURACIÓN ELEVENLABS ======
-const ELEVENLABS_API_KEY = 'sk_abdb547b1e48007a9557c9ee79f33b4c226d583598ada4db';
+const ELEVENLABS_API_KEY = 's';
 
 // VOCES ALTERNADAS - Una para cada tortuguita
 const ELEVENLABS_VOICES = [
@@ -1079,6 +1083,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const bar = document.querySelector('.course-progress-bar');
 
     let index = 0;
+    let autoplayActive = false; // ✅ MOVER AQUÍ PARA QUE SEA ACCESIBLE
 
     panels.forEach(p => p.style.display = 'none');
     showIndex(0);
@@ -1218,7 +1223,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btnPrev').onclick = ()=> showIndex(index-1);
 
     // ====== AUTOPLAY ======
-    let autoplayActive = false;
     const btnAutoplay = document.getElementById('btnAutoplay');
     
     btnAutoplay.onclick = ()=>{
@@ -1262,6 +1266,147 @@ document.addEventListener('DOMContentLoaded', function () {
         readCurrentPanel();
     }
     
+    // ✅ FUNCIÓN MEJORADA: Manejar video con segmentos
+    function handleVideoWithSegments(video, panel) {
+        console.log('🎥 Manejando video con posibles segmentos...');
+        
+        // Obtener segmentos del panel
+        let segments = [];
+        const segmentsData = panel.dataset.videoSegments;
+        
+        if (segmentsData) {
+            try {
+                const parsedSegments = JSON.parse(segmentsData);
+                // ✅ Convertir objeto con índices numéricos a array
+                segments = Object.values(parsedSegments);
+                console.log('📊 Segmentos encontrados:', segments);
+            } catch (e) {
+                console.log('⚠️ No hay segmentos definidos, usando tortuguita por defecto');
+            }
+        }
+        
+        // Función para convertir MM:SS a segundos
+        function timeToSeconds(timeStr) {
+            const [minutes, seconds] = timeStr.split(':').map(Number);
+            return minutes * 60 + seconds;
+        }
+        
+        let currentSegmentIndex = -1;
+        let turtleUpdateInterval = null;
+        
+        // Función para actualizar tortuguita según el tiempo actual
+        function updateTurtleByTime() {
+            const currentTime = video.currentTime;
+            
+            if (segments.length === 0) {
+                // Sin segmentos, usar tortuguita por defecto del panel
+                const showTurtle = panel.dataset.showTurtle === '1';
+                const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+                
+                if (showTurtle && !document.getElementById('turtle-mascot')?.classList.contains('active')) {
+                    showTurtleWithVoice(turtleVoice);
+                }
+                return;
+            }
+            
+            // Buscar segmento activo
+            let activeSegmentIndex = -1;
+            
+            for (let i = 0; i < segments.length; i++) {
+                const segment = segments[i];
+                const startTime = timeToSeconds(segment.start);
+                const endTime = segment.end ? timeToSeconds(segment.end) : video.duration;
+                
+                if (currentTime >= startTime && currentTime < endTime) {
+                    activeSegmentIndex = i;
+                    break;
+                }
+            }
+            
+            // Si cambió el segmento activo
+            if (activeSegmentIndex !== currentSegmentIndex) {
+                currentSegmentIndex = activeSegmentIndex;
+                
+                if (activeSegmentIndex >= 0) {
+                    const segment = segments[activeSegmentIndex];
+                    const turtleVoice = parseInt(segment.turtle);
+                    
+                    console.log(`🐢 Cambiando a tortuguita ${turtleVoice} (${turtleVoice === 0 ? 'Toby' : 'Mely'})`);
+                    
+                    showTurtleWithVoice(turtleVoice);
+                } else {
+                    // Fuera de todos los segmentos, ocultar tortuguita
+                    console.log('👋 Ocultando tortuguita (fuera de segmentos)');
+                    hideTurtle();
+                }
+            }
+        }
+        
+        // Iniciar monitoreo de tiempo
+        updateTurtleByTime(); // Actualizar inmediatamente
+        
+        turtleUpdateInterval = setInterval(updateTurtleByTime, 500); // Revisar cada 0.5 segundos
+        
+        // Limpiar interval cuando termina el video
+video.addEventListener('ended', function videoEnded() {
+    console.log('✅ Video completado');
+    
+    if (turtleUpdateInterval) {
+        clearInterval(turtleUpdateInterval);
+    }
+    
+    hideTurtle();
+    
+    if (autoplayActive) {
+        // ✅ VERIFICAR SI EL SIGUIENTE ES UN JUEGO ANTES DE AVANZAR
+        setTimeout(() => {
+            // Simular avance para verificar
+            const links = [...document.querySelectorAll('.syllabus-link')];
+            const currentIndex = links.findIndex(l => l.classList.contains('active'));
+            const nextIndex = currentIndex + 1;
+            
+            if (nextIndex < links.length) {
+                const nextTarget = links[nextIndex].dataset.target;
+                const nextPanel = document.querySelector(nextTarget);
+                
+                if (nextPanel && nextPanel.querySelector('.game-container')) {
+    console.log('🎮 Siguiente es un juego - avanzando y mostrando modal');
+    
+    // ✅ PRIMERO avanzar al juego
+    window.currentTurtleIndex = (window.currentTurtleIndex + 1) % 2;
+    const links = [...document.querySelectorAll('.syllabus-link')];
+    const currentIndex = links.findIndex(l => l.classList.contains('active'));
+    showIndex(currentIndex + 1);
+    
+    // ✅ LUEGO pausar autoplay y mostrar modal
+    setTimeout(() => {
+        autoplayActive = false;
+        const btnAutoplay = document.getElementById('btnAutoplay');
+        if (btnAutoplay) {
+            btnAutoplay.textContent = '▶️ Autoplay';
+            btnAutoplay.style.background = '';
+        }
+        showGameModal();
+    }, 300);
+} else {
+    advanceToNext();
+}
+            }
+        }, 1000);
+    }
+    
+    video.removeEventListener('ended', videoEnded);
+});
+        
+        // Limpiar interval si se pausa (y no está en autoplay)
+        video.addEventListener('pause', function videoPaused() {
+            if (turtleUpdateInterval && !autoplayActive) {
+                clearInterval(turtleUpdateInterval);
+                hideTurtle();
+            }
+        });
+    }
+    
     function readCurrentPanel() {
         const panel = document.querySelector('.content-panel:not([style*="display: none"])');
         if (!panel) return;
@@ -1271,20 +1416,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (video) {
             console.log('🎥 Video detectado');
             
-            const showTurtle = panel.dataset.showTurtle === '1';
-            const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
-            
-            if (showTurtle) {
-                showTurtleWithVoice(turtleVoice);
-                
-                video.addEventListener('ended', () => {
-                    console.log('✅ Video del CURSO completado');
-                    hideTurtle();
-                    if (autoplayActive) {
-                        setTimeout(() => advanceToNext(), 1000);
-                    }
-                });
-            }
+            // ✅ USAR LA FUNCIÓN QUE MANEJA SEGMENTOS
+            handleVideoWithSegments(video, panel);
             
             if (autoplayActive) {
                 const title = panel.querySelector('h2');
@@ -1302,6 +1435,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         () => {
                             if (autoplayActive) {
                                 setTimeout(() => {
+                                    video.currentTime = 0;
                                     video.play().catch(() => {
                                         if (autoplayActive) advanceToNext();
                                     });
@@ -1310,6 +1444,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     );
                 } else {
+                    video.currentTime = 0;
                     video.play();
                 }
             }
@@ -1317,49 +1452,78 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         // 2. BUSCAR VIDEOS en iframes
-        const allIframes = panel.querySelectorAll('iframe');
-        for (let iframe of allIframes) {
-            if (iframe.src && 
-                (iframe.src.toLowerCase().includes('.mp4') || 
-                 iframe.src.toLowerCase().includes('.webm') ||
-                 iframe.src.toLowerCase().includes('.ogg') ||
-                 iframe.src.toLowerCase().includes('video'))) {
+const allIframes = panel.querySelectorAll('iframe');
+for (let iframe of allIframes) {
+    if (iframe.src && 
+        (iframe.src.toLowerCase().includes('.mp4') || 
+         iframe.src.toLowerCase().includes('.webm') ||
+         iframe.src.toLowerCase().includes('.ogg') ||
+         iframe.src.toLowerCase().includes('video'))) {
+        
+        console.log('🎥 Video en iframe detectado:', iframe.src);
+        
+        // ✅ Intentar acceder al video dentro del iframe
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+                const video = iframeDoc.querySelector('video');
                 
-                console.log('🎥 Video en iframe detectado:', iframe.src);
-                
-                const showTurtle = panel.dataset.showTurtle === '1';
-                const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
-                
-                if (showTurtle) {
-                    showTurtleWithVoice(turtleVoice);
-                }
-                
-                if (autoplayActive) {
-                    const title = panel.querySelector('h2');
-                    const description = panel.querySelector('p');
+                if (video) {
+                    console.log('✅ Video tag encontrado dentro del iframe');
                     
-                    let textToRead = '';
-                    if (title) textToRead += title.textContent + '. ';
-                    if (description) textToRead += description.textContent;
-                    textToRead = textToRead.trim();
+                    // ✅ USAR handleVideoWithSegments para el video del iframe
+                    handleVideoWithSegments(video, panel);
                     
-                    if (textToRead.length > 10) {
-                        speakWithElevenLabs(
-                            textToRead,
-                            () => {},
-                            () => {
-                                if (autoplayActive) {
-                                    tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+                    if (autoplayActive) {
+                        const title = panel.querySelector('h2');
+                        const description = panel.querySelector('p');
+                        
+                        let textToRead = '';
+                        if (title) textToRead += title.textContent + '. ';
+                        if (description) textToRead += description.textContent;
+                        textToRead = textToRead.trim();
+                        
+                        if (textToRead.length > 10) {
+                            speakWithElevenLabs(
+                                textToRead,
+                                () => {},
+                                () => {
+                                    if (autoplayActive) {
+                                        setTimeout(() => {
+                                            video.currentTime = 0;
+                                            video.play().catch(() => {
+                                                if (autoplayActive) advanceToNext();
+                                            });
+                                        }, 1000);
+                                    }
                                 }
-                            }
-                        );
-                    } else {
-                        tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+                            );
+                        } else {
+                            video.currentTime = 0;
+                            video.play();
+                        }
                     }
+                    return;
                 }
-                return;
             }
+        } catch (err) {
+            console.log('⚠️ No se pudo acceder al video dentro del iframe, usando método legacy');
         }
+        
+        // FALLBACK: Si no se pudo acceder al iframe, usar método antiguo
+        const showTurtle = panel.dataset.showTurtle === '1';
+        const turtleVoice = parseInt(panel.dataset.turtleVoice) || 0;
+        
+        if (showTurtle) {
+            showTurtleWithVoice(turtleVoice);
+        }
+        
+        if (autoplayActive) {
+            tryDetectIframeVideoDuration(iframe, showTurtle, turtleVoice);
+        }
+        return;
+    }
+}
         
         // 3. BUSCAR PDFs CON CANVAS
         const pdfCanvas = panel.querySelector('canvas[data-pdf-id]');
@@ -1541,15 +1705,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 const video = iframeDoc.querySelector('video');
                 
                 if (video) {
-                    video.currentTime = 0;
-                    video.play().then(() => {
-                        video.addEventListener('ended', () => {
-                            if (showTurtle) hideTurtle();
-                            if (autoplayActive) setTimeout(() => advanceToNext(), 1000);
-                        });
-                    }).catch(() => {
-                        useEstimatedTime(showTurtle);
-                    });
+    video.currentTime = 0;
+    video.play().then(() => {
+        video.addEventListener('ended', () => {
+            if (showTurtle) hideTurtle();
+            
+            if (autoplayActive) {
+                setTimeout(() => {
+                    // ✅ VERIFICAR SI EL SIGUIENTE ES UN JUEGO
+                    const links = [...document.querySelectorAll('.syllabus-link')];
+                    const currentIndex = links.findIndex(l => l.classList.contains('active'));
+                    const nextIndex = currentIndex + 1;
+                    
+                    if (nextIndex < links.length) {
+                        const nextTarget = links[nextIndex].dataset.target;
+                        const nextPanel = document.querySelector(nextTarget);
+                        
+                        if (nextPanel && nextPanel.querySelector('.game-container')) {
+    console.log('🎮 Siguiente es un juego - avanzando y mostrando modal');
+    
+    // ✅ PRIMERO avanzar al juego
+    window.currentTurtleIndex = (window.currentTurtleIndex + 1) % 2;
+    const links = [...document.querySelectorAll('.syllabus-link')];
+    const currentIndex = links.findIndex(l => l.classList.contains('active'));
+    showIndex(currentIndex + 1);
+    
+    // ✅ LUEGO pausar autoplay y mostrar modal
+    setTimeout(() => {
+        autoplayActive = false;
+        const btnAutoplay = document.getElementById('btnAutoplay');
+        if (btnAutoplay) {
+            btnAutoplay.textContent = '▶️ Autoplay';
+            btnAutoplay.style.background = '';
+        }
+        showGameModal();
+    }, 300);
+} else {
+    advanceToNext();
+}
+                    }
+                }, 1000);
+            }
+        });
+    }).catch(() => {
+        useEstimatedTime(showTurtle);
+    });
                 } else {
                     useEstimatedTime(showTurtle);
                 }
@@ -1786,8 +1986,6 @@ function speak(text) {
             }
         }
     );
-}
-
 }
 </script>
 

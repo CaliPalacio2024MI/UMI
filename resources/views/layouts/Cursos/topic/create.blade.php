@@ -67,26 +67,62 @@
                         <input type="file" id="file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                     </div>
 
-                    {{-- OPCIONES DE TORTUGUITA (solo para videos en TEMAS) --}}
-                    <div id="topic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
-                        <div style="margin-bottom: 10px;">
-                            <label style="display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" name="show_turtle" value="1" id="topic_show_turtle_checkbox" style="width: auto; height: auto;">
-                                <strong>Mostrar tortuguita durante el video</strong>
-                            </label>
-                            <small style="color: #666; margin-left: 24px;">
-                                La tortuguita permanecerá visible mientras el video se reproduce
-                            </small>
-                        </div>
-                        
-                        <div id="topic-turtle-voice-selector" style="display: none; margin-left: 24px;">
-                            <label for="topic_turtle_voice">¿Cuál tortuguita?</label>
-                            <select name="turtle_voice" id="topic_turtle_voice">
-                                <option value="0">🐢 Toby (Masculino)</option>
-                                <option value="1">🐢 Mely (Femenino)</option>
-                            </select>
-                        </div>
-                    </div>
+                    {{-- OPCIONES DE TORTUGUITA CON SEGMENTOS --}}
+<div id="topic-turtle-options" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
+    
+    <div class="form-group">
+        <label>
+            <input type="checkbox" name="show_turtle" value="1" id="topic_show_turtle_checkbox" style="width: auto; height: auto;">
+            <strong>Mostrar tortuguita durante el video</strong>
+        </label>
+        <small style="color: #666; margin-left: 24px;">
+            La tortuguita aparecerá mientras el video se reproduce
+        </small>
+    </div>
+
+    <div id="topic-turtle-voice-selector" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+        
+        <!-- TABS -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd;">
+            <button type="button" class="turtle-mode-btn active" data-mode="simple" data-form="topic" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid #4f46e5; font-weight: bold;">
+                🐢 Simple
+            </button>
+            <button type="button" class="turtle-mode-btn" data-mode="segments" data-form="topic" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; color: #666;">
+                ⏱️ Segmentos
+            </button>
+        </div>
+
+        <!-- MODO SIMPLE -->
+        <div id="topic-turtle-simple-mode" style="display: block;">
+            <label for="topic_turtle_voice">Selecciona la tortuguita:</label>
+            <select name="turtle_voice" id="topic_turtle_voice" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="0">🐢 Toby (Masculino)</option>
+                <option value="1">🐢 Mely (Femenino)</option>
+            </select>
+            <small style="display: block; margin-top: 5px; color: #666;">
+                La tortuguita aparecerá durante todo el video
+            </small>
+        </div>
+
+        <!-- MODO SEGMENTOS -->
+        <div id="topic-turtle-segments-mode" style="display: none;">
+            <p style="margin-bottom: 15px; color: #555;">
+                <strong>📹 Videos largos:</strong> Define cuándo aparece cada tortuguita
+            </p>
+
+            <div id="topic-segments-container"></div>
+
+            <button type="button" id="topic-add-segment-btn" style="margin-top: 10px; padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                ➕ Agregar Segmento
+            </button>
+
+            <small style="display: block; margin-top: 10px; color: #666;">
+                💡 Tip: Formato de tiempo MM:SS (ej: 01:30)
+            </small>
+        </div>
+    </div>
+    
+</div>
 
                      <button type="submit" class="btn-successs">+ Añadir Tema </button>
 
@@ -342,29 +378,65 @@
                         </div>
                     </div>
 
-                    {{-- OPCIONES DE TORTUGUITA (solo para videos) --}}
-                    <div id="edit-topic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
-                        <div style="margin-bottom: 10px;">
-                            <label style="display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" name="show_turtle" value="1" id="edit_topic_show_turtle_checkbox" style="width: auto; height: auto;">
-                                <strong>Mostrar tortuguita durante el video</strong>
-                            </label>
-                            <small style="color: #666; margin-left: 24px;">
-                                La tortuguita permanecerá visible mientras el video se reproduce
-                            </small>
-                        </div>
-                        
-                        <div id="edit-topic-turtle-voice-selector" style="display: none; margin-left: 24px;">
-                            <label for="edit_topic_turtle_voice">¿Cuál tortuguita?</label>
-                            <select name="turtle_voice" id="edit_topic_turtle_voice">
-                                <option value="0">🐢 Toby (Masculino)</option>
-                                <option value="1">🐢 Mely (Femenino)</option>
-                            </select>
-                        </div>
-                    </div>
+                    {{-- OPCIONES DE TORTUGUITA CON SEGMENTOS (EDICIÓN) --}}
+<div id="edit-topic-turtle-options" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
+    
+    <div class="form-group">
+        <label>
+            <input type="checkbox" name="show_turtle" value="1" id="edit_topic_show_turtle_checkbox" style="width: auto; height: auto;">
+            <strong>Mostrar tortuguita durante el video</strong>
+        </label>
+        <small style="color: #666; margin-left: 24px;">
+            La tortuguita aparecerá mientras el video se reproduce
+        </small>
+    </div>
+
+    <div id="edit-topic-turtle-voice-selector" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+        
+        <!-- TABS -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd;">
+            <button type="button" class="turtle-mode-btn active" data-mode="simple" data-form="edit" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid #4f46e5; font-weight: bold;">
+                🐢 Simple
+            </button>
+            <button type="button" class="turtle-mode-btn" data-mode="segments" data-form="edit" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; color: #666;">
+                ⏱️ Segmentos
+            </button>
+        </div>
+
+        <!-- MODO SIMPLE -->
+        <div id="edit-turtle-simple-mode" style="display: block;">
+            <label for="edit_topic_turtle_voice">Selecciona la tortuguita:</label>
+            <select name="turtle_voice" id="edit_topic_turtle_voice" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="0">🐢 Toby (Masculino)</option>
+                <option value="1">🐢 Mely (Femenino)</option>
+            </select>
+            <small style="display: block; margin-top: 5px; color: #666;">
+                La tortuguita aparecerá durante todo el video
+            </small>
+        </div>
+
+        <!-- MODO SEGMENTOS -->
+        <div id="edit-turtle-segments-mode" style="display: none;">
+            <p style="margin-bottom: 15px; color: #555;">
+                <strong>📹 Videos largos:</strong> Define cuándo aparece cada tortuguita
+            </p>
+
+            <div id="edit-segments-container"></div>
+
+            <button type="button" id="edit-add-segment-btn" style="margin-top: 10px; padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                ➕ Agregar Segmento
+            </button>
+
+            <small style="display: block; margin-top: 10px; color: #666;">
+                💡 Tip: Formato de tiempo MM:SS (ej: 01:30)
+            </small>
+        </div>
+    </div>
+    
+</div>
 
                     <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn-successs">Guardar Cambios</button>
+                        <button type="submit" class="btn-successs" onclick="console.log('🔍 Datos del formulario de edición:', new FormData(document.getElementById('edit-topic-form')))">Guardar Cambios</button>
                         <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancelar</button>
                     </div>
                 </form>
@@ -472,6 +544,7 @@
                                         data-show-title="{{ $topic->show_title ? '1' : '0' }}"
                                         data-show-turtle="{{ $topic->show_turtle ? '1' : '0' }}"
                                         data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}"
+                                        data-video-segments='@json($topic->video_segments)'
                                         data-update-url="{{ route('topics.update', $topic->id) }}"
                                         title="Editar Tema">
                                     <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" 
@@ -1198,6 +1271,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const filePath = btn.dataset.filePath;
             const showTitle = btn.dataset.showTitle;
             const showTurtle = btn.dataset.showTurtle;
+            const videoSegments = btn.dataset.videoSegments; // ✅ AGREGAR ESTA LÍNEA
             const turtleVoice = btn.dataset.turtleVoice;
             const updateUrl = btn.dataset.updateUrl;
 
@@ -1233,15 +1307,71 @@ document.addEventListener('DOMContentLoaded', function() {
                                    fileName.toLowerCase().endsWith('.wmv');
                     
                     if (isVideo && editTurtleOptions) {
-                        editTurtleOptions.style.display = 'block';
+    editTurtleOptions.style.display = 'block';
+    
+    // Cargar valores existentes
+    if (showTurtle === '1') {
+        editShowTurtleCheckbox.checked = true;
+        editTurtleVoiceSelector.style.display = 'block';
+        
+        // ✅ CARGAR SEGMENTOS SI EXISTEN
+        console.log('📂 Cargando datos de tortuguita...');
+        console.log('videoSegments raw:', videoSegments);
+        
+        if (videoSegments && videoSegments !== 'null' && videoSegments !== '' && videoSegments !== '[]') {
+            try {
+                let segments;
+                
+                // Si es string, parsearlo
+                if (typeof videoSegments === 'string') {
+                    segments = JSON.parse(videoSegments);
+                } else {
+                    segments = videoSegments;
+                }
+                
+                console.log('✅ Segmentos parseados:', segments);
+                
+                // Si hay segmentos, cambiar a tab de segmentos
+                if (segments && segments.length > 0) {
+                    console.log(`📊 Encontrados ${segments.length} segmentos, cambiando a modo segmentos...`);
+                    
+                    // Click en tab de segmentos
+                    const editTabSegments = document.querySelector('.turtle-mode-btn[data-form="edit"][data-mode="segments"]');
+                    if (editTabSegments) {
+                        editTabSegments.click();
                         
-                        // Cargar valores existentes
-                        if (showTurtle === '1') {
-                            editShowTurtleCheckbox.checked = true;
-                            editTurtleVoiceSelector.style.display = 'block';
-                            editTurtleVoiceSelect.value = turtleVoice || '0';
-                        }
+                        // Esperar un poco para que el DOM se actualice
+                        setTimeout(() => {
+                            const editContainer = document.getElementById('edit-segments-container');
+                            if (editContainer) {
+                                // Limpiar container
+                                editContainer.innerHTML = '';
+                                
+                                // Cargar cada segmento
+                                segments.forEach((seg, index) => {
+                                    console.log(`  ➕ Cargando segmento ${index + 1}:`, seg);
+                                    addSegment('edit', seg.start, seg.end, seg.turtle.toString());
+                                });
+                                
+                                console.log('✅ Todos los segmentos cargados!');
+                            }
+                        }, 100);
                     }
+                } else {
+                    console.log('ℹ️ No hay segmentos, usando modo simple');
+                    editTurtleVoiceSelect.value = turtleVoice || '0';
+                }
+            } catch (e) {
+                console.error('❌ Error parseando segmentos:', e);
+                console.log('Usando modo simple por defecto');
+                editTurtleVoiceSelect.value = turtleVoice || '0';
+            }
+        } else {
+            console.log('ℹ️ Sin video_segments, modo simple');
+            editTurtleVoiceSelect.value = turtleVoice || '0';
+        }
+    }
+}
                 } else {
                     currentFileText.textContent = 'No hay archivo adjunto.';
                 }
@@ -1304,6 +1434,150 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===================================================
     setFormMode(currentMode);
 });
+
+// ===================================================
+// MANEJO DE SEGMENTOS DE VIDEO
+// ===================================================
+
+let topicSegmentCount = 0;
+let subtopicSegmentCount = 0;
+let editSegmentCount = 0; // ✅ AGREGAR
+
+// TABS SIMPLE/SEGMENTOS
+document.querySelectorAll('.turtle-mode-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const mode = this.dataset.mode;
+        const form = this.dataset.form;
+        
+        const tabs = this.parentElement.querySelectorAll('.turtle-mode-btn');
+        tabs.forEach(t => {
+            t.classList.remove('active');
+            t.style.borderBottom = '3px solid transparent';
+            t.style.fontWeight = 'normal';
+            t.style.color = '#666';
+        });
+        
+        this.classList.add('active');
+        this.style.borderBottom = '3px solid #4f46e5';
+        this.style.fontWeight = 'bold';
+        this.style.color = '#000';
+        
+        const simpleMode = document.getElementById(`${form}-turtle-simple-mode`);
+        const segmentsMode = document.getElementById(`${form}-turtle-segments-mode`);
+        const container = document.getElementById(`${form}-segments-container`);
+        
+        if (mode === 'simple') {
+            simpleMode.style.display = 'block';
+            segmentsMode.style.display = 'none';
+        } else {
+            simpleMode.style.display = 'none';
+            segmentsMode.style.display = 'block';
+            if (container.children.length === 0) {
+                addSegment(form, '00:00', '', '0');
+            }
+        }
+    });
+});
+
+// BOTÓN AGREGAR SEGMENTO - TEMA
+const topicAddBtn = document.getElementById('topic-add-segment-btn');
+if (topicAddBtn) {
+    topicAddBtn.addEventListener('click', () => addSegment('topic', '', '', '0'));
+}
+
+// BOTÓN AGREGAR SEGMENTO - SUBTEMA
+const subtopicAddBtn = document.getElementById('subtopic-add-segment-btn');
+if (subtopicAddBtn) {
+    subtopicAddBtn.addEventListener('click', () => addSegment('subtopic', '', '', '0'));
+}
+
+function addSegment(form, start = '', end = '', turtle = '0') {
+    const count = form === 'topic' ? ++topicSegmentCount : (form === 'subtopic' ? ++subtopicSegmentCount : ++editSegmentCount);
+    const container = document.getElementById(`${form}-segments-container`);
+    
+    console.log(`➕ Agregando segmento #${count} a formulario: ${form}`, {start, end, turtle}); // ✅ AGREGAR ESTE LOG
+    
+    const div = document.createElement('div');
+    // ... resto del código
+    div.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px;border:1px solid #ddd;border-radius:4px;background:white';
+    div.innerHTML = `
+        <div style="flex:1">
+            <label style="font-size:12px;color:#666">Inicio</label>
+            <input type="text" name="video_segments[${count}][start]" placeholder="00:00" value="${start}" 
+                   class="segment-time" style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px" pattern="[0-9]{2}:[0-9]{2}">
+        </div>
+        <div style="flex:1">
+            <label style="font-size:12px;color:#666">Fin</label>
+            <input type="text" name="video_segments[${count}][end]" placeholder="01:30" value="${end}"
+                   class="segment-time" style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px" pattern="[0-9]{2}:[0-9]{2}">
+        </div>
+        <div style="flex:1.5">
+            <label style="font-size:12px;color:#666">Tortuguita</label>
+            <select name="video_segments[${count}][turtle]" style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px">
+                <option value="0" ${turtle==='0'?'selected':''}>🐢 Toby</option>
+                <option value="1" ${turtle==='1'?'selected':''}>🐢 Mely</option>
+            </select>
+        </div>
+        <button type="button" class="remove-segment" style="padding:8px 12px;background:#ff5252;color:white;border:none;border-radius:4px;cursor:pointer;align-self:flex-end">🗑️</button>
+    `;
+    
+    div.querySelector('.remove-segment').addEventListener('click', () => {
+        if (container.children.length > 1) div.remove();
+        else alert('Debe haber al menos un segmento');
+    });
+    
+    container.appendChild(div);
+}
+
+// VALIDAR FORMATO TIEMPO
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const inputs = form.querySelectorAll('.segment-time');
+        for (let input of inputs) {
+            if (input.value && !/^[0-9]{2}:[0-9]{2}$/.test(input.value)) {
+                e.preventDefault();
+                alert(`Formato incorrecto: "${input.value}"\nUsa MM:SS (ej: 01:30)`);
+                input.focus();
+                return false;
+            }
+        }
+    });
+});
+
+// BOTÓN AGREGAR SEGMENTO - EDICIÓN
+const editAddBtn = document.getElementById('edit-add-segment-btn');
+if (editAddBtn) {
+    editAddBtn.addEventListener('click', () => addSegment('edit', '', '', '0'));
+}
+
+
+// 🔍 DEBUG TEMPORAL - Ver qué se envía en edición
+const editFormDebug = document.getElementById('edit-topic-form');
+if (editFormDebug) {
+    editFormDebug.addEventListener('submit', function(e) {
+        const formData = new FormData(this);
+        
+        console.log('📤 ENVIANDO FORMULARIO DE EDICIÓN:');
+        console.log('='.repeat(50));
+        
+        for (let [key, value] of formData.entries()) {
+            if (key.includes('video_segments')) {
+                console.log(`✅ ${key} = ${value}`);
+            }
+        }
+        
+        console.log('='.repeat(50));
+        
+        // Verificar si hay inputs de segmentos en el DOM
+        const segmentInputs = this.querySelectorAll('[name^="video_segments"]');
+        console.log(`📊 Total de inputs de segmentos encontrados: ${segmentInputs.length}`);
+        
+        segmentInputs.forEach(input => {
+            console.log(`  - ${input.name} = ${input.value}`);
+        });
+    });
+}
+
 </script>
 
 @endpush
