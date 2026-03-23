@@ -33,6 +33,11 @@ use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController; 
 
+// --- Controladores CRM ---
+use App\Http\Controllers\CRM\CRMController;
+
+// --- Formulario CRM ---
+use App\Http\Controllers\Public\LeadPublicController;
 
 // ==========================================================================
 // 1. ACCESO PÚBLICO
@@ -41,9 +46,11 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::get('/', function () {
-    return redirect()->route('dashboard');
-});
+Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
+
+// FORMULARIO PÚBLICO
+Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('public.inscripcion.create');
+Route::post('/registro-publico', [LeadPublicController::class, 'store'])->name('public.inscripcion.store');
 
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
@@ -238,6 +245,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::put('/lista-estudiantes/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-estudiantes/{id}', [studentController::class, 'destroy'])->name('students.destroy');
         });
+    
+        
 
 
         // ------------------------------------------------------------
@@ -265,5 +274,46 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     // Nota: está dentro del middleware ['auth', 'ajax', 'spa'], así que idealmente llámalo como AJAX
     // (por ejemplo desde fetch) o asegurando el header 'X-Requested-With: XMLHttpRequest'.
     Route::get('/external-data', [ExternalDataController::class, 'index'])->name('external-data.index');
+            // =======================
+            // MÓDULO CRM (INDEPENDIENTE)
+            // =======================
+
+            Route::prefix('crm')
+            ->name('crm.')
+            ->middleware(['role:master,coordinador_ctp,ctp'])
+            ->group(function () {
+
+                // LEADS → todos
+                Route::get('/leads', [CRMController::class, 'leads'])->name('leads');
+
+                Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
+
+                // ESTADÍSTICAS → TODOS
+                Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
+
+
+                // 🔒 SOLO Master y Coordinador
+                Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+
+                    Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
+
+                        // Comisiones: solo Master (ya está dentro del middleware master,coordinador_ctp,
+                        // pero la vista solo la usa master
+                        Route::middleware(['role:master'])->group(function () {
+                            Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
+                        });
+
+                    // ASIGNAR CTP
+                    Route::post('/leads/{lead}/asignar-ctp', [CRMController::class, 'asignarCTP'])
+                        ->name('leads.asignar_ctp');
+
+                    Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])
+                        ->name('leads.destroy');
+
+                });
+
+                Route::get('/crm/estadisticas/data', [EstadisticasController::class, 'data'])->name('crm.estadisticas.data');
+
+            });
 
 }); // Fin Middleware Auth + Ajax + SPA

@@ -32,11 +32,13 @@ class RoleMiddleware
             return redirect()->route('context.set'); 
         }
 
-        // B. Verificar si el rol activo coincide con los roles permitidos
+        $activeRoleName = strtoupper($activeRoleName);
+        $roles = array_map('strtoupper', $roles);
+
         if (!in_array($activeRoleName, $roles)) {
-            // No permitir el acceso si el rol activo no está en la lista
-            abort(403, 'Acceso denegado. Tu rol activo (' . ucfirst($activeRoleName) . ') no tiene permisos para esta sección.');
+            abort(403, 'Acceso denegado. Tu rol activo (' . $activeRoleName . ') no tiene permisos para esta sección.');
         }
+
 
         // Esto reemplaza la lógica antigua de $user->hasAnyRole($roles)
         return $next($request);

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -12,7 +13,13 @@
   <title>@yield('title','Dashboard')</title>
   
   {{-- Vite inyecta los enlaces a CSS/JS de resources --}}
+  @vite(['resources/css/CRM/leads.css'])
+  @vite(['resources/css/CRM/prospectos.css'])
+  @vite(['resources/css/CRM/estadisticas.css'])
+  @vite(['resources/css/CRM/comisiones.css'])
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @stack('css')
+
 </head>
 <body>
   {{-- Botón menú móvil --}}
@@ -80,6 +87,7 @@
       @yield('content')
     </main>
   </div>
+  @stack('scripts')
 
   {{-- Modal Ver docente (en layout para que exista siempre con SPA) --}}
   <div id="teacherViewModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
@@ -134,7 +142,6 @@
     </div>
   </div>
   @endif
-
 {{-- ======================= SCRIPT MAESTRO ======================= --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -481,6 +488,9 @@ function closeFacturaModal(modal) {
         });
     });
 </script>
+{{-- Librerías globales para CRM Prospectos --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 @stack('scripts')
 

@@ -1,0 +1,189 @@
+/* FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #eef2f3;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* LAYOUT & SIDEBAR */
+/* HEADER & FOOTER */
+.public-header {
+    background-color: #fff;
+    /* Dark blue from image/leads.css style */
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.public-footer {
+    background-color: #0d1e38;
+    /* Dark blue from image/leads.css style */
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.public-header {
+    justify-content: flex-start;
+}
+
+.header-logo img {
+    height: 120px;
+    /* Adjust based on actual logo */
+}
+
+.footer-logo img {
+    height: 70px;
+}
+
+/* MAIN CONTENT */
+.public-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* Cambiado de center a flex-start */
+    padding: 0 20px 40px 20px;
+    /* Top padding 0 */
+    /* Reducido de 40px a 20px */
+    background-color: #fff;
+}
+
+/* FORM CARD */
+.enrollment-card {
+    background-color: #EDF2F4;
+    /* Light gray from previous implementation/image */
+    border-radius: 20px;
+    padding: 50px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 25px;
+}
+
+/* ALERTS */
+.alert {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+/* FORM LAYOUT */
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-label {
+    width: 30%;
+    text-align: right;
+    padding-right: 20px;
+    color: #444;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.form-input-container {
+    width: 70%;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 50px;
+    /* Pill shape */
+    border: none;
+    background-color: #fff;
+    font-size: 15px;
+    outline: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(74, 108, 168, 0.2);
+    /* Light blue focus ring */
+}
+
+/* NESTED / SPLIT INPUTS */
+.split-inputs {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* Ensure inputs inside split-inputs share width equally */
+.split-inputs .form-control {
+    flex: 1;
+    min-width: 0;
+    /* Prevents overflow */
+}
+
+.split-label {
+    margin-right: 0;
+    /* Gap handles spacing now */
+    white-space: nowrap;
+    color: #444;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+/* BUTTON */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.btn-submit {
+    background-color: #B08955;
+    /* Brown/Gold color */
+    color: white;
+    border: none;
+    padding: 12px 60px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(176, 137, 85, 0.3);
+    transition: background-color 0.3s;
+}
+
+.btn-submit:hover {
+    background-color: #9a7647;
+}
