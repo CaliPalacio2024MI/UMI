@@ -167,7 +167,7 @@
                 <li class="has-submenu {{ request()->routeIs('control.*') || request()->routeIs('escolar.*') ? 'active' : '' }}">
                     <a href="#">
                         <span class="icon" aria-hidden="true">
-                            <img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="Control Icon" style="width:24px;height:24px" loading="lazy">
+                            <img src="{{ asset('images/icons/school-circle-check-solid-full.svg') }}" alt="Control Icon" style="width:24px;height:24px" loading="lazy">
                         </span>
                         <span class="text">Control Administrativo</span>
                     </a>

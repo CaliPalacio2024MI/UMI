@@ -75,4 +75,9 @@ class Career extends Model
     {
         return $this->hasMany(AcademicProfile::class);
     }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
 }

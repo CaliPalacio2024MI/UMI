@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Users\ContextController;
 use App\Http\Controllers\MiInformacion\MiInformacionController;
 use App\Http\Controllers\Ajustes\AjustesController;
+use App\Http\Controllers\ExternalDataController;
 
 // --- Controladores LMS (Cursos) ---
 use App\Http\Controllers\Cursos\CourseController;
@@ -259,5 +260,10 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         });
 
     }); // Fin Middleware Administrativo
+
+    // Endpoint para consumir la API externa (devuelve JSON).
+    // Nota: está dentro del middleware ['auth', 'ajax', 'spa'], así que idealmente llámalo como AJAX
+    // (por ejemplo desde fetch) o asegurando el header 'X-Requested-With: XMLHttpRequest'.
+    Route::get('/external-data', [ExternalDataController::class, 'index'])->name('external-data.index');
 
 }); // Fin Middleware Auth + Ajax + SPA

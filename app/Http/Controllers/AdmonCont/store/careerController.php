@@ -98,7 +98,9 @@ class careerController extends Controller
             'type', 'semesters',
         ]));
 
-        return redirect()->route('control.careers.index')->with('success', '¡Carrera actualizada exitosamente!');
+        return redirect()
+            ->route('control.careers.index', ['modal' => 'success'])
+            ->with('success', 'Departamento actualizado exitosamente.');
     }
     //Eliminar
     //1. Modulo a usar
@@ -106,7 +108,13 @@ class careerController extends Controller
     //                      1.     2.
     public function destroy(Career $carrera)
     {
+        // Eliminar en cascada todo lo que depende de la carrera (en BD: academic_profiles → set null; materias y horario_clases → cascade)
+        $carrera->enrollments()->delete();
+        \App\Models\AdmonCont\HorarioClase::where('career_id', $carrera->id)->delete();
+
         $carrera->delete();
-        return redirect()->route('control.careers.index')->with('success', 'Carrera eliminada exitosamente.');
+        return redirect()
+            ->route('control.careers.index', ['modal' => 'success'])
+            ->with('success', 'Carrera eliminada exitosamente.');
     }
 }

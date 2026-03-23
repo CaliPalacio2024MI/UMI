@@ -15,6 +15,38 @@
            value="{{ old('apellido_materno', $item->apellido_materno ?? '') }}">
 </div>
 
+@php
+    $selectedInstitutionId = old('institution_id');
+    if ($selectedInstitutionId === null) {
+        $selectedInstitutionId = isset($item) ? (optional($item->institutions)->first()->id ?? $item->institution_id ?? null) : null;
+        $selectedInstitutionId = $selectedInstitutionId ?? session('active_institution_id');
+    }
+@endphp
+<div class="form-group">
+    <label for="institution_id">Unidad de Negocio</label>
+    <select id="institution_id" name="institution_id" required class="form-control">
+        <option value="">-- Seleccione Unidad de Negocio --</option>
+        @foreach($institutions ?? [] as $inst)
+            <option value="{{ $inst->id }}" {{ $selectedInstitutionId == $inst->id ? 'selected' : '' }}>
+                {{ $inst->name }}
+            </option>
+        @endforeach
+    </select>
+    @error('institution_id')
+        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+</div>
+
+<div class="form-group">
+    <label for="role_id">Rol Principal</label>
+    <select id="role_id_select" name="role_id" required>
+        <option value="">-- Seleccione Rol --</option>
+       
+    </select>
+</div>
+
 <div class="form-group">
     <label for="RFC">Usuario (RFC)</label>
     <input type="text" id="RFC" name="RFC" required maxlength="13"
@@ -31,20 +63,6 @@
 </div>
 <hr style="margin: 15px 0;">
 
-
-<div class="form-group">
-    <label for="email">Correo Electrónico</label>
-    <input type="email" id="email" name="email" required
-           class="form-control @error('email') is-invalid @enderror"
-           value="{{ old('email', $item->email ?? '') }}">
-           
-   
-    @error('email')
-        <span class="error-message" style="color: red; font-size: 0.85em; display: block; margin-top: 5px;">
-            {{ $message }}
-        </span>
-    @enderror
-</div>
 
 {{-- Campo: Contraseña --}}
 <div class="form-group">
@@ -65,26 +83,8 @@
     @endif
 </div>
 
-{{-- Campo: Confirmar Contraseña --}}
-<div class="form-group">
-    <label for="password_confirmation">Confirmar Contraseña</label>
-    {{-- ¡OJO! El name DEBE ser 'password_confirmation' --}}
-    <input type="password" id="password_confirmation" name="password_confirmation" 
-           class="form-control"
-           {{ isset($item) ? '' : 'required' }}>
-</div>
 <hr style="margin: 15px 0;">
 
-
-<input type="hidden" name="institution_id" value="{{ session('active_institution_id') }}">
-
-<div class="form-group">
-    <label for="role_id">Rol Principal</label>
-    <select id="role_id_select" name="role_id" required>
-        <option value="">-- Seleccione Rol --</option>
-       
-    </select>
-</div>
 
 <div id="admin-modules-wrapper" class="form-group" style="display: none; border: 1px solid #eee; padding: 10px; border-radius: 4px; background-color: #f9f9f9;">
     <label>Módulos a Habilitar para Control Administrativo:</label>

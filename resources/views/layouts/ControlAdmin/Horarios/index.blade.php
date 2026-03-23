@@ -187,8 +187,8 @@
                                     }
                                 @endphp
                                 <td>{!! $celdaCarrera !!}</td>
-                                <td>{!! str_replace('Orientada a ', 'Orientada a<br>', e($horario->materia->nombre ?? '')) !!}</td>
-                                <td>{{ $horario->user->nombre }}</td>
+                                <td>{!! str_replace('Orientada a ', 'Orientada a<br>', e($horario->materia?->nombre ?? '')) !!}</td>
+                                <td>{{ $horario->user?->nombre ?? '—' }}</td>
                                 <td>
                                     <div class="carrer-btn-section" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                         <a href="{{ route('control.schedules.show', $horario->id) }}" class="btn-view" data-show-url="{{ route('control.schedules.show', $horario->id) }}" title="Ver información">

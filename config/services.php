@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -35,4 +34,9 @@ return [
         ],
     ],
 
+    'external_api' => [
+        'access_key' => env('EXTERNAL_API_ACCESS_KEY'),
+        'secret_key' => env('EXTERNAL_API_SECRET_KEY'),
+        'base_url' => env('EXTERNAL_API_BASE_URL'),
+    ],
 ];

@@ -47,11 +47,26 @@
                 <div id="context-switcher-menu" class="context-switcher-menu">
                     <div class="context-switcher-header">Unidad de Negocio</div>
                     <ul>
-                        @foreach ($availableContexts as $context)
+                        @php
+                            // Excluir roles CTP del selector
+                            $filteredContexts = collect($availableContexts)->filter(function ($ctx) {
+                                $roleName = $ctx['role_name'] ?? null;
+                                return !in_array($roleName, ['ctp', 'coordinador_ctp']);
+                            })->values()->all();
+
+                            $institutionCount = collect($filteredContexts)->groupBy('institution_id')->map->count();
+                        @endphp
+
+                        @foreach ($filteredContexts as $context)
                             <li>
                                 <a href="{{ route('context.switch', ['institutionId' => $context['institution_id'], 'roleId' => $context['role_id']]) }}"
                                   data-no-spa>
-                                    <span class="institution">{{ $context['institution_name'] }}</span>
+                                    <span class="institution">
+                                        {{ $context['institution_name'] }}
+                                        @if(($institutionCount[$context['institution_id']] ?? 1) > 1)
+                                            <span class="context-role">({{ $context['display_name'] ?? $context['role_name'] ?? '' }})</span>
+                                        @endif
+                                    </span>
                                 </a>
                             </li>
                         @endforeach
