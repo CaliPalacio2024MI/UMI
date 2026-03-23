@@ -279,7 +279,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             ->group(function () {
 
                 // LEADS → todos
-                Route::get('/', [CRMController::class, 'leads'])->name('leads');
+                Route::get('/leads', [CRMController::class, 'leads'])->name('leads');
 
                 Route::post('/leads/{lead}/seguimiento', [CRMController::class, 'guardarSeguimiento']);
 

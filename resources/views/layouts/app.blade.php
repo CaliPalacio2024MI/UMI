@@ -16,6 +16,7 @@
   @vite(['resources/css/CRM/leads.css'])
   @vite(['resources/css/CRM/prospectos.css'])
   @vite(['resources/css/CRM/estadisticas.css'])
+  @vite(['resources/css/CRM/comisiones.css'])
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   @stack('css')
 
@@ -472,6 +473,9 @@ function closeFacturaModal(modal) {
         });
     });
 </script>
+{{-- Librerías globales para CRM Prospectos --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 @stack('scripts')
 
