@@ -8,41 +8,44 @@
 
 @section('content')
     <div class="crm-estadisticas">
-
+       <form method="GET" action="{{ route('crm.estadisticas') }}">
         {{-- Header --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <div class="header-top">
 
             <h1>ESTADÍSTICOS</h1>
 
-        <button class="btn-exportar"
-        onclick="window.location='{{ route('crm.estadisticas.exportar', request()->query()) }}'">
-            
-            <img src="{{ asset('images/icons/export.svg') }}" alt="Exportar" width="16">
-            <i class="fa fa-file-excel-o"></i> 
-            Exportar
-
-        </button>
-
-        </div>
-        {{-- Filters Bar --}}
-        <form method="GET" action="{{ route('crm.estadisticas') }}">
-            <div class="toolbar mb-8">
-
-                <div class="filtros-izquierda">
-
+            <div class="header-actions">
                     <!-- Fecha Inicio -->
                     <div class="input-group-custom">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                            class="input-custom">
+                            class="input-custom" onchange="this.form.submit()">
                     </div>
 
                     <!-- Fecha Fin -->
                     <div class="input-group-custom">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                        <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom">
+                        <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom"
+                        onchange="this.form.submit()">
                     </div>
+
+                    <!-- Exportar -->
+                   <button type="button" class="btn-exportar"
+                    onclick="exportarExcel()">
+                    
+                    <img src="{{ asset('images/icons/export.svg') }}" width="16">
+                    Exportar
+                </button>
+            </div>
+
+        </div>
+
+        {{-- Filters Bar --}}
+ 
+            <div class="toolbar mb-8">
+
+                <div class="filtros-izquierda">
                     
                     <!-- Filtro CTP -->
                    @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
@@ -93,6 +96,34 @@
                             </option>
 
                         </select>
+                    </div>
+
+
+                    <!-- Filtro Nivel Educativo -->
+                    <div class="input-group-custom select-wrapper filtro-carrera">
+
+                        <select name="nivel_educativo" class="input-custom" onchange="this.form.submit()">
+
+                            <option value="">Todos los niveles</option>
+
+                            <option value="licenciatura" {{ request('nivel_educativo') == 'licenciatura' ? 'selected' : '' }}>
+                                Licenciatura
+                            </option>
+
+                            <option value="maestria" {{ request('nivel_educativo') == 'maestria' ? 'selected' : '' }}>
+                                Posgrado
+                            </option>
+
+                            <option value="doctorado" {{ request('nivel_educativo') == 'doctorado' ? 'selected' : '' }}>
+                                Maestría
+                            </option>
+
+                            <option value="tecnico" {{ request('nivel_educativo') == 'tecnico' ? 'selected' : '' }}>
+                                Doctorado
+                            </option>
+
+                        </select>
+
                     </div>
 
                     <!-- Filtro Carrera -->
@@ -875,5 +906,17 @@
 
     });
     
+</script>
+
+<script>
+    function exportarExcel() {
+
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+
+        const params = new URLSearchParams(formData).toString();
+
+        window.location = "{{ route('crm.estadisticas.exportar') }}?" + params;
+    }
 </script>
 @endpush

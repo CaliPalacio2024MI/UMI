@@ -123,6 +123,22 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label">Nivel educativo:</label>
+                        <div class="form-input-container">
+                            <select name="nivel_educativo" class="form-control">
+                                
+                                <option value="">Seleccione un nivel</option>
+
+                                <!-- Estos son ejemplos, luego se reemplazan con BD -->
+                                <option value="licenciatura">Licenciatura</option>
+                                <option value="maestria">Posgrado</option>
+                                <option value="doctorado">Maestría</option>
+                                <option value="tecnico">Doctorado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">Plan de Estudio/Carrera:</label>
                         <div class="form-input-container">
                             <select name="carrera_id" class="form-control" required>

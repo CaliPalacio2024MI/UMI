@@ -173,6 +173,7 @@ class CRMController extends Controller
             ['Tiempo Promedio', $tiempoPromedio],
 
             [],
+            [],
 
             ['DISTRIBUCIÓN DE PROSPECTOS'],
             ['Estado', 'Total'],
@@ -181,6 +182,7 @@ class CRMController extends Controller
             ['Aspirante', $totalAspirante],
             ['Alumno', $totalAlumno],
 
+            [],
             [],
 
             ['TASA DE CONVERSIÓN'],
@@ -376,17 +378,34 @@ class CRMController extends Controller
             'Aspirante' => array_fill(1, 12, 0),
             'Alumno' => array_fill(1, 12, 0),
         ];
-
+        
         foreach ($leads as $lead) {
 
-            $ultimoSeguimiento = $lead->seguimientos->first();
+            // Filtrar seguimientos por fecha seleccionada
+            $seguimientosFiltrados = $lead->seguimientos->filter(function ($seg) use ($request) {
+
+                $fecha = \Carbon\Carbon::parse($seg->fecha);
+
+                if ($request->filled('fecha_inicio') && $fecha->lt($request->fecha_inicio)) {
+                    return false;
+                }
+
+                if ($request->filled('fecha_fin') && $fecha->gt($request->fecha_fin)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Tomar el último dentro del rango
+            $ultimoSeguimiento = $seguimientosFiltrados->sortByDesc('fecha')->first();
 
             if (!$ultimoSeguimiento) {
                 continue;
             }
 
             $estado = $ultimoSeguimiento->estado;
-            $mes = date('n', strtotime($ultimoSeguimiento->fecha));
+            $mes = \Carbon\Carbon::parse($ultimoSeguimiento->fecha)->month;
 
             if (isset($porMes[$estado])) {
                 $porMes[$estado][$mes]++;
