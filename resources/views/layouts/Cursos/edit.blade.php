@@ -38,6 +38,19 @@
 
         <input type="hidden" name="institution_id" value="{{ $currentInstitution->id }}">
 
+        {{-- MODALIDAD --}}
+        <div class="form-group">
+            <label for="modality">Modalidad</label>
+            <select id="modality" name="modality" required>
+                <option value="" disabled>Selecciona la modalidad</option>
+
+                <option value="presencial" {{ old('modality', $course->modality) == 'presencial' ? 'selected' : ''}}>Presencial</option>
+                <option value="virtual" {{ old('modality', $course->modality) == 'virtual' ? 'selected' : ''}}>Virtual</option>
+                <option value="hibrido" {{ old('modality', $course->modality) == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
+            </select>
+        </div>
+        
+
         {{-- UNIVERSIDAD --}}
         @if ($currentInstitution->name == 'Universidad Mundo Imperial')
 
@@ -81,10 +94,10 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="department_id">Departamento</label>
-                    <select name="department_id" id="department_id" required>
+                    <select name="departments[]" id="department_id" multiple required>
                         @foreach($currentInstitution->departments as $department)
                             <option value="{{ $department->id }}"
-                                @if(old('department_id', $selectedFilters['department_id']) == $department->id) selected @endif>
+                                @if(collect(old('departments', $course->departments->pluck('id')->toArray()))->contains($department->id)) selected @endif>
                                 {{ $department->name }}
                             </option>
                         @endforeach
@@ -93,8 +106,8 @@
 
                 <div class="form-group">
                     <label for="workstation_id">Puesto</label>
-                    <select name="workstation_id" id="workstation_id"
-                        @if(!old('department_id', $selectedFilters['department_id'])) disabled @endif>
+                    <select name="workstations[]" id="workstation_id" multiple
+                        @if(empty(old('departments', $course->departments->pluck('id')->toArray()))) disabled @endif>
                         <option value="">Todos los Puestos</option>
                     </select>
                 </div>
@@ -181,10 +194,10 @@
     const workstationSelect = document.getElementById('workstation_id');
     
     // 3. ID del puesto que ya estaba guardado (si existe)
-    let selectedWorkstationId = "{{ old('workstation_id', $selectedFilters['workstation_id']) }}";
+    let selectedWorkstationIds = @json(old('workstations', $course->workstations->pluck('id')->toArray()));
 
     // 4. Función para poblar los puestos
-    function populateWorkstations(selectedDepartmentId) {
+    function populateWorkstations(selectedDepartmentIds) {
         if (!workstationSelect) return; 
 
         // Limpiamos opciones anteriores (dejamos la opción "Todos los puestos")
@@ -192,15 +205,21 @@
             workstationSelect.remove(1);
         }
 
-        if (selectedDepartmentId && departmentWorkstations[selectedDepartmentId]) {
+        if (selectedDepartmentIds && selectedDepartmentIds.length > 0) {
             workstationSelect.disabled = false;
             
-            const workstations = departmentWorkstations[selectedDepartmentId];
+            let allWorkstations = [];
+
+            selectedDepartmentIds.forEach(function(deptId){
+                if (departmentWorkstations[deptId]) {
+                    allWorkstations = allWorkstations.concat(departmentWorkstations[deptId]);
+                }
+            });
             
-            workstations.forEach(function (workstation) {
+            allWorkstations.forEach(function (workstation) {
                 const option = new Option(workstation.name, workstation.id);
                 // Si este puesto es el que estaba guardado, lo seleccionamos
-                if (workstation.id == selectedWorkstationId) {
+                if (selectedWorkstationIds.includes(workstation.id)) {
                     option.selected = true;
                 }
                 workstationSelect.add(option);
@@ -215,15 +234,18 @@
         departmentSelect.addEventListener('change', function () {
             // Importante: Si el usuario cambia el depto, ya no queremos
             // forzar la selección del puesto guardado anteriormente.
-            selectedWorkstationId = null; 
-            populateWorkstations(this.value);
+            //selectedWorkstationIds = null;
+            const selectedDepartments = Array.from(this.selectedOptions).map(opt => opt.value);
+
+            populateWorkstations(selectedDepartments);
         });
     }
 
     // 6. Ejecutar la función una vez al cargar la página
     //    para rellenar los puestos del departamento que ya estaba seleccionado.
     if (departmentSelect) {
-        populateWorkstations(departmentSelect.value);
+        const initialDepartments = Array.from(departmentSelect.selectedOptions).map(opt => opt.value);
+        populateWorkstations(initialDepartments);
     }
 </script>
 @endpush

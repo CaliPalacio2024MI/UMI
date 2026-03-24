@@ -4,7 +4,8 @@ namespace App\Models\Users;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use App\Models\Cursos\Course;
 /**
  * @property int $id
  * @property string $name
@@ -45,6 +46,11 @@ class Workstation extends Model
     public function department()
     {
         return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function courses():MorphToMany
+    {
+        return $this->morphToMany(Course::class, 'targetable');
     }
 
 }

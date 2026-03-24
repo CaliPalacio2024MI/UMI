@@ -36,6 +36,7 @@ class StoreCourseRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'modality' =>'required|in:presencial,virtual,hibrido',
             'institution_id' => 'required|exists:institutions,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20480', // Validación de imagen
             'credits' => $creditsRule,

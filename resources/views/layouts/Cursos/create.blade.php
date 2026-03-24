@@ -36,6 +36,17 @@
             <textarea id="description" name="description" rows="4" required>{{ old('description') }}</textarea>
         </div>
 
+        {{-- Modalidad--}}
+        <div class="form-group">
+            <label for="modality">Modalidad</label>
+            <select id="modality" name="modality" required>
+                <option value="" disabled selected>Selecciona la modalidad</option>
+                <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
+                <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
+                <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
+            </select>
+        </div>    
+
         {{-- Campos especiales para Universidad Mundo Imperial --}}
         @if ($currentInstitution->name == 'Universidad Mundo Imperial')
             <div class="form-row">
@@ -71,10 +82,10 @@
             <div class="form-row">
                 <div class="form-group flex-1">
                     <label for="department_id">Dirigido a Departamento</label>
-                    <select name="department_id" id="department_id" required>
-                        <option value="" disabled selected>Selecciona el Departamento</option>
+                    <select name="departments[]" id="department_id" multiple required>
+                        <option value="" disabled>Selecciona el Departamento</option>
                         @foreach($currentInstitution->departments as $department)
-                            <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                            <option value="{{ $department->id }}" {{collect(old('departments', []))->contains($department->id) ? 'selected' : ''}}>
                                 {{ $department->name }}
                             </option>
                         @endforeach
@@ -83,7 +94,7 @@
 
                 <div class="form-group flex-1">
                     <label for="workstation_id">Dirigido al Puesto</label>
-                    <select name="workstation_id" id="workstation_id" disabled>
+                    <select name="workstations[]" id="workstation_id" multiple disabled>
                         <option value="" selected>Primero selecciona un departamento</option>
                         <option value="">Todos los Puestos del Departamento</option>
                     </select>
@@ -127,6 +138,25 @@
                 <p id="image-name-sig2" class="file-name"></p>
             </div>
         </div>
+
+        {{--Seleccion de Temas--}}
+        <div class="form-group m-3">
+            <label for="template_topics">Temas desde biblioteca</label>
+
+            <select name="template_topics[]" id="template_topics" class="form-control" multiple>
+
+                @foreach($templates as $template)
+                <option value="{{ $template->id }}">
+                    {{ $template->title }}
+                </option>
+                @endforeach
+                
+            </select>
+            
+            <small class="text-muted">
+                Puedes seleccionar varios manteniendo presionada la tecla CTRL.
+            </small>
+        </div>        
 
         <button type="submit" class="btn-submit">
             Guardar Curso

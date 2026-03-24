@@ -18,6 +18,8 @@ use Illuminate\Http\JsonResponse; // <-- Importante
 use App\Models\Cursos\Activities;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
+use App\Models\TopicTemplate;
+use App\Models\Cursos\Topics;
 
 class CourseController extends Controller
 {
@@ -60,8 +62,9 @@ class CourseController extends Controller
             });
         }
 
+        $templates = TopicTemplate::orderBy('title')->get();
         // Pasamos solo la institución actual a la vista.
-        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap'));
+        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
     }
 
     /**
@@ -95,7 +98,7 @@ class CourseController extends Controller
         // Manejo de imagen
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('courses', 'public');
-            $courseData['image'] = $path;
+            $courseData['image_path'] = $path;
         }
         // Material de apoyo
         if ($request->hasFile('guide_material')) {
@@ -119,19 +122,30 @@ class CourseController extends Controller
             $courseData['cert_sig_2_path'] = $path;
         }
 
+
         $course = Course::create($courseData);
+
+        //Copiar plantillas de tema
+        if ($request->has('template_topics')) {
+
+            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+
+            foreach ($selectedTemplates as $template){
+                Topics::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
+            }
+        }
 
         if ($request->filled('career_id')) {
             // sync() adjunta el ID y quita cualquier otro que no esté en el array
             $course->careers()->sync([$request->career_id]);
         } 
-        elseif ($request->filled('department_id')) {
-            $course->departments()->sync([$request->department_id]);
-            
-            // Si se especificó un puesto, guardarlo.
-            if ($request->filled('workstation_id')) {
-                $course->workstations()->sync([$request->workstation_id]);
-            }
+        //Nuevo bloque multiple
+        if ($request->filled('departments')){
+            $course->departments()->sync($request->departments);
+        }
+        
+        if ($request->filled('worstations')){
+            $course->worstations()->sync($request->workstations);
         }
 
         Log::info('Curso creado exitosamente', [
@@ -153,6 +167,8 @@ class CourseController extends Controller
         // 1. Cargar toda la data del curso
         $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
         
+        //session(['active_course_id' => $course->id]);
+
         $user = Auth::user();
         
         // 2. Calcular Total de Items (CRUCIAL para el JS)
@@ -309,12 +325,14 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'credits' => $creditsRule,
             'hours' => 'required|integer|min:0|max:1000',
+            'modality' => 'required|in:presencial,virtual,hibrido',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960', 
             'institution_id' => 'required|exists:institutions,id', // Lo usamos pero no lo actualizamos
-            'career_id' => 'nullable|exists:careers,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'workstation_id' => 'nullable|exists:workstations,id',
+            'departments' => 'nullable|array',
+            'departments.*' =>'exists:departments,id',
+            'workstations' => 'nullable|array',
+            'workstations.*' =>'exists:workstations,id',
         ]);
 
         // Manejo de imagen
@@ -334,25 +352,13 @@ class CourseController extends Controller
             // Guardar el nuevo archivo
             $validatedData['guide_material_path'] = $request->file('guide_material')->store('courses/guides', 'public');
         }
-
+        
+        $data = $request->except(['departments','workstations']);
         $course->update($validatedData);
 
-        if ($request->filled('career_id')) {
-            $course->careers()->sync([$request->career_id]);
-            $course->departments()->sync([]); // Limpiar el otro filtro
-            $course->workstations()->sync([]);
-        } 
-        elseif ($request->filled('department_id')) {
-            $course->departments()->sync([$request->department_id]);
-            $course->careers()->sync([]); // Limpiar el otro filtro
-            
-            // Si se especificó un puesto, guardarlo. Si no, limpiarlo.
-            if ($request->filled('workstation_id')) {
-                $course->workstations()->sync([$request->workstation_id]);
-            } else {
-                $course->workstations()->sync([]);
-            }
-        }
+        //Guardar relaciones multiselect
+        $course->departments()->sync($request->departments ?? []);
+        $course->workstations()->sync($request->workstations ?? []);
 
         Log::info('Curso actualizado', ['course_id' => $course->id, 'user_id' => Auth::id()]);
 

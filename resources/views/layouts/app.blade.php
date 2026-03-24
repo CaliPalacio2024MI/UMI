@@ -9,6 +9,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <title>@yield('title','Dashboard')</title>
   
   {{-- Vite inyecta los enlaces a CSS/JS de resources --}}
@@ -62,7 +63,9 @@
         </div>
     
       {{-- Contenido específico de cada página --}}
-      @yield('content')
+      <div class="page-content">
+        @yield('content')
+      </div>
     </main>
   </div>
 {{-- ======================= SCRIPT MAESTRO ======================= --}}

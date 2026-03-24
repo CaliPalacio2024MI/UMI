@@ -33,7 +33,17 @@
                 <a href="{{ route('course.show', $courses) }}" class="course-card-show">
                     <img src="{{ asset('storage/' . $courses->image) }}" alt="Imagen del curso">
                     <div class="course-info">
-                        <h3 class="course-title">{{ $courses->title }}</h3>
+                        @php
+                            $icon = match ($courses->modality) {
+                                 'virtual' => 'fa-solid fa-computer',
+                                 'presencial' => 'fa-solid fa-user',
+                                 'hibrido' => 'fa-solid fa-book-open-reader',
+                                 default => 'fa-solid fa-book'
+                            };
+                        @endphp
+                        <h3 class="course-title"><i class="{{ $icon }}" style="margin-right:8px;"></i>
+                            {{ $courses->title}}
+                        </h3>
                         <p class="course-description">{{ $courses->description }}</p>
                         <div class="course-meta">
                             @if (session('active_institution_name') == 'Universidad Mundo Imperial')

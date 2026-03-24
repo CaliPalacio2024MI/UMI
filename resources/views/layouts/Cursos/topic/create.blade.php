@@ -46,9 +46,12 @@
                     @csrf
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
 
-                    {{-- Título --}}
+                    {{-- Título con checkbox inline --}}
                     <div class="form-group">
-                        <label for="title">Título del Tema</label>
+                        <label for="title">
+                            Título del Tema
+                            <input type="checkbox" name="show_title" value="1" checked style="margin-left: 10px; width: auto; height: auto;">
+                        </label>
                         <input type="text" id="title" name="title" required>
                     </div>
 
@@ -61,8 +64,30 @@
                     {{-- Archivo --}}
                     <div class="form-group">
                         <label for="file">Adjuntar Archivo (PDF o Video)</label>
-                        <input type="file" id="file" name="file">
+                        <input type="file" id="file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                     </div>
+
+                    {{-- OPCIONES DE TORTUGUITA (solo para videos en TEMAS) --}}
+                    <div id="topic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" name="show_turtle" value="1" id="topic_show_turtle_checkbox" style="width: auto; height: auto;">
+                                <strong>Mostrar tortuguita durante el video</strong>
+                            </label>
+                            <small style="color: #666; margin-left: 24px;">
+                                La tortuguita permanecerá visible mientras el video se reproduce
+                            </small>
+                        </div>
+                        
+                        <div id="topic-turtle-voice-selector" style="display: none; margin-left: 24px;">
+                            <label for="topic_turtle_voice">¿Cuál tortuguita?</label>
+                            <select name="turtle_voice" id="topic_turtle_voice">
+                                <option value="0">🐢 Tortuguita 1 (Voz femenina)</option>
+                                <option value="1">🐢 Tortuguita 2 (Voz masculina)</option>
+                            </select>
+                        </div>
+                    </div>
+
                      <button type="submit" class="btn-successs">+ Añadir Tema </button>
 
                 </form>
@@ -83,7 +108,10 @@
 
                     {{-- Campos Subtema (simples) --}}
                     <div class="form-group">
-                        <label for="subtopic-title">Título del Subtema</label>
+                        <label for="subtopic-title">
+                            Título del Subtema
+                            <input type="checkbox" name="show_title" value="1" checked style="margin-left: 10px; width: auto; height: auto;">
+                        </label>
                         <input type="text" id="subtopic-title" name="title" required>
                     </div>
                     <div class="form-group">
@@ -93,8 +121,30 @@
                     {{-- Archivo --}}
                     <div class="form-group">
                         <label for="subtopic-file">Adjuntar Archivo (PDF o Video)</label>
-                        <input type="file" id="subtopic-file" name="file">
+                        <input type="file" id="subtopic-file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                     </div>
+
+                    {{-- OPCIONES DE TORTUGUITA (solo para videos en SUBTEMAS) --}}
+                    <div id="subtopic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" name="show_turtle" value="1" id="subtopic_show_turtle_checkbox" style="width: auto; height: auto;">
+                                <strong>Mostrar tortuguita durante el video</strong>
+                            </label>
+                            <small style="color: #666; margin-left: 24px;">
+                                La tortuguita permanecerá visible mientras el video se reproduce
+                            </small>
+                        </div>
+                        
+                        <div id="subtopic-turtle-voice-selector" style="display: none; margin-left: 24px;">
+                            <label for="subtopic_turtle_voice">¿Cuál tortuguita?</label>
+                            <select name="turtle_voice" id="subtopic_turtle_voice">
+                                <option value="0">🐢 Tortuguita 1 (Voz femenina)</option>
+                                <option value="1">🐢 Tortuguita 2 (Voz masculina)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn-successs"> Añadir Subtema </button>
                 </form>
             </div>
@@ -102,7 +152,7 @@
             {{-- 2.3 FORMULARIO DE ACTIVIDAD (Inicialmente oculto) --}}
             <div id="form-activity" class="form-mode-container" style="display: none;">
                 <h3>Añadir Nueva Actividad</h3>
-                <form id="activity-form" action="{{route('activities.store')}}" method="POST">
+                <form id="activity-form" action="{{route('activities.store')}}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
                     <input type="hidden" name="subtopic_id" id="activity-subtopic-id">
@@ -114,6 +164,10 @@
                     </div>
                     
                     <div class="form-group">
+                        <label>
+                            Título de la actividad
+                            <input type="checkbox" name="show_title" value="1" checked style="margin-left: 10px; width: auto; height: auto;">
+                        </label>
                         <input type="text" name="title" placeholder="Título de la actividad" required>
                     </div>
 
@@ -135,7 +189,9 @@
                             <option value="" disabled selected>Selecciona un tipo</option>
                             <option value="Cuestionario">Cuestionario (Quiz)</option>
                             <option value="SopaDeLetras">Sopa de Letras</option>
-                            <option value="Examen">Examen (Múltiples preguntas)</option> 
+                            <option value="Examen">Examen (Múltiples preguntas)</option>
+                            <option value="Ahorcado">Ahorcado</option>
+                            <option value="Crucigrama">Crucigrama</option>
                         </select>
                     </div>
 
@@ -191,6 +247,60 @@
                                 + Añadir Pregunta al Examen
                             </button>
                         </div>
+
+                        {{-- NUEVO: TEMPLATE AHORCADO --}}
+                        <div id="template-Ahorcado" class="activity-template" style="display: none;">
+                            <div class="activity-fields-container">
+                                <div class="form-group">
+                                    <label for="ahorcado_word">Palabra a adivinar:</label>
+                                    <input type="text" name="content[word]" id="ahorcado_word" 
+                                           class="form-field-ahorcado" 
+                                           placeholder="Ej: PROGRAMACION" 
+                                           pattern="[A-ZÑ]+" 
+                                           disabled>
+                                    <small>Solo letras mayúsculas sin espacios ni acentos</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ahorcado_hint">Pista (opcional):</label>
+                                    <input type="text" name="content[hint]" id="ahorcado_hint" 
+                                           class="form-field-ahorcado" 
+                                           placeholder="Ej: Proceso de escribir código" 
+                                           disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ahorcado_attempts">Intentos máximos:</label>
+                                    <input type="number" name="content[max_attempts]" id="ahorcado_attempts" 
+                                           value="6" min="3" max="10" 
+                                           class="form-field-ahorcado" 
+                                           disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- NUEVO: TEMPLATE CRUCIGRAMA --}}
+                        <div id="template-Crucigrama" class="activity-template" style="display: none;">
+                            <div class="activity-fields-container">
+                                <div class="form-group">
+                                    <label for="cw_grid_size">Tamaño de Cuadrícula:</label>
+                                    <input type="number" name="content[grid_size]" id="cw_grid_size" 
+                                           value="10" min="5" max="15" 
+                                           class="form-field-crucigrama" 
+                                           disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <h4>Palabras y Pistas del Crucigrama</h4>
+                                    <div id="cw_words_container" style="margin-bottom: 10px;">
+                                        {{-- Aquí se agregarán las palabras dinámicamente --}}
+                                    </div>
+                                    <button type="button" id="cw_add_word_btn" class="btn-secondary" disabled>
+                                        + Añadir Palabra
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div> 
                 </form>
             </div>
@@ -210,7 +320,10 @@
 
                     {{-- Título --}}
                     <div class="form-group">
-                        <label for="edit-title">Título del Tema</label>
+                        <label for="edit-title">
+                            Título del Tema
+                            <input type="checkbox" name="show_title" value="1" id="edit-show-title" style="margin-left: 10px; width: auto; height: auto;">
+                        </label>
                         <input type="text" id="edit-title" name="title" required>
                     </div>
 
@@ -223,11 +336,32 @@
                     {{-- Archivo --}}
                     <div class="form-group">
                         <label for="edit-file">Reemplazar Archivo (Opcional)</label>
-                        <input type="file" id="edit-file" name="file">
+                        <input type="file" id="edit-file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                         <div id="current-file-info" style="margin-top: 5px;">
                             <small id="current-file-text"></small>
                             {{-- Campo oculto para mantener el file_path actual si no se sube nuevo archivo --}}
                             <input type="hidden" name="current_file_path" id="current-file-path">
+                        </div>
+                    </div>
+
+                    {{-- OPCIONES DE TORTUGUITA (solo para videos) --}}
+                    <div id="edit-topic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" name="show_turtle" value="1" id="edit_topic_show_turtle_checkbox" style="width: auto; height: auto;">
+                                <strong>Mostrar tortuguita durante el video</strong>
+                            </label>
+                            <small style="color: #666; margin-left: 24px;">
+                                La tortuguita permanecerá visible mientras el video se reproduce
+                            </small>
+                        </div>
+                        
+                        <div id="edit-topic-turtle-voice-selector" style="display: none; margin-left: 24px;">
+                            <label for="edit_topic_turtle_voice">¿Cuál tortuguita?</label>
+                            <select name="turtle_voice" id="edit_topic_turtle_voice">
+                                <option value="0">🐢 Tortuguita 1 (Voz femenina)</option>
+                                <option value="1">🐢 Tortuguita 2 (Voz masculina)</option>
+                            </select>
                         </div>
                     </div>
 
@@ -255,7 +389,7 @@
             </div>
                 
             {{-- Lista de temas y subtemas --}}
-            <div class="topics-list-content">
+            <div class="topics-list-content" id="sortable-topics">
                 @if ($course->finalExam)
                     @php $activity = $course->finalExam; @endphp
                     
@@ -293,9 +427,12 @@
 
                         {{-- Cabecera del tema --}}
                         <div class="topic-header">
-                            <div>
-                                <h5 class="topic-title" style="font-weight: 600; font-size: 15px;">{{ $topic->title }}</h5>
-                                <p class="topic-description">{{ $topic->description }}</p>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="drag-handle" style="cursor: grab; font-size: 20px; color: #999;">⋮⋮</span>
+                                <div>
+                                    <h5 class="topic-title" style="font-weight: 600; font-size: 15px;">{{ $topic->title }}</h5>
+                                    <p class="topic-description">{{ $topic->description }}</p>
+                                </div>
                             </div>
 
                             <div class="topic-actions"> 
@@ -305,6 +442,9 @@
                                         data-title="{{ $topic->title }}"
                                         data-description="{{ $topic->description }}"
                                         data-file-path="{{ $topic->file_path }}"
+                                        data-show-title="{{ $topic->show_title ? '1' : '0' }}"
+                                        data-show-turtle="{{ $topic->show_turtle ? '1' : '0' }}"
+                                        data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}"
                                         data-update-url="{{ route('topics.update', $topic->id) }}"
                                         title="Editar Tema">
                                     <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" 
@@ -331,6 +471,11 @@
                                 <a href="{{ asset('storage/' . $topic->file_path) }}" target="_blank" class="text-decoration-none">
                                      Ver Archivo Adjunto
                                 </a>
+                                @if($topic->show_turtle)
+                                    <span style="font-size: 14px; color: #28a745; margin-left: 10px;">
+                                        🐢 Con Tortuguita (Voz {{ $topic->turtle_voice + 1 }})
+                                    </span>
+                                @endif
                             </div>
                         @endif
 
@@ -342,6 +487,9 @@
                                     <div class="activity-item">
                                         <span class="activity-type">{{ ucfirst($activity->type) }}</span>
                                         <span class="activity-title">{{ $activity->title }}</span>
+                                        @if($activity->show_turtle)
+                                            <span style="font-size: 12px; color: #28a745;">🐢 Voz {{ $activity->turtle_voice + 1 }}</span>
+                                        @endif
                                         <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
                                             onsubmit="return confirm('¿Eliminar esta actividad?');" class="ms-2">
                                             @csrf
@@ -390,6 +538,11 @@
                                             <a href="{{ asset('storage/' . $subtopic->file_path) }}" target="_blank" class="text-decoration-none">
                                                  Ver Archivo Adjunto
                                             </a>
+                                            @if($subtopic->show_turtle)
+                                                <span style="font-size: 14px; color: #28a745; margin-left: 10px;">
+                                                    🐢 Con Tortuguita (Voz {{ $subtopic->turtle_voice + 1 }})
+                                                </span>
+                                            @endif
                                         </div>
                                     @endif
 
@@ -400,6 +553,9 @@
                                             <div class="activity-item" style="margin-left: 10px;">
                                                 <span class="activity-type">{{ ucfirst($activity->type) }}</span>
                                                 <span class="activity-title">{{ $activity->title }}</span>
+                                                @if($activity->show_turtle)
+                                                    <span style="font-size: 12px; color: #28a745;">🐢 Voz {{ $activity->turtle_voice + 1 }}</span>
+                                                @endif
                                                 <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
                                                     onsubmit="return confirm('¿Eliminar esta actividad?');">
                                                     @csrf
@@ -427,6 +583,9 @@
 
 @once
 @push('scripts')
+{{-- SortableJS CDN --}}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ===================================================
@@ -444,60 +603,95 @@ document.addEventListener('DOMContentLoaded', function() {
     const editTopicForm = document.getElementById('edit-topic-form');
 
     // ===================================================
-    // 2. FUNCIÓN setFormMode
+    // 2. DRAG & DROP CON SORTABLE.JS
+    // ===================================================
+    const sortableList = document.getElementById('sortable-topics');
+    if (sortableList) {
+        Sortable.create(sortableList, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            onEnd: function (evt) {
+                // Recopilar nuevo orden
+                const topicIds = [];
+                document.querySelectorAll('.topic-card[data-topic-id]').forEach((card, index) => {
+                    const topicId = card.dataset.topicId;
+                    topicIds.push({ id: topicId, order: index });
+                });
+
+                // Enviar AJAX para actualizar orden
+                fetch('{{ route("topics.updateOrder") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ topics: topicIds })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('✅ Orden actualizado correctamente');
+                    }
+                })
+                .catch(error => console.error('❌ Error actualizando orden:', error));
+            }
+        });
+    }
+
+    // ===================================================
+    // 3. FUNCIÓN setFormMode
     // ===================================================
     function setFormMode(mode) {
-    console.log("→ setFormMode activado con modo:", mode);
+        console.log("→ setFormMode activado con modo:", mode);
 
-    currentMode = mode;
+        currentMode = mode;
 
-    // 🔹 Oculta todos los formularios
-    formContainers.forEach(container => container.style.display = 'none');
+        // Oculta todos los formularios
+        formContainers.forEach(container => container.style.display = 'none');
 
-    // 🔹 Quita clases y controla botones
-    modeButtons.forEach(btn => {
-        btn.classList.remove('active', 'btn-primary');
-        btn.disabled = (mode === 'edit-topic'); // Solo desactiva si estás editando
-    });
+        // Quita clases y controla botones
+        modeButtons.forEach(btn => {
+            btn.classList.remove('active', 'btn-primary');
+            btn.disabled = (mode === 'edit-topic');
+        });
 
-    // 🔹 Mostrar formulario correcto
-    const formToShow = document.getElementById(`form-${mode}`);
-    if (formToShow) {
-        console.log(`→ Mostrando formulario: form-${mode}`);
-        formToShow.style.display = 'block';
-    } else {
-        console.warn(`⚠ No se encontró form-${mode}, mostrando form-topic por defecto`);
-        document.getElementById('form-topic').style.display = 'block';
-    }
-
-    // 🔹 Solo marcar botón activo si no estamos editando
-    if (mode !== 'edit-topic') {
-        const activeBtn = document.getElementById(`mode-${mode}`);
-        if (activeBtn) {
-            activeBtn.classList.add('active', 'btn-primary');
+        // Mostrar formulario correcto
+        const formToShow = document.getElementById(`form-${mode}`);
+        if (formToShow) {
+            console.log(`→ Mostrando formulario: form-${mode}`);
+            formToShow.style.display = 'block';
+        } else {
+            console.warn(`⚠ No se encontró form-${mode}, mostrando form-topic por defecto`);
+            document.getElementById('form-topic').style.display = 'block';
         }
-    }
 
-    // 🔹 Asignar IDs de tema/subtema para actividades
-    if (mode === 'activity') {
-        const topicIdField = document.getElementById('activity-topic-id');
-        const subtopicIdField = document.getElementById('activity-subtopic-id');
-        if (selectedSubtopicId) {
-            subtopicIdField.value = selectedSubtopicId;
-            topicIdField.value = '';
-        } else if (selectedTopicId) {
-            topicIdField.value = selectedTopicId;
-            subtopicIdField.value = '';
+        // Solo marcar botón activo si no estamos editando
+        if (mode !== 'edit-topic') {
+            const activeBtn = document.getElementById(`mode-${mode}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'btn-primary');
+            }
         }
+
+        // Asignar IDs de tema/subtema para actividades
+        if (mode === 'activity') {
+            const topicIdField = document.getElementById('activity-topic-id');
+            const subtopicIdField = document.getElementById('activity-subtopic-id');
+            if (selectedSubtopicId) {
+                subtopicIdField.value = selectedSubtopicId;
+                topicIdField.value = '';
+            } else if (selectedTopicId) {
+                topicIdField.value = selectedTopicId;
+                subtopicIdField.value = '';
+            }
+        }
+
+        console.log("✔ Formulario mostrado correctamente:", formToShow ? formToShow.id : 'ninguno');
     }
-
-    // 🔹 Confirmación visual
-    console.log("✔ Formulario mostrado correctamente:", formToShow ? formToShow.id : 'ninguno');
-}
-
 
     // ===================================================
-    // 3. FUNCIÓN updateSelectionState
+    // 4. FUNCIÓN updateSelectionState
     // ===================================================
     function updateSelectionState(topicId, subtopicId, topicTitle, subtopicTitle = null) {
         selectedTopicId = topicId;
@@ -523,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===================================================
-    // 4. EVENTOS DE MODO
+    // 5. EVENTOS DE MODO
     // ===================================================
     modeButtons.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -538,14 +732,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ===================================================
-    // 5. SELECCIÓN DE TEMAS Y SUBTEMAS
+    // 6. SELECCIÓN DE TEMAS Y SUBTEMAS
     // ===================================================
     topicCards.forEach(card => {
         const topicId = card.dataset.topicId;
         const topicTitle = card.dataset.topicTitle;
         
         card.addEventListener('click', function(e) {
-            if (e.target.closest('.topic-actions')) return;
+            if (e.target.closest('.topic-actions') || e.target.closest('.drag-handle')) return;
             updateSelectionState(topicId, null, topicTitle);
             this.classList.add('selected');
             setFormMode('subtopic');
@@ -567,73 +761,149 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ===================================================
-    // 6. SELECTOR DE TIPO DE ACTIVIDAD (CORREGIDO)
+    // 7. SELECTOR DE TIPO DE ACTIVIDAD (SIN VIDEOS)
     // ===================================================
-    const activityTypeSelect = document.getElementById('activity_type'); // <- Corregido: Usar el ID
+    const activityTypeSelect = document.getElementById('activity_type');
 
     if (activityTypeSelect) {
         activityTypeSelect.addEventListener('change', function () {
-            const selectedType = this.value; // ej: "Cuestionario" o "SopaDeLetras"
+            const selectedType = this.value;
             const form = this.closest('form');
             
-            // 1. Ocultar TODAS las plantillas
+            // Ocultar TODAS las plantillas
             const allTemplates = form.querySelectorAll('.activity-template');
             allTemplates.forEach(template => {
                 template.style.display = 'none';
-                
-                // Deshabilitar todos sus campos para que no se envíen
                 template.querySelectorAll('input, button, select, textarea').forEach(input => {
                     input.disabled = true;
                 });
             });
 
-            // 2. Mostrar la plantilla seleccionada
+            // Mostrar la plantilla seleccionada
             const activeTemplate = form.querySelector('#template-' + selectedType);
             if (activeTemplate) {
                 activeTemplate.style.display = 'block';
-                
-                // Habilitar solo sus campos
                 activeTemplate.querySelectorAll('input, button, select, textarea').forEach(input => {
                     input.disabled = false;
                 });
+                
                 if (selectedType === 'Crucigrama') {
-                    const gridSize = document.getElementById('cw_grid_size').value;
-                    drawEditorGrid(gridSize);
+                    initCrucigramaForm();
                 }
             }
         });
     }
 
-    // Lógica para el formulario de Sopa de Letras (Esta parte ya estaba bien)
+    // ===================================================
+    // 7.5 DETECTAR VIDEO EN TEMAS Y SUBTEMAS (TORTUGUITAS)
+    // ===================================================
+    
+    // PARA TEMAS
+    const topicFileInput = document.getElementById('file');
+    const topicTurtleOptions = document.getElementById('topic-turtle-options');
+    const topicShowTurtleCheckbox = document.getElementById('topic_show_turtle_checkbox');
+    const topicTurtleVoiceSelector = document.getElementById('topic-turtle-voice-selector');
+
+    if (topicFileInput && topicTurtleOptions) {
+        topicFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const fileName = file.name.toLowerCase();
+                const isVideo = fileName.endsWith('.mp4') || 
+                               fileName.endsWith('.webm') || 
+                               fileName.endsWith('.avi') || 
+                               fileName.endsWith('.mov') ||
+                               fileName.endsWith('.wmv');
+                
+                if (isVideo) {
+                    topicTurtleOptions.style.display = 'block';
+                } else {
+                    topicTurtleOptions.style.display = 'none';
+                    topicShowTurtleCheckbox.checked = false;
+                    topicTurtleVoiceSelector.style.display = 'none';
+                }
+            } else {
+                topicTurtleOptions.style.display = 'none';
+            }
+        });
+
+        if (topicShowTurtleCheckbox) {
+            topicShowTurtleCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    topicTurtleVoiceSelector.style.display = 'block';
+                } else {
+                    topicTurtleVoiceSelector.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // PARA SUBTEMAS
+    const subtopicFileInput = document.getElementById('subtopic-file');
+    const subtopicTurtleOptions = document.getElementById('subtopic-turtle-options');
+    const subtopicShowTurtleCheckbox = document.getElementById('subtopic_show_turtle_checkbox');
+    const subtopicTurtleVoiceSelector = document.getElementById('subtopic-turtle-voice-selector');
+
+    if (subtopicFileInput && subtopicTurtleOptions) {
+        subtopicFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const fileName = file.name.toLowerCase();
+                const isVideo = fileName.endsWith('.mp4') || 
+                               fileName.endsWith('.webm') || 
+                               fileName.endsWith('.avi') || 
+                               fileName.endsWith('.mov') ||
+                               fileName.endsWith('.wmv');
+                
+                if (isVideo) {
+                    subtopicTurtleOptions.style.display = 'block';
+                } else {
+                    subtopicTurtleOptions.style.display = 'none';
+                    subtopicShowTurtleCheckbox.checked = false;
+                    subtopicTurtleVoiceSelector.style.display = 'none';
+                }
+            } else {
+                subtopicTurtleOptions.style.display = 'none';
+            }
+        });
+
+        if (subtopicShowTurtleCheckbox) {
+            subtopicShowTurtleCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    subtopicTurtleVoiceSelector.style.display = 'block';
+                } else {
+                    subtopicTurtleVoiceSelector.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // ===================================================
+    // 8. LÓGICA SOPA DE LETRAS
+    // ===================================================
     const addWordBtn = document.getElementById('ws_add_word_btn');
     const wordInput = document.getElementById('ws_word_input');
     const wordList = document.getElementById('ws_word_list');
     const hiddenInputsContainer = document.getElementById('ws_hidden_inputs');
 
     if (addWordBtn) {
-        
-        // Función para añadir la palabra
         const addWord = () => {
             let word = wordInput.value.trim().toUpperCase();
             
-            // Validar (simple)
             if (word === '' || word.includes(' ')) {
                 alert('Por favor, escribe una sola palabra sin espacios.');
                 return;
             }
 
-            // 1. Crear el input oculto para el formulario
             const hiddenInput = document.createElement('input');
             hiddenInput.type = 'hidden';
-            hiddenInput.name = 'content[words][]'; // Esto crea el array en PHP
+            hiddenInput.name = 'content[words][]';
             hiddenInput.value = word;
             hiddenInputsContainer.appendChild(hiddenInput);
 
-            // 2. Crear el elemento <li> para que el usuario lo vea
             const li = document.createElement('li');
             li.textContent = word;
 
-            // 3. (Opcional) Añadir botón de eliminar
             const removeBtn = document.createElement('span');
             removeBtn.textContent = ' [X]';
             removeBtn.style.color = 'red';
@@ -645,26 +915,22 @@ document.addEventListener('DOMContentLoaded', function() {
             li.appendChild(removeBtn);
             
             wordList.appendChild(li);
-
-            // 4. Limpiar el input
             wordInput.value = '';
             wordInput.focus();
         };
 
-        // Añadir al hacer clic
         addWordBtn.addEventListener('click', addWord);
-        
-        // Añadir al presionar Enter
         wordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault(); // Evitar que el formulario se envíe
+                e.preventDefault();
                 addWord();
             }
         });
     }
 
-    
-    // --- LÓGICA PARA NUEVO EXAMEN (MÚLTIPLES PREGUNTAS) ---
+    // ===================================================
+    // 9. LÓGICA EXAMEN
+    // ===================================================
     const addExamenBtn = document.getElementById('add-examen-question-btn');
     const examenContainer = document.getElementById('examen-questions-container');
     let examenQuestionCounter = 0;
@@ -674,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === 'Examen') {
                 addExamenBtn.disabled = false;
                 if (examenContainer.childElementCount === 0) {
-                    addExamenQuestionBlock(); // Añadir la primera pregunta
+                    addExamenQuestionBlock();
                 }
             } else {
                 addExamenBtn.disabled = true;
@@ -715,57 +981,190 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===================================================
-    // 7. DELEGACIÓN DE EVENTO: EDITAR TEMA
+    // 10. LÓGICA CRUCIGRAMA
+    // ===================================================
+    let crucigramaWordCounter = 0;
+    
+    function initCrucigramaForm() {
+        const addWordBtn = document.getElementById('cw_add_word_btn');
+        const wordsContainer = document.getElementById('cw_words_container');
+        
+        if (addWordBtn && !addWordBtn.dataset.initialized) {
+            addWordBtn.dataset.initialized = 'true';
+            addWordBtn.addEventListener('click', function() {
+                addCrucigramaWord(wordsContainer);
+            });
+            
+            addCrucigramaWord(wordsContainer);
+        }
+    }
+    
+    function addCrucigramaWord(container) {
+        const index = crucigramaWordCounter++;
+        const wordBlock = document.createElement('div');
+        wordBlock.classList.add('crucigrama-word-block');
+        wordBlock.style.border = '1px solid #ddd';
+        wordBlock.style.padding = '10px';
+        wordBlock.style.marginBottom = '10px';
+        wordBlock.style.borderRadius = '6px';
+        wordBlock.style.backgroundColor = '#f9f9f9';
+        
+        wordBlock.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h5 style="margin: 0;">Palabra ${index + 1}</h5>
+                <button type="button" class="btn-danger-small btn-remove-cw-word">Eliminar</button>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Palabra:</label>
+                <input type="text" 
+                       name="content[words][${index}][word]" 
+                       placeholder="Ej: MATEMATICA" 
+                       pattern="[A-ZÑ]+" 
+                       required 
+                       style="text-transform: uppercase;">
+                <small>Solo letras mayúsculas, sin espacios ni acentos</small>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Pista:</label>
+                <input type="text" 
+                       name="content[words][${index}][clue]" 
+                       placeholder="Ej: Ciencia de los números" 
+                       required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Dirección:</label>
+                <select name="content[words][${index}][direction]" required>
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
+                </select>
+            </div>
+        `;
+        
+        wordBlock.querySelector('.btn-remove-cw-word').addEventListener('click', function() {
+            wordBlock.remove();
+        });
+        
+        container.appendChild(wordBlock);
+    }
+
+    // ===================================================
+    // 11. DELEGACIÓN DE EVENTO: EDITAR TEMA
     // ===================================================
     document.addEventListener('click', function (event) {
         if (event.target.closest('.btn-edit-topic')) {
-            console.log("✅ Click detectado en botón editar tema");
             const btn = event.target.closest('.btn-edit-topic');
-            console.log("Datos del botón:", btn.dataset);
-
             const topicId = btn.dataset.id;
             const title = btn.dataset.title;
             const description = btn.dataset.description;
             const filePath = btn.dataset.filePath;
+            const showTitle = btn.dataset.showTitle;
+            const showTurtle = btn.dataset.showTurtle;
+            const turtleVoice = btn.dataset.turtleVoice;
             const updateUrl = btn.dataset.updateUrl;
 
-            console.log({ topicId, title, description, filePath, updateUrl });
-
-            // Verificar existencia del formulario
             const editForm = document.getElementById('form-edit-topic');
             if (!editForm) {
-                console.error("❌ No se encontró el formulario de edición (id='form-edit-topic')");
+                console.error("❌ No se encontró el formulario de edición");
                 return;
             }
 
             editForm.querySelector('form').action = updateUrl;
-
-            // Llenar formulario
             document.getElementById('edit-topic-id').value = topicId || '';
             document.getElementById('edit-title').value = title || '';
             document.getElementById('edit-description').value = description || '';
             document.getElementById('current-file-path').value = filePath || '';
+            document.getElementById('edit-show-title').checked = (showTitle === '1');
 
             const currentFileText = document.getElementById('current-file-text');
+            const editTurtleOptions = document.getElementById('edit-topic-turtle-options');
+            const editShowTurtleCheckbox = document.getElementById('edit_topic_show_turtle_checkbox');
+            const editTurtleVoiceSelector = document.getElementById('edit-topic-turtle-voice-selector');
+            const editTurtleVoiceSelect = document.getElementById('edit_topic_turtle_voice');
+
             if (currentFileText) {
-                currentFileText.textContent = filePath
-                    ? `Archivo actual: ${filePath.split('/').pop()}`
-                    : 'No hay archivo adjunto.';
+                if (filePath) {
+                    const fileName = filePath.split('/').pop();
+                    currentFileText.textContent = `Archivo actual: ${fileName}`;
+                    
+                    // Detectar si es video
+                    const isVideo = fileName.toLowerCase().endsWith('.mp4') ||
+                                   fileName.toLowerCase().endsWith('.webm') ||
+                                   fileName.toLowerCase().endsWith('.avi') ||
+                                   fileName.toLowerCase().endsWith('.mov') ||
+                                   fileName.toLowerCase().endsWith('.wmv');
+                    
+                    if (isVideo && editTurtleOptions) {
+                        editTurtleOptions.style.display = 'block';
+                        
+                        // Cargar valores existentes
+                        if (showTurtle === '1') {
+                            editShowTurtleCheckbox.checked = true;
+                            editTurtleVoiceSelector.style.display = 'block';
+                            editTurtleVoiceSelect.value = turtleVoice || '0';
+                        }
+                    }
+                } else {
+                    currentFileText.textContent = 'No hay archivo adjunto.';
+                }
             }
 
-            // Cambiar el modo
-            console.log("Cambiando a modo edición...");
-            if (typeof setFormMode === "function") {
-                setFormMode('edit-topic');
-            } else {
-                console.error("⚠️ La función setFormMode no está definida o no es global.");
-            }
+            setFormMode('edit-topic');
         }
     });
 
+    // Detectar cambio de archivo en formulario de edición
+    const editFileInput = document.getElementById('edit-file');
+    const editTurtleOptions = document.getElementById('edit-topic-turtle-options');
+    const editShowTurtleCheckbox = document.getElementById('edit_topic_show_turtle_checkbox');
+    const editTurtleVoiceSelector = document.getElementById('edit-topic-turtle-voice-selector');
+
+    if (editFileInput && editTurtleOptions) {
+        editFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const fileName = file.name.toLowerCase();
+                const isVideo = fileName.endsWith('.mp4') || 
+                               fileName.endsWith('.webm') || 
+                               fileName.endsWith('.avi') || 
+                               fileName.endsWith('.mov') ||
+                               fileName.endsWith('.wmv');
+                
+                if (isVideo) {
+                    editTurtleOptions.style.display = 'block';
+                } else {
+                    editTurtleOptions.style.display = 'none';
+                    editShowTurtleCheckbox.checked = false;
+                    editTurtleVoiceSelector.style.display = 'none';
+                }
+            }
+        });
+
+        if (editShowTurtleCheckbox) {
+            editShowTurtleCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    editTurtleVoiceSelector.style.display = 'block';
+                } else {
+                    editTurtleVoiceSelector.style.display = 'none';
+                }
+            });
+        }
+    }
 
     // ===================================================
-    // 9. ESTADO INICIAL
+    // 12. BOTÓN CANCELAR EDICIÓN
+    // ===================================================
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', function() {
+            setFormMode('topic');
+        });
+    }
+
+    // ===================================================
+    // 13. ESTADO INICIAL
     // ===================================================
     setFormMode(currentMode);
 });

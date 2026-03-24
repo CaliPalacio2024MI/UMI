@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use App\Models\Users\User;
 use App\Models\Users\Institution;
 use App\Models\Users\Workstation;
 use App\Models\Users\Department;
 use App\Models\Users\Career;
+
 
 
 /**
@@ -62,6 +64,7 @@ class Course extends Model
     protected $fillable = [
         'title',
         'description',
+        'modality',
         'credits',
         'hours',
         'instructor_id',
@@ -92,19 +95,19 @@ class Course extends Model
     }
 
     // Relación polimórfica para las carreras
-    public function careers()
+    public function careers(): MorphToMany
     {
         return $this->morphedByMany(Career::class, 'targetable');
     }
 
     // Relación polimórfica para los departamentos
-    public function departments()
+    public function departments(): MorphToMany
     {
         return $this->morphedByMany(Department::class, 'targetable');
     }
 
     // Relación polimórfica para los puestos de trabajo
-    public function workstations()
+    public function workstations(): MorphToMany
     {
         return $this->morphedByMany(Workstation::class, 'targetable');
     }

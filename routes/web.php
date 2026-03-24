@@ -82,13 +82,29 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/cursos/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/cursos/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('/cursos/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
-        
+
+        //Biblioteca de Temas (Plantillas)
+        Route::get('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'index'])->name('templates.index');
+        //Route::get('/biblioteca-temas/crear', [\App\Http\Controllers\TopicTemplateController::class, 'create'])->name('templates.create');
+        Route::post('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'store'])->name('templates.store');
+        //Ruta para mostrar el formulario de edicion
+        Route::get('/biblioteca-temas/{id}/editar',[\App\Http\Controllers\TopicTemplateController::class, 'edit'])->name('templates.edit');
+        //Ruta para procesar la actualizacion (usa PUT o PATCH)
+        Route::put('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'update'])->name('templates.update');
+        //Ruta para eliminar
+        Route::delete('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'destroy'])->name('templates.destroy');
+
+
         // Temas y Subtemas
         Route::get('/cursos/{course}/temas/crear', [TopicsController::class, 'create'])->name('course.topic.create');
+        Route::get('/temas-editor/{course}', [TopicsController::class, 'create'])->name('topics.editor');
         Route::post('/temas', [TopicsController::class, 'store'])->name('topics.store');
         Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit'); 
         Route::put('/temas/{topic}', [TopicsController::class, 'update'])->name('topics.update');
         Route::delete('/temas/{topic}', [TopicsController::class, 'destroy'])->name('topics.destroy');
+
+        //Orden de temas (Arrastrar)
+        Route::post('/topics/update-order',[TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
         
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');

@@ -127,6 +127,19 @@
                     <li class="{{ request()->routeIs('courses.certificates.index') ? 'active-submenu' : '' }}">
                         <a href="{{ route('courses.certificates.index') }}">Mis Certificados</a> 
                     </li>
+                    
+                    {{--Boton bilbioteca de temas--}}
+                    <li>
+                        <a href="{{ route('templates.index') }}">
+                            <span>Biblioteca de TEMAS</span>
+                        </a>
+                    </li>
+                    {{--Boton biblioteca de subtemas
+                    <li>
+                        <a href="{{ route('') }}">
+                            <span>Biblioteca de Subtemas</span>
+                        </a>    
+                    </li>--}}
                 </ul>
             </li>
 
@@ -297,6 +310,7 @@
                                 <a href="{{ route('ajustes.show', 'departments') }}">Departamentos</a>
                             </li>
                         @endif
+
                     </ul>
                 </li>
             @endif
