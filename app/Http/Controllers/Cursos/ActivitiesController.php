@@ -21,8 +21,6 @@ class ActivitiesController extends Controller
             'course_id' => 'required|exists:courses,id', 
             'is_final_exam' => 'nullable|boolean', 
             
-            // ✅ CORREGIDO: topic_id y subtopic_id son totalmente opcionales
-            // Las actividades pueden ser independientes (mismo nivel que temas)
             'topic_id' => 'nullable|exists:topics,id',
             'subtopic_id' => 'nullable|exists:subtopics,id',
 
@@ -81,7 +79,7 @@ class ActivitiesController extends Controller
             ]);
         }
 
-        // ✅ NUEVO: Manejar videos con tortuguita
+        //  NUEVO: Manejar videos con tortuguita
         elseif ($validatedData['type'] === 'Video') {
             if ($request->hasFile('video_file')) {
                 $validatedData['file_path'] = $request->file('video_file')->store('videos', 'public');
@@ -94,7 +92,7 @@ class ActivitiesController extends Controller
             $validatedData['content'] = [];
         }
 
-        // ✅ NUEVO: Guardar show_title
+        //  NUEVO: Guardar show_title
         $validatedData['show_title'] = $request->has('show_title');
         
         $courseId = $validatedData['course_id'];
@@ -128,13 +126,13 @@ class ActivitiesController extends Controller
             }
             $courseId = $topic->course_id;
         } else {
-            // ✅ CASO 3: Actividad INDEPENDIENTE (mismo nivel que temas)
+            //  CASO 3: Actividad INDEPENDIENTE (mismo nivel que temas)
             // No pertenece a ningún tema ni subtema
             $validatedData['topic_id'] = null;
             $validatedData['subtopic_id'] = null;
         }
 
-        // ✅ NUEVO: Asignar orden automáticamente
+        //  NUEVO: Asignar orden automáticamente
         if ($validatedData['subtopic_id']) {
             $maxOrder = Activities::where('subtopic_id', $validatedData['subtopic_id'])->max('order');
         } elseif ($validatedData['topic_id']) {

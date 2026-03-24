@@ -42,7 +42,6 @@ class SubtopicsController extends Controller
             'description' => 'nullable|string',
             'file_path' => 'nullable|file|mimes:pdf,doc,docx,pptx,mp4,mov,avi,wmv|max:51200',
             'order' => 'nullable|integer',
-            // ✅ AGREGAR ESTAS VALIDACIONES
             'video_segments' => 'nullable|array',
             'video_segments.*.start' => 'required_with:video_segments|string',
             'video_segments.*.end' => 'required_with:video_segments|string',
@@ -55,19 +54,19 @@ class SubtopicsController extends Controller
             unset($validatedData['file']);
         }
 
-        // ✅ NUEVO: Guardar show_title
+        // NUEVO: Guardar show_title
         $validatedData['show_title'] = $request->has('show_title');
         
-        // ✅ NUEVO: Guardar show_turtle y turtle_voice
+        // NUEVO: Guardar show_turtle y turtle_voice
         $validatedData['show_turtle'] = $request->has('show_turtle');
         $validatedData['turtle_voice'] = $request->input('turtle_voice', null);
 
-        // ✅ AGREGAR después de guardar show_turtle y turtle_voice
+        // AGREGAR después de guardar show_turtle y turtle_voice
         if ($request->has('video_segments')) {
         $validatedData['video_segments'] = $request->video_segments;
     }
 
-        // ✅ NUEVO: Asignar orden automáticamente si no viene
+        // NUEVO: Asignar orden automáticamente si no viene
         if (!isset($validatedData['order'])) {
             $maxOrder = Subtopic::where('topic_id', $topic->id)->max('order');
             $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
@@ -100,7 +99,6 @@ class SubtopicsController extends Controller
         'title' => 'required|string|max:255',
         'description' => 'nullable|string',
         'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
-        // ✅ AGREGAR VALIDACIÓN DE SEGMENTOS
         'video_segments' => 'nullable|array',
         'video_segments.*.start' => 'required_with:video_segments|string',
         'video_segments.*.end' => 'required_with:video_segments|string',
@@ -114,7 +112,7 @@ class SubtopicsController extends Controller
     $topic->show_turtle = $request->has('show_turtle');
     $topic->turtle_voice = $request->input('turtle_voice', null);
     
-    // ✅ GUARDAR SEGMENTOS DE VIDEO
+    // GUARDAR SEGMENTOS DE VIDEO
     if ($request->has('video_segments')) {
         $topic->video_segments = $request->video_segments;
     } else {

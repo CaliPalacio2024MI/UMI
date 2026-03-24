@@ -38,7 +38,6 @@ class TopicsController extends Controller
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'file' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,doc,docx,ppt,pptx,mp4,mov,avi,wmv|max:163840',
-            // ✅ VALIDACIÓN DE SEGMENTOS
             'video_segments' => 'nullable|array',
             'video_segments.*.start' => 'required_with:video_segments|string',
             'video_segments.*.end' => 'required_with:video_segments|string',
@@ -52,14 +51,14 @@ class TopicsController extends Controller
 
         unset($validatedData['file']);
 
-        // ✅ Guardar show_title
+        // Guardar show_title
         $validatedData['show_title'] = $request->has('show_title');
         
-        // ✅ Guardar show_turtle y turtle_voice
+        // Guardar show_turtle y turtle_voice
         $validatedData['show_turtle'] = $request->has('show_turtle');
         $validatedData['turtle_voice'] = $request->input('turtle_voice', null);
 
-        // ✅ Guardar video_segments como array puro (no objeto con índices)
+        // Guardar video_segments como array puro (no objeto con índices)
         if ($request->has('video_segments') && !empty($request->video_segments)) {
             // Convertir a array con índices consecutivos desde 0
             $validatedData['video_segments'] = array_values($request->video_segments);
@@ -67,7 +66,7 @@ class TopicsController extends Controller
             $validatedData['video_segments'] = null;
         }
 
-        // ✅ Asignar orden automáticamente
+        // Asignar orden automáticamente
         $maxOrder = Topics::where('course_id', $validatedData['course_id'])->max('order');
         $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
 
@@ -113,7 +112,7 @@ class TopicsController extends Controller
         $topic->show_turtle = $request->has('show_turtle');
         $topic->turtle_voice = $request->input('turtle_voice', null);
         
-        // ✅ CRÍTICO: Guardar video_segments como array puro
+        // CRÍTICO: Guardar video_segments como array puro
         if ($request->has('video_segments') && !empty($request->video_segments)) {
             // Convertir a array con índices consecutivos desde 0
             $topic->video_segments = array_values($request->video_segments);

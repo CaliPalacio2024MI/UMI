@@ -42,11 +42,11 @@ class Topics extends Model
         'title',
         'description',
         'file_path',
-        'show_title',     // ✅ AGREGAR
-    'show_turtle',    // ✅ AGREGAR
-    'video_segments',  // ✅ AGREGAR
-    'turtle_voice',   // ✅ AGREGAR
-    'order',          // ✅ AGREGAR
+        'show_title', 
+        'show_turtle', 
+        'video_segments',
+        'turtle_voice',
+        'order',
     ];
 
     // ✅ AGREGAR ESTO (nuevo)

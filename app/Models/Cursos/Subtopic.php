@@ -39,14 +39,14 @@ class Subtopic extends Model
         'description',
         'file_path',
         'order',
-        'show_title',     // ✅ AGREGAR
-    'show_turtle',    // ✅ AGREGAR
-    'video_segments',  // ✅ AGREGAR
-    'turtle_voice',   // ✅ AGREGAR
-    'order',          // ✅ AGREGAR
+        'show_title',
+        'show_turtle',
+        'video_segments',
+        'turtle_voice',
+        'order',
     ];
 
-    // ✅ AGREGAR ESTO (nuevo)
+    // Nuevo)
     protected $casts = [
         'show_title' => 'boolean',
         'show_turtle' => 'boolean',
