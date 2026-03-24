@@ -284,8 +284,9 @@ body:has(.crm-prospectos) .main-content {
     box-shadow: 0 10px 40px rgba(0,0,0,.2);
 }
 
+/* ── HEADER DEL MODAL ── */
 .modal-prospecto-header {
-    background: #2c4770;
+    background: #0d1b2a;
     color: white;
     padding: 16px 24px;
     border-radius: 20px 20px 0 0;
@@ -293,7 +294,12 @@ body:has(.crm-prospectos) .main-content {
     justify-content: space-between;
     align-items: center;
 }
-.modal-prospecto-header h5 { margin: 0; font-weight: 700; }
+.modal-prospecto-header h5 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+}
 
 .btn-cerrar-modal {
     background: none;
@@ -303,11 +309,13 @@ body:has(.crm-prospectos) .main-content {
     cursor: pointer;
     line-height: 1;
 }
+.btn-cerrar-modal:hover { color: #ccc; }
 
 .modal-prospecto-body { padding: 20px 24px; }
 
+/* ── TÍTULOS DE SECCIÓN (SEGUIMIENTO / DATOS GENERALES) ── */
 .modal-seccion-titulo {
-    background: #2c4770;
+    background: #0d1b2a;
     color: white;
     text-align: center;
     padding: 10px;
@@ -315,8 +323,10 @@ body:has(.crm-prospectos) .main-content {
     font-weight: 700;
     font-size: 13px;
     margin-bottom: 10px;
+    letter-spacing: 0.5px;
 }
 
+/* ── TABLA SEGUIMIENTO ── */
 .modal-seguimiento-header {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -324,7 +334,8 @@ body:has(.crm-prospectos) .main-content {
     font-size: 13px;
     text-align: center;
     padding: 8px 0;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 2px solid #0d1b2a;
+    color: #0d1b2a;
 }
 
 .modal-seg-row {
@@ -335,26 +346,31 @@ body:has(.crm-prospectos) .main-content {
     padding: 10px 0;
     border-bottom: 1px solid #eee;
 }
-.modal-seg-row.registrado { color: #2c4770; font-weight: 600; }
-.modal-seg-row.pendiente  { color: #aaa; }
+.modal-seg-row.registrado {
+    color: #1f3a63;
+    font-weight: 700;
+}
+.modal-seg-row.pendiente { color: #bbb; }
 
+/* ── CARDS DE DATOS ── */
 .modal-datos-card {
     background: #f8f9fa;
     border-radius: 14px;
     padding: 16px;
     margin-top: 12px;
+    border: 1px solid #e0e4ea;
 }
+
+/* Subtítulo "Datos del Tutor / Aspirante" — azul en lugar de dorado */
 .modal-titulo-card {
     text-align: center;
-    color: #c18b54;
+    color: #1f3a63;
     font-weight: 700;
     font-size: 14px;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #1f3a63;
 }
-.modal-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; }
-.modal-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; text-align: center; }
-.modal-dato label { font-weight: 700; font-size: 12px; display: block; }
-.modal-dato p { font-size: 13px; color: #555; margin: 0; }
 
 .modal-fila-3 {
     display: grid;
@@ -377,25 +393,8 @@ body:has(.crm-prospectos) .main-content {
     text-align: center;
     padding: 4px 8px;
 }
-.modal-datos-card label {
-    all: unset;
-    font-weight: 700 !important;
-    font-size: 12px !important;
-    color: #333 !important;
-    display: block !important;
-    margin-bottom: 3px !important;
-    text-align: center !important;
-    width: 100% !important;
-}
 
-.modal-datos-card p {
-    all: unset;
-    font-size: 13px !important;
-    color: #555 !important;
-    display: block !important;
-    text-align: center !important;
-    width: 100% !important;
-}
+/* Labels y valores dentro de las cards */
 #modal-prospecto .modal-datos-card label {
     all: unset !important;
     font-weight: 700 !important;
@@ -416,6 +415,43 @@ body:has(.crm-prospectos) .main-content {
     text-align: center !important;
     width: 100% !important;
     margin: 0 !important;
+}
+
+/* ── PANEL CARRERA ── */
+.carrera-panel {
+    background: #dce8f5;
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-align: center;
+    margin: 10px 0 0 0;
+}
+
+.carrera-panel label {
+    display: block !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #555 !important;
+    margin-bottom: 4px !important;
+}
+
+.carrera-panel p {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1f3a63 !important;
+    margin: 0 !important;
+}
+
+/* ── SCROLLBAR DEL MODAL ── */
+.modal-prospecto-content::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-prospecto-content::-webkit-scrollbar-thumb {
+    background: #1f3a63;
+    border-radius: 10px;
+}
+.modal-prospecto-content::-webkit-scrollbar-track {
+    background: #f0f2f5;
+    border-radius: 10px;
 }
 .input-custom[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0;
