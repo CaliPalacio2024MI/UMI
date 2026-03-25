@@ -429,3 +429,26 @@ body:has(.crm-comisiones) .main-content {
 }
 
 .mc-btn-agregar:hover { background: #162d4a; }
+
+.mc-table-header {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    font-weight: 700;
+    font-size: 13px;
+    text-align: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.mc-table-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    text-align: center;
+    font-size: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.mc-celda {
+    text-align: center;
+}
