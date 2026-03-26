@@ -52,7 +52,7 @@
                      title="Ver detalle">
                   <img src="{{ asset('images/icons/download.svg') }}"
                      alt="Descargar"
-                     class="icon-accion btn-descargar-pdf"
+                     class="icon-accion btn-descargar-pdf-comision"
                      title="Descargar PDF">
                </div>
             </div>
@@ -170,7 +170,6 @@
                         <!-- FILAS DINÁMICAS -->
                         <div class="mc-table-row">
                             <div class="mc-celda">Licenciatura</div>
-                            <div class="mc-celda">Derecho</div>
                             <div class="mc-celda">1</div>
                             <div class="mc-celda">$2,500</div>
                         </div>
@@ -191,6 +190,7 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
    (function initComisiones() {
        // Evitar doble init
@@ -283,7 +283,120 @@
             this.classList.add('d-none');
         }
     });
-   
+
+    document.querySelectorAll('.btn-descargar-pdf-comision').forEach(btn => {
+    btn.addEventListener('click', function () {
+
+        if (!window.jspdf) {
+            alert('Cargando librería...');
+            return;
+        }
+
+        const fila = this.closest('.table-row');
+        const nombreCTP = fila.querySelector('.col-ctp').innerText;
+
+        // 👇 OBTENER FILAS DEL MODAL (YA GENERADAS)
+        const filas = document.querySelectorAll('#detalle-comision-body .mc-table-row');
+
+        if (filas.length === 0) {
+            alert('Primero abre el detalle (👁️) para generar el PDF');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const azulOscuro = [13, 27, 42];
+        const azulMedio  = [31, 58, 99];
+        const grisF      = [245, 247, 250];
+
+        const W = 210;
+        const M = 14;
+
+        // HEADER
+        doc.setFillColor(...azulOscuro);
+        doc.rect(0, 0, W, 30, 'F');
+
+        doc.setTextColor(255,255,255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('DETALLE DE COMISIONES', W/2, 15, { align: 'center' });
+
+        doc.setFontSize(10);
+        doc.text(nombreCTP, W/2, 23, { align: 'center' });
+
+        let y = 40;
+
+        // TITULO
+        doc.setFillColor(...azulOscuro);
+        doc.roundedRect(M, y - 5, W - M*2, 10, 2, 2, 'F');
+
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(9);
+        doc.text('MONTO DE CONVERSIÓN', W/2, y+2, { align: 'center' });
+
+        y += 10;
+
+        // HEADER TABLA
+        doc.setFillColor(...azulMedio);
+        doc.rect(M, y, W - M*2, 8, 'F');
+
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(8);
+
+        const col1 = M + 5;
+        const col2 = 90;
+        const col3 = 150;
+
+        doc.text('Clasificación', col1, y+5);
+        doc.text('Alumno', col2, y+5);
+        doc.text('Precio', col3, y+5);
+
+        y += 8;
+
+        let total = 0;
+
+        filas.forEach((f, i) => {
+            const celdas = f.querySelectorAll('.mc-celda');
+
+            const clasificacion = celdas[0].innerText;
+            const alumno        = celdas[1].innerText;
+            const precio        = celdas[2].innerText;
+
+            total += parseFloat(precio.replace(/[$,]/g, ''));
+
+            if (i % 2 === 0) {
+                doc.setFillColor(...grisF);
+                doc.rect(M, y, W - M*2, 8, 'F');
+            }
+
+            doc.setTextColor(30,30,30);
+            doc.text(clasificacion, col1, y+5);
+            doc.text(alumno, col2, y+5);
+            doc.text(precio, col3, y+5);
+
+            y += 8;
+        });
+
+        // TOTAL
+        y += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...azulMedio);
+        doc.text(`Total: $${total.toLocaleString('es-MX')}`, W - M, y, { align: 'right' });
+
+        // FOOTER
+        doc.setFillColor(...azulOscuro);
+        doc.rect(0, 280, W, 15, 'F');
+
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(8);
+        doc.text(`Generado el ${new Date().toLocaleDateString('es-MX')}`, W/2, 290, { align: 'center' });
+
+        doc.save(`comisiones_${nombreCTP}.pdf`);
+    });
+});
+
+      
        // ===== EXPORTAR EXCEL =====
        document.querySelector('.btn-exportar')?.addEventListener('click', () => {
            const datos = [];
