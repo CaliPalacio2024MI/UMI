@@ -432,7 +432,7 @@ body:has(.crm-comisiones) .main-content {
 
 .mc-table-header {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     font-weight: 700;
     font-size: 13px;
     text-align: center;
@@ -442,7 +442,7 @@ body:has(.crm-comisiones) .main-content {
 
 .mc-table-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     text-align: center;
     font-size: 13px;
     padding: 10px 0;
@@ -451,4 +451,24 @@ body:has(.crm-comisiones) .main-content {
 
 .mc-celda {
     text-align: center;
+}
+
+#modal-detalle-comision .modal-prospecto-header {
+    background-color: #1f3a63; /* azul elegante */
+    color: #ffffff;
+}
+
+/* Título "Monto de Conversión" */
+#modal-detalle-comision .modal-seccion-titulo {
+    background-color: #1f3a63; /* azul claro */
+    color: #fff;
+    padding: 8px;
+    border-radius: 12px;
+    font-style: normal;
+    font-weight: 700;
+}
+
+#modal-detalle-comision .mc-table-header {
+    background-color: transparent; /* quita el azul */
+    color: #111;
 }

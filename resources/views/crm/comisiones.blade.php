@@ -153,7 +153,7 @@
 
             <!-- TITULO -->
             <div class="modal-seccion-titulo text-center">
-                <strong>Monto de Conversión</strong>
+                <strong>MONTO DE CONVERSIÓN</strong>
             </div>
 
             <!-- TABLA -->
@@ -162,7 +162,6 @@
 
                     <div class="mc-table-header">
                         <div>Clasificación</div>
-                        <div>Producto</div>
                         <div>Alumno</div>
                         <div>Precio de comisión</div>
                     </div>
@@ -172,7 +171,7 @@
                         <div class="mc-table-row">
                             <div class="mc-celda">Licenciatura</div>
                             <div class="mc-celda">Derecho</div>
-                            <div class="mc-celda">Juan Pérez</div>
+                            <div class="mc-celda">1</div>
                             <div class="mc-celda">$2,500</div>
                         </div>
                     </div>
@@ -246,8 +245,7 @@
 
             // 🔥 EJEMPLO FRONT (luego aquí va backend)
             const datosEjemplo = [
-                { clasificacion: 'Licenciatura', producto: 'Derecho', alumno: 'Juan Pérez', precio: 2500 },
-                { clasificacion: 'Maestría', producto: 'Administración', alumno: 'Ana López', precio: 3200 }
+                { clasificacion: 'Licenciatura', alumno: '1', precio: 2500 },
             ];
 
             let total = 0;
@@ -260,7 +258,6 @@
 
                 fila.innerHTML = `
                     <div class="mc-celda">${item.clasificacion}</div>
-                    <div class="mc-celda">${item.producto}</div>
                     <div class="mc-celda">${item.alumno}</div>
                     <div class="mc-celda">$${item.precio.toLocaleString('es-MX')}</div>
                 `;
