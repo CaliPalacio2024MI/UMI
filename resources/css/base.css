@@ -6,15 +6,15 @@
     --umi-blue-dark: #223F70;
     --umi-blue-light: #4A6CA8;
     --umi-red-danger: #E74C3C;
-    
+
     /* CAMBIO 2: MÁS ALTURA PARA LA TABLA */
     /* Reducimos el offset de 120px a 60px para dar más espacio vertical */
-    --global-offset-height: 60px; 
+    --global-offset-height: 60px;
 
     /* CAMBIO 1: INVERSIÓN DE COLORES */
     --page-bg: #FFFFFF;       /* Fondo de la página BLANCO */
     --card-bg: #f5f5f5;       /* Fondo del contenedor GRIS */
-    --text: #333333; 
+    --text: #333333;
 }
 
 *, *::before, *::after {
@@ -48,7 +48,7 @@ body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 /* Header */
@@ -56,7 +56,7 @@ body {
     font-size: 28px;
     font-weight: 800;
     margin: 0 0 15px 0;
-    flex-shrink: 0; 
+    flex-shrink: 0;
     color: #333;
     text-transform: uppercase;
 }
@@ -64,35 +64,35 @@ body {
 /* Toolbar */
 #umi-app-view .umi-toolbar {
     margin-bottom: 20px;
-    flex-shrink: 0; 
-    display: flex; 
+    flex-shrink: 0;
+    display: flex;
     align-items: center;
-    gap: 15px; 
+    gap: 15px;
 }
 
 /* --- CARD CONTENEDORA --- */
 #umi-app-view .umi-table-card {
-    flex: 1; 
+    flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden; 
-    min-height: 0; 
-    
+    overflow: hidden;
+    min-height: 0;
+
     /* CAMBIO 1: FONDO GRIS PARA EL CONTENEDOR */
-    background: var(--card-bg); 
+    background: var(--card-bg);
     border-radius: 12px;
     /* Sombra más suave para el fondo gris */
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.03); 
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
     padding: 20px;
 }
 
 .umi-table-scroll {
-    height: 100%; 
-    overflow-y: auto; 
+    height: 100%;
+    overflow-y: auto;
     overflow-x: auto;
     padding: 0;
     /* CAMBIO 3: Asegura que el scroll se comporte bien con el sticky */
-    position: relative; 
+    position: relative;
 }
 
 /* =========================================
@@ -100,9 +100,9 @@ body {
    ========================================= */
 
 #umi-app-view .umi-table-card table {
-    table-layout: fixed; 
-    border-collapse: separate; 
-    border-spacing: 0;         
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
 }
 
@@ -120,13 +120,13 @@ body {
     font-size: 14px;
     vertical-align: middle;
     border: none;
-    
+
     /* Mantenemos el truco del borde transparente para la separación */
-  
+
     background-clip: padding-box;
-    
+
     /* CAMBIO 3: Sombra sutil para que al hacer scroll se sienta "desprendido" y sólido */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 /* Redondeo completo (Píldora) para el encabezado */
@@ -147,19 +147,19 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border-radius: 12px;
     /* Asegura que el cuerpo esté en un plano inferior al header */
-    position: relative; 
+    position: relative;
     z-index: 1;
 }
 
 /* LÍNEAS ROJAS VERTICALES */
 #umi-app-view table tbody td:not(:last-child) {
-    border-right: 2px solid var(--umi-red-danger); 
+    border-right: 2px solid var(--umi-red-danger);
 }
 
 /* Estilos de las celdas del cuerpo */
 #umi-app-view tbody td {
     padding: 12px 10px;
-    border-bottom: 1px solid #f0f0f0; 
+    border-bottom: 1px solid #f0f0f0;
     font-size: 14px;
     vertical-align: middle;
     color: #444;
@@ -184,13 +184,13 @@ body {
 /* --- AJUSTE DE ANCHO Y ALINEACIÓN DE COLUMNAS --- */
 #umi-app-view table thead th:nth-child(1),
 #umi-app-view table tbody td:nth-child(1) {
-    width: 250px; 
+    width: 250px;
     min-width: 200px;
     text-align: center;
 }
-#umi-app-view table thead th:nth-child(6), 
+#umi-app-view table thead th:nth-child(6),
 #umi-app-view table tbody td:nth-child(6) {
-    width: 150px; 
+    width: 150px;
     min-width: 150px;
     text-align: center;
 }
@@ -208,7 +208,7 @@ body {
 #umi-app-view tbody td .actions-row {
     display: flex;
     gap: 8px;
-    justify-content: center; 
+    justify-content: center;
 }
 
 /* =========================================
@@ -230,21 +230,21 @@ body {
     background-color: var(--umi-blue-dark);
     color: #FFFFFF;
     border: none;
-    font-weight: 500; 
-    font-size: 16px; 
-    border-radius: 50px; 
-    padding: 10px 30px; 
+    font-weight: 500;
+    font-size: 16px;
+    border-radius: 50px;
+    padding: 10px 30px;
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
     text-decoration: none;
     box-shadow: 0 4px 6px rgba(34, 63, 112, 0.2);
-    white-space: nowrap; 
+    white-space: nowrap;
 }
 .umi-btn:hover { background-color: #1a3055; transform: translateY(-1px); }
 .umi-btn i { font-size: 18px; }
 
 .umi-search-wrapper {
-    flex-grow: 1; 
+    flex-grow: 1;
     max-width: 500px;
     position: relative;
 }
@@ -258,13 +258,13 @@ body {
 }
 .umi-search-input {
     width: 100%;
-    padding: 12px 20px 12px 50px; 
+    padding: 12px 20px 12px 50px;
     border: 1px solid transparent;
-    border-radius: 50px; 
+    border-radius: 50px;
     font-size: 16px;
     outline: none;
     background-color: #FFFFFF;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     color: #555;
 }
 .umi-search-input:focus { box-shadow: 0 4px 12px rgba(34, 63, 112, 0.15); }
@@ -274,12 +274,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px; height: 32px; 
+    width: 32px; height: 32px;
     border-radius: 50%;
     border: 1px solid transparent;
     background-color: transparent;
-    color: #555; 
-    padding: 0; 
+    color: #555;
+    padding: 0;
     transition: all 0.2s;
     cursor: pointer;
 }
@@ -330,18 +330,18 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    
+
     /* Color Rojo definido en tus variables */
     background-color: var(--umi-red-danger);
     color: #FFFFFF;
-    
+
     border: none;
     font-weight: 600;
     font-size: 16px;
-    
+
     /* AQUÍ ESTÁ EL REDONDEO QUE PEDISTE */
-    border-radius: 50px; 
-    
+    border-radius: 50px;
+
     padding: 12px 35px;
     margin-top: 20px;
     text-decoration: none;
@@ -393,16 +393,16 @@ body {
         box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         border-radius: 8px;
         overflow: hidden;
-        height: 90vh; 
-        width: 80%; 
+        height: 90vh;
+        width: 80%;
         max-width: 1000px;
     }
     .modal-header {
-        background: #333; 
-        color: white; 
-        padding: 10px 15px; 
-        display: flex; 
-        justify-content: space-between; 
+        background: #333;
+        color: white;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
     }
     .modal-close {
@@ -414,10 +414,9 @@ body {
         padding: 0 10px;
     }
     .modal-close:hover { color: #ff6b6b; }
-    
+
     /* Animación suave para el mensaje de éxito */
     #success-alert {
         transition: opacity 0.5s ease-out;
     }
 
-   

@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Cursos;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\StoreCourseRequest; 
+use App\Http\Requests\StoreCourseRequest;
 use App\Models\Cursos\Course;
 use App\Models\Users\Institution;
+use App\Models\Schedule;
 use App\Models\Users\Department;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use App\Models\TopicTemplate;
 use App\Models\Cursos\Topics;
+use App\Models\SubtopicTemplate;
+use App\Models\Cursos\Subtopic;
 
 class CourseController extends Controller
 {
@@ -48,23 +51,34 @@ class CourseController extends Controller
      * Mostrar formulario de creación de curso
      */
     public function create(): View
-    {
-         // Obtenemos el ID de la institución de la sesión actual del usuario
-        $institutionId = session('active_institution_id');
+   {
+    // Obtenemos el ID de la institución de la sesión actual del usuario
+    $institutionId = session('active_institution_id');
 
-        // Cargamos la institución actual con sus relaciones (carreras, departamentos, etc.)
-        $currentInstitution = Institution::with(['careers', 'departments.workstations'])->find($institutionId);
+    // Cargamos la institución actual con sus relaciones
+    $currentInstitution = Institution::with(['careers', 'departments.workstations'])
+        ->find($institutionId);
 
-        $departmentWorkstationsMap = [];
-        if ($currentInstitution->departments) {
-            $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
-                return [$department->id => $department->workstations->toArray()];
-            });
-        }
+    $departmentWorkstationsMap = [];
+    if ($currentInstitution->departments) {
+        $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
+            return [$department->id => $department->workstations->toArray()];
+        });
+    }
 
-        $templates = TopicTemplate::orderBy('title')->get();
-        // Pasamos solo la institución actual a la vista.
-        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
+    $templates = TopicTemplate::orderBy('title')->get();
+    // Pasamos solo la institución actual a la vista.
+    return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
+
+    // Traer todos los horarios registrados
+    $schedules = Schedule::all();
+
+    // Enviar también $schedules a la vista
+    return view('layouts.Cursos.create', compact(
+        'currentInstitution',
+        'departmentWorkstationsMap',
+        'schedules'
+     ));
     }
 
     /**
@@ -98,7 +112,7 @@ class CourseController extends Controller
         // Manejo de imagen
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('courses', 'public');
-            $courseData['image_path'] = $path;
+            $courseData['image'] = $path;
         }
         // Material de apoyo
         if ($request->hasFile('guide_material')) {
@@ -122,11 +136,19 @@ class CourseController extends Controller
             $courseData['cert_sig_2_path'] = $path;
         }
 
-
         $course = Course::create($courseData);
-
         //Copiar plantillas de tema
         if ($request->has('template_topics')) {
+
+            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+
+            foreach ($selectedTemplates as $template){
+                Topics::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
+            }
+        }
+
+        //Copiar plantillas de subtema
+        if ($request->has('template_subtopics')) {
 
             $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
 
@@ -138,15 +160,23 @@ class CourseController extends Controller
         if ($request->filled('career_id')) {
             // sync() adjunta el ID y quita cualquier otro que no esté en el array
             $course->careers()->sync([$request->career_id]);
-        } 
-        //Nuevo bloque multiple
-        if ($request->filled('departments')){
-            $course->departments()->sync($request->departments);
         }
-        
-        if ($request->filled('worstations')){
-            $course->worstations()->sync($request->workstations);
+        elseif ($request->filled('department_ids')) {
+
+           // Guardar múltiples departamentos
+           $course->departments()->sync($request->department_ids);
+
+          // Guardar múltiples puestos (opcional)
+          if ($request->filled('workstation_ids')) {
+
+             $cleanIds = array_filter($request->workstation_ids);
+
+            if (!empty($cleanIds)) {
+             $course->workstations()->sync($cleanIds);
         }
+    }
+
+}
 
         Log::info('Curso creado exitosamente', [
             'course_id' => $course->id,
@@ -166,11 +196,9 @@ class CourseController extends Controller
     {
         // 1. Cargar toda la data del curso
         $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
-        
-        //session(['active_course_id' => $course->id]);
 
         $user = Auth::user();
-        
+
         // 2. Calcular Total de Items (CRUCIAL para el JS)
         $totalItems = 0;
         foreach ($course->topics as $topic) {
@@ -228,11 +256,11 @@ class CourseController extends Controller
 
         // 5. Retornar vista con TODAS las variables
         return view('layouts.Cursos.show', compact(
-            'course', 
-            'progress',       
-            'totalItems',     
-            'isEnrolled', 
-            'finalExamActivity', 
+            'course',
+            'progress',
+            'totalItems',
+            'isEnrolled',
+            'finalExamActivity',
             'finalExamData',
             'userCompletions'
         ));
@@ -276,7 +304,7 @@ class CourseController extends Controller
         // 3. Cargar los filtros que el curso YA tiene seleccionados
         //    Usamos pluck('id') para obtener un array simple de IDs [1, 3]
         $course->load('careers', 'departments', 'workstations');
-        
+
         $selectedFilters = [
             'career_id' => $course->careers->pluck('id')->first(), // Asumimos que solo es una carrera
             'department_id' => $course->departments->pluck('id')->first(), // Asumimos que solo es un depto
@@ -284,7 +312,7 @@ class CourseController extends Controller
         ];
 
         return view('layouts.Cursos.edit', compact(
-            'course', 
+            'course',
             'currentInstitution', // Necesario para los filtros
             'departmentWorkstationsMap', // Necesario para el JS
             'selectedFilters' // Necesario para pre-seleccionar
@@ -324,15 +352,14 @@ class CourseController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'credits' => $creditsRule,
+            'modality' => 'required|in:presencial,virtual,hibrida',
             'hours' => 'required|integer|min:0|max:1000',
-            'modality' => 'required|in:presencial,virtual,hibrido',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960', 
+            'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960',
             'institution_id' => 'required|exists:institutions,id', // Lo usamos pero no lo actualizamos
-            'departments' => 'nullable|array',
-            'departments.*' =>'exists:departments,id',
-            'workstations' => 'nullable|array',
-            'workstations.*' =>'exists:workstations,id',
+            'career_id' => 'nullable|exists:careers,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'workstation_id' => 'nullable|exists:workstations,id',
         ]);
 
         // Manejo de imagen
@@ -352,13 +379,25 @@ class CourseController extends Controller
             // Guardar el nuevo archivo
             $validatedData['guide_material_path'] = $request->file('guide_material')->store('courses/guides', 'public');
         }
-        
-        $data = $request->except(['departments','workstations']);
+
         $course->update($validatedData);
 
-        //Guardar relaciones multiselect
-        $course->departments()->sync($request->departments ?? []);
-        $course->workstations()->sync($request->workstations ?? []);
+        if ($request->filled('career_id')) {
+            $course->careers()->sync([$request->career_id]);
+            $course->departments()->sync([]); // Limpiar el otro filtro
+            $course->workstations()->sync([]);
+        }
+        elseif ($request->filled('department_id')) {
+            $course->departments()->sync([$request->department_id]);
+            $course->careers()->sync([]); // Limpiar el otro filtro
+
+            // Si se especificó un puesto, guardarlo. Si no, limpiarlo.
+            if ($request->filled('workstation_id')) {
+                $course->workstations()->sync([$request->workstation_id]);
+            } else {
+                $course->workstations()->sync([]);
+            }
+        }
 
         Log::info('Curso actualizado', ['course_id' => $course->id, 'user_id' => Auth::id()]);
 
@@ -434,7 +473,7 @@ class CourseController extends Controller
             $this->authorize('view', $course);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'No tienes permiso para inscribirte en este curso.'
             ], 403);
         }
@@ -444,12 +483,12 @@ class CourseController extends Controller
         $user->courses()->syncWithoutDetaching($course->id);
 
         Log::info('Usuario inscrito en curso', [
-            'user_id' => $user->id, 
+            'user_id' => $user->id,
             'course_id' => $course->id
         ]);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => '¡Inscripción exitosa!'
         ]);
     }
@@ -467,12 +506,12 @@ class CourseController extends Controller
         $user->courses()->detach($course->id);
 
         Log::info('Usuario dado de baja de curso', [
-            'user_id' => $user->id, 
+            'user_id' => $user->id,
             'course_id' => $course->id
         ]);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Has sido dado de baja del curso.'
         ]);
     }
@@ -480,10 +519,10 @@ class CourseController extends Controller
     public function showCertificate(Course $course)
     {
         $user = Auth::user();
-        
+
         // 1. Buscar el examen final del curso
         $finalExam = $course->finalExam;
-        
+
         if (!$finalExam) {
             return redirect()->route('course.show', $course)
                 ->with('error', 'Este curso no tiene certificado disponible.');
@@ -504,7 +543,7 @@ class CourseController extends Controller
         // ---------------------------------------------------------
         // 2. PREPARACIÓN DE DATOS
         // ---------------------------------------------------------
-        
+
         // Formatear fecha elegante: "24 de Noviembre de 2025"
         // Si tu Laravel no está en español, esto ayuda a forzarlo.
         $completionDate = $completion->created_at->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
@@ -522,7 +561,7 @@ class CourseController extends Controller
         // ---------------------------------------------------------
         // 3. GENERACIÓN DEL PDF
         // ---------------------------------------------------------
-        
+
         // Cargamos la vista de diseño que creamos (Cursos.template_v1)
         $pdf = Pdf::loadView('layouts.Cursos.template_v1', $data);
 
@@ -551,7 +590,7 @@ class CourseController extends Controller
             ->with('completable.course') // Cargar curso para ver su institución
             ->get()
             ->filter(function ($completion) use ($activeInstitutionId) {
-                
+
                 // Verificaciones de seguridad (que exista la actividad y el curso)
                 if (!$completion->completable || !$completion->completable->course) {
                     return false;

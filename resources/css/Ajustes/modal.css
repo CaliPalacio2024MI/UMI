@@ -1,26 +1,26 @@
 
 
 .modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1050; 
+    display: none;
+    position: fixed;
+    z-index: 1050;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto; 
-    background-color: rgba(0, 0, 0, 0.5); 
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(3px);
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 10% auto; 
+    margin: 10% auto;
     padding: 25px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    width: 80%; 
-    max-width: 600px; 
+    width: 80%;
+    max-width: 600px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     position: relative;
     animation: slideDown 0.3s ease-out;
@@ -33,7 +33,7 @@
         opacity: 0;
     }
     to {
-        top: 0; 
+        top: 0;
         opacity: 1;
     }
 }
@@ -93,7 +93,7 @@
  }
 
 #modalForm button[type="submit"] {
-    background-color: #223F70; 
+    background-color: #223F70;
     color: white;
     padding: 12px 20px;
     border: none;
@@ -105,25 +105,38 @@
 }
 
 #modalForm button[type="submit"]:hover {
-    background-color: #1a3258; 
+    background-color: #1a3258;
 }
 
 
 .checkbox-line {
-    display: flex;         
-    align-items: center;   
-    margin-bottom: 10px; 
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 
 .checkbox-line input[type="checkbox"] {
-    margin-right: 8px;   
-    display: inline-block; 
-    width: auto;           
+    margin-right: 8px;
+    display: inline-block;
+    width: auto;
 }
 
 .checkbox-line label {
-    display: inline;       
-    width: auto;           
-    margin-bottom: 0;   
+    display: inline;
+    width: auto;
+    margin-bottom: 0;
+}
+.submenu li a{
+    display:block;
+    padding:12px 15px;
+    text-decoration:none;
+    color:black;
+    border-radius:12px;
+    transition:0.2s;
+}
+
+.submenu li a:hover{
+    background:#f2f2f2;
+    color:black;
 }

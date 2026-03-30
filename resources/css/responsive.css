@@ -13,34 +13,34 @@
     min-width: 70px;
     max-width: 70px;
   }
-  
+
   .menu li a .text {
     display: none;
   }
-  
+
   .menu li a {
     justify-content: center;
     padding: var(--spacing-md) var(--spacing-sm);
     min-height: 44px;
   }
-  
+
   .brand-img {
     display: none;
   }
-  
+
   .btn-logout .text {
     display: none;
   }
-  
+
   .btn-logout {
     justify-content: center;
     min-height: 44px;
   }
-  
+
   .brand-bottom img {
     width: 40px;
   }
-  
+
   .main-content {
     padding: var(--spacing-md);
   }
@@ -50,19 +50,19 @@
   .app-container {
     flex-direction: column;
   }
-  
+
   .sidebar {
     flex: 0 0 auto;
     height: auto;
     position: relative;
     order: 2;
   }
-  
+
   .main-content {
     order: 1;
     padding: var(--spacing-md);
   }
-  
+
   /* Mobile menu toggle */
   .mobile-menu-toggle {
     display: block;
@@ -78,11 +78,11 @@
     cursor: pointer;
     box-shadow: var(--pill-shadow);
   }
-  
+
   .sidebar.mobile-hidden {
     display: none;
   }
-  
+
   .sidebar.mobile-visible {
     display: flex;
     position: fixed;

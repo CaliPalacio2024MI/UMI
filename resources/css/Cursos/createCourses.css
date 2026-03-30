@@ -102,8 +102,3 @@ input[type="file"] {
     color: #444;
     font-style: italic;
 }
-
-/* Altura visible para selects multiples */
-select[multiple]{
-    min-height: 120px; /*puedes ajustar*/
-}

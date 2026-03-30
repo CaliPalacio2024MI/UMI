@@ -4,7 +4,7 @@
 
 
 @section('content')
-@vite(['resources/css/Cursos/createCourses.css']) 
+@vite(['resources/css/Cursos/createCourses.css'])
 
 <div class="create-course-container">
     <h1 class="page-title">Crear Nuevo Curso</h1>
@@ -45,62 +45,44 @@
                 <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
                 <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
             </select>
-        </div>    
+        </div>
 
-        {{-- Campos especiales para Universidad Mundo Imperial --}}
-        @if ($currentInstitution->name == 'Universidad Mundo Imperial')
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label for="hours">Horas</label>
-                    <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
-                </div>
+      {{-- Campos especiales para Universidad Mundo Imperial --}}
+@if ($currentInstitution->name == 'Universidad Mundo Imperial')
 
-                <div class="form-group flex-1">
-                    <label for="credits">Créditos</label>
-                    <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
-                </div>
-            </div>
+    <div class="form-row">
+        <div class="form-group flex-1">
+            <label for="hours">Horas</label>
+            <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
+        </div>
 
-            <div class="form-group">
-                <label for="career_id">Carrera</label>
-                <select name="career_id" id="career_id" required>
-                    <option value="" disabled selected>Selecciona la Carrera</option>
-                    @foreach($currentInstitution->careers as $career)
-                        <option value="{{ $career->id }}" {{ old('career_id') == $career->id ? 'selected' : '' }}>
-                            {{ $career->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="form-group flex-1">
+            <label for="credits">Créditos</label>
+            <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
+        </div>
+    </div>
 
-        @else
-            <div class="form-group">
-                <label for="hours">Horas</label>
-                <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
-            </div>
+    <div class="form-group">
+        <label for="career_id">Carrera</label>
+        <select name="career_id" id="career_id" required>
+            <option value="" disabled selected>Selecciona la Carrera</option>
+            @foreach($currentInstitution->careers as $career)
+                <option value="{{ $career->id }}" {{ old('career_id') == $career->id ? 'selected' : '' }}>
+                    {{ $career->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label for="department_id">Dirigido a Departamento</label>
-                    <select name="departments[]" id="department_id" multiple required>
-                        <option value="" disabled>Selecciona el Departamento</option>
-                        @foreach($currentInstitution->departments as $department)
-                            <option value="{{ $department->id }}" {{collect(old('departments', []))->contains($department->id) ? 'selected' : ''}}>
-                                {{ $department->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+@else
 
-                <div class="form-group flex-1">
-                    <label for="workstation_id">Dirigido al Puesto</label>
-                    <select name="workstations[]" id="workstation_id" multiple disabled>
-                        <option value="" selected>Primero selecciona un departamento</option>
-                        <option value="">Todos los Puestos del Departamento</option>
-                    </select>
-                </div>
-            </div>
-        @endif
+    {{-- SOLO HORAS --}}
+    <div class="form-group">
+        <label for="hours">Horas</label>
+        <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
+    </div>
+
+@endif
 
         <div class="form-row">
             <div class="form-group" >
@@ -139,30 +121,47 @@
             </div>
         </div>
 
+
         {{--Seleccion de Temas--}}
         <div class="form-group m-3">
             <label for="template_topics">Temas desde biblioteca</label>
 
             <select name="template_topics[]" id="template_topics" class="form-control" multiple>
-
                 @foreach($templates as $template)
                 <option value="{{ $template->id }}">
                     {{ $template->title }}
                 </option>
                 @endforeach
-                
             </select>
-            
+
             <small class="text-muted">
                 Puedes seleccionar varios manteniendo presionada la tecla CTRL.
             </small>
-        </div>        
+        </div>
+
+        {{--Seleccion de Subtemas
+        <div class="form-group m-3">
+            <label for="template_subtopics">Subtemas desde biblioteca</label>
+
+            <select name="template_subtopics[]" id="template_subtopics" class="form-control" multiple>
+                @foreach($subtopicTemplates as $subtopics)
+                <option value="{{ $subtopics->id }}">
+                    {{ $subtopics->title }}
+                </option>
+                @endforeach
+            </select>
+
+            <small class="text-muted">
+                Puedes seleccionar varios manteniendo presionada la tecla CTRL.
+            </small>
+        </div> --}}
 
         <button type="submit" class="btn-submit">
             Guardar Curso
         </button>
     </form>
 </div>
+
 
 <script>
 (function() {
@@ -211,7 +210,7 @@
     }
 
     /* ============================
-       4. Inicializador 
+       4. Inicializador
     ============================ */
     if (departmentSelect) {
 

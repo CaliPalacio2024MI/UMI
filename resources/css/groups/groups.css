@@ -1,0 +1,76 @@
+/* ===== CONTENEDOR GENERAL ===== */
+.container {
+    padding: 20px;
+}
+
+/* ===== TITULO ===== */
+.container h1 {
+    margin-bottom: 5px;
+}
+
+.container p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* ===== CONTENEDOR DE COLUMNAS ===== */
+.groups-container {
+    display: flex;
+    gap: 20px;
+}
+
+/* ===== TARJETAS ===== */
+.group-card {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: 0.2s ease;
+}
+
+/* ===== TITULOS ===== */
+.group-card h4 {
+    margin-bottom: 10px;
+    font-weight: 600;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+/* ===== TABLA ===== */
+.group-card table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* ===== FILAS ===== */
+.group-card td {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* ===== HOVER ===== */
+.group-card tr:hover {
+    background-color: #f5f7fa;
+    cursor: pointer;
+}
+
+/* ===== FILA ACTIVA ===== */
+.active-row {
+    background-color: #dfe6e9 !important;
+    font-weight: 600;
+}
+
+/* ===== MENSAJES ===== */
+.empty-msg {
+    text-align: center;
+    color: #999;
+    padding: 15px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .groups-container {
+        flex-direction: column;
+    }
+}

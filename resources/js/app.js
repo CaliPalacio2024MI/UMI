@@ -23,10 +23,10 @@ class SimpleSPANavigation {
     // !! FUNCIÓN setupEventListeners REESCRITA PARA HOVER !!
     // !! ========================================================== !!
     setupEventListeners() {
-        
+
         // --- 1. Lógica de Hover para Menús ---
         const menuItems = document.querySelectorAll('.menu li.has-submenu');
-        
+
         menuItems.forEach(item => {
             const timeoutDelay = 200; // Delay de 200ms antes de cerrar
 
@@ -36,10 +36,10 @@ class SimpleSPANavigation {
                     clearTimeout(this.menuTimeouts.get(item));
                     this.menuTimeouts.delete(item);
                 }
-                
+
                 // Abre este menú
                 item.classList.add('open');
-                
+
                 // Cierra los hermanos (menús del mismo nivel)
                 const siblings = this.getSiblings(item);
                 siblings.forEach(sibling => {
@@ -68,12 +68,12 @@ class SimpleSPANavigation {
                     openSubmenu.classList.remove('open');
                 });
             }
-            
+
             // B. Clic DENTRO de un enlace (Navegación SPA)
             const link = e.target.closest('.menu a');
             // Solo navega si el enlace NO es el padre de un submenú (ej. no es "Ajustes")
             const isSubmenuToggle = link && link.parentElement.classList.contains('has-submenu');
-            
+
             if (link && !isSubmenuToggle && this.shouldIntercept(link)) {
                 e.preventDefault();
                 this.setImmediateActivate(link);
@@ -138,11 +138,11 @@ class SimpleSPANavigation {
     }
 
     shouldIntercept(link) {
-        return link.hostname === window.location.hostname && 
+        return link.hostname === window.location.hostname &&
                 !link.hasAttribute('data-no-intercept') &&
                 !link.href.includes('logout') &&
                 !link.href.includes('#') &&
-                !link.closest('.brand'); 
+                !link.closest('.brand');
     }
 
     async navigate(url) {
@@ -164,22 +164,22 @@ class SimpleSPANavigation {
 
 async loadPage(url, updateHistory = true) {
         const cacheKey = this.getCacheKey(url);
-        
+
         // LISTA NEGRA: Estas páginas NUNCA se guardan en memoria
-        const noCachePaths = ['/facturacion']; 
+        const noCachePaths = ['/facturacion'];
         const currentPath = new URL(url, window.location.origin).pathname;
-        
+
         // Si la URL contiene algo de la lista negra, NO usamos caché
         const shouldUseCache = !noCachePaths.some(path => currentPath.includes(path));
 
         if (shouldUseCache && this.cache.has(cacheKey)) {
             const cached = this.cache.get(cacheKey);
-            if (Date.now() - cached.timestamp < 300000) { 
+            if (Date.now() - cached.timestamp < 300000) {
                 if (updateHistory) history.pushState({ page: url }, '', url);
                 return cached.content;
             }
         }
-        
+
         // Si es facturación, esto pedirá datos frescos al servidor
         try {
             const controller = new AbortController();
@@ -196,7 +196,7 @@ async loadPage(url, updateHistory = true) {
             });
             clearTimeout(timeoutId);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
+
             const html = await response.text();
             const content = this.parsePageContent(html);
             if (!content) throw new Error('Invalid structure');
@@ -288,8 +288,8 @@ async loadPage(url, updateHistory = true) {
             } catch (e) {
                 linkPath = href.replace(/\/+$/, '') || '/';
             }
-            const isMatch = (linkPath === currentPath) || 
-                            (linkPath !== '/' && currentPath.startsWith(linkPath + '/')) || 
+            const isMatch = (linkPath === currentPath) ||
+                            (linkPath !== '/' && currentPath.startsWith(linkPath + '/')) ||
                             (linkPath !== '/' && currentPath === linkPath);
             if (isMatch) {
                 if (!li.classList.contains('active')) {
@@ -364,6 +364,7 @@ async loadPage(url, updateHistory = true) {
     navigateTo(url) {
         this.navigate(url);
     }
+
 }
 
 // Inicializar cuando el DOM esté listo
@@ -398,3 +399,51 @@ window.addEventListener('beforeunload', () => {
         }
     });
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const departmentSelect = document.getElementById('department_id');
+    const workstationSelect = document.getElementById('workstation_id');
+
+    if (!departmentSelect || !workstationSelect || !window.departmentWorkstations) {
+        return;
+    }
+
+    function populateWorkstations(departmentIds) {
+        workstationSelect.innerHTML = '';
+
+        if (!departmentIds.length) {
+            workstationSelect.disabled = true;
+            workstationSelect.appendChild(
+                new Option('Selecciona al menos un departamento', '')
+            );
+            return;
+        }
+
+        workstationSelect.disabled = false;
+
+        const added = new Set();
+
+        departmentIds.forEach(depId => {
+            if (window.departmentWorkstations[depId]) {
+                window.departmentWorkstations[depId].forEach(ws => {
+                    if (!added.has(ws.id)) {
+                        workstationSelect.appendChild(
+                            new Option(ws.name, ws.id)
+                        );
+                        added.add(ws.id);
+                    }
+                });
+            }
+        });
+    }
+
+    departmentSelect.addEventListener('change', () => {
+        const selectedDepartments = Array.from(
+            departmentSelect.selectedOptions
+        ).map(option => option.value);
+
+        populateWorkstations(selectedDepartments);
+    });
+});
+

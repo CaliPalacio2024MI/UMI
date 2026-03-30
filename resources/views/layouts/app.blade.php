@@ -11,10 +11,12 @@
   <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <title>@yield('title','Dashboard')</title>
-  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   {{-- Vite inyecta los enlaces a CSS/JS de resources --}}
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 </head>
+
 <body>
   {{-- Botón menú móvil --}}
   <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Abrir menú">
@@ -23,11 +25,12 @@
     </svg>
   </button>
 
+
   {{-- Contenedor principal: sidebar + contenido --}}
   <div class="app-container">
     {{-- Sidebar --}}
     @include('layouts.components.sidebar')
-    
+
     <main class="main-content" id="main-content">
        <div class="header">
           <div class="header-user-info">
@@ -61,25 +64,26 @@
             @endif
           </div>
         </div>
-    
+
       {{-- Contenido específico de cada página --}}
       <div class="page-content">
         @yield('content')
       </div>
     </main>
   </div>
-{{-- ======================= SCRIPT MAESTRO ======================= --}}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+ {{-- ======================= SCRIPT MAESTRO ======================= --}}
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+ <script>
+ document.addEventListener('DOMContentLoaded', () => {
 
     /* ============================================================
        1. ARRANQUE INICIAL
     ============================================================ */
     executeScrollLogic();
     checkAndShowAlerts();
-    
+
     // Reintento por si la carga es lenta
     setTimeout(() => {
         executeScrollLogic();
@@ -114,13 +118,13 @@ if (formFactura) {
         const pdfInput = document.getElementById('modal_archivo_pdf');
         if (pdfInput && pdfInput.files.length > 0) {
             const pdfFile = pdfInput.files[0];
-            
+
             if (!pdfFile.name.toLowerCase().endsWith('.pdf')) {
                 valid = false;
                 errorMessage = 'El archivo PDF debe ser formato PDF (.pdf)';
-            } 
+            }
             // VALIDACIÓN DE TAMAÑO PDF
-            else if (pdfFile.size > MAX_FILE_SIZE) { 
+            else if (pdfFile.size > MAX_FILE_SIZE) {
                 valid = false;
                 errorMessage = 'El archivo PDF es demasiado grande. Máximo permitido: 5 MB.';
             }
@@ -135,9 +139,9 @@ if (formFactura) {
                 if (!xmlFile.name.toLowerCase().endsWith('.xml')) {
                     valid = false;
                     errorMessage = 'El archivo XML debe ser formato XML (.xml)';
-                } 
+                }
                 // 🚨 VALIDACIÓN DE TAMAÑO XML
-                else if (xmlFile.size > MAX_FILE_SIZE) { 
+                else if (xmlFile.size > MAX_FILE_SIZE) {
                     valid = false;
                     errorMessage = 'El archivo XML es demasiado grande. Máximo permitido: 5 MB.';
                 }
@@ -173,7 +177,7 @@ if (formFactura) {
             const select = e.target;
             const inputReal = document.getElementById('modal_monto');
             const inputVisible = document.getElementById('modal_monto_visible');
-            
+
             if (select && inputReal && inputVisible) {
                 const option = select.options[select.selectedIndex];
                 const precio = option.getAttribute('data-amount');
@@ -223,7 +227,7 @@ if (formFactura) {
             const modal = document.getElementById('modalFactura');
             if (modal) closeFacturaModal(modal);
         }
-        
+
         // Toggle Detalles (Abonos)
         const toggleBtn = e.target.closest('.icon-toggle');
         if (toggleBtn) {
@@ -244,7 +248,7 @@ if (formFactura) {
     });
 
 /* ============================================================
-   6. FUNCIONES AUXILIARES (FUSIONADA: 
+   6. FUNCIONES AUXILIARES (FUSIONADA:
    ============================================================ */
 function fillAndOpenModal(modal, btn) {
     const form = modal.querySelector('form');
@@ -255,7 +259,7 @@ function fillAndOpenModal(modal, btn) {
 
         // Helpers rápidos
         const setVal = (sel, val) => { const el = modal.querySelector(sel); if(el) el.value = val; };
-        
+
         // 2. Datos Básicos
         setVal('#modal_user_id', btn.dataset.userId || '');
         const userNameSpan = modal.querySelector('#modalUserName');
@@ -269,7 +273,7 @@ function fillAndOpenModal(modal, btn) {
         // 4. CÁLCULO DE FECHA (Lógica interna)
         let fechaISO = '';
         const hoy = new Date();
-        
+
         if (prefix === 'MEN-') {
             // Si es MENSUALIDAD: Usamos la fecha estricta del periodo
             fechaISO = btn.dataset.date || new Date().toISOString().split('T')[0];
@@ -284,7 +288,7 @@ function fillAndOpenModal(modal, btn) {
         // Mostramos solo la fecha bonita (DD/MM/YYYY)
         const [y, m, d] = fechaISO.split('-');
         const textoFecha = modal.querySelector('#texto_fecha_vencimiento');
-        
+
         if (textoFecha) {
             textoFecha.style.color = '#223F70'; // Azul Institucional
             textoFecha.style.fontWeight = 'bold';
@@ -296,15 +300,15 @@ function fillAndOpenModal(modal, btn) {
             setVal('#modal_period_id', btn.dataset.periodId);
         }
     }
-    
+
     document.body.style.overflow = 'hidden';
     modal.style.display = 'flex';
-}
+ }
 
-function closeFacturaModal(modal) {
+ function closeFacturaModal(modal) {
     modal.style.display = 'none';
     document.body.style.overflow = '';
-}
+ }
 
 
 
@@ -314,8 +318,8 @@ function closeFacturaModal(modal) {
             try {
                 const alertas = JSON.parse(dataDiv.dataset.alerts);
                 if (alertas.length > 0) {
-                    let alerta = alertas.find(a => a.tipo === 'error') 
-                               || alertas.find(a => a.tipo === 'warning') 
+                    let alerta = alertas.find(a => a.tipo === 'error')
+                               || alertas.find(a => a.tipo === 'warning')
                                || alertas[0];
 
                     Swal.fire({
@@ -369,16 +373,16 @@ function closeFacturaModal(modal) {
     function submitExport() {
         // 1. Obtener el formulario de filtros
         const form = document.querySelector('form[action="{{ route('Facturacion.index') }}"]');
-        
+
         // 2. Guardar la acción original (la ruta index)
         const originalAction = form.action;
-        
+
         // 3. Cambiar la acción a la ruta de exportación
         form.action = "{{ route('Facturacion.export') }}";
-        
+
         // 4. Enviar el formulario (descarga el archivo)
         form.submit();
-        
+
         // 5. Restaurar la acción original inmediatamente (para que el botón Filtrar siga funcionando normal)
         setTimeout(() => {
             form.action = originalAction;
@@ -414,7 +418,7 @@ function closeFacturaModal(modal) {
         });
     });
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
 
 </body>

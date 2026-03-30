@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('topic_templates', function (Blueprint $table) {
-            //
-            $table->string('file_path')->nullable()->after('description');
-        });
+        Schema::create('subtopic_templates', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->string('file_path')->nullable();
+            $table->timestamps();
+});
     }
 
     /**
@@ -22,10 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('topic_templates', function (Blueprint $table) {
-            //
-            $table->dropColumn('file_path');
-            
-        });
+        Schema::dropIfExists('subtopic_templates');
     }
 };

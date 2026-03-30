@@ -33,13 +33,14 @@ class StoreCourseRequest extends FormRequest
             $creditsRule = 'required|integer|min:0'; // Required only for UMI
         }
 
+
         return [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'modality' =>'required|in:presencial,virtual,hibrido',
             'institution_id' => 'required|exists:institutions,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20480', // Validación de imagen
             'credits' => $creditsRule,
+            'modality' => 'required|in:presencial,virtual,hibrida',
             'hours' => 'required|integer|min:0',
             'workstation_id' => 'nullable|exists:workstations,id',
             'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960', // max 40MB

@@ -6,8 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Users\Institution;
 use App\Models\Users\Workstation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use App\Models\Cursos\Course;
+
 
 /**
  * @property int $id
@@ -42,21 +41,15 @@ class Department extends Model
         'institution_id',
     ];
 
-    
+
     public function institution()
     {
         return $this->belongsTo(Institution::class);
     }
 
-    
+
     public function workstations()
     {
         return $this->hasMany(Workstation::class);
     }
-
-    public function courses():MorphToMany
-    {
-        return $this->morphToMany(Course::class, 'targetable');
-    }
-
 }

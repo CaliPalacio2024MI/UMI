@@ -143,47 +143,61 @@
     color: var(--muted);
 }
 
-/* ================= ACTIONS ================= */
+/* ================= ACTIONS (CORREGIDO) ================= */
 .btn-display {
     display: flex;
     justify-content: flex-end;
-    gap: 6px;
-    padding: 10px 12px;
+    align-items: center;
+    gap: 10px; /* Espacio uniforme entre botones */
+    padding: 12px;
     background: white;
     border-top: 1px solid rgba(0,0,0,.06);
     z-index: 5;
 }
 
+/* Estilo unificado para el contenedor del botón */
+.btn-action,
 .btn-display a,
 .btn-display button {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    background: #f3f4f6; /* Fondo gris claro suave para todos */
+    color: #111827;      /* Iconos color negro por defecto */
     transition: transform .2s ease, background .2s ease;
 }
 
+/* Tamaño estándar para cualquier icono interno */
+.btn-display i,
+.btn-display svg,
+.btn-display img {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    fill: currentColor; /* Asegura que SVGs tomen el color negro */
+}
+
+/* Hover general */
 .btn-display a:hover,
 .btn-display button:hover {
-    transform: scale(1.08);
+    transform: scale(1.1);
+    background: #e5e7eb;
 }
 
-.btn-edit,
+/* Excepción para el botón de borrar */
 .btn-delete {
-    border-radius: 10px;
-    padding: 8px;
-    transition: .25s;
-}
-
-.btn-edit:hover {
-    background: rgba(234,179,8,.2);
+    background: #dabac1 !important; /* Rojo */
+    color: white !important;         /* Icono blanco */
 }
 
 .btn-delete:hover {
-    background: rgba(220,38,38,.2);
-}
-
-/* ================= EMPTY ================= */
-.no-courses-message {
-    text-align: center;
-    color: var(--muted);
-    padding: 60px;
+    background: #a87d88 !important;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -199,6 +213,46 @@
     }
 }
 
+/* ================= EXTRA ================= */
+.content-panel {
+    display: none;
+}
+/* ================= CORRECCIÓN PARA EL BOTÓN ROJO ================= */
+
+/* Selector específico para el botón de borrar */
+.btn-delete {
+    background: #c7a3aa !important; /* Rojo */
+    color: white !important;         /* Icono blanco */
+    padding: 0 12px;                 /* Relleno lateral para dar aire al icono */
+    width: auto !important;          /* Permite que el ancho crezca según el icono */
+    height: 38px;                    /* Mantiene la misma altura que los otros */
+}
+
+/* Asegura que el icono de borrar NO se escale */
+.btn-delete i {
+    font-size: 18px !important;
+    width: auto !important;          /* El ancho del icono es automático */
+    height: auto !important;
+}
+
+.btn-delete:hover {
+    background: #c3b1b6 !important;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1200px) {
+    .courses-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .courses-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================= EXTRA ================= */
 .content-panel {
     display: none;
 }
