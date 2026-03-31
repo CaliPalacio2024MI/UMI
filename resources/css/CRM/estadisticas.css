@@ -151,6 +151,10 @@ select.input-custom{
     position: relative;
 }
 
+#tituloDona {
+    margin-bottom: 40px;
+}
+
 /* Título pequeño */
 .chart-item h4 {
     font-size: 14px;

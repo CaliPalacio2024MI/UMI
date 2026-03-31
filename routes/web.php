@@ -296,6 +296,10 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                         // pero la vista solo la usa master
                         Route::middleware(['role:master'])->group(function () {
                             Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
+                            Route::post('/comisiones', [CRMController::class, 'storeComision'])->name('comisiones.store');
+                            Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');  
+                            Route::delete('/comisiones/{id}', [CRMController::class, 'destroyComision'])->name('comisiones.destroy');
+                            Route::get('/comisiones/{ctpId}/detalle', [CRMController::class, 'detalleComision'])->name('comisiones.detalle');
                         });
 
                     // ASIGNAR CTP

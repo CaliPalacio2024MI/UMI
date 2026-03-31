@@ -104,7 +104,7 @@
 
                         <select name="nivel_educativo" class="input-custom" onchange="this.form.submit()">
 
-                            <option value="">Todos los niveles</option>
+                            <option value="">Todos clasificación</option>
 
                             <option value="licenciatura" {{ request('nivel_educativo') == 'licenciatura' ? 'selected' : '' }}>
                                 Licenciatura
@@ -116,10 +116,6 @@
 
                             <option value="doctorado" {{ request('nivel_educativo') == 'doctorado' ? 'selected' : '' }}>
                                 Maestría
-                            </option>
-
-                            <option value="tecnico" {{ request('nivel_educativo') == 'tecnico' ? 'selected' : '' }}>
-                                Doctorado
                             </option>
 
                         </select>
@@ -184,10 +180,9 @@
                 <div class="card-icon">
                     <i class="fa-solid fa-clock"></i>
                 </div>
-
                 <div class="card-info">
-                    <div class="card-titulo">Tiempo Promedio</div>
-                    <div class="card-numero contador" data-target="{{ $tiempoPromedio }}"></div>
+                    <div class="card-titulo">Conversión General</div>
+                    <div class="card-numero contador" data-target="{{ $porcentajeConversion }}">%</div>
                 </div>
             </div>
 
@@ -338,25 +333,25 @@
                         <div class="table-row-mini">
                             <div>Prospecto Frío</div>
                             <div>{{ $porcentajeFrio }}%</div>
-                            <div>{{ $promedioFrio }} días</div>
+                            <div>{{ $promedioFrio }}</div>
                         </div>
 
                         <div class="table-row-mini">
                             <div>Prospecto Caliente</div>
                             <div>{{ $porcentajeCaliente }}%</div>
-                            <div>{{ $promedioCaliente }} días</div>
+                            <div>{{ $promedioCaliente }}</div>
                         </div>
 
                         <div class="table-row-mini">
                             <div>Aspirante</div>
                             <div>{{ $porcentajeAspirante }}%</div>
-                            <div>{{ $promedioAspirante }} días</div>
+                            <div>{{ $promedioAspirante }}</div>
                         </div>
 
                         <div class="table-row-mini">
                             <div>Alumno</div>
                             <div>{{ $porcentajeAlumno }}%</div>
-                            <div>{{ $promedioAlumno }} días</div>
+                            <div>{{ $promedioAlumno }}</div>
                         </div>
 
                     </div>
