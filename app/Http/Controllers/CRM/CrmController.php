@@ -509,8 +509,9 @@ class CRMController extends Controller
 
         $leads = $query->with(['seguimientos', 'ctp', 'carrera'])->orderBy('created_at', 'desc')->get();
         // ── LOGO PARA PDF ──
-    $logoPath = public_path('images/LogoUMI-Blanco.png');
-    $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        $logoPath   = public_path('images/LogoUMI-Azul.png');
+        $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+    
 
     return view('crm.prospectos', compact('leads', 'logoBase64'));
     }

@@ -28,8 +28,8 @@
                class="input-custom buscador" 
                placeholder="Buscar"
                >
-         </div>
-      </div>
+         </div>   
+    </div>
       <button class="btn-exportar">
       <img src="{{ asset('images/icons/export.svg') }}" alt="Search" width="16">
       <i class="fa fa-file-excel-o"></i> 
@@ -218,35 +218,34 @@ const LOGO_BASE64 = "{{ $logoBase64 }}";
     };
 
     // ── HEADER ──────────────────────────────────
-    doc.setFillColor(...azulOscuro);
-    doc.rect(0, 0, W, 32, 'F');
+      // Fondo blanco
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, W, 38, 'F');
 
-    // Logo blanco esquina izquierda
-    doc.addImage(LOGO_BASE64, 'PNG', 3, 3, 24, 24);
+      // Logo azul — esquina izquierda
+      doc.addImage(LOGO_BASE64, 'PNG', 8, 3, 28, 28);
 
-    // Título centrado
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('FICHA DEL PROSPECTO', W / 2, 13, { align: 'center' });
 
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('FICHA DEL PROSPECTO', W / 2, 13, { align: 'center' });
+      // Título a la derecha del logo
+      doc.setTextColor(...azulOscuro);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('FICHA DEL PROSPECTO', W / 2, 18, { align: 'center' });
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    const nombreCompleto = `${d.alumnoNombre || ''} ${d.alumnoPaterno || ''} ${d.alumnoMaterno || ''}`.trim();
-    doc.text(nombreCompleto, W / 2, 23, { align: 'center' });
+      // Nombre del prospecto
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      const nombreCompleto = `${d.alumnoNombre || ''} ${d.alumnoPaterno || ''} ${d.alumnoMaterno || ''}`.trim();
+      doc.text(nombreCompleto, W / 2, 28, { align: 'center' });
 
-    // Línea divisoria blanca/gris en lugar de dorada
-    doc.setDrawColor(...azulMedio);
-    doc.setLineWidth(1.2);
-    doc.line(M, 31, W - M, 31);
+      // Línea divisoria azul
+      doc.setDrawColor(...azulMedio);
+      doc.setLineWidth(1.5);
+      doc.line(0, 38, W, 38);
 
-    // ── SECCIÓN SEGUIMIENTO ──────────────────────
-    let y = 40;
+      // ── SECCIÓN SEGUIMIENTO ── (ajusta y a 48 en lugar de 40)
+      let y = 48;
 
     // Título sección
     doc.setFillColor(...azulOscuro);
@@ -391,7 +390,7 @@ const LOGO_BASE64 = "{{ $logoBase64 }}";
     const a2y = a1y + 14;
     drawField('CURP', d.alumnoCurp, W / 2 - 15, a2y);
 
-    // Panel de carrera — azul oscuro en lugar de celeste/dorado
+    // Panel de carrera — azul oscuro
     const a3y = a2y + 14;
     doc.setFillColor(...azulClaro);
     doc.roundedRect(M, a3y - 4, W - M * 2, 14, 2, 2, 'F');
@@ -404,13 +403,13 @@ const LOGO_BASE64 = "{{ $logoBase64 }}";
     doc.setTextColor(...azulMedio);
     doc.text(d.carrera || '---', W / 2, a3y + 7, { align: 'center' });
 
-    // ── FOOTER ───────────────────────────────────
-    doc.setFillColor(...azulOscuro);
-    doc.rect(0, 282, W, 15, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Generado el ${new Date().toLocaleDateString('es-MX')}`, W / 2, 291, { align: 'center' });
+
+    // ── FOOTER / LEYENDA LEGAL ───────────────────────────
+   doc.setFont('helvetica', 'normal');
+   doc.setFontSize(7);
+   doc.setTextColor(120, 120, 120);
+   doc.text('Propiedad de Mundo Imperial.', W / 2, 281, { align: 'center' });
+   doc.text('Prohibida su reproducción total o parcial sin previa autorización por escrito de Mundo Imperial.', W / 2, 286, { align: 'center' });
 
     const nombreArchivo = `prospecto_${(d.alumnoPaterno || 'sin_nombre').toLowerCase()}_${(d.alumnoNombre || '').toLowerCase()}.pdf`;
     doc.save(nombreArchivo);
