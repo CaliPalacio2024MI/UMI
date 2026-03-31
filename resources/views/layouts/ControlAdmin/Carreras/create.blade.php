@@ -27,6 +27,19 @@
                 </div>
 
                 <div class="form-field">
+                    <label for="career_classification_id" class="career-classification-label--opens-modal" title="Clic para agregar o administrar clasificaciones">Clasificación:</label>
+                    <select id="career_classification_id" name="career_classification_id"
+                        class="@error('career_classification_id') validation-error @enderror">
+                        <option value="">Seleccione una clasificación</option>
+                        @foreach ($careerClassifications ?? [] as $clasificacion)
+                            <option value="{{ $clasificacion->id }}" @selected(old('career_classification_id') == $clasificacion->id)>
+                                {{ $clasificacion->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-field">
                     <label for="description1">Profesionalización y empleabilidad:</label>
                     <input type="text" id="description1" name="description1" placeholder="Ingrese la descripción"
                         class="@error('description1') validation-error @enderror" value="{{ old('description1') }}">

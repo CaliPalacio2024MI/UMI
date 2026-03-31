@@ -98,8 +98,8 @@
                <select id="mc-producto" class="mc-select">
                   <option value="">Seleccione el producto</option>
                   @foreach($carreras as $carrera)
-                  <option value="{{ $carrera->id }}" data-nombre="{{ $carrera->nombre }}">
-                     {{ $carrera->nombre }}
+                  <option value="{{ $carrera->id }}" data-nombre="{{ $carrera->name }}">
+                     {{ $carrera->name }}
                   </option>
                   @endforeach
                </select>
@@ -435,7 +435,7 @@ const LOGO_BASE64 = "data:image/png;base64,{{ $logoBase64 }}";
 
             const fila      = this.closest('.table-row');
             const nombreCTP = fila.querySelector('.col-ctp').innerText;
-            const totalCTP  = fila.querySelector('.col-total').innerText; // 👈 tomar el total de la tabla
+            const totalCTP  = fila.querySelector('.col-total').innerText;
             const filas     = document.querySelectorAll('#detalle-comision-body .mc-table-row');
 
             if (filas.length === 0) {
@@ -498,7 +498,6 @@ const LOGO_BASE64 = "data:image/png;base64,{{ $logoBase64 }}";
                 const alumno        = celdas[2]?.innerText ?? '';
                 const comision      = celdas[3]?.innerText ?? '$0';
 
-                // Sumar correctamente
                 total += parseFloat(comision.replace(/[$,]/g, '')) || 0;
 
                 if (i % 2 === 0) {

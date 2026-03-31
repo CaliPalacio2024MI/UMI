@@ -67,13 +67,13 @@
                data-alumno-materno="{{ $lead->alumno_materno }}"
                data-alumno-curp="{{ $lead->alumno_curp }}"
                data-ctp="{{ $lead->ctp ? $lead->ctp->nombre.' '.$lead->ctp->apellido_paterno : 'Sin asignar' }}"
-               data-carrera="{{ $lead->carrera->nombre ?? 'Sin carrera' }}"
+               data-carrera="{{ $lead->carrera->name ?? 'Sin carrera' }}"
                data-seguimientos='@json($lead->seguimientos)'
                >
                <div class="col-curp">{{ $lead->alumno_curp }}</div>
                <div class="col-nombre">{{ $lead->alumno_nombre }}</div>
                <div class="col-paterno">{{ $lead->alumno_paterno }}</div>
-               <div class="col-materno">{{ $lead->carrera->nombre ?? 'Sin carrera'}}</div>
+               <div class="col-materno">{{ $lead->carrera->name ?? 'Sin carrera'}}</div>
                <div class="col-ctp">{{ $lead->ctp ? $lead->ctp->nombre.' '.$lead->ctp->apellido_paterno : 'Sin asignar' }}</div>
                <div class="col-tipo">
                   @if($lead->ctp_id)

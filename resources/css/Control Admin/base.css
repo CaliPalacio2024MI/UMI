@@ -261,6 +261,13 @@
     color: #8b4513; /* Código de color para el café */
 }
 
+.option-carrer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .option-carrer button{
     background-color: #223f70;
     color: white;
@@ -1812,7 +1819,8 @@
 /* 1. Centrar el título (H5) */
 /* El 'margin-right: auto' en el H5 empuja el botón de cierre a la derecha */
 .modal-header-custom h5,
-#createCareerModalLabel {
+#createCareerModalLabel,
+#createClassificationModalLabel {
     color: #223f70; /* Letras azules (azul marino) */
     /* Ocupa el espacio necesario, pero se centra por el truco del flexbox */
     flex-grow: 1; 
@@ -1846,12 +1854,23 @@
     align-items: flex-start;
 }
 
-/* Labels del modal de crear carrera */
-#createCareerModal .form-field:nth-of-type(1) label,
-#createCareerModal .form-field:nth-of-type(2) label,
-#createCareerModal .form-field:nth-of-type(3) label,
-#createCareerModal .form-field:nth-of-type(4) label,
-#createCareerModal .form-field:nth-of-type(5) label {
+/* Labels del modal de crear carrera (por for=…; nth-of-type se rompe al añadir campos) */
+#createCareerModal .form-field > label[for="name"],
+#createCareerModal .form-field > label[for="official_id"],
+#createCareerModal .form-field > label[for="career_classification_id"],
+#createCareerModal .form-field > label[for="description1"],
+#createCareerModal .form-field > label[for="description2"],
+#createCareerModal .form-field > label[for="description3"] {
+    color: #BC8A55;
+}
+
+#createCareerModal .career-classification-label--opens-modal {
+    cursor: pointer;
+}
+
+/* Títulos Modalidad / Semestres: antes heredaban #BC8A55 por nth-of-type(1|2) dentro de .options */
+#createCareerModal .form-field.Checkboxes > label:not([for]),
+#createCareerModal .form-field.lists > label[for="semesters"] {
     color: #BC8A55;
 }
 
@@ -1921,6 +1940,14 @@
 /* Select semestres: valor en gris */
 #createCareerModal #semesters {
     color: #6c757d;
+}
+
+/* Clasificación: alineado más a la izquierda (menos padding que .form-field select) */
+#createCareerModal #career_classification_id {
+    color: #6c757d;
+    padding-left: 0;
+    text-align: left;
+    text-align-last: left;
 }
 
 /* Labels Modalidad (Presencial / En linea) en gris claro, fuente Poppins */
@@ -2139,6 +2166,11 @@ select[name="semestre"] {
     text-align-last: center;
 }
 
+/* Select clasificación en modal Editar carrera */
+[id^="editCareerModal"] select[id^="career_classification_id_"] {
+    color: #6c757d;
+}
+
 /* Radios Presencial/En línea en modal Editar carrera: cuadrado ovalado con ✓ */
 [id^="editCareerModal"] .form-field.Checkboxes input[type="radio"],
 [id^="editCareerModal"] .Checkboxes.form-field input[type="radio"] {
@@ -2198,6 +2230,153 @@ select[name="semestre"] {
 
 /* Al pasar el mouse: azul más oscuro, sin cambio de color de texto */
 #createCareerModal .submit-button:hover {
+    background-color: #1a3360;
+    color: white;
+    transform: none;
+    box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Modal clasificaciones de carrera: tamaño acotado y scroll interno */
+/* z-index por encima del modal "Agregar carrera" si ambos están abiertos */
+#createClassificationModal.modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    z-index: 1100;
+}
+#createClassificationModal .modal-content-container {
+    margin: 0;
+    width: min(100%, 520px);
+    max-width: 520px;
+    max-height: min(85vh, 560px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+#createClassificationModal .modal-header-custom {
+    flex-shrink: 0;
+}
+#createClassificationModal .classification-modal-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+#createClassificationModal .classification-modal-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: min(45vh, 300px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 0.25rem;
+    padding-right: 2px;
+}
+#createClassificationModal .classification-modal-form {
+    flex-shrink: 0;
+}
+
+/* Modal clasificaciones de carrera */
+.classification-modal-list {
+    margin-bottom: 1.25rem;
+    padding: 12px 14px;
+    background: #fff;
+    border-radius: 8px;
+    border: none;
+}
+.classification-modal-list__title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #BC8A55;
+    margin-bottom: 0.5rem;
+}
+.classification-modal-list__items {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+.classification-modal-list__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 6px 0;
+    border-bottom: 1px solid #DB5865;
+}
+.classification-modal-list__name {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+.classification-modal-list__delete-form {
+    margin: 0;
+    flex-shrink: 0;
+}
+.classification-modal-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    padding: 0 4px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.35rem;
+    font-weight: 400;
+    line-height: 1;
+    color: #6c757d;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.classification-modal-delete-btn:hover {
+    background-color: rgba(108, 117, 125, 0.12);
+    color: #495057;
+}
+.classification-modal-delete-btn:focus-visible {
+    outline: 2px solid #223f70;
+    outline-offset: 2px;
+}
+.classification-modal-empty {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+#createClassificationModal .form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #BC8A55;
+}
+#createClassificationModal .form-field input[type="text"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #fff;
+    border-bottom: 1px solid #DB5865;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fff;
+}
+#createClassificationModal .form-field input.validation-error {
+    border: 1px solid #c0392b;
+    border-bottom: 1px solid #c0392b;
+}
+#createClassificationModal .submit-button {
+    min-width: 150px;
+    padding-left: 24px;
+    padding-right: 24px;
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+#createClassificationModal .submit-button:hover {
     background-color: #1a3360;
     color: white;
     transform: none;

@@ -445,6 +445,172 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// --- Delegación: botón "Agregar clasificación" (carreras) ---
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#openCreateClasificacionBtn');
+    if (!btn) return;
+    const modal = document.getElementById('createClassificationModal');
+    if (modal) modal.style.display = 'flex';
+});
+
+// --- Clic en etiqueta "Clasificación" (modal agregar carrera): abrir modal de clasificaciones ---
+document.addEventListener(
+    'click',
+    (e) => {
+        const label = e.target.closest('label[for="career_classification_id"]');
+        if (!label || !label.closest('#createCareerModal')) return;
+        e.preventDefault();
+        const modal = document.getElementById('createClassificationModal');
+        if (modal) modal.style.display = 'flex';
+    },
+    true
+);
+
+function clearClassificationStoreAjaxFeedback(form) {
+    const el = form.querySelector('#classification_name_ajax_error');
+    if (el) {
+        el.textContent = '';
+        el.style.display = 'none';
+    }
+    const input = form.querySelector('#classification_name');
+    if (input) input.classList.remove('validation-error');
+}
+
+function showClassificationStoreAjaxError(form, message) {
+    const el = form.querySelector('#classification_name_ajax_error');
+    if (el) {
+        el.textContent = message;
+        el.style.display = 'block';
+    }
+    const input = form.querySelector('#classification_name');
+    if (input) input.classList.add('validation-error');
+}
+
+function appendClassificationModalListRow(classification) {
+    const modal = document.getElementById('createClassificationModal');
+    if (!modal) return;
+    const scroll = modal.querySelector('.classification-modal-scroll');
+    if (!scroll) return;
+    scroll.querySelector('.classification-modal-empty')?.remove();
+    let wrap = scroll.querySelector('.classification-modal-list');
+    if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.className = 'classification-modal-list';
+        const title = document.createElement('span');
+        title.className = 'classification-modal-list__title';
+        title.textContent = 'Registradas en esta institución';
+        const ul = document.createElement('ul');
+        ul.className = 'classification-modal-list__items';
+        wrap.appendChild(title);
+        wrap.appendChild(ul);
+        scroll.insertBefore(wrap, scroll.firstChild);
+    }
+    let ul = wrap.querySelector('.classification-modal-list__items');
+    if (!ul) {
+        ul = document.createElement('ul');
+        ul.className = 'classification-modal-list__items';
+        wrap.appendChild(ul);
+    }
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const li = document.createElement('li');
+    li.className = 'classification-modal-list__row';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'classification-modal-list__name';
+    nameSpan.textContent = classification.name;
+    const delForm = document.createElement('form');
+    delForm.method = 'post';
+    delForm.className = 'classification-modal-list__delete-form';
+    delForm.action = classification.destroy_url;
+    delForm.addEventListener('submit', (ev) => {
+        if (!confirm('¿Eliminar esta clasificación?')) ev.preventDefault();
+    });
+    const tok = document.createElement('input');
+    tok.type = 'hidden';
+    tok.name = '_token';
+    tok.value = token;
+    const method = document.createElement('input');
+    method.type = 'hidden';
+    method.name = '_method';
+    method.value = 'DELETE';
+    const delBtn = document.createElement('button');
+    delBtn.type = 'submit';
+    delBtn.className = 'classification-modal-delete-btn';
+    delBtn.title = 'Eliminar clasificación';
+    delBtn.setAttribute('aria-label', 'Eliminar clasificación');
+    delBtn.textContent = '×';
+    delForm.appendChild(tok);
+    delForm.appendChild(method);
+    delForm.appendChild(delBtn);
+    li.appendChild(nameSpan);
+    li.appendChild(delForm);
+    ul.appendChild(li);
+}
+
+// Guardar clasificación por AJAX: no recargar la página (mantener modal "Agregar carrera" abierto)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('#classificationStoreForm');
+    if (!form) return;
+    e.preventDefault();
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    clearClassificationStoreAjaxFeedback(form);
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok && data.classification) {
+                const c = data.classification;
+                const mainSel = document.getElementById('career_classification_id');
+                if (mainSel) {
+                    const exists = Array.from(mainSel.options).some((o) => String(o.value) === String(c.id));
+                    if (!exists) {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.name;
+                        mainSel.appendChild(opt);
+                    }
+                    mainSel.value = String(c.id);
+                }
+                document.querySelectorAll('select[id^="career_classification_id_"]').forEach((s) => {
+                    if (Array.from(s.options).some((o) => String(o.value) === String(c.id))) return;
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    s.appendChild(opt);
+                });
+                appendClassificationModalListRow(c);
+                const nameInput = form.querySelector('#classification_name');
+                if (nameInput) nameInput.value = '';
+                const classModal = document.getElementById('createClassificationModal');
+                if (classModal) classModal.style.display = 'none';
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = 'Clasificación guardada exitosamente.';
+                    successModal.style.display = 'flex';
+                }
+                return;
+            }
+            let msg = data.message || 'No se pudo guardar.';
+            if (data.errors && data.errors.classification_name && data.errors.classification_name[0]) {
+                msg = data.errors.classification_name[0];
+            }
+            showClassificationStoreAjaxError(form, msg);
+        })
+        .catch(() => {
+            showClassificationStoreAjaxError(form, 'Error de red. Intenta de nuevo.');
+        });
+});
+
 // --- Delegación: botón "Agregar Carrera" (funciona con SPA al reemplazar contenido) ---
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('#openCreateCareerBtn');

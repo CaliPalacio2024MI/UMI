@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use Illuminate\Http\Request;
-use App\Models\Carrera;
+use App\Models\Users\Career;
 
 class LeadPublicController extends Controller
 {
     // Muestra el formulario público
     public function create()
     {
-        $carreras = Carrera::orderBy('nombre')->get();
+        $carreras = Career::orderBy('name')->get();
 
         return view('public.inscripcion', compact('carreras'));
     }
@@ -33,6 +33,7 @@ public function store(Request $request)
         'alumno_nombre' => 'required|string',
         'alumno_paterno' => 'required|string',
         'alumno_materno' => 'required|string',
+        'carrera_id' => 'required|exists:careers,id',
     ]);
 
     // Crear el LEAD

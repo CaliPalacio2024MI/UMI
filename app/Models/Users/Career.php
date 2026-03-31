@@ -51,6 +51,7 @@ class Career extends Model
         'type',
         'semesters', // <--- ✅ CORRECTO: Plural, como en tu BD
         'institution_id', // Agregado por seguridad ya que está en tu BD
+        'career_classification_id',
         'credits'         // Agregado por seguridad
     ];
 
@@ -59,6 +60,11 @@ class Career extends Model
     public function institution(): BelongsTo 
     { 
         return $this->belongsTo(Institution::class); 
+    }
+
+    public function classification(): BelongsTo
+    {
+        return $this->belongsTo(CareerClassification::class, 'career_classification_id');
     }
 
     public function materias(): HasMany
@@ -74,5 +80,10 @@ class Career extends Model
     public function academicProfiles(): HasMany
     {
         return $this->hasMany(AcademicProfile::class);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
     }
 }

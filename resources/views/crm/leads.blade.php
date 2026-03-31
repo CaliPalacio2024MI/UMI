@@ -61,11 +61,11 @@
                             data-tutor-email="{{ $lead->tutor_email }}"
                             data-alumno-curp="{{ $lead->alumno_curp }}"
                             data-comentario-reasignacion="{{ $lead->comentario_reasignacion }}"
-                            data-carrera="{{ $lead->carrera->nombre ?? 'Sin carrera' }}"
+                            data-carrera="{{ $lead->carrera->name ?? 'Sin carrera' }}"
                         >
                             <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
-                            <div>{{ $lead->carrera->nombre ?? 'Sin carrera' }}</div>
+                            <div>{{ $lead->carrera->name ?? 'Sin carrera' }}</div>
                             <div>
                             @if($lead->ctp_id)
                                 {{ $lead->seguimientos->sortByDesc('id')->first()?->estado ?? 'Prospecto frío' }}

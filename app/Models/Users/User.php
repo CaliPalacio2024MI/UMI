@@ -234,8 +234,14 @@ class User extends Authenticatable
         )
         ->get();
 
+        $seen = [];
         foreach ($userContexts as $context) {
-            $contexts[] = (array) $context; 
+            $key = $context->institution_id . '_' . $context->role_id;
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $contexts[] = (array) $context;
         }
 
         return $contexts;

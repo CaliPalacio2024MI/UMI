@@ -15,6 +15,10 @@
                     <dd>{{ $career->official_id ?? '—' }}</dd>
                 </div>
                 <div class="career-view-row">
+                    <dt>Clasificación</dt>
+                    <dd>{{ $career->classification->name ?? '—' }}</dd>
+                </div>
+                <div class="career-view-row">
                     <dt>Profesionalización y empleabilidad</dt>
                     <dd>{{ $career->description1 ?? '—' }}</dd>
                 </div>

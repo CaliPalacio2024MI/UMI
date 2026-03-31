@@ -147,7 +147,7 @@
 
                                 @foreach($carreras as $carrera)
                                     <option value="{{ $carrera->id }}">
-                                        {{ $carrera->nombre }}
+                                        {{ $carrera->name }}
                                     </option>
                                 @endforeach
 

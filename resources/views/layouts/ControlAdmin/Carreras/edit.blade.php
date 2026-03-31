@@ -31,6 +31,22 @@
                            value="{{ old('official_id', $career->official_id) }}">
                 </div>
 
+                @php
+                    $selClassId = old('career_classification_id', $career->career_classification_id);
+                @endphp
+                <div class="form-field">
+                    <label for="career_classification_id_{{ $career->id }}">Clasificación:</label>
+                    <select id="career_classification_id_{{ $career->id }}" name="career_classification_id"
+                        class="@error('career_classification_id') validation-error @enderror">
+                        <option value="">Seleccione una clasificación</option>
+                        @foreach ($careerClassifications ?? [] as $clasificacion)
+                            <option value="{{ $clasificacion->id }}" @selected((string) $selClassId === (string) $clasificacion->id)>
+                                {{ $clasificacion->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- 3. Desc1 --}}
                 <div class="form-field">
                     <label for="description1_{{ $career->id }}">Profesionalización y empleabilidad:</label>
