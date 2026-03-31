@@ -1,8 +1,14 @@
-@extends(request('modal') ? 'layouts.iframe_content' : 'layouts.app')
+@extends((request('modal') || request()->routeIs('escolar.inscripcion.create')) ? 'layouts.iframe_content' : 'layouts.app')
 
-@section('title', isset($alumno) ? 'Proceso de Reinscripción' : 'Registro de Aspirante')
+@php
+    // En "Nuevo Registro" (inscripción) el controlador puede pasar $alumno para prellenar datos,
+    // pero sin que sea una reinscripción.
+    $esReinscripcion = (bool) ($modoReinscripcion ?? isset($alumno));
+@endphp
 
-@if(!request('modal'))
+@section('title', $esReinscripcion ? 'Proceso de Reinscripción' : 'Inscripción')
+
+@if(!(request('modal') || request()->routeIs('escolar.inscripcion.create')))
 @vite(['resources/css/ControlEsc/base.css','resources/js/app.js'])
 @endif
 
@@ -10,7 +16,7 @@
 
     {{-- 0. ÉXITO EN MODAL: cerrar modal y refrescar lista en el padre --}}
     @if(request('modal') && request('success') && session('success'))
-        <div class="form-container" style="padding: 2rem; text-align: center;">
+        <div class="form-container form-container--inscripcion" style="padding: 2rem; text-align: center;">
             <p style="font-size: 1.1rem; color: #27ae60; margin-bottom: 1rem;">{{ session('success') }}</p>
             <p style="color: #666;">Cerrando ventana...</p>
         </div>
@@ -45,37 +51,21 @@
     
     {{-- 2. SI NO HAY ERROR, MOSTRAMOS EL FORMULARIO --}}
     @else
-    <div class="form-container">
+    <div class="form-container form-container--inscripcion">
         <div class="header-section">
-            <div style="display: grid; grid-template-columns: 32px 1fr 32px; align-items: center;">
-                <span aria-hidden="true"></span>
+            <div>
                 <h2 class="form-title" style="text-align: center; margin: 0;">
                     {{-- Título Dinámico --}}
-                    @if(isset($alumno))
+                    @if($esReinscripcion)
                          Reinscripción de Alumno <span style="font-size: 0.8em; opacity: 0.8;">(Al Semestre {{ $alumno->semestre + 1 }})</span>
                     @else
-                         Nuevo Registro de Aspirante
+                         Inscripción
                     @endif
                 </h2>
-                @if(request('modal'))
-                <a href="#" onclick="if(window.parent && window.parent.cerrarModalInscripcion) window.parent.cerrarModalInscripcion(); return false;"
-                   class="btn-back"
-                   aria-label="Cerrar"
-                   style="text-decoration: none; color: #666; font-size: 1.8rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; justify-self: end;">
-                    &times;
-                </a>
-                @else
-                <a href="{{ route('escolar.students.index') }}"
-                   class="btn-back"
-                   aria-label="Cerrar"
-                   style="text-decoration: none; color: #666; font-size: 1.8rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; justify-self: end;">
-                    &times;
-                </a>
-                @endif
             </div>
 
             {{-- Badge de Status para Reinscripciones --}}
-            @if(isset($alumno))
+            @if($esReinscripcion)
                 <div class="status-bar" style="margin-top: 10px; background: #fff3cd; padding: 8px 15px; border-left: 4px solid #ffc107; border-radius: 4px;">
                     <strong>Status Actual:</strong> 
                     <span class="badge-status {{ strtolower($alumno->status) }}">{{ $alumno->status ?? 'Inactivo' }}</span>
@@ -99,23 +89,53 @@
             </style>
             {{-- Formulario Único: Maneja tanto STORE (Nuevo) como UPDATE (Reinscripción) --}}
             <form method="POST" 
-                  action="{{ isset($alumno) ? route('escolar.inscripcion.update', $alumno->id) : route('escolar.inscripcion.store') }}" 
+                  action="{{ $esReinscripcion ? route('escolar.inscripcion.update', $alumno->id) : route('escolar.inscripcion.store') }}" 
                   class="registration-form" 
                   id="inscriptionForm"
                   enctype="multipart/form-data"
                   target="_self"
-                  data-es-nuevo-registro="{{ isset($alumno) ? '0' : '1' }}">
+                  data-es-nuevo-registro="{{ $esReinscripcion ? '0' : '1' }}">
                 @if(request('modal'))
                 <input type="hidden" name="modal" value="1">
                 @endif
                 @csrf
-                @if(isset($alumno))
+                @if($esReinscripcion)
                     @method('PUT')
+                @endif
+
+                {{-- Si ya existe el usuario (ej. el rol activo es "estudiante"), evitamos recrearlo. --}}
+                @if(!$esReinscripcion && isset($alumno))
+                    <input type="hidden" name="existing_user_id" value="{{ $alumno->id }}">
                 @endif
                 
                 {{-- Mensajes de Feedback --}}
                 @if (session('success')) <div class="message-success">{{ session('success') }}</div> @endif
                 @if (session('error')) <div class="message-error">{{ session('error') }}</div> @endif
+
+                @if(!empty($bloqueadoPorAceptacion) && $bloqueadoPorAceptacion)
+                    {{-- Overlay: bloquea edición hasta que Master acepte --}}
+                    <div id="pendingAcceptanceOverlay"
+                         style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 10060; display:flex; align-items:center; justify-content:center; padding: 20px;">
+                        <div style="background:#fff; border-radius: 16px; max-width: 560px; width: 100%; box-shadow: 0 18px 50px rgba(0,0,0,0.35); padding: 22px 20px; text-align:center;">
+                            <div style="width:72px; height:72px; border-radius:50%; background:#eaf7ea; margin: 0 auto 14px; display:flex; align-items:center; justify-content:center; border: 3px solid #cfe6c8; color:#2e7d32; font-size: 38px; font-weight: 800;">
+                                ✓
+                            </div>
+                            <h3 style="margin: 0; color:#223F70; font-size: 1.25rem;">Espere su hora</h3>
+                            <p style="margin: 10px 0 0; color:#666; font-weight: 600; line-height: 1.5;">
+                                Tu registro está en espera de aprobación por Control Escolar.
+                            </p>
+                        </div>
+                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var form = document.getElementById('inscriptionForm');
+                            if (!form) return;
+                            form.querySelectorAll('input, select, textarea, button').forEach(function(el) {
+                                el.disabled = true;
+                            });
+                        });
+                    </script>
+                @endif
                 @if ($errors->any())
                     <div class="message-error">
                         <ul>@foreach ($errors->all() as $e) <li>{{ $e }}</li> @endforeach</ul>
@@ -218,9 +238,9 @@
                     <div class="form-field">
                         <label>Semestre a Inscribir</label>
                         <input type="number" id="semestre" name="semestre" 
-                               value="{{ old('semestre', isset($alumno) ? ($alumno->semestre + 1) : 1) }}" 
+                               value="{{ old('semestre', $esReinscripcion ? ($alumno->semestre + 1) : 1) }}" 
                                readonly style="background-color: #e9ecef; font-weight: bold; border-color: #ced4da;">
-                        @if(isset($alumno))
+                        @if($esReinscripcion)
                             <small style="color: #666;">(Avanza del semestre {{ $alumno->semestre }} al {{ $alumno->semestre + 1 }})</small>
                         @endif
                     </div>
@@ -229,10 +249,17 @@
                 {{-- CARGA DE DOCUMENTOS --}}
                 <div class="docs-container" style="background: #ffffff; padding: 20px; border: 1px dashed #3498db; border-radius: 8px; margin-top: 20px;">
                     <h4 style="margin-top:0; color: #2980b9;"><i class="fa-solid fa-cloud-arrow-up"></i> Documentación Requerida</h4>
-                    
+                    @if(isset($alumno) && (!empty($alumno->doc_acta_rechazado) || !empty($alumno->doc_certificado_rechazado) || !empty($alumno->doc_curp_rechazado) || !empty($alumno->doc_ine_rechazado) || !empty($alumno->doc_ficha_pago_rechazado ?? false) || !empty($alumno->doc_factura_xml_rechazado ?? false)))
+                        <div class="doc-rechazo-banner" style="background: #fdecea; border: 1px solid #e74c3c; color: #922b21; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem;">
+                            <strong>Atención:</strong> Control escolar marcó uno o más documentos como incorrectos. Sube de nuevo los archivos indicados abajo.
+                        </div>
+                    @endif
                     <div class="form-group-double">
                         <div class="form-field">
                             <label>Acta de Nacimiento (PDF)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_acta_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_acta_nacimiento" accept=".pdf">
                             @if(isset($alumno) && $alumno->doc_acta_nacimiento)
                                 <a href="{{ asset('storage/'.$alumno->doc_acta_nacimiento) }}" target="_blank" class="link-view-doc">
@@ -242,6 +269,9 @@
                         </div>
                         <div class="form-field">
                             <label>Certificado de Preparatoria (PDF)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_certificado_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_certificado_prepa" accept=".pdf">
                             @if(isset($alumno) && $alumno->doc_certificado_prepa)
                                 <a href="{{ asset('storage/'.$alumno->doc_certificado_prepa) }}" target="_blank" class="link-view-doc">
@@ -253,6 +283,9 @@
                     <div class="form-group-double">
                         <div class="form-field">
                             <label>CURP (PDF)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_curp_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_curp" accept=".pdf">
                             @if(isset($alumno) && $alumno->doc_curp)
                                 <a href="{{ asset('storage/'.$alumno->doc_curp) }}" target="_blank" class="link-view-doc">
@@ -262,6 +295,9 @@
                         </div>
                         <div class="form-field">
                             <label>INE (Opcional)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_ine_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_ine" accept=".pdf,.jpg,.png">
                             @if(isset($alumno) && $alumno->doc_ine)
                                 <a href="{{ asset('storage/'.$alumno->doc_ine) }}" target="_blank" class="link-view-doc">
@@ -339,15 +375,29 @@
                                     <option value="Pendiente">Pendiente</option>
                                     <option value="Pagada">Pagada</option>
                                 </select>
+                            </div>
 
-                                {{-- 6. Archivos (OPCIONALES) --}}
-                                <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:10px;">Archivo (PDF) (Opcional):</label>
+                            {{-- Archivos de facturación: fuera del bloque colapsable para poder corregir sin volver a marcar la casilla --}}
+                            <div class="billing-files-block" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(231,76,60,0.35);">
+                                <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:6px;">Ficha de pago / comprobante (PDF):</label>
+                                @if(isset($alumno) && !empty($alumno->doc_ficha_pago_rechazado ?? false))
+                                    <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un PDF nuevo.</p>
+                                @endif
                                 <input type="file" id="modal_archivo_pdf" name="archivo" accept=".pdf" style="width: 100%;">
                                 <small style="color: #666;">Solo archivos .pdf</small>
+                                @if(isset($alumno) && $alumno->doc_ficha_pago ?? false)
+                                    <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_ficha_pago) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver ficha actual</a></div>
+                                @endif
 
-                                <label for="modal_archivo_xml" style="font-weight:bold; display:block; margin-top:10px;">Subir XML (Opcional):</label>
-                                <input type="file" id="modal_archivo_xml" name="archivo_xml" accept=".xml,text/xml" style="width: 100%;">
-                                <small style="color: #666;">Solo archivos .xml</small>
+                                <label for="modal_archivo_xml" style="font-weight:bold; display:block; margin-top:14px;">Factura PDF:</label>
+                                @if(isset($alumno) && !empty($alumno->doc_factura_xml_rechazado ?? false))
+                                    <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Factura rechazada — adjunta un PDF nuevo.</p>
+                                @endif
+                                <input type="file" id="modal_archivo_xml" name="archivo_xml" accept=".pdf,application/pdf" style="width: 100%;">
+                                <small style="color: #666;">Solo archivos .pdf</small>
+                                @if(isset($alumno) && ($alumno->doc_factura_xml ?? false))
+                                    <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_factura_xml) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver factura actual</a></div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -395,7 +445,7 @@
 
                 <div class="form-action-buttons">
                     <button type="submit" class="submit-button">
-                        <i class="fa-solid fa-save"></i> {{ isset($alumno) ? 'Guardar Reinscripción' : 'Registrar Aspirante' }}
+                        <i class="fa-solid fa-save"></i> {{ $esReinscripcion ? 'Enviar formulario' : 'Enviar formulario' }}
                     </button>
                 </div>
                 </form>

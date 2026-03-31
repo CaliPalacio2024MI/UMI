@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Users\ContextController;
 use App\Http\Controllers\MiInformacion\MiInformacionController;
 use App\Http\Controllers\Ajustes\AjustesController;
+use App\Http\Controllers\ExternalDataController;
 
 // --- Controladores LMS (Cursos) ---
 use App\Http\Controllers\Cursos\CourseController;
@@ -157,13 +158,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/inicio', [ControlAdministrativoController::class, 'showEscolar'])->name('dashboard');
 
             // 1. Inscripción / Reinscripción
-            Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
-            Route::get('/inscripcion/nuevo', [InscripcionController::class, 'create'])->name('inscripcion.create');
-            Route::post('/inscripcion/nuevo', [InscripcionController::class, 'store'])->name('inscripcion.store');
+            // NOTA: Las rutas de Inscripción están registradas abajo en un grupo aparte
+            // para permitir también el rol activo "estudiante".
             
-            Route::get('/inscripcion/{id}/reinscribir', [InscripcionController::class, 'edit'])->name('inscripcion.edit');
-            Route::put('/inscripcion/{id}', [InscripcionController::class, 'update'])->name('inscripcion.update'); 
-                
             // 2. Lista de Alumnos (Gestión y Contraseña)
             Route::get('/lista-alumnos', [studentController::class, 'index'])->name('students.index');
             Route::get('/lista-alumnos/export', [studentController::class, 'export'])->name('students.export');
@@ -171,6 +168,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/lista-alumnos/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
             Route::put('/lista-alumnos/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-alumnos/{id}', [studentController::class, 'destroy'])->name('students.destroy');
+            Route::post('/lista-alumnos/aspirantes/{lead}/aceptar', [studentController::class, 'acceptAspirante'])->name('students.acceptAspirante');
+            Route::post('/lista-alumnos/leads/{lead}/alumno-email', [studentController::class, 'syncAlumnoEmailFromModal'])->name('students.syncAlumnoEmail');
+            Route::post('/lista-alumnos/leads/{lead}/expediente', [studentController::class, 'updateLeadExpediente'])->name('students.updateLeadExpediente');
 
             // 3. Matrículas
             Route::get('/matriculas', [MatriculaController::class, 'index'])->name('matriculas.index');
@@ -208,6 +208,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/carreras/create',[careerController::class,'create'])->name('careers.create');
             Route::get('/carreras/{carrera}/reticula', [careerController::class, 'reticula'])->name('careers.reticula');
             Route::post('/carreras', [careerController::class, 'store'])->name('careers.store');
+            Route::post('/carreras/clasificaciones', [careerController::class, 'storeClassification'])->name('careers.classifications.store');
+            Route::delete('/carreras/clasificaciones/{careerClassification}', [careerController::class, 'destroyClassification'])->name('careers.classifications.destroy');
             Route::put('/carreras/{carrera}', [careerController::class, 'update'])->name('careers.update');
             Route::delete('/carreras/{carrera}', [careerController::class, 'destroy'])->name('careers.destroy');
 
@@ -243,6 +245,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/lista-estudiantes/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
             Route::put('/lista-estudiantes/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-estudiantes/{id}', [studentController::class, 'destroy'])->name('students.destroy');
+            Route::post('/lista-estudiantes/leads/{lead}/alumno-email', [studentController::class, 'syncAlumnoEmailFromModal'])->name('students.syncAlumnoEmailControl');
+            Route::post('/lista-estudiantes/leads/{lead}/expediente', [studentController::class, 'updateLeadExpediente'])->name('students.updateLeadExpedienteControl');
         });
     
         
@@ -269,6 +273,21 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
     }); // Fin Middleware Administrativo
 
+    // ------------------------------------------------------------
+    // Rutas de Inscripción accesibles también para Estudiante
+    // (para que al entrar a su cuenta vea primero "Nuevo Registro de Aspirante")
+    // ------------------------------------------------------------
+    Route::middleware(['role:master,control_administrativo,estudiante'])
+        ->prefix('control-escolar')->name('escolar.')->group(function () {
+            Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
+            Route::get('/inscripcion/nuevo', [InscripcionController::class, 'create'])->name('inscripcion.create');
+            Route::post('/inscripcion/nuevo', [InscripcionController::class, 'store'])->name('inscripcion.store');
+        });
+
+    // Endpoint para consumir la API externa (devuelve JSON).
+    // Nota: está dentro del middleware ['auth', 'ajax', 'spa'], así que idealmente llámalo como AJAX
+    // (por ejemplo desde fetch) o asegurando el header 'X-Requested-With: XMLHttpRequest'.
+    Route::get('/external-data', [ExternalDataController::class, 'index'])->name('external-data.index');
             // =======================
             // MÓDULO CRM (INDEPENDIENTE)
             // =======================
@@ -296,12 +315,17 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                         // pero la vista solo la usa master
                         Route::middleware(['role:master'])->group(function () {
                             Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
+                            Route::post('/comisiones', [CRMController::class, 'storeComision'])->name('comisiones.store');
+                            Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');  
+                            Route::delete('/comisiones/{id}', [CRMController::class, 'destroyComision'])->name('comisiones.destroy');
+                            Route::get('/comisiones/{ctpId}/detalle', [CRMController::class, 'detalleComision'])->name('comisiones.detalle');
                         });
 
                     // ASIGNAR CTP
                     Route::post('/leads/{lead}/asignar-ctp', [CRMController::class, 'asignarCTP'])
                         ->name('leads.asignar_ctp');
 
+                    Route::put('/leads/{lead}', [CRMController::class, 'update'])->name('leads.update');
                     Route::delete('/leads/{lead}', [CRMController::class, 'destroy'])
                         ->name('leads.destroy');
 

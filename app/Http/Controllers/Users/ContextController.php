@@ -128,6 +128,12 @@ class ContextController extends Controller
         ]);
         
         
+        // Para estudiantes: la primera vista debe ser el formulario de inscripción
+        // con sus datos precargados (sin entrar a reinscripción).
+        if (strtolower($activeContext['role_name'] ?? '') === 'estudiante') {
+            return redirect()->route('escolar.inscripcion.create');
+        }
+
         return redirect()->route('dashboard');
     }
 }

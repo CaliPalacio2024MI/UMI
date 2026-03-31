@@ -28,19 +28,20 @@ class LoginController extends Controller
             'login'    => ['required', 'string'], // Usamos 'login' como nombre genérico
             'password' => ['required'],
         ], [
-            'login.required' => 'Debes ingresar tu RFC o Matrícula.',
+            'login.required' => 'Debes ingresar tu RFC, CURP o Matrícula.',
             'password.required' => 'La contraseña es obligatoria.',
         ]);
 
-        $input = $request->input('login');
+        $input = strtoupper(trim((string) $request->input('login')));
 
-        // 2. Buscamos al usuario por RFC o Matrícula
-        // (Ya no buscamos por email)
-        $user = User::where('RFC', $input)
-                    ->orWhereHas('academicProfile', function ($query) use ($input) {
-                        $query->where('matricula', $input);
-                    })
-                    ->first();
+        // 2. Buscamos al usuario por RFC, CURP o Matrícula
+        $user = User::where(function ($q) use ($input) {
+            $q->where('RFC', $input)
+                ->orWhere('curp', $input)
+                ->orWhereHas('academicProfile', function ($query) use ($input) {
+                    $query->where('matricula', $input);
+                });
+        })->first();
 
         // 3. Verificamos la contraseña
         if ($user && Hash::check($request->input('password'), $user->password)) {

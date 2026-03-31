@@ -25,7 +25,7 @@
         $greeting = match($activeRoleName) {
             'master' => '¡Bienvenido(a) Master',
             'docente' => '¡Bienvenido(a) Maestro',
-            'estudiante' => '¡Bienvenido(a) Estudiante', // Corregido de 'alumno' a 'estudiante'
+            'estudiante' => '¡Bienvenido(a) Alumno!',
             'anfitrion' => '¡Bienvenido(a) Anfitrión',
             default => '¡Bienvenido(a)'
         };

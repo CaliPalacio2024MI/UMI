@@ -8,7 +8,6 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +22,7 @@ use App\Models\Users\Role;
 use App\Models\Users\Period;
 use App\Models\Users\AcademicProfile;
 use App\Models\Users\CorporateProfile;
+use App\Models\Lead;
 
 class AjustesController extends Controller
 {
@@ -64,10 +64,14 @@ class AjustesController extends Controller
         $data = $query->paginate(15)->withQueryString(); 
         
         $titles = $this->getSectionTitles($seccion);
-        $page_title = $titles['plural']; 
-        $singular_title = $titles['singular']; 
-       
-       return view('layouts.Ajustes.index', compact('data', 'seccion', 'page_title', 'singular_title'));
+        $page_title = $titles['plural'];
+        $singular_title = $titles['singular'];
+
+        if ($request->ajax() && $seccion === 'users') {
+            return response()->view('layouts.Ajustes.partials.users_table_body', compact('data', 'seccion', 'page_title'));
+        }
+
+        return view('layouts.Ajustes.index', compact('data', 'seccion', 'page_title', 'singular_title'));
     }
 
   
@@ -208,20 +212,33 @@ class AjustesController extends Controller
             case 'users':
              
            
+            $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
+            $rfcMax = $tipoCreacion === 'alumno' ? 18 : 13;
+            $rfcMin = $tipoCreacion === 'alumno' ? 12 : 10;
+
             $validatedData = $request->validate([
                 'nombre' => 'required|string|max:255',
                 'apellido_paterno' => 'required|string|max:255',
                 'apellido_materno' => 'nullable|string|max:255',
-                'RFC' => ['required', 'string', 'max:13'],
-                'email' => ['required', 'email'],          
+                'RFC' => ['required', 'string', 'min:'.$rfcMin, 'max:'.$rfcMax, 'regex:/^[A-ZÑ0-9]+$/iu'],
                 'role_id' => 'required|exists:roles,id',
                 'institution_id' => 'required|exists:institutions,id',
                 'department_id' => 'nullable|exists:departments,id',
                 'workstation_id' => 'nullable|exists:workstations,id',
+                'tipo_usuario_creacion' => 'nullable|in:normal,alumno',
                
             ]);
+            $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
  
             $selectedRole = Role::find($validatedData['role_id']);
+            if ($tipoCreacion === 'alumno') {
+                $rolEstudiante = Role::where('name', 'estudiante')->first();
+                if (! $rolEstudiante || (int) $validatedData['role_id'] !== (int) $rolEstudiante->id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'role_id' => 'Si marcas Alumno, el rol principal debe ser Alumno.',
+                    ]);
+                }
+            }
  
            
            
@@ -249,7 +266,12 @@ class AjustesController extends Controller
             }
  
            
-            $existingUser = User::withTrashed()->where('RFC', $validatedData['RFC'])->first();
+            $u = $validatedData['RFC'];
+            $existingUser = User::withTrashed()
+                ->where(function ($q) use ($u) {
+                    $q->where('RFC', $u)->orWhere('curp', $u);
+                })
+                ->first();
  
             if ($existingUser) {
                
@@ -278,15 +300,15 @@ class AjustesController extends Controller
                
  
             } else {
-               
+                if (User::where('RFC', $u)->orWhere('curp', $u)->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'RFC' => 'Este RFC o CURP ya está registrado.',
+                    ]);
+                }
+
                 $request->validate([
-                    'RFC' => 'unique:users,RFC',
-                    'email' => 'unique:users,email',
-                    'password' => 'required|string|min:8|confirmed',
+                    'password' => 'required|string|min:8',
                 ], [
-                    'RFC.unique' => 'Este RFC ya está registrado.',
-                    'email.unique' => 'Este correo ya está registrado.',
-                    'password.confirmed' => 'Las contraseñas no coinciden.',
                     'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
                 ]);
  
@@ -295,8 +317,9 @@ class AjustesController extends Controller
                     'nombre' => $validatedData['nombre'],
                     'apellido_paterno' => $validatedData['apellido_paterno'],
                     'apellido_materno' => $validatedData['apellido_materno'],
-                    'RFC' => $validatedData['RFC'],
-                    'email' => $validatedData['email'],
+                    'RFC' => $u,
+                    'curp' => ($tipoCreacion === 'alumno' && strlen($u) === 18) ? $u : null,
+                    'email' => null,
                     'password' => Hash::make($request->password),
                     'department_id' => $validatedData['department_id'],
                     'workstation_id' => $validatedData['workstation_id'],
@@ -432,31 +455,46 @@ public function update(Request $request, $seccion, $id)
                 if (!$item) return back()->with('error', 'Registro no encontrado.');
 
                 // 2. Validación Principal (QUITAMOS PASSWORD DE AQUÍ)
+                $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
+                $rfcMax = $tipoCreacion === 'alumno' ? 18 : 13;
+                $rfcMin = $tipoCreacion === 'alumno' ? 12 : 10;
+
                 $validatedData = $request->validate([
                     'nombre' => 'required|string|max:255',
                     'apellido_paterno' => 'required|string|max:255',
                     'apellido_materno' => 'nullable|string|max:255',
-                    'RFC' => ['required', 'string', 'max:13', Rule::unique('users', 'RFC')->ignore($item->id)],
-                    'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($item->id)],
-                    
-                    // 'password' => '...', // <--- ¡¡BORRA ESTA LÍNEA!!
-                    
+                    'RFC' => ['required', 'string', 'min:'.$rfcMin, 'max:'.$rfcMax, 'regex:/^[A-ZÑ0-9]+$/iu'],
                     'role_id' => 'required|exists:roles,id',
                     'institution_id' => 'required|exists:institutions,id',
                     'department_id' => 'nullable|exists:departments,id',
                     'workstation_id' => 'nullable|exists:workstations,id',
-                ], [
-                    'RFC.unique' => 'Este RFC ya pertenece a otro usuario.',
-                    'email.unique' => 'Este correo ya está siendo usado por otra persona.',
+                    'tipo_usuario_creacion' => 'nullable|in:normal,alumno',
                 ]);
+
+                $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
+                $u = $validatedData['RFC'];
+
+                if (User::where('id', '!=', $item->id)
+                    ->where(function ($q) use ($u) {
+                        $q->where('RFC', $u)->orWhere('curp', $u);
+                    })
+                    ->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'RFC' => 'Este RFC o CURP ya pertenece a otro usuario.',
+                    ]);
+                }
+
+                if ($tipoCreacion === 'alumno' && strlen($u) === 18) {
+                    $validatedData['curp'] = $u;
+                } elseif ($tipoCreacion !== 'alumno') {
+                    $validatedData['curp'] = null;
+                }
 
                 // 3. Validación de Contraseña (AQUÍ SÍ VA)
                 if (!empty($request->password)) {
                     $request->validate([
-                        'password' => 'string|min:8|confirmed'
+                        'password' => 'string|min:8'
                     ], [
-                        // Aquí están tus mensajes en español
-                        'password.confirmed' => 'Las contraseñas no coinciden.',
                         'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
                     ]);
                     
@@ -467,6 +505,16 @@ public function update(Request $request, $seccion, $id)
                 
                 // 4. Validación Extra (Módulos de Admin)
                 $selectedRole = Role::find($validatedData['role_id']);
+
+                if ($tipoCreacion === 'alumno') {
+                    $rolEstudiante = Role::where('name', 'estudiante')->first();
+                    if (! $rolEstudiante || (int) $validatedData['role_id'] !== (int) $rolEstudiante->id) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'role_id' => 'Si marcas Alumno, el rol principal debe ser Alumno.',
+                        ]);
+                    }
+                }
+
                 if ($selectedRole && $selectedRole->name === 'control_administrativo') {
                     if (!$request->has('modules_enabled') || empty($request->input('modules_enabled'))) {
                         throw \Illuminate\Validation\ValidationException::withMessages([
@@ -609,12 +657,18 @@ public function update(Request $request, $seccion, $id)
                     }
                 ]); 
                 if ($search) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('nombre', 'like', "%{$search}%")
-                          ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                          ->orWhere('apellido_materno', 'like', "%{$search}%")
-                          ->orWhere('RFC', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%");
+                    $term = "%{$search}%";
+                    $query->where(function($q) use ($term) {
+                        $q->where('nombre', 'like', $term)
+                          ->orWhere('apellido_paterno', 'like', $term)
+                          ->orWhere('apellido_materno', 'like', $term)
+                          ->orWhere('RFC', 'like', $term)
+                          ->orWhereHas('institutions', function($sub) use ($term) {
+                              $sub->where('institutions.name', 'like', $term);
+                          })
+                          ->orWhereHas('roles', function($sub) use ($term) {
+                              $sub->where('roles.display_name', 'like', $term);
+                          });
                     });
                 }
                 $query->orderBy('id', 'desc');
@@ -718,9 +772,7 @@ public function update(Request $request, $seccion, $id)
                 break;
                 
             case 'users':
-                
-                
-                $data['institutions'] = Institution::where('id', $activeInstitutionId)->get(); 
+                $data['institutions'] = Institution::orderBy('name')->get(); 
                 
                
                 $data['all_roles'] = Role::orderBy('display_name')->get(); 
@@ -728,6 +780,14 @@ public function update(Request $request, $seccion, $id)
                 
                 $data['departments'] = Department::where('institution_id', $activeInstitutionId)->orderBy('name')->get();
                 $data['workstations'] = Workstation::where('institution_id', $activeInstitutionId)->orderBy('name')->get();
+
+                // Aspirantes CRM (id + datos para autocompletar apellidos y CURP en el modal de usuario)
+                $data['aspirantes_crm_list'] = Lead::queryBaseAspirantesControlEscolar()
+                    ->whereNotNull('alumno_nombre')
+                    ->where('alumno_nombre', '!=', '')
+                    ->orderBy('alumno_nombre')
+                    ->orderBy('alumno_paterno')
+                    ->get(['id', 'alumno_nombre', 'alumno_paterno', 'alumno_materno', 'alumno_curp']);
 
                 
                 if ($user->hasActiveRole('master')) {

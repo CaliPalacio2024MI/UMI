@@ -178,12 +178,42 @@
                 <li class="has-submenu {{ request()->routeIs('control.*') || request()->routeIs('escolar.*') ? 'active' : '' }}">
                     <a href="#">
                         <span class="icon" aria-hidden="true">
-                            <img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="Control Icon" style="width:24px;height:24px" loading="lazy">
+                            <img src="{{ asset('images/icons/school-circle-check-solid-full.svg') }}" alt="Control Icon" style="width:24px;height:24px" loading="lazy">
                         </span>
                         <span class="text">Control Administrativo</span>
                     </a>
                     
                     <ul class="submenu">
+                        {{-- Orden: Control Académico → Control Escolar → Planeación y Vinculación --}}
+                        @if($canSeeAcademico)
+                            <li class="has-submenu {{ request()->routeIs('control.*') && !request()->routeIs('control.planeacion.*') ? 'active open' : '' }}">
+                                <a href="#">Control Académico</a>
+                                <ul class="submenu">
+                                    <li class="{{ request()->routeIs('control.careers.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.careers.index') }}">Carreras</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('control.subjects.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.subjects.index') }}">Materias</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('control.schedules.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.schedules.index') }}">Horarios</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('control.classes.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.classes.index') }}">Clases</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('control.teachers.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.teachers.index') }}">Docentes</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('control.students.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('control.students.index') }}">Alumnos</a>
+                                    </li>
+                                    <li class="{{ request()->is('control/academico/planeacion') ? 'active-submenu' : '' }}">
+                                        <a href="#">Planeación Escolar</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        @endif
+
                         @if($canSeeEscolar)
                             <li class="has-submenu {{ request()->routeIs('escolar.*') ? 'active open' : '' }}">
                                 <a href="#">Control Escolar</a>
@@ -211,35 +241,6 @@
                                     </li>
                                     <li class="{{ request()->is('control/escolar/titulacion') ? 'active-submenu' : '' }}">
                                         <a href="#">Titulación</a>
-                                    </li>
-                                </ul>
-                            </li>
-                        @endif
-
-                        @if($canSeeAcademico)
-                            <li class="has-submenu {{ request()->routeIs('control.*') && !request()->routeIs('control.planeacion.*') ? 'active open' : '' }}">
-                                <a href="#">Control Académico</a>
-                                <ul class="submenu">
-                                    <li class="{{ request()->routeIs('control.careers.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.careers.index') }}">Carreras</a>
-                                    </li>
-                                    <li class="{{ request()->routeIs('control.subjects.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.subjects.index') }}">Materias</a>
-                                    </li>
-                                    <li class="{{ request()->routeIs('control.schedules.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.schedules.index') }}">Horarios</a>
-                                    </li>
-                                    <li class="{{ request()->routeIs('control.classes.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.classes.index') }}">Clases</a>
-                                    </li>
-                                    <li class="{{ request()->routeIs('control.teachers.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.teachers.index') }}">Docentes</a>
-                                    </li>
-                                    <li class="{{ request()->routeIs('control.students.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('control.students.index') }}">Alumnos</a>
-                                    </li>
-                                    <li class="{{ request()->is('control/academico/planeacion') ? 'active-submenu' : '' }}">
-                                        <a href="#">Planeación Escolar</a>
                                     </li>
                                 </ul>
                             </li>

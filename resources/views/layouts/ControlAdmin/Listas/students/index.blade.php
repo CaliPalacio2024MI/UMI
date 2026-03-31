@@ -28,9 +28,10 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#002A4E" stroke-miterlimit="10" stroke-width="1.91"><circle cx="9.14" cy="9.14" r="7.64"/><line x1="22.5" y1="22.5" x2="14.39" y2="14.39"/></svg>
                 </span>
                 <select name="filter_status" id="filter_status" class="umi-filter-select" style="flex: 1; padding: 6px 12px 6px 6px; border: none; background: transparent; color: #555; font-size: 0.9rem; cursor: pointer; outline: none; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23555%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center;">
-                    <option value="" {{ (request('filter_status') ?? '') === '' ? 'selected' : '' }}>Estatus</option>
-                    <option value="activos" {{ request('filter_status') === 'activos' ? 'selected' : '' }}>Alumno activo</option>
-                    <option value="inactivos" {{ request('filter_status') === 'inactivos' ? 'selected' : '' }}>Alumno inactivo</option>
+                    <option value="" {{ (request('filter_status') ?? '') === '' ? 'selected' : '' }}>Estatus:</option>
+                    <option value="activos" {{ request('filter_status') === 'activos' ? 'selected' : '' }}>Alumno</option>
+                    <option value="aspirantes" {{ request('filter_status') === 'aspirantes' ? 'selected' : '' }}>Aspirante</option>
+                    <option value="inactivos" {{ request('filter_status') === 'inactivos' ? 'selected' : '' }}>Baja</option>
                 </select>
             </div>
         </form>
@@ -48,12 +49,6 @@
             </button>
         </form>
 
-        {{-- Botón abre modal Nuevo Registro de Aspirante (data-action para app.js SPA) --}}
-        <button type="button" class="umi-btn" style="margin-left: auto;"
-                data-action="open-modal-inscripcion"
-                data-inscription-url="{{ route('escolar.inscripcion.create', ['modal' => 1]) }}">
-            <i class="fa-solid fa-plus"></i> +Agregar alumnos
-        </button>
     </div>
 
     {{-- CARD QUE CONTIENE LA TABLA (Área de crecimiento flexible) --}}
@@ -68,7 +63,7 @@
                         <th>Apellido<br>Materno</th>
                         <th style="text-align:center">Estatus</th>
                         <th style="min-width: 180px;">Carrera</th>
-                        <th style="text-align:center">Acciones</th>
+                        <th style="text-align:center; min-width: 240px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="data-table-body" id="students-table-body">
@@ -77,6 +72,12 @@
             </table>
         </div>
     </div>
+
+    @if(method_exists($dataList, 'hasPages') && $dataList->hasPages())
+        <div id="students-pagination" class="d-flex justify-content-center py-3 px-2">
+            {{ $dataList->withQueryString()->links() }}
+        </div>
+    @endif
 </div>
 
 {{-- ========================================================= --}}
@@ -113,25 +114,41 @@
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 
-            <div class="details-grid">
-                {{-- Columna Izquierda: Datos --}}
-                <div class="details-column">
-                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px;">
-                        <i class="fa-solid fa-id-card"></i> Información Personal
-                    </h4>
+            <div class="student-details-tabs-wrap">
+                <div class="student-details-tabs" role="tablist" aria-label="Secciones del expediente">
+                    <button type="button" class="student-details-tab-btn is-active" role="tab" aria-selected="true" aria-controls="studentDetailsTabPersonal" id="studentDetailsTabBtnPersonal" data-student-tab="personal">
+                        Información Personal
+                    </button>
+                    <button type="button" class="student-details-tab-btn" role="tab" aria-selected="false" aria-controls="studentDetailsTabAcademico" id="studentDetailsTabBtnAcademico" data-student-tab="academico">
+                        Académico
+                    </button>
+                    <button type="button" class="student-details-tab-btn" role="tab" aria-selected="false" aria-controls="studentDetailsTabDocs" id="studentDetailsTabBtnDocs" data-student-tab="docs">
+                        <i class="fa-solid fa-folder-open" style="margin-right:6px;"></i>Documentación
+                    </button>
+                </div>
+
+                <div id="studentDetailsTabPersonal" class="student-details-tab-panel is-active" role="tabpanel" aria-labelledby="studentDetailsTabBtnPersonal">
                     <div class="detail-item">
-                        <label>Matrícula:</label> <span id="modalMatricula" style="font-weight: normal; color: #000;">-</span>
+                        <label>Nombre:</label> <span id="modalNombre" style="font-weight: normal; color: #000;">-</span>
                     </div>
                     <div class="detail-item">
-                        <label>Email:</label> <span id="modalEmail">-</span>
+                        <label>Ap. Paterno:</label> <span id="modalApellidoPaterno" style="font-weight: normal; color: #000;">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Ap. Materno:</label> <span id="modalApellidoMaterno" style="font-weight: normal; color: #000;">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>CURP:</label> <span id="modalCurp" style="font-weight: normal; color: #000;">-</span>
                     </div>
                     <div class="detail-item">
                         <label>Teléfono:</label> <span id="modalPhone">-</span>
                     </div>
-                    
-                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px; margin-top:20px;">
-                        <i class="fa-solid fa-graduation-cap"></i> Académico
-                    </h4>
+                    <div class="detail-item">
+                        <label>Correo:</label> <span id="modalEmail">-</span>
+                    </div>
+                </div>
+
+                <div id="studentDetailsTabAcademico" class="student-details-tab-panel" role="tabpanel" aria-labelledby="studentDetailsTabBtnAcademico">
                     <div class="detail-item">
                         <label>Carrera:</label> <span id="modalCareer">-</span>
                     </div>
@@ -140,17 +157,15 @@
                     </div>
                 </div>
 
-                {{-- Columna Derecha: Documentos --}}
-                <div class="details-column">
-                    <h4 style="color:#BC8A55; border-bottom:1px solid #c00; padding-bottom:5px; margin-bottom:15px;">
-                        <i class="fa-solid fa-folder-open"></i> Documentación
-                    </h4>
+                <div id="studentDetailsTabDocs" class="student-details-tab-panel" role="tabpanel" aria-labelledby="studentDetailsTabBtnDocs">
                     <div class="docs-list">
                         <button id="btnDocActa" class="doc-btn hidden"><i class="fa-solid fa-file-pdf"></i> Acta de Nacimiento</button>
                         <button id="btnDocCert" class="doc-btn hidden"><i class="fa-solid fa-file-certificate"></i> Certificado Prepa</button>
                         <button id="btnDocCurp" class="doc-btn hidden"><i class="fa-solid fa-passport"></i> CURP</button>
                         <button id="btnDocIne" class="doc-btn hidden"><i class="fa-solid fa-id-card"></i> INE</button>
-                        
+                        <button id="btnDocFicha" class="doc-btn hidden"><i class="fa-solid fa-file-invoice-dollar"></i> Ficha / comprobante de pago</button>
+                        <button id="btnDocFacturaXml" class="doc-btn hidden"><i class="fa-solid fa-file-pdf"></i> Factura PDF</button>
+
                         <div id="noDocsMsg" class="no-docs" style="display:none;">
                             No hay documentos digitales cargados.
                         </div>
@@ -164,6 +179,121 @@
 {{-- ========================================================= --}}
 {{-- MODAL 2: VISOR DE DOCUMENTOS (ENCIMA DEL PRIMER MODAL)    --}}
 {{-- ========================================================= --}}
+{{-- MODAL 2: Editar Aspirante (misma vista que Ver expediente) --}}
+<div id="leadEditModal" class="modal-overlay" style="display: none; z-index: 9998;">
+    <div class="modal-container expediente-modal">
+        <div class="modal-header">
+            <h3>Expediente del Aspirante (Editar)</h3>
+            <button type="button" class="modal-close" onclick="closeLeadEditModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll">
+            <form id="leadEditForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 0;">
+                <input type="hidden" name="lead_edit_docs_interacted" id="leadEditDocsInteracted" value="0">
+                <div class="student-summary" style="margin-bottom: 15px;">
+                    <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    <div class="student-info-header">
+                        <h2 id="leadEditModalName" style="margin:0 0 6px 0; font-size: 1.25rem;">-</h2>
+                        <span id="leadEditModalStatusBadge" class="badge-status badge-orange">Aspirante</span>
+                    </div>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                <div class="details-grid lead-edit-details-grid">
+                    <div class="details-column lead-edit-tabs-wrap">
+                        <div class="lead-edit-tabs" role="tablist" aria-label="Secciones del expediente">
+                            <button type="button" class="lead-edit-tab-btn is-active" role="tab" aria-selected="true" aria-controls="leadEditTabPersonal" id="leadEditTabBtnPersonal" data-lead-tab="personal">Personal</button>
+                            <button type="button" class="lead-edit-tab-btn" role="tab" aria-selected="false" aria-controls="leadEditTabAcademico" id="leadEditTabBtnAcademico" data-lead-tab="academico">Académico</button>
+                            <button type="button" class="lead-edit-tab-btn" role="tab" aria-selected="false" aria-controls="leadEditTabDocs" id="leadEditTabBtnDocs" data-lead-tab="docs"><i class="fa-solid fa-folder-open" style="margin-right:6px;"></i>Documentación</button>
+                        </div>
+                        <div id="leadEditTabPersonal" class="lead-edit-tab-panel is-active" role="tabpanel" aria-labelledby="leadEditTabBtnPersonal">
+                            <div class="detail-item"><label>Nombre:</label><input type="text" name="alumno_nombre" id="leadAlumnoNombre" required style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
+                            <div class="detail-item"><label>Ap. Paterno:</label><input type="text" name="alumno_paterno" id="leadAlumnoPaterno" required style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
+                            <div class="detail-item"><label>Ap. Materno:</label><input type="text" name="alumno_materno" id="leadAlumnoMaterno" required style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
+                            <div class="detail-item"><label>CURP:</label><input type="text" name="alumno_curp" id="leadAlumnoCurp" maxlength="18" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
+                            <div class="detail-item"><label>Teléfono:</label><input type="text" name="telefono1" id="leadTelefono1" required maxlength="20" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
+                            <div class="detail-item"><label>Correro:</label><input type="email" name="alumno_email" id="leadAlumnoEmail" autocomplete="off" placeholder="Correo del alumno (inscripción o edición aquí)" title="Se guarda en la cuenta del estudiante al pulsar Guardar cambios" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:260px;"></div>
+                        </div>
+                        <div id="leadEditTabAcademico" class="lead-edit-tab-panel" role="tabpanel" aria-labelledby="leadEditTabBtnAcademico">
+                            <div class="detail-item"><label>Carrera:</label>
+                                <select name="carrera_id" id="leadCarreraId" style="flex:1; padding:6px 10px; border:1px solid #ddd; border-radius:6px; max-width:220px;">
+                                    <option value="">Sin asignar</option>
+                                    @foreach(\App\Models\Users\Career::orderBy('name')->get() as $c)
+                                        <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="detail-item"><label>Semestre:</label>
+                                <input type="number" name="semestre" id="leadSemestre" min="1" max="12" value="1" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:100px;">
+                            </div>
+                        </div>
+                        <div id="leadEditTabDocs" class="lead-edit-tab-panel" role="tabpanel" aria-labelledby="leadEditTabBtnDocs">
+                            <div id="leadDocsContainer" class="lead-docs-list">
+                                <div class="lead-doc-item" data-doc-field="doc_acta_nacimiento">
+                                    <label>Acta Nacimiento</label>
+                                    <div class="lead-doc-links" id="leadDocActaLink"></div>
+                                    <label class="lead-rechazar-doc-wrap">
+                                        <input type="checkbox" name="rechazar_doc_acta_nacimiento" value="1" class="lead-rechazar-doc-cb">
+                                        <span>Rechazar Documento</span>
+                                    </label>
+                                    <input type="file" name="doc_acta_nacimiento" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
+                                </div>
+                                <div class="lead-doc-item" data-doc-field="doc_certificado_prepa">
+                                    <label>Certificado Prepa</label>
+                                    <div class="lead-doc-links" id="leadDocCertLink"></div>
+                                    <label class="lead-rechazar-doc-wrap">
+                                        <input type="checkbox" name="rechazar_doc_certificado_prepa" value="1" class="lead-rechazar-doc-cb">
+                                        <span>Rechazar Documento</span>
+                                    </label>
+                                    <input type="file" name="doc_certificado_prepa" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
+                                </div>
+                                <div class="lead-doc-item" data-doc-field="doc_curp">
+                                    <label>CURP</label>
+                                    <div class="lead-doc-links" id="leadDocCurpLink"></div>
+                                    <label class="lead-rechazar-doc-wrap">
+                                        <input type="checkbox" name="rechazar_doc_curp" value="1" class="lead-rechazar-doc-cb">
+                                        <span>Rechazar Documento</span>
+                                    </label>
+                                    <input type="file" name="doc_curp" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
+                                </div>
+                                <div class="lead-doc-item" data-doc-field="doc_ine">
+                                    <label>INE</label>
+                                    <div class="lead-doc-links" id="leadDocIneLink"></div>
+                                    <label class="lead-rechazar-doc-wrap">
+                                        <input type="checkbox" name="rechazar_doc_ine" value="1" class="lead-rechazar-doc-cb">
+                                        <span>Rechazar Documento</span>
+                                    </label>
+                                    <input type="file" name="doc_ine" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
+                                </div>
+                                <div class="lead-doc-item" data-doc-field="doc_ficha_pago">
+                                    <label>Ficha de pago / comprobante (PDF)</label>
+                                    <div class="lead-doc-links" id="leadDocFichaLink"></div>
+                                    <label class="lead-rechazar-doc-wrap">
+                                        <input type="checkbox" name="rechazar_doc_ficha_pago" value="1" class="lead-rechazar-doc-cb">
+                                        <span>Rechazar Documento</span>
+                                    </label>
+                                    <input type="file" name="doc_ficha_pago" accept=".pdf" class="lead-doc-input">
+                                </div>
+                                <div class="lead-doc-item" data-doc-field="doc_factura_xml">
+                                    <label>Factura PDF</label>
+                                    <div class="lead-doc-links" id="leadDocXmlLink"></div>
+                                    <label class="lead-rechazar-doc-wrap">
+                                        <input type="checkbox" name="rechazar_doc_factura_xml" value="1" class="lead-rechazar-doc-cb">
+                                        <span>Rechazar Documento</span>
+                                    </label>
+                                    <input type="file" name="doc_factura_xml" accept=".pdf,application/pdf,.xml,text/xml,.txt" class="lead-doc-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lead-edit-form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="closeLeadEditModal()">Cancelar</button>
+                    <button type="submit" class="btn btn--primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div id="docViewerModal" class="modal-overlay" style="display: none; z-index: 10000;">
     <div class="modal-container" style="height: 90vh; width: 80%; max-width: 1000px;">
         <div class="modal-header" style="background: #333; color: white; border-radius: 8px 8px 0 0;">
@@ -172,6 +302,25 @@
         </div>
         <div class="modal-body" style="padding: 0; height: 100%; background: #525659;">
             <iframe id="docViewerFrame" src="" width="100%" height="100%" style="border:none;"></iframe>
+        </div>
+    </div>
+</div>
+
+<div id="acceptAspiranteModal" class="modal-overlay" style="display: none; z-index: 10001;">
+    <div class="modal-container accept-aspirante-modal">
+        <div class="modal-header accept-aspirante-modal__header">
+            <button type="button" class="modal-close" onclick="closeAcceptAspiranteModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll accept-aspirante-modal__body">
+            <div class="accept-aspirante-modal__icon" aria-hidden="true">
+                <span aria-hidden="true">✓</span>
+            </div>
+            <p id="acceptAspiranteText" class="accept-aspirante-modal__text">
+                ¿Deseas aceptar este aspirante para pasarlo de aspirante como alumno?
+            </p>
+            <div class="accept-aspirante-modal__actions">
+                <button type="button" id="btnConfirmAcceptAspirante" class="btn btn--primary">Aceptar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -343,6 +492,60 @@
     .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
     .modal-body-scroll { padding: 25px; overflow-y: auto; flex: 1; }
     .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; text-align: right; background: #f8f9fa; border-radius: 0 0 12px 12px; }
+
+    /* Modal confirmar aspirante (estilo limpio tipo confirmación) */
+    #acceptAspiranteModal .accept-aspirante-modal {
+        max-width: 460px;
+        max-height: 300px;
+    }
+    #acceptAspiranteModal .accept-aspirante-modal__header {
+        background: #ffffff;
+        justify-content: flex-end;
+    }
+    #acceptAspiranteModal .accept-aspirante-modal__body {
+        padding: 14px 18px 12px;
+        text-align: center;
+    }
+    #acceptAspiranteModal .accept-aspirante-modal__icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        border: 2px solid #cfe6c8;
+        color: #8ec58d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    #acceptAspiranteModal .accept-aspirante-modal__text {
+        margin: 0;
+        color: #223F70;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    #acceptAspiranteModal .accept-aspirante-modal__actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+
+    /* Botones tipo "confirmación" ovalados azul marino */
+    #acceptAspiranteModal .btn {
+        border: none;
+        border-radius: 50px;
+        padding: 10px 22px;
+        font-weight: 600;
+        cursor: pointer;
+        background: #223F70;
+        color: #fff;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    #acceptAspiranteModal .btn:hover {
+        background: #1a3055;
+    }
     
     .btn-secondary-modal { background: #e0e0e0; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; color: #333; font-weight: 600; }
     .btn-secondary-modal:hover { background: #d0d0d0; }
@@ -359,6 +562,34 @@
     .badge-orange { background: #fff3e0; color: #ef6c00; border-color: #ffe0b2; }
     .badge-gray { background: #223F70; color: #fff; border-color: #223F70; }
 
+    /* Badge "Alumno" en modal de edición: azul marino + letras blancas */
+    #leadEditModal .badge-green {
+        background: #223F70 !important;
+        color: #fff !important;
+        border-color: #223F70 !important;
+    }
+
+    /* Badge "Aspirante" en modal editar expediente: azul marino + texto blanco */
+    #leadEditModal .badge-orange {
+        background: #223F70 !important;
+        color: #fff !important;
+        border-color: #1a3258 !important;
+    }
+
+    /* Badge "Alumno" en modal de ver expediente: azul marino + letras blancas */
+    #studentDetailsModal .badge-green {
+        background: #223F70 !important;
+        color: #fff !important;
+        border-color: #223F70 !important;
+    }
+
+    /* Badge "Aspirante" en modal ver expediente: azul marino + texto blanco */
+    #studentDetailsModal .badge-orange {
+        background: #223F70 !important;
+        color: #fff !important;
+        border-color: #1a3258 !important;
+    }
+
     .student-summary { display: flex; align-items: center; gap: 15px; }
     .avatar-placeholder { width: 50px; height: 50px; background: #e0e0e0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; color: white; }
     
@@ -374,12 +605,183 @@
     }
 
     .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    .detail-item { margin-bottom: 12px; }
-    .detail-item label { font-weight: 600; color: #BC8A55; width: 80px; display: inline-block; }
+    #leadEditModal .lead-edit-details-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .detail-item { margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+    .detail-item label { font-weight: 600; color: #BC8A55; width: 80px; flex-shrink: 0; }
+
+    #leadEditModal .lead-doc-item {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #DB5865;
+    }
+    #leadEditModal .lead-rechazar-doc-wrap {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        margin: 8px 0;
+        font-size: 0.85rem;
+        color: #c0392b;
+        cursor: pointer;
+        font-weight: 500;
+        line-height: 1.2;
+    }
+    #leadEditModal .lead-rechazar-doc-wrap input.lead-rechazar-doc-cb {
+        margin: 0;
+        flex-shrink: 0;
+        width: 1.05em;
+        height: 1.05em;
+        accent-color: #c0392b;
+    }
+    #leadEditModal .lead-edit-form-actions {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #fff;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Botones modal editar aspirante: azul marino, forma ovalada */
+    #leadEditModal .btn,
+    #leadEditModal button.btn--primary,
+    #leadEditModal button.btn--secondary {
+        background: #223F70;
+        color: #fff;
+        border: 1px solid #fff;
+        border-radius: 50px;
+        padding: 10px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    #leadEditModal .btn:hover,
+    #leadEditModal button.btn--primary:hover,
+    #leadEditModal button.btn--secondary:hover {
+        background: #1a3258;
+    }
+
+    #leadEditModal .lead-doc-item {
+        margin-bottom: 14px;
+    }
+    #leadEditModal .lead-doc-item label {
+        display: block;
+        font-weight: 600;
+        color: #BC8A55;
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+    }
+    #leadEditModal .lead-doc-links {
+        margin-bottom: 6px;
+    }
+    #leadEditModal .lead-doc-links .btn-ver-doc {
+        color: #2980b9;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    #leadEditModal .lead-doc-links .btn-ver-doc:hover {
+        text-decoration: underline;
+    }
+    #leadEditModal .lead-doc-input {
+        font-size: 0.85rem;
+        padding: 4px 0;
+    }
+
+    /* Pestañas modal editar aspirante */
+    #leadEditModal .lead-edit-tabs-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        min-height: 0;
+    }
+    #leadEditModal .lead-edit-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #e8e0d8;
+        flex-shrink: 0;
+    }
+    #leadEditModal .lead-edit-tab-btn {
+        flex: 1;
+        padding: 10px 10px;
+        border: none;
+        background: transparent;
+        color: #888;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.2s, border-color 0.2s;
+    }
+    #leadEditModal .lead-edit-tab-btn:hover {
+        color: #BC8A55;
+    }
+    #leadEditModal .lead-edit-tab-btn.is-active {
+        color: #223F70;
+        border-bottom-color: #BC8A55;
+    }
+    #leadEditModal .lead-edit-tab-panel {
+        display: none;
+        padding-top: 4px;
+    }
+    #leadEditModal .lead-edit-tab-panel.is-active {
+        display: block;
+    }
+
+    /* Pestañas modal detalles alumno */
+    #studentDetailsModal .student-details-tabs-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        min-height: 0;
+    }
+    #studentDetailsModal .student-details-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #e8e0d8;
+        flex-shrink: 0;
+    }
+    #studentDetailsModal .student-details-tab-btn {
+        flex: 1;
+        padding: 10px 10px;
+        border: none;
+        background: transparent;
+        color: #888;
+        font-weight: 600;
+        font-size: 0.82rem;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.2s, border-color 0.2s;
+        text-align: center;
+    }
+    #studentDetailsModal .student-details-tab-btn:hover {
+        color: #BC8A55;
+    }
+    #studentDetailsModal .student-details-tab-btn.is-active {
+        color: #223F70;
+        border-bottom-color: #BC8A55;
+    }
+    #studentDetailsModal .student-details-tab-panel {
+        display: none;
+        padding-top: 4px;
+    }
+    #studentDetailsModal .student-details-tab-panel.is-active {
+        display: block;
+    }
     
 </style>
 {{-- SCRIPTS --}}
 <script>
+    const UMI_STUDENTS_LEADS_BASE = @json(
+        str_contains(request()->path(), 'lista-estudiantes')
+            ? url('/control-administrativo/lista-estudiantes/leads')
+            : url('/control-escolar/lista-alumnos/leads')
+    );
     // =============================================================
     // 1. LÓGICA VISUAL (Funciones que muestran/ocultan)
     // =============================================================
@@ -401,20 +803,33 @@
     function openStudentDetails(data) {
         // 1. Llenar Textos
         document.getElementById('modalName').innerText = data.name;
+        document.getElementById('modalNombre').innerText = data.alumnoNombre || '-';
+        document.getElementById('modalApellidoPaterno').innerText = data.alumnoPaterno || '-';
+        document.getElementById('modalApellidoMaterno').innerText = data.alumnoMaterno || '-';
+        document.getElementById('modalCurp').innerText = data.alumnoCurp || '-';
         document.getElementById('modalEmail').innerText = data.email;
         document.getElementById('modalPhone').innerText = data.phone;
         document.getElementById('modalCareer').innerText = data.career;
-        document.getElementById('modalSemester').innerText = data.semester;
-        document.getElementById('modalMatricula').innerText = data.matricula;
+        var semVal = data.semester;
+        if (semVal === undefined || semVal === null || String(semVal).trim() === '' || semVal === '—') {
+            semVal = '1';
+        }
+        document.getElementById('modalSemester').innerText = String(semVal);
         
         // 2. Configurar Badge (Etiqueta de color)
         const badge = document.getElementById('modalStatusBadge');
-        badge.innerText = data.status;
+        var uiStatus = data.status || 'Aspirante';
+        // En tu sistema, a veces el backend manda 'Pendiente' para alumnos aún no inscritos.
+        // Para el modal, lo mostramos como 'Aspirante'.
+        if (uiStatus === 'Pendiente') {
+            uiStatus = 'Aspirante';
+        }
+        badge.innerText = uiStatus;
         badge.className = 'badge-status'; 
         badge.classList.remove('badge-green', 'badge-orange', 'badge-gray');
         
-        if(data.status === 'Alumno Activo') badge.classList.add('badge-green');
-        else if(data.status === 'Aspirante') badge.classList.add('badge-orange');
+        if(uiStatus === 'Alumno Activo' || uiStatus === 'Alumno') badge.classList.add('badge-green');
+        else if(uiStatus === 'Aspirante') badge.classList.add('badge-orange');
         else badge.classList.add('badge-gray');
 
         // 3. Configurar Botones de Documentos
@@ -438,13 +853,208 @@
         configureBtn('btnDocCert', data.docCert, 'Certificado Preparatoria');
         configureBtn('btnDocCurp', data.docCurp, 'CURP');
         configureBtn('btnDocIne', data.docIne, 'INE');
+        configureBtn('btnDocFicha', data.docFicha, 'Ficha de pago / comprobante');
+        configureBtn('btnDocFacturaXml', data.docXml, 'Factura PDF');
 
         document.getElementById('noDocsMsg').style.display = (docsCount === 0) ? 'block' : 'none';
+        resetStudentDetailsTabsToPersonal();
         document.getElementById('studentDetailsModal').style.display = 'flex';
     }
 
     function closeStudentDetails() {
         document.getElementById('studentDetailsModal').style.display = 'none';
+    }
+
+    function resetStudentDetailsTabsToPersonal() {
+        var modal = document.getElementById('studentDetailsModal');
+        if (!modal) return;
+        modal.querySelectorAll('.student-details-tab-btn').forEach(function(b) {
+            var on = b.getAttribute('data-student-tab') === 'personal';
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        modal.querySelectorAll('.student-details-tab-panel').forEach(function(p) {
+            p.classList.toggle('is-active', p.id === 'studentDetailsTabPersonal');
+        });
+    }
+
+    (function initStudentDetailsTabs() {
+        var modal = document.getElementById('studentDetailsModal');
+        if (!modal) return;
+        modal.addEventListener('click', function(e) {
+            var btn = e.target.closest('.student-details-tab-btn');
+            if (!btn || !modal.contains(btn)) return;
+            e.preventDefault();
+            var tab = btn.getAttribute('data-student-tab');
+            modal.querySelectorAll('.student-details-tab-btn').forEach(function(b) {
+                var on = b.getAttribute('data-student-tab') === tab;
+                b.classList.toggle('is-active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            modal.querySelectorAll('.student-details-tab-panel').forEach(function(p) {
+                var show = (tab === 'personal' && p.id === 'studentDetailsTabPersonal')
+                    || (tab === 'academico' && p.id === 'studentDetailsTabAcademico')
+                    || (tab === 'docs' && p.id === 'studentDetailsTabDocs');
+                p.classList.toggle('is-active', show);
+            });
+        });
+    })();
+
+    function resetLeadEditTabsToPersonal() {
+        var modal = document.getElementById('leadEditModal');
+        if (!modal) return;
+        modal.querySelectorAll('.lead-edit-tab-btn').forEach(function(b) {
+            var on = b.getAttribute('data-lead-tab') === 'personal';
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        modal.querySelectorAll('.lead-edit-tab-panel').forEach(function(p) {
+            p.classList.toggle('is-active', p.id === 'leadEditTabPersonal');
+        });
+    }
+
+    function openLeadEditModal(data) {
+        resetLeadEditTabsToPersonal();
+        var fullName = [data.alumnoNombre, data.alumnoPaterno, data.alumnoMaterno].filter(Boolean).join(' ') || '-';
+        // Pintar badge según estatus (Alumno / Aspirante / etc.)
+        var status = data.status || 'Aspirante';
+        // Normalización de estatus para la UI:
+        // En tu sistema, a veces aparece como 'Pendiente' pero para el modal debe verse como 'Aspirante'.
+        if (status === 'Pendiente') {
+            status = 'Aspirante';
+        }
+        var badge = document.getElementById('leadEditModalStatusBadge');
+        if (badge) {
+            badge.innerText = status;
+            badge.className = 'badge-status';
+            badge.classList.remove('badge-green', 'badge-orange', 'badge-gray');
+            if (status === 'Alumno Activo' || status === 'Alumno') badge.classList.add('badge-green');
+            else if (status === 'Aspirante') badge.classList.add('badge-orange');
+            else badge.classList.add('badge-gray');
+        }
+        document.getElementById('leadEditModalName').innerText = fullName;
+        document.getElementById('leadAlumnoNombre').value = data.alumnoNombre || '';
+        document.getElementById('leadAlumnoPaterno').value = data.alumnoPaterno || '';
+        document.getElementById('leadAlumnoMaterno').value = data.alumnoMaterno || '';
+        document.getElementById('leadAlumnoCurp').value = data.alumnoCurp || '';
+        document.getElementById('leadTelefono1').value = data.telefono1 || '';
+        document.getElementById('leadAlumnoEmail').value = data.alumnoEmail || '';
+        document.getElementById('leadCarreraId').value = data.carreraId || '';
+        document.getElementById('leadSemestre').value = data.semestre || '1';
+        document.getElementById('leadEditForm').dataset.leadId = data.leadId;
+        var docsFlag = document.getElementById('leadEditDocsInteracted');
+        if (docsFlag) docsFlag.value = '0';
+
+        function setDocLink(id, url, title) {
+            var el = document.getElementById(id);
+            el.innerHTML = '';
+            if (url && url.trim() !== '') {
+                var a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.className = 'btn-ver-doc';
+                a.innerHTML = '<i class="fa-regular fa-file-pdf"></i> Ver documento';
+                el.appendChild(a);
+            }
+        }
+        setDocLink('leadDocActaLink', data.docActa, 'Acta');
+        setDocLink('leadDocCertLink', data.docCert, 'Certificado');
+        setDocLink('leadDocCurpLink', data.docCurp, 'CURP');
+        setDocLink('leadDocIneLink', data.docIne, 'INE');
+        setDocLink('leadDocFichaLink', data.docFicha, 'Ficha');
+        setDocLink('leadDocXmlLink', data.docXml, 'Factura PDF');
+
+        function leadEditSetRechazoRow(field, docUrl, rechVal) {
+            var item = document.querySelector('#leadEditModal .lead-doc-item[data-doc-field="' + field + '"]');
+            if (!item) return;
+            var wrap = item.querySelector('.lead-rechazar-doc-wrap');
+            var cb = wrap && wrap.querySelector('input[type=checkbox]');
+            var hasDoc = !!(docUrl && String(docUrl).trim() !== '');
+            var wasRej = rechVal === '1' || rechVal === 1 || rechVal === true;
+            if (wrap) {
+                wrap.style.display = (hasDoc || wasRej) ? 'flex' : 'none';
+            }
+            if (cb) {
+                cb.checked = wasRej;
+            }
+        }
+        leadEditSetRechazoRow('doc_acta_nacimiento', data.docActa, data.docRechActa);
+        leadEditSetRechazoRow('doc_certificado_prepa', data.docCert, data.docRechCert);
+        leadEditSetRechazoRow('doc_curp', data.docCurp, data.docRechCurp);
+        leadEditSetRechazoRow('doc_ine', data.docIne, data.docRechIne);
+        leadEditSetRechazoRow('doc_ficha_pago', data.docFicha, data.docRechFicha);
+        leadEditSetRechazoRow('doc_factura_xml', data.docXml, data.docRechXml);
+
+        document.querySelectorAll('#leadEditForm .lead-doc-input').forEach(function(inp) { inp.value = ''; });
+        document.getElementById('leadEditModal').style.display = 'flex';
+    }
+
+    function closeLeadEditModal() {
+        document.getElementById('leadEditModal').style.display = 'none';
+    }
+
+    (function initLeadEditModalTabs() {
+        var modal = document.getElementById('leadEditModal');
+        if (!modal) return;
+        modal.addEventListener('click', function(e) {
+            var btn = e.target.closest('.lead-edit-tab-btn');
+            if (!btn || !modal.contains(btn)) return;
+            e.preventDefault();
+            var tab = btn.getAttribute('data-lead-tab');
+            modal.querySelectorAll('.lead-edit-tab-btn').forEach(function(b) {
+                var on = b.getAttribute('data-lead-tab') === tab;
+                b.classList.toggle('is-active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            modal.querySelectorAll('.lead-edit-tab-panel').forEach(function(p) {
+                var show = (tab === 'personal' && p.id === 'leadEditTabPersonal')
+                    || (tab === 'academico' && p.id === 'leadEditTabAcademico')
+                    || (tab === 'docs' && p.id === 'leadEditTabDocs');
+                p.classList.toggle('is-active', show);
+            });
+        });
+    })();
+
+    (function initLeadCurpInputNormalize() {
+        var el = document.getElementById('leadAlumnoCurp');
+        if (!el) return;
+        el.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/\s/g, '');
+        });
+    })();
+
+    (function initLeadDocRechazoFileUncheck() {
+        var modal = document.getElementById('leadEditModal');
+        if (!modal) return;
+        modal.addEventListener('change', function(e) {
+            if (e.target.classList.contains('lead-doc-input') || e.target.classList.contains('lead-rechazar-doc-cb')) {
+                var df = document.getElementById('leadEditDocsInteracted');
+                if (df) df.value = '1';
+            }
+            if (!e.target.classList.contains('lead-doc-input')) return;
+            if (e.target.files && e.target.files.length) {
+                var item = e.target.closest('.lead-doc-item');
+                var cb = item && item.querySelector('.lead-rechazar-doc-cb');
+                if (cb) cb.checked = false;
+            }
+        });
+    })();
+
+    let acceptAspiranteUrl = '';
+
+    function openAcceptAspiranteModal(data) {
+        acceptAspiranteUrl = data.url || '';
+        const text = document.getElementById('acceptAspiranteText');
+        const nombre = (data.name || '').trim();
+        text.textContent = nombre
+            ? `¿Deseas aceptar a "${nombre}" para pasarlo de aspirante como alumno?`
+            : '¿Deseas aceptar este aspirante para pasarlo de aspirante como alumno?';
+        document.getElementById('acceptAspiranteModal').style.display = 'flex';
+    }
+
+    function closeAcceptAspiranteModal() {
+        acceptAspiranteUrl = '';
+        document.getElementById('acceptAspiranteModal').style.display = 'none';
     }
 
     function openModalInscripcion() {
@@ -461,17 +1071,68 @@
     // =============================================================
     document.addEventListener('click', function(event) {
         
-        // --- CASO A: ABRIR EL EXPEDIENTE ---
+        // --- CASO A: ABRIR EL EXPEDIENTE (VER) ---
         const openBtn = event.target.closest('[data-action="open-expediente"]');
         if (openBtn) {
             const d = openBtn.dataset;
             openStudentDetails({
                 name: d.name, email: d.email, phone: d.phone,
                 career: d.career, semester: d.semester, status: d.status,
-                matricula: d.matricula, docActa: d.docActa, docCert: d.docCert,
-                docCurp: d.docCurp, docIne: d.docIne
+                alumnoNombre: d.alumnoNombre,
+                alumnoPaterno: d.alumnoPaterno,
+                alumnoMaterno: d.alumnoMaterno,
+                alumnoCurp: d.alumnoCurp,
+                docActa: d.docActa, docCert: d.docCert,
+                docCurp: d.docCurp, docIne: d.docIne,
+                docFicha: d.docFicha || '', docXml: d.docXml || ''
             });
-            return; // Ya hicimos el trabajo, terminamos.
+            return;
+        }
+
+        // --- CASO A2: ABRIR EXPEDIENTE EDIT (ASPIRANTE) ---
+        const editLeadBtn = event.target.closest('[data-action="open-expediente-edit"]');
+        if (editLeadBtn) {
+            const d = editLeadBtn.dataset;
+            openLeadEditModal({
+                leadId: d.leadId,
+                status: d.status,
+                alumnoNombre: d.alumnoNombre,
+                alumnoPaterno: d.alumnoPaterno,
+                alumnoMaterno: d.alumnoMaterno,
+                alumnoCurp: d.alumnoCurp,
+                telefono1: d.telefono1,
+                alumnoEmail: d.alumnoEmail || '',
+                carreraId: d.carreraId,
+                semestre: d.semestre || '1',
+                docActa: d.docActa || '',
+                docCert: d.docCert || '',
+                docCurp: d.docCurp || '',
+                docIne: d.docIne || '',
+                docRechActa: d.docRechActa || '0',
+                docRechCert: d.docRechCert || '0',
+                docRechCurp: d.docRechCurp || '0',
+                docRechIne: d.docRechIne || '0',
+                docFicha: d.docFicha || '',
+                docXml: d.docXml || '',
+                docRechFicha: d.docRechFicha || '0',
+                docRechXml: d.docRechXml || '0'
+            });
+            return;
+        }
+
+        // --- CASO A3: ABRIR CONFIRMACIÓN ACEPTAR ASPIRANTE ---
+        const acceptBtn = event.target.closest('[data-action="accept-aspirante"]');
+        if (acceptBtn) {
+            const d = acceptBtn.dataset;
+            if (!d.acceptUrl) {
+                alert('Este registro no tiene un lead CRM vinculado para aceptar.');
+                return;
+            }
+            openAcceptAspiranteModal({
+                url: d.acceptUrl,
+                name: d.leadName || ''
+            });
+            return;
         }
 
         // --- CASO B: CERRAR (Botón X) ---
@@ -481,6 +1142,8 @@
         }
         if (event.target.closest('.modal-close')) {
             closeStudentDetails();
+            closeLeadEditModal();
+            closeAcceptAspiranteModal();
             closeDocViewer();
             return;
         }
@@ -488,9 +1151,127 @@
         // --- CASO C: CERRAR (Clic afuera / Fondo oscuro) ---
         if (event.target.classList.contains('modal-overlay')) {
             if (event.target.id === 'modalInscripcion') cerrarModalInscripcion();
+            else if (event.target.id === 'leadEditModal') closeLeadEditModal();
+            else if (event.target.id === 'acceptAspiranteModal') closeAcceptAspiranteModal();
             else { closeStudentDetails(); closeDocViewer(); }
             return;
         }
+    });
+
+    document.getElementById('btnConfirmAcceptAspirante')?.addEventListener('click', function() {
+        if (!acceptAspiranteUrl) return;
+        const btn = this;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+
+        fetch(acceptAspiranteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(function(r) { return r.json().then(function(j){ return { ok: r.ok, data: j }; }); })
+        .then(function(res) {
+            if (!res.ok || !res.data?.success) {
+                throw new Error(res.data?.message || 'No se pudo aceptar el aspirante.');
+            }
+            closeAcceptAspiranteModal();
+            const form = document.getElementById('umi-search-form');
+            if (form) {
+                const params = new URLSearchParams(new FormData(form));
+                const url = form.action + (params.toString() ? '?' + params.toString() : '');
+                fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) {
+                        const tbody = document.getElementById('students-table-body');
+                        if (tbody) tbody.innerHTML = html;
+                    });
+            }
+        })
+        .catch(function(err) { alert(err.message || 'Error al aceptar aspirante'); })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = original || 'Aceptar';
+        });
+    });
+
+    // --- ENVÍO FORMULARIO EDITAR ASPIRANTE ---
+    document.getElementById('leadEditForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const leadId = this.dataset.leadId;
+        if (!leadId) {
+            alert('Este alumno no tiene un lead CRM vinculado para editar desde este modal.');
+            return;
+        }
+        const formData = new FormData(this);
+        formData.delete('alumno_email');
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const origText = submitBtn?.textContent;
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Guardando...'; }
+
+        fetch(UMI_STUDENTS_LEADS_BASE + '/' + leadId + '/expediente', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(function(r) {
+            return r.json().then(function(j) {
+                if (!r.ok) {
+                    var msg = j.message || (j.errors && Object.values(j.errors).flat().join(' ')) || (r.status === 403 ? 'No tienes permiso para editar.' : 'Error al guardar');
+                    throw new Error(msg);
+                }
+                return j;
+            });
+        })
+        .then(function() {
+            const emailVal = (document.getElementById('leadAlumnoEmail') && document.getElementById('leadAlumnoEmail').value) ? document.getElementById('leadAlumnoEmail').value.trim() : '';
+            const curpVal = (document.getElementById('leadAlumnoCurp') && document.getElementById('leadAlumnoCurp').value) ? document.getElementById('leadAlumnoCurp').value.trim() : '';
+            if (!emailVal || !leadId) {
+                return Promise.resolve();
+            }
+            return fetch(UMI_STUDENTS_LEADS_BASE + '/' + leadId + '/alumno-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ alumno_email: emailVal, alumno_curp: curpVal })
+            }).then(function(sr) {
+                return sr.json().then(function(j) {
+                    if (!sr.ok) {
+                        throw new Error(j.message || (j.errors && Object.values(j.errors).flat().join(' ')) || 'No se pudo guardar el correo del alumno');
+                    }
+                    return j;
+                });
+            });
+        })
+        .then(function() {
+            closeLeadEditModal();
+            var form = document.getElementById('umi-search-form');
+            if (form) {
+                var params = new URLSearchParams(new FormData(form));
+                var url = form.action + (params.toString() ? '?' + params.toString() : '');
+                fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) {
+                        var tbody = document.getElementById('students-table-body');
+                        if (tbody) tbody.innerHTML = html;
+                    });
+            }
+        })
+        .catch(function(err) { alert(err.message); })
+        .finally(function() {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText || 'Guardar cambios'; }
+        });
     });
 
     // =============================================================
@@ -519,6 +1300,8 @@
             .then(function(r) { if (!r.ok) throw new Error('Error'); return r.text(); })
             .then(function(html) {
                 tbody.innerHTML = html;
+                var pag = document.getElementById('students-pagination');
+                if (pag) pag.style.display = 'none';
                 if (typeof history !== 'undefined' && history.replaceState) {
                     history.replaceState(null, '', url);
                 }

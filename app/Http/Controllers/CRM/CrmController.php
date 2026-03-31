@@ -4,6 +4,8 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Comision;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Lead;
 use App\Models\Users\User;
 use Carbon\Carbon;
@@ -48,7 +50,7 @@ class CRMController extends Controller
     {
         $query = Lead::with([
             'seguimientos' => function ($q) {
-                $q->latest();
+                $q->orderBy('fecha', 'asc')->orderBy('hora', 'asc');
             },
             'ctp'
         ]);
@@ -71,6 +73,12 @@ class CRMController extends Controller
         if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
             $query->whereHas('seguimientos', function ($q) use ($request) {
 
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                });
+
                 if ($request->filled('fecha_inicio')) {
                     $q->whereDate('fecha', '>=', $request->fecha_inicio);
                 }
@@ -87,94 +95,104 @@ class CRMController extends Controller
             });
         }
 
-
         $leads = $query->get();
-
         $totalLeads = $leads->count();
+        $hoy = Carbon::now()->startOfDay();
 
         // ================= ESTADOS =================
-        $estados = $leads->map(function ($lead) {
-            $ultimoSeguimiento = $lead->seguimientos->first();
+        $totalFrio = 0;
+        $totalCaliente = 0;
+        $totalAspirante = 0;
+        $totalAlumno = 0;
 
-            return $ultimoSeguimiento
-                ? $ultimoSeguimiento->estado
-                : 'Prospecto frío';
-        });
+        foreach ($leads as $lead) {
+            $ultimoEstado = $lead->seguimientos->last()?->estado ?? 'Prospecto frío';
 
-        $conteos = $estados->countBy();
-
-        $totalFrio = $conteos['Prospecto frío'] ?? 0;
-        $totalCaliente = $conteos['Prospecto caliente'] ?? 0;
-        $totalAspirante = $conteos['Aspirante'] ?? 0;
-        $totalAlumno = $conteos['Alumno'] ?? 0;
+            match ($ultimoEstado) {
+                'Prospecto frío'     => $totalFrio++,
+                'Prospecto caliente' => $totalCaliente++,
+                'Aspirante'          => $totalAspirante++,
+                'Alumno'             => $totalAlumno++,
+                default              => null,
+            };
+        }
 
         // ================= PORCENTAJES =================
         $totalEstados = $totalFrio + $totalCaliente + $totalAspirante + $totalAlumno;
 
-        $porcentajeFrio = $totalEstados > 0 ? round(($totalFrio / $totalEstados) * 100, 1) : 0;
-        $porcentajeCaliente = $totalEstados > 0 ? round(($totalCaliente / $totalEstados) * 100, 1) : 0;
+        $porcentajeFrio      = $totalEstados > 0 ? round(($totalFrio / $totalEstados) * 100, 1) : 0;
+        $porcentajeCaliente  = $totalEstados > 0 ? round(($totalCaliente / $totalEstados) * 100, 1) : 0;
         $porcentajeAspirante = $totalEstados > 0 ? round(($totalAspirante / $totalEstados) * 100, 1) : 0;
-        $porcentajeAlumno = $totalEstados > 0 ? round(($totalAlumno / $totalEstados) * 100, 1) : 0;
+        $porcentajeAlumno    = $totalEstados > 0 ? round(($totalAlumno / $totalEstados) * 100, 1) : 0;
 
         // ================= TIEMPOS =================
         $tiempos = [
-            'Prospecto frío' => [],
+            'Prospecto frío'     => [],
             'Prospecto caliente' => [],
-            'Aspirante' => [],
-            'Alumno' => [],
+            'Aspirante'          => [],
+            'Alumno'             => [],
         ];
 
         foreach ($leads as $lead) {
 
-            $fechaInicio = $lead->created_at;
-            $ultimoSeguimiento = $lead->seguimientos->first();
+            $seguimientos = $lead->seguimientos;
 
-            if (!$ultimoSeguimiento) continue;
+            if ($seguimientos->isEmpty()) continue;
 
-            $estado = $ultimoSeguimiento->estado;
-            $fechaFin = Carbon::parse($ultimoSeguimiento->fecha);
-            $dias = $fechaInicio->diffInHours($fechaFin) / 24;
+            $ultimoSeg    = $seguimientos->last();
+            $estadoActual = $ultimoSeg->estado;
 
-            if (isset($tiempos[$estado])) {
-                $tiempos[$estado][] = $dias;
-            }
+            if (!isset($tiempos[$estadoActual])) continue;
+
+            $fechaEntradaEstado = Carbon::parse($ultimoSeg->fecha . ' ' . $ultimoSeg->hora);
+            $segundos = $fechaEntradaEstado->diffInSeconds($hoy);
+
+            $tiempos[$estadoActual][] = $segundos;
         }
 
-        $promedioFrio = count($tiempos['Prospecto frío']) > 0 ? round(array_sum($tiempos['Prospecto frío']) / count($tiempos['Prospecto frío']), 2) : 0;
-        $promedioCaliente = count($tiempos['Prospecto caliente']) > 0 ? round(array_sum($tiempos['Prospecto caliente']) / count($tiempos['Prospecto caliente']), 2) : 0;
-        $promedioAspirante = count($tiempos['Aspirante']) > 0 ? round(array_sum($tiempos['Aspirante']) / count($tiempos['Aspirante']), 2) : 0;
-        $promedioAlumno = count($tiempos['Alumno']) > 0 ? round(array_sum($tiempos['Alumno']) / count($tiempos['Alumno']), 2) : 0;
+        $convertirSegundos = function (float $segundos): string {
+            $seg  = (int) $segundos;
+            $dias = intdiv($seg, 86400);
+            $seg -= $dias * 86400;
+            $hrs  = intdiv($seg, 3600);
+            $seg -= $hrs * 3600;
+            $mins = intdiv($seg, 60);
 
-        // ================= TIEMPO PROMEDIO GENERAL =================
-        $totalSegundos = 0;
+            $partes = [];
+            if ($dias) $partes[] = "{$dias} d";
+            if ($hrs)  $partes[] = "{$hrs} h";
+            if ($mins) $partes[] = "{$mins} min";
 
-        foreach ($leads as $lead) {
+            return implode(', ', $partes) ?: '0 min';
+        };
 
-            $fechaInicio = $lead->created_at;
-            $ultimoSeguimiento = $lead->seguimientos->first();
+        $promedioFrio = count($tiempos['Prospecto frío']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Prospecto frío']) / count($tiempos['Prospecto frío']))
+            : '0 min';
 
-            if ($ultimoSeguimiento) {
-                $fechaFin = Carbon::parse($ultimoSeguimiento->fecha . ' ' . $ultimoSeguimiento->hora);
-            } else {
-                $fechaFin = now();
-            }
+        $promedioCaliente = count($tiempos['Prospecto caliente']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Prospecto caliente']) / count($tiempos['Prospecto caliente']))
+            : '0 min';
 
-            $totalSegundos += $fechaInicio->diffInSeconds($fechaFin);
-        }
+        $promedioAspirante = count($tiempos['Aspirante']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Aspirante']) / count($tiempos['Aspirante']))
+            : '0 min';
 
+        $promedioAlumno = count($tiempos['Alumno']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Alumno']) / count($tiempos['Alumno']))
+            : '0 min';
 
-        $tiempoPromedio = $totalLeads > 0
-            ? round(($totalSegundos / $totalLeads) / 86400, 2)
+        // ================= CONVERSIÓN =================
+        $porcentajeConversion = $totalEstados > 0
+            ? round(($totalAlumno / $totalEstados) * 100, 1)
             : 0;
-
-
 
         // ================= EXCEL =================
         $data = [
             ['RESUMEN'],
             ['Total Leads', $totalLeads],
             ['Total Alumnos', $totalAlumno],
-            ['Tiempo Promedio', $tiempoPromedio],
+            ['Conversión General', $porcentajeConversion.'%'],
 
             [],
             [],
@@ -191,10 +209,10 @@ class CRMController extends Controller
 
             ['TASA DE CONVERSIÓN'],
             ['Estado', 'Conversión', 'Tiempo Promedio'],
-            ['Prospecto Frío', $porcentajeFrio.'%', $promedioFrio.' días'],
-            ['Prospecto Caliente', $porcentajeCaliente.'%', $promedioCaliente.' días'],
-            ['Aspirante', $porcentajeAspirante.'%', $promedioAspirante.' días'],
-            ['Alumno', $porcentajeAlumno.'%', $promedioAlumno.' días'],
+            ['Prospecto Frío', $porcentajeFrio.'%', $promedioFrio],
+            ['Prospecto Caliente', $porcentajeCaliente.'%', $promedioCaliente],
+            ['Aspirante', $porcentajeAspirante.'%', $promedioAspirante],
+            ['Alumno', $porcentajeAlumno.'%', $promedioAlumno],
         ];
 
         return Excel::download(new EstadisticasExport($data), 'estadisticas.xlsx');
@@ -206,7 +224,7 @@ class CRMController extends Controller
     {
         $query = Lead::with([
             'seguimientos' => function ($q) {
-                $q->latest();
+                $q->orderBy('fecha', 'asc')->orderBy('hora', 'asc');
             },
             'ctp'
         ]);
@@ -218,8 +236,7 @@ class CRMController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        
-       if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -227,9 +244,16 @@ class CRMController extends Controller
             $query->where('carrera_id', $request->carrera_id);
         }
 
-
+        // Traemos todos los leads que tienen al menos un seguimiento en el rango
         if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
             $query->whereHas('seguimientos', function ($q) use ($request) {
+
+                // Solo el último seguimiento de cada lead
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                });
 
                 if ($request->filled('fecha_inicio')) {
                     $q->whereDate('fecha', '>=', $request->fecha_inicio);
@@ -241,226 +265,221 @@ class CRMController extends Controller
             });
         }
 
-        if ($request->filled('estatus')) {
-            $query->whereHas('seguimientos', function ($q) use ($request) {
-                $q->where('estado', $request->estatus);
-            });
-        }
-
-
         $leads = $query->get();
-
         $totalLeads = $leads->count();
+        $hoy = Carbon::now()->startOfDay();
 
         /* ===========================
         ESTADO ACTUAL
+        (último estado del lead hoy, sin importar filtro de fecha)
         =========================== */
 
-        $estados = $leads->map(function ($lead) {
+        $totalFrio = 0;
+        $totalCaliente = 0;
+        $totalAspirante = 0;
+        $totalAlumno = 0;
 
-            $ultimoSeguimiento = $lead->seguimientos->first();
+        foreach ($leads as $lead) {
+            // Último seguimiento real (sin filtro de fecha) = estado actual
+            $ultimoEstado = $lead->seguimientos->last()?->estado ?? 'Prospecto frío';
 
-            return $ultimoSeguimiento
-                ? $ultimoSeguimiento->estado
-                : 'Prospecto frío';
-        });
-
-        $conteos = $estados->countBy();
-
-        $totalFrio = $conteos['Prospecto frío'] ?? 0;
-        $totalCaliente = $conteos['Prospecto caliente'] ?? 0;
-        $totalAspirante = $conteos['Aspirante'] ?? 0;
-        $totalAlumno = $conteos['Alumno'] ?? 0;
+            match ($ultimoEstado) {
+                'Prospecto frío'     => $totalFrio++,
+                'Prospecto caliente' => $totalCaliente++,
+                'Aspirante'          => $totalAspirante++,
+                'Alumno'             => $totalAlumno++,
+                default              => null,
+            };
+        }
 
         /* ===========================
         PORCENTAJES
         =========================== */
 
-       $totalEstados = $totalFrio + $totalCaliente + $totalAspirante + $totalAlumno;
+        $totalEstados = $totalFrio + $totalCaliente + $totalAspirante + $totalAlumno;
 
-        $porcentajeFrio = $totalEstados > 0 ? round(($totalFrio / $totalEstados) * 100, 1) : 0;
-        $porcentajeCaliente = $totalEstados > 0 ? round(($totalCaliente / $totalEstados) * 100, 1) : 0;
+        $porcentajeFrio      = $totalEstados > 0 ? round(($totalFrio / $totalEstados) * 100, 1) : 0;
+        $porcentajeCaliente  = $totalEstados > 0 ? round(($totalCaliente / $totalEstados) * 100, 1) : 0;
         $porcentajeAspirante = $totalEstados > 0 ? round(($totalAspirante / $totalEstados) * 100, 1) : 0;
-        $porcentajeAlumno = $totalEstados > 0 ? round(($totalAlumno / $totalEstados) * 100, 1) : 0;
+        $porcentajeAlumno    = $totalEstados > 0 ? round(($totalAlumno / $totalEstados) * 100, 1) : 0;
 
         /* ===========================
         TIEMPO PROMEDIO POR ESTADO
+        Criterio: desde que entró al estado actual → hasta hoy
+        Solo leads cuyo estado actual coincide con el estado
         =========================== */
 
         $tiempos = [
-            'Prospecto frío' => [],
+            'Prospecto frío'     => [],
             'Prospecto caliente' => [],
-            'Aspirante' => [],
-            'Alumno' => [],
+            'Aspirante'          => [],
+            'Alumno'             => [],
         ];
 
         foreach ($leads as $lead) {
 
-            $fechaInicio = $lead->created_at;
+            $seguimientos = $lead->seguimientos; // ya ordenados asc
 
-            $ultimoSeguimiento = $lead->seguimientos->first();
+            if ($seguimientos->isEmpty()) continue;
 
-            if (!$ultimoSeguimiento) {
-                continue;
-            }
+            // Estado actual = último seguimiento
+            $ultimoSeg   = $seguimientos->last();
+            $estadoActual = $ultimoSeg->estado;
 
-            $estado = $ultimoSeguimiento->estado;
+            if (!isset($tiempos[$estadoActual])) continue;
 
-            $fechaFin = Carbon::parse($ultimoSeguimiento->fecha);
+            // Fecha en que entró a ese estado actual
+            $fechaEntradaEstado = Carbon::parse(
+                $ultimoSeg->fecha . ' ' . $ultimoSeg->hora
+            );
 
-            $dias = $fechaInicio->diffInHours($fechaFin) / 24;
+            // Segundos desde que entró al estado hasta hoy
+            $segundos = $fechaEntradaEstado->diffInSeconds($hoy);
 
-            if (isset($tiempos[$estado])) {
-                $tiempos[$estado][] = $dias;
-            }
+            $tiempos[$estadoActual][] = $segundos;
         }
 
+        $convertirSegundos = function (float $segundos): string {
+            $seg  = (int) $segundos;
+            $dias = intdiv($seg, 86400);
+            $seg -= $dias * 86400;
+            $hrs  = intdiv($seg, 3600);
+            $seg -= $hrs * 3600;
+            $mins = intdiv($seg, 60);
+
+            $partes = [];
+            if ($dias) $partes[] = "{$dias} d";
+            if ($hrs)  $partes[] = "{$hrs} h";
+            if ($mins) $partes[] = "{$mins} min";
+
+            return implode(', ', $partes) ?: '0 min';
+        };
+
         $promedioFrio = count($tiempos['Prospecto frío']) > 0
-            ? round(array_sum($tiempos['Prospecto frío']) / count($tiempos['Prospecto frío']), 2)
-            : 0;
+            ? $convertirSegundos(array_sum($tiempos['Prospecto frío']) / count($tiempos['Prospecto frío']))
+            : '0 min';
 
         $promedioCaliente = count($tiempos['Prospecto caliente']) > 0
-            ? round(array_sum($tiempos['Prospecto caliente']) / count($tiempos['Prospecto caliente']), 2)
-            : 0;
+            ? $convertirSegundos(array_sum($tiempos['Prospecto caliente']) / count($tiempos['Prospecto caliente']))
+            : '0 min';
 
         $promedioAspirante = count($tiempos['Aspirante']) > 0
-            ? round(array_sum($tiempos['Aspirante']) / count($tiempos['Aspirante']), 2)
-            : 0;
+            ? $convertirSegundos(array_sum($tiempos['Aspirante']) / count($tiempos['Aspirante']))
+            : '0 min';
 
         $promedioAlumno = count($tiempos['Alumno']) > 0
-            ? round(array_sum($tiempos['Alumno']) / count($tiempos['Alumno']), 2)
-            : 0;
+            ? $convertirSegundos(array_sum($tiempos['Alumno']) / count($tiempos['Alumno']))
+            : '0 min';
 
         /* ===========================
         CONVERSIÓN
         =========================== */
 
-        $totalInteresados = $totalFrio + $totalCaliente;
-        $totalConvertidos = $totalAspirante + $totalAlumno;
+        $totalInteresados  = $totalFrio + $totalCaliente;
+        $totalConvertidos  = $totalAspirante + $totalAlumno;
 
-        $porcentajeConversion = $totalInteresados > 0
-            ? round(($totalConvertidos / $totalInteresados) * 100, 1)
-            : 0;
-
-        /* ===========================
-        TIEMPO PROMEDIO GENERAL
-        =========================== */
-
-        $totalSegundos = 0;
-
-        foreach ($leads as $lead) {
-
-            $fechaInicio = $lead->created_at;
-
-            $ultimoSeguimiento = $lead->seguimientos->first();
-
-            if ($ultimoSeguimiento) {
-
-                $fechaFin = Carbon::parse(
-                    $ultimoSeguimiento->fecha . ' ' . $ultimoSeguimiento->hora
-                );
-
-            } else {
-
-                $fechaFin = now();
-            }
-
-            $totalSegundos += $fechaInicio->diffInSeconds($fechaFin);
-        }
-
-        $tiempoPromedio = $totalLeads > 0
-            ? round(($totalSegundos / $totalLeads) / 86400, 2)
+        $porcentajeConversion = $totalEstados > 0
+            ? round(($totalAlumno / $totalEstados) * 100, 1)
             : 0;
 
         /* ===========================
         DATOS POR MES
+        Criterio: Mes = cuando entró por primera vez al CRM (primer seguimiento).
+        Estado = su último estado actual.
         =========================== */
-
         $porMes = [
-            'Prospecto frío' => array_fill(1, 12, 0),
+            'Prospecto frío'     => array_fill(1, 12, 0),
             'Prospecto caliente' => array_fill(1, 12, 0),
-            'Aspirante' => array_fill(1, 12, 0),
-            'Alumno' => array_fill(1, 12, 0),
+            'Aspirante'          => array_fill(1, 12, 0),
+            'Alumno'             => array_fill(1, 12, 0),
         ];
-        
+
         foreach ($leads as $lead) {
 
-            // Filtrar seguimientos por fecha seleccionada
-            $seguimientosFiltrados = $lead->seguimientos->filter(function ($seg) use ($request) {
+            $seguimientos = $lead->seguimientos;
 
-                $fecha = \Carbon\Carbon::parse($seg->fecha);
+            if ($seguimientos->isEmpty()) continue;
 
-                if ($request->filled('fecha_inicio') && $fecha->lt($request->fecha_inicio)) {
-                    return false;
-                }
+            $ultimoSeg = $seguimientos->last();
 
-                if ($request->filled('fecha_fin') && $fecha->gt($request->fecha_fin)) {
-                    return false;
-                }
+            $mes = \Carbon\Carbon::parse($ultimoSeg->fecha)->month;
+            $estado = $ultimoSeg->estado;
 
-                return true;
-            });
-
-            // Tomar el último dentro del rango
-            $ultimoSeguimiento = $seguimientosFiltrados->sortByDesc('fecha')->first();
-
-            if (!$ultimoSeguimiento) {
-                continue;
+            // Aplicar filtro de fechas si existe (sobre el primer seguimiento)
+            if ($request->filled('fecha_inicio')) {
+                $fechaInicio = \Carbon\Carbon::parse($request->fecha_inicio)->startOfDay();
+                if (\Carbon\Carbon::parse($ultimoSeg->fecha)->lt($fechaInicio)) continue;
             }
 
-            $estado = $ultimoSeguimiento->estado;
-            $mes = \Carbon\Carbon::parse($ultimoSeguimiento->fecha)->month;
+            if ($request->filled('fecha_fin')) {
+                $fechaFin = \Carbon\Carbon::parse($request->fecha_fin)->endOfDay();
+                if (\Carbon\Carbon::parse($ultimoSeg->fecha)->gt($fechaFin)) continue;
+            }
 
-            if (isset($porMes[$estado])) {
+            if (isset($porMes[$estado][$mes])) {
                 $porMes[$estado][$mes]++;
             }
         }
 
-        $frioPorMes = $porMes['Prospecto frío'];
-        $calientePorMes = $porMes['Prospecto caliente'];
+        $frioPorMes      = $porMes['Prospecto frío'];
+        $calientePorMes  = $porMes['Prospecto caliente'];
         $aspirantePorMes = $porMes['Aspirante'];
-        $alumnoPorMes = $porMes['Alumno'];
+        $alumnoPorMes    = $porMes['Alumno'];
 
-        $ctps = User::whereHas('roles', function ($q) {
-            $q->where('name', 'ctp');
-        })->get();
-
+        $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
         $carreras = Carrera::orderBy('nombre')->get();
-
+        
+        
         return view('crm.estadisticas', compact(
-            'leads',
-            'ctps',
-            'carreras',
-            'totalLeads',
-            'totalFrio',
-            'totalCaliente',
-            'totalAspirante',
-            'totalAlumno',
-            'totalInteresados',
-            'totalConvertidos',
-            'porcentajeConversion',
-            'tiempoPromedio',
-            'frioPorMes',
-            'calientePorMes',
-            'aspirantePorMes',
-            'alumnoPorMes',
-            'porcentajeFrio',
-            'porcentajeCaliente',
-            'porcentajeAspirante',
-            'porcentajeAlumno',
-            'promedioFrio',
-            'promedioCaliente',
-            'promedioAspirante',
-            'promedioAlumno'
+            'leads', 'ctps', 'carreras',
+            'totalLeads', 'totalFrio', 'totalCaliente', 'totalAspirante', 'totalAlumno',
+            'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
+            'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
+            'porcentajeFrio', 'porcentajeCaliente', 'porcentajeAspirante', 'porcentajeAlumno',
+            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno'
         ));
     }
-
     
 
-    public function destroy(Lead $lead)
+    public function update(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'alumno_nombre' => 'required|string|max:255',
+            'alumno_paterno' => 'required|string|max:255',
+            'alumno_materno' => 'required|string|max:255',
+            'alumno_curp' => 'nullable|string|max:18',
+            'telefono1' => 'required|string|max:20',
+            'carrera_id' => 'nullable|exists:careers,id',
+            'semestre' => 'nullable|integer|min:1|max:12',
+            'doc_acta_nacimiento' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'doc_certificado_prepa' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'doc_curp' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'doc_ine' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        $data = $request->only(['alumno_nombre', 'alumno_paterno', 'alumno_materno', 'alumno_curp', 'telefono1', 'carrera_id', 'semestre']);
+
+        foreach (['doc_acta_nacimiento', 'doc_certificado_prepa', 'doc_curp', 'doc_ine'] as $campo) {
+            if ($request->hasFile($campo)) {
+                if ($lead->$campo) {
+                    Storage::disk('public')->delete($lead->$campo);
+                }
+                $data[$campo] = $request->file($campo)->store("documentos/leads/{$lead->id}", 'public');
+            }
+        }
+
+        $lead->update($data);
+        return response()->json(['success' => true, 'message' => 'Aspirante actualizado correctamente.']);
+    }
+
+    public function destroy(Request $request, Lead $lead)
     {
         $lead->delete();
-        return response()->json(['success' => true]);
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Aspirante eliminado correctamente.');
     }
 
     public function guardarSeguimiento(Request $request, Lead $lead)
@@ -553,11 +572,91 @@ class CRMController extends Controller
                 ->whereHas('seguimientos', function ($q) {
                     $q->where('estado', 'Alumno');
                 })->count();
+
+            $leads = Lead::where('ctp_id', $ctp->id)
+                ->whereHas('seguimientos', function ($q) {
+                    $q->where('estado', 'Alumno');
+                })
+                ->with('carrera')
+                ->get();
+
+                $ctp->total_comisiones = $leads->sum(function ($lead) {
+                    $comision = Comision::where('producto', $lead->carrera?->nombre)->first();
+                    return $comision?->total ?? 0;
+            });
+
         });
-    
+
+        $comisiones = Comision::all();
+
+        $logoPath = public_path('images/logoUMI-Blanco.png');
+        $logoBase64 = base64_encode(file_get_contents($logoPath));
+        
         return view('crm.comisiones', [
-            'ctps'     => $ctps,
-            'carreras' => \App\Models\Carrera::all(),
+            'ctps'       => $ctps,
+            'carreras'   => \App\Models\Users\Career::orderBy('name')->get(),
+            'comisiones' => $comisiones,
+            'logoBase64' => $logoBase64,
+        ]);
+    }
+
+    public function storeComision(Request $request)
+    {
+        $comision = Comision::create([
+            'clasificacion' => $request->clasificacion,
+            'producto'      => $request->producto,
+            'precio'        => $request->precio,
+            'porcentaje'    => $request->porcentaje,
+            'total'         => ($request->precio * $request->porcentaje) / 100,
+        ]);
+
+        return response()->json($comision);
+    }
+
+    public function updateComision(Request $request, $id)
+    {
+        $comision = Comision::findOrFail($id);
+        $comision->update([
+            'clasificacion' => $request->clasificacion,
+            'producto'      => $request->producto,
+            'precio'        => $request->precio,
+            'porcentaje'    => $request->porcentaje,
+            'total'         => ($request->precio * $request->porcentaje) / 100,
+        ]);
+
+        return response()->json($comision);
+    }
+
+    public function destroyComision($id)
+    {
+        Comision::findOrFail($id)->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function detalleComision($ctpId)
+    {
+        $leads = Lead::where('ctp_id', $ctpId)
+            ->whereHas('seguimientos', function ($q) {
+                $q->where('estado', 'Alumno');
+            })
+            ->with('carrera')
+            ->get();
+
+        $resultado = $leads->map(function ($lead) {
+            $comision = Comision::where('producto', $lead->carrera?->nombre)
+                                ->first();
+
+            return [
+                'clasificacion' => $lead->clasificacion ?? $comision?->clasificacion ?? 'Sin clasificación',
+                'producto'      => $lead->carrera?->nombre ?? 'Sin producto',
+                'alumno'        => $lead->alumno_nombre . ' ' . $lead->alumno_paterno,
+                'comision'      => $comision?->total ?? 0,
+            ];
+        });
+
+        return response()->json([
+            'data'  => $resultado,
+            'total' => $resultado->sum('comision'),
         ]);
     }
 }

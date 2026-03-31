@@ -54,11 +54,26 @@
                 <div id="context-switcher-menu" class="context-switcher-menu">
                     <div class="context-switcher-header">Unidad de Negocio</div>
                     <ul>
-                        @foreach ($availableContexts as $context)
+                        @php
+                            // Excluir roles CTP del selector
+                            $filteredContexts = collect($availableContexts)->filter(function ($ctx) {
+                                $roleName = $ctx['role_name'] ?? null;
+                                return !in_array($roleName, ['ctp', 'coordinador_ctp']);
+                            })->values()->all();
+
+                            $institutionCount = collect($filteredContexts)->groupBy('institution_id')->map->count();
+                        @endphp
+
+                        @foreach ($filteredContexts as $context)
                             <li>
                                 <a href="{{ route('context.switch', ['institutionId' => $context['institution_id'], 'roleId' => $context['role_id']]) }}"
                                   data-no-spa>
-                                    <span class="institution">{{ $context['institution_name'] }}</span>
+                                    <span class="institution">
+                                        {{ $context['institution_name'] }}
+                                        @if(($institutionCount[$context['institution_id']] ?? 1) > 1)
+                                            <span class="context-role">({{ $context['display_name'] ?? $context['role_name'] ?? '' }})</span>
+                                        @endif
+                                    </span>
                                 </a>
                             </li>
                         @endforeach
@@ -185,20 +200,19 @@ if (formFactura) {
             }
         }
 
-        // --- 2. VALIDACIÓN XML (Opcional: Tipo y Tamaño) ---
+        // --- 2. VALIDACIÓN archivo adjunto factura (PDF en inscripción; XML opcional en módulo Facturación — mismo id en distintas vistas)
         if (valid) {
-            const xmlInput = document.getElementById('modal_archivo_xml');
-            if (xmlInput && xmlInput.files.length > 0) {
-                const xmlFile = xmlInput.files[0];
-
-                if (!xmlFile.name.toLowerCase().endsWith('.xml')) {
+            const adjuntoFacturaInput = document.getElementById('modal_archivo_xml');
+            if (adjuntoFacturaInput && adjuntoFacturaInput.files.length > 0) {
+                const f = adjuntoFacturaInput.files[0];
+                const n = f.name.toLowerCase();
+                const ok = n.endsWith('.pdf') || n.endsWith('.xml');
+                if (!ok) {
                     valid = false;
-                    errorMessage = 'El archivo XML debe ser formato XML (.xml)';
-                } 
-                // 🚨 VALIDACIÓN DE TAMAÑO XML
-                else if (xmlFile.size > MAX_FILE_SIZE) { 
+                    errorMessage = 'El archivo adjunto debe ser PDF (.pdf) o XML (.xml).';
+                } else if (f.size > MAX_FILE_SIZE) {
                     valid = false;
-                    errorMessage = 'El archivo XML es demasiado grande. Máximo permitido: 5 MB.';
+                    errorMessage = 'El archivo es demasiado grande. Máximo permitido: 5 MB.';
                 }
             }
         }
