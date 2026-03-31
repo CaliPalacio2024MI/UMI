@@ -104,8 +104,8 @@
                     <select id="mc-producto" class="mc-select">
                         <option value="">Seleccione el producto</option>
                         @foreach($carreras as $carrera)
-                            <option value="{{ $carrera->id }}" data-nombre="{{ $carrera->nombre }}">
-                                {{ $carrera->nombre }}
+                            <option value="{{ $carrera->id }}" data-nombre="{{ $carrera->name }}">
+                                {{ $carrera->name }}
                             </option>
                         @endforeach
                     </select>

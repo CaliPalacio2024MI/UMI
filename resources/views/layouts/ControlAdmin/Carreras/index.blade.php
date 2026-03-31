@@ -16,10 +16,12 @@
         </div>
         <div class="option-carrer">
             @if(Auth::user()->hasAnyRole(['master']))
+                <button type="button" id="openCreateClasificacionBtn">+ Agregar clasificación</button>
                 <button type="button" id="openCreateCareerBtn">+ Agregar carrera</button>
             @endif
         </div>
         @include('layouts.ControlAdmin.Carreras.create')
+        @include('layouts.ControlAdmin.Carreras.classification_modal')
     </div>
     <!-- Grid de Carreras -->
     <div class="carrers-container">
@@ -171,6 +173,12 @@
 
             if (createModal && hasCreateErrors) {
                  createModal.style.display = 'flex'; 
+            }
+
+            const classificationModal = document.getElementById('createClassificationModal');
+            const hasClassificationErrors = @json($errors->has('classification_name'));
+            if (classificationModal && hasClassificationErrors) {
+                classificationModal.style.display = 'flex';
             }
             
             // ----------------------------------------------------

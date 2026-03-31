@@ -69,6 +69,13 @@
   outline: none;
   font-size: 0.9em;
   min-width: 250px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(34, 63, 112, 0.06);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.search-form input[type="text"]:focus {
+  border-color: #adb5bd;
+  box-shadow: 0 4px 14px rgba(34, 63, 112, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* --- Botón Principal (Agregar) --- */
@@ -112,9 +119,18 @@
 .main-table td {
   padding: 12px 15px; 
   text-align: left;
-  border-bottom: 1px solid #dee2e6; 
+  border: 1px solid transparent;
   vertical-align: middle; 
   text-align: center;
+}
+
+.main-table tbody td {
+  font-size: 0.9em;
+  border-right: 2px solid #DB5865;
+}
+
+.main-table tbody td:last-child {
+  border-right: 1px solid transparent;
 }
 
 /* --- Cabecera de la Tabla (th) --- */
@@ -126,6 +142,7 @@
   text-transform: uppercase; 
   letter-spacing: 0.5px;
   border-bottom: 2px solid #1a3258; 
+  border-right: 1px solid transparent;
   position: sticky; 
   top: 0;
   z-index: 10;
@@ -142,10 +159,6 @@
 /* --- Cuerpo de la Tabla (tbody) --- */
 .main-table tbody tr:hover {
   background-color: #f1f3f5; 
-}
-
-.main-table tbody td {
-  font-size: 0.9em;
 }
 
 /* --- Celdas Específicas --- */

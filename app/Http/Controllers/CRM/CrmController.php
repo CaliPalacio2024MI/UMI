@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Lead;
 use App\Models\Users\User;
 use Carbon\Carbon;
@@ -259,10 +260,45 @@ class CRMController extends Controller
         ));
     }
 
-    public function destroy(Lead $lead)
+    public function update(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'alumno_nombre' => 'required|string|max:255',
+            'alumno_paterno' => 'required|string|max:255',
+            'alumno_materno' => 'required|string|max:255',
+            'alumno_curp' => 'nullable|string|max:18',
+            'telefono1' => 'required|string|max:20',
+            'carrera_id' => 'nullable|exists:careers,id',
+            'semestre' => 'nullable|integer|min:1|max:12',
+            'doc_acta_nacimiento' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'doc_certificado_prepa' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'doc_curp' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'doc_ine' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        $data = $request->only(['alumno_nombre', 'alumno_paterno', 'alumno_materno', 'alumno_curp', 'telefono1', 'carrera_id', 'semestre']);
+
+        foreach (['doc_acta_nacimiento', 'doc_certificado_prepa', 'doc_curp', 'doc_ine'] as $campo) {
+            if ($request->hasFile($campo)) {
+                if ($lead->$campo) {
+                    Storage::disk('public')->delete($lead->$campo);
+                }
+                $data[$campo] = $request->file($campo)->store("documentos/leads/{$lead->id}", 'public');
+            }
+        }
+
+        $lead->update($data);
+        return response()->json(['success' => true, 'message' => 'Aspirante actualizado correctamente.']);
+    }
+
+    public function destroy(Request $request, Lead $lead)
     {
         $lead->delete();
-        return response()->json(['success' => true]);
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Aspirante eliminado correctamente.');
     }
 
     public function guardarSeguimiento(Request $request, Lead $lead)
@@ -355,7 +391,7 @@ class CRMController extends Controller
     
         return view('crm.comisiones', [
             'ctps'     => $ctps,
-            'carreras' => \App\Models\Carrera::all(),
+            'carreras' => \App\Models\Users\Career::orderBy('name')->get(),
         ]);
     }
 }

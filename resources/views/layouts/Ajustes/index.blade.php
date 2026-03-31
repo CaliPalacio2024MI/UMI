@@ -12,7 +12,7 @@
                 <span class="search-form-icon">
                     <img src="{{ asset('images/icons/magnifying-glass-svgrepo-com.svg') }}" alt="Buscar" width="18" height="18">
                 </span>
-                <input type="text" name="search" placeholder="Buscar por usuario, unidad, nombre, apellidos, rol..." value="{{ request('search') }}" id="searchInput" autocomplete="off">
+                <input type="text" name="search" placeholder="Buscar por..." value="{{ request('search') }}" id="searchInput" autocomplete="off">
             </form>
             <button id="openModalBtn" class="btn-primary">
                 + Agregar {{ $singular_title }}
@@ -167,6 +167,12 @@
     </div>
 </div>
 
+<style>
+    #formModal #modalTitle {
+        color: #0d2240;
+        font-weight: 700;
+    }
+</style>
 <div id="formModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>

@@ -42,9 +42,9 @@ class RoleSeeder extends Seeder
             ['display_name' => 'Docente']
         );
 
-        Role::firstOrCreate(
+        Role::updateOrCreate(
             ['name' => 'estudiante'],
-            ['display_name' => 'Estudiante']
+            ['display_name' => 'Alumno']
         );
 
         Role::firstOrCreate(
