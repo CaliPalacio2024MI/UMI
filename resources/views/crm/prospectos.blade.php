@@ -205,7 +205,7 @@
     const doc = new jsPDF();
 
     // ── PALETA DE COLORES ──
-    const azulOscuro  = [13, 27, 42];    // casi negro azulado (como el formato empresa)
+    const azulOscuro  = [13, 27, 42];    // casi negro azulado 
     const azulMedio   = [31, 58, 99];    // azul medio para acentos
     const azulClaro   = [220, 230, 242]; // fondo de headers internos
     const grisF       = [245, 247, 250]; // fondo de cards
