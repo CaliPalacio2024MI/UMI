@@ -132,7 +132,6 @@
                     <span>Acciones</span>
                 </div>
                 <div class="seguimiento-body">
-                    <!-- JS inyecta filas -->
                 </div>
             </div>
 
@@ -142,7 +141,6 @@
             </div>
 
             <div class="rfc-panel" id="datos-panel">
-                <!-- JS inyecta datos -->
             </div>
 
         </div>
@@ -406,7 +404,6 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
         renderizarDatos(fila);
     });
 });
-// ===== CLICK EN CHECK Y OJO — sin guard =====
 window._pendienteEstado = null;
 
 const cuerpoLeads = document.querySelector('.crm-leads');

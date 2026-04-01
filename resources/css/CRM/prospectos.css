@@ -36,7 +36,6 @@ body:has(.crm-prospectos) .main-content {
     letter-spacing: -0.5px;
 }
 
-/* ← CAMBIADO */
 .toolbar {
     display: flex;
     align-items: center;
@@ -45,7 +44,6 @@ body:has(.crm-prospectos) .main-content {
     margin-bottom: 16px;
 }
 
-/* ← CAMBIADO */
 .filtros-izquierda {
     display: flex;
     align-items: center;
@@ -76,7 +74,6 @@ body:has(.crm-prospectos) .main-content {
     align-items: center;
 }
 
-/* ← CAMBIADO: el buscador cede espacio */
 .search-wrapper {
     flex: 1;
     min-width: 80px;
@@ -378,7 +375,7 @@ body:has(.crm-prospectos) .main-content {
     flex-shrink: 0;
 }
 
-/* ← CAMBIADO */
+
 .chip-filtro {
     padding: 6px 12px;
     border-radius: 30px;
