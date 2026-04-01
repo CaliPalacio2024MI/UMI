@@ -952,12 +952,12 @@
 
 <script>
 // ====== CONFIGURACIÓN ELEVENLABS ======
-const ELEVENLABS_API_KEY = 's';
+const ELEVENLABS_API_KEY = 'sk';
 
 // VOCES ALTERNADAS - Una para cada tortuguita
 const ELEVENLABS_VOICES = [
-    'akHMa5INOPN1uVFL2h4o',  // Voz 0 (MASCULINA - tortuguita-hablando.webm)
-    'qjk0ggayMrstLVWqGMaV'   // Voz 1 (FEMENINA - tortuguita1-hablando.webm)
+    'iHfvoHbLYn9aHUcsmJuC',  // Voz 0 (MASCULINA - tortuguita-hablando.webm)
+    'VSim0Box4DjqUmOLLAd8'   // Voz 1 (FEMENINA - tortuguita1-hablando.webm)
 ];
 
 // Variable global para controlar el estado de lectura

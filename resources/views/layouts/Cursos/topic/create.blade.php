@@ -96,8 +96,8 @@
         <div id="topic-turtle-simple-mode" style="display: block;">
             <label for="topic_turtle_voice">Selecciona la tortuguita:</label>
             <select name="turtle_voice" id="topic_turtle_voice" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="0">🐢 Toby (Masculino)</option>
-                <option value="1">🐢 Mely (Femenino)</option>
+                <option value="0">🐢 Toby</option>
+                <option value="1">🐢 Mely</option>
             </select>
             <small style="display: block; margin-top: 5px; color: #666;">
                 La tortuguita aparecerá durante todo el video
@@ -175,8 +175,8 @@
                         <div id="subtopic-turtle-voice-selector" style="display: none; margin-left: 24px;">
                             <label for="subtopic_turtle_voice">¿Cuál tortuguita?</label>
                             <select name="turtle_voice" id="subtopic_turtle_voice">
-                                <option value="0">🐢 Toby (Masculino)</option>
-                                <option value="1">🐢 Mely (Femenino)</option>
+                                <option value="0">🐢 Toby</option>
+                                <option value="1">🐢 Mely</option>
                             </select>
                         </div>
                     </div>
@@ -407,8 +407,8 @@
         <div id="edit-turtle-simple-mode" style="display: block;">
             <label for="edit_topic_turtle_voice">Selecciona la tortuguita:</label>
             <select name="turtle_voice" id="edit_topic_turtle_voice" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="0">🐢 Toby (Masculino)</option>
-                <option value="1">🐢 Mely (Femenino)</option>
+                <option value="0">🐢 Toby</option>
+                <option value="1">🐢 Mely</option>
             </select>
             <small style="display: block; margin-top: 5px; color: #666;">
                 La tortuguita aparecerá durante todo el video

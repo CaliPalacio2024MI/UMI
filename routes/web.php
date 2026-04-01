@@ -32,6 +32,12 @@ use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController; 
 
 
+Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
+//Filtrado de practicantes
+Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
+//Lector QR
+Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
+
 // ==========================================================================
 // 1. ACCESO PÚBLICO
 // ==========================================================================
@@ -83,6 +89,29 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::put('/cursos/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('/cursos/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
         
+        //Biblioteca de Temas (Plantillas)
+        Route::get('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'index'])->name('templates.index');
+        Route::get('/biblioteca-temas/crear', [\App\Http\Controllers\TopicTemplateController::class, 'create'])->name('templates.create');
+        Route::post('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'store'])->name('templates.store');
+        //Ruta para mostrar el formulario de edicion
+        Route::get('/biblioteca-temas/{id}/editar',[\App\Http\Controllers\TopicTemplateController::class, 'edit'])->name('templates.edit');
+        //Ruta para procesar la actualizacion (usa PUT o PATCH)
+        Route::put('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'update'])->name('templates.update');
+        //Ruta para eliminar
+        Route::delete('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'destroy'])->name('templates.destroy');
+
+
+        //Biblioteca de Subtemas (Plantillas)
+        Route::get('/biblioteca-subtemas', [\App\Http\Controllers\SubtopicTemplateController::class, 'index'])->name('subtopics_template.index');
+        Route::get('/biblioteca-subtemas/crear', [\App\Http\Controllers\SubtopicTemplateController::class, 'create'])->name('subtopics_template.create');
+        Route::post('/biblioteca-subtemas', [\App\Http\Controllers\SubtopicTemplateController::class, 'store'])->name('subtopics_template.store');
+        //Ruta para mostrar el formulario de edicion
+        Route::get('/biblioteca-subtemas/{id}/editar',[\App\Http\Controllers\SubtopicTemplateController::class, 'edit'])->name('subtopics_template.edit');
+        //Ruta para procesar la actualizacion (usa PUT o PATCH)
+        Route::put('/biblioteca-subtemas/{id}', [\App\Http\Controllers\SubtopicTemplateController::class, 'update'])->name('subtopics_template.update');
+        //Ruta para eliminar
+        Route::delete('/biblioteca-subtemas/{id}', [\App\Http\Controllers\SubtopicTemplateController::class, 'destroy'])->name('subtopics_template.destroy');
+
         // Temas y Subtemas
         Route::get('/cursos/{course}/temas/crear', [TopicsController::class, 'create'])->name('course.topic.create');
         Route::post('/temas', [TopicsController::class, 'store'])->name('topics.store');
@@ -100,7 +129,30 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
         Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
         
+        // Grupos
+
+        // Vista principal
+        Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
+
+        // ✅ AJAX
+        Route::get('/departments/{id}/workstations', [GroupDataController::class, 'workstations']);
+        Route::get('/workstations/{id}/participants', [GroupDataController::class, 'participants']);
+        
     });
+
+    // ===============================
+    // HORARIOS (SESIONES PRESENCIALES)
+    // ===============================
+    Route::get('/cursos/{course}/horarios', [\App\Http\Controllers\Cursos\CourseSessionController::class, 'index'])
+        ->name('courses.sessions.index');
+    Route::post('/cursos/{course}/horarios', [\App\Http\Controllers\Cursos\CourseSessionController::class, 'store'])
+       ->name('courses.sessions.store');
+    Route::delete('/courses/{course}/sessions/{session}',[CourseSessionController::class, 'destroy'])
+       ->name('courses.sessions.destroy');
+    Route::patch('/cursos/{course}/horarios/{session}/toggle',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'toggle'])
+       ->name('courses.sessions.toggle');
+    Route::put('/cursos/{course}/horarios/{session}',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'update'])
+       ->name('courses.sessions.update');
 
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
     // Estas rutas atrapan {course}, por eso van AL FINAL de la sección de cursos

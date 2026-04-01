@@ -18,6 +18,8 @@ use Illuminate\Http\JsonResponse; // <-- Importante
 use App\Models\Cursos\Activities;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
+use App\Models\SubtopicTemplate;
+use App\Models\Cursos\Subtopic;;
 
 class CourseController extends Controller
 {
@@ -60,8 +62,15 @@ class CourseController extends Controller
             });
         }
 
-        // Pasamos solo la institución actual a la vista.
-        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap'));
+         // Traer todos los horarios registrados
+    $schedules = Schedule::all();
+
+    // Enviar también $schedules a la vista
+    return view('layouts.Cursos.create', compact(
+        'currentInstitution',
+        'departmentWorkstationsMap',
+        'schedules'
+     ));
     }
 
     /**
