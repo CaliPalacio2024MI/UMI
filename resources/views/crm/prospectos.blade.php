@@ -187,8 +187,9 @@
    </div>
 </div>
 <script>
-const LOGO_BASE64 = "{{ $logoBase64 }}";
+
 (function() {
+    const LOGO_BASE64 = "{{ $logoBase64 }}";
     const ESTADOS = ['Prospecto frío','Prospecto caliente','Aspirante','Alumno'];
     // Descargar PDF
     document.querySelectorAll('.btn-descargar-pdf').forEach(btn => {
