@@ -748,3 +748,30 @@ body:has(.crm-leads) .main-content {
     color: #185fa5;
     margin: 0;
 }
+.filtros-clasificacion { display: flex; gap: 8px; flex-wrap: wrap;  }
+.chip-filtro {
+    padding: 8px 18px;
+    border-radius: 30px;
+    border: 2px solid var(--crm-primary);
+    background: transparent;
+    color: var(--crm-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.chip-filtro:hover { background: rgba(44, 71, 112, 0.08); }
+.chip-filtro.activo { background: var(--crm-primary); color: white; }
+.search-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filtros-clasificacion {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}

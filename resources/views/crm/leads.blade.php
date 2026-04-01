@@ -12,6 +12,7 @@
             <h1 class="fw-bold mb-0">LEADS</h1>
         </div>
         
+        <div class="search-filter-row">
         <div class="search-wrapper">
             <img 
                 src="{{ asset('images/icons/search.svg') }}"
@@ -20,6 +21,14 @@
             >
             <input type="text" class="form-control buscador" placeholder="Buscar">
         </div>
+         <div class="filtros-clasificacion">
+    <button class="chip-filtro activo" data-clasificacion="todos">Todos</button>
+    @foreach($clasificaciones as $clasificacion)
+        <button class="chip-filtro" data-clasificacion="{{ $clasificacion->name }}">
+            {{ $clasificacion->name }}
+        </button>
+    @endforeach
+</div>
     </div>
 
     <!-- CONTENIDO PRINCIPAL EN DOS COLUMNAS -->
@@ -47,7 +56,7 @@
                             data-id="{{ $lead->id }}"
                             data-tiene-ctp="{{ $lead->ctp_id ? '1' : '0' }}"
                             data-ctp="{{ $lead->ctp_id }}"
-                            data-clasificacion="{{ $lead->clasificacion }}"
+                            data-clasificacion="{{ $lead->carrera->classification->name ?? '' }}"
                             data-tutor-nombre="{{ $lead->tutor_nombre }}"
                             data-tutor-paterno="{{ $lead->tutor_paterno }}"
                             data-tutor-materno="{{ $lead->tutor_materno }}"
@@ -271,14 +280,28 @@ document.querySelectorAll('.btn-eliminar').forEach(btn => {
     });
 });
 
-// ===== BUSCADOR =====
+// ===== BUSCADOR y FILTRO CLASIFICACIÓN =====
+let filtroActivo = 'todos';
+
 const buscador = document.querySelector('.buscador');
-if (buscador) {
-    buscador.addEventListener('input', function () {
-        const texto = this.value.toLowerCase().trim();
-        document.querySelectorAll('.fila-lead').forEach(fila => {
-            fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
-        });
+if (buscador) buscador.addEventListener('input', aplicarFiltros);
+
+document.querySelectorAll('.chip-filtro').forEach(chip => {
+    chip.addEventListener('click', function () {
+        document.querySelectorAll('.chip-filtro').forEach(c => c.classList.remove('activo'));
+        this.classList.add('activo');
+        filtroActivo = this.dataset.clasificacion;
+        aplicarFiltros();
+    });
+});
+
+function aplicarFiltros() {
+    const texto = buscador?.value.toLowerCase().trim() ?? '';
+    document.querySelectorAll('.fila-lead').forEach(fila => {
+        const coincideTexto  = fila.innerText.toLowerCase().includes(texto);
+        const coincideClasif = filtroActivo === 'todos' ||
+            (fila.dataset.clasificacion ?? '').toLowerCase() === filtroActivo.toLowerCase();
+        fila.style.display = (coincideTexto && coincideClasif) ? '' : 'none';
     });
 }
 
@@ -383,33 +406,35 @@ document.querySelectorAll('.fila-lead').forEach(fila => {
         renderizarDatos(fila);
     });
 });
-
 // ===== CLICK EN CHECK Y OJO — sin guard =====
 window._pendienteEstado = null;
 
-document.addEventListener('click', function(e) {
-    const check = e.target.closest('.icon-check.clickeable');
-    if (check) {
-        window._pendienteEstado = check.dataset.estado;
-        document.getElementById('modal-seg-estado-label').textContent =
-            `Estás marcando este lead como: ${window._pendienteEstado}`;
-        document.getElementById('seg-comentario').value = '';
-        document.getElementById('modal-seguimiento').classList.remove('d-none');
-        return;
-    }
+const cuerpoLeads = document.querySelector('.crm-leads');
+if (cuerpoLeads) {
+    cuerpoLeads.addEventListener('click', function(e) {
+        const check = e.target.closest('.icon-check.clickeable');
+        if (check) {
+            window._pendienteEstado = check.dataset.estado;
+            document.getElementById('modal-seg-estado-label').textContent =
+                `Estás marcando este lead como: ${window._pendienteEstado}`;
+            document.getElementById('seg-comentario').value = '';
+            document.getElementById('modal-seguimiento').classList.remove('d-none');
+            return;
+        }
 
-    const ojo = e.target.classList.contains('icon-eye')
-        ? e.target
-        : e.target.closest('.icon-eye');
-    if (ojo) {
-        const comentario = decodeURIComponent(ojo.dataset.comentario || '');
-        document.getElementById('modal-ver-estado').textContent = ojo.dataset.estado;
-        document.getElementById('modal-ver-fecha').textContent  = `${ojo.dataset.fecha} ${ojo.dataset.hora}`;
-        document.getElementById('modal-ver-texto').textContent  = comentario || '(Sin comentario)';
-        document.getElementById('modal-ver-comentario').classList.remove('d-none');
-        return;
-    }
-});
+        const ojo = e.target.classList.contains('icon-eye')
+            ? e.target
+            : e.target.closest('.icon-eye');
+        if (ojo) {
+            const comentario = decodeURIComponent(ojo.dataset.comentario || '');
+            document.getElementById('modal-ver-estado').textContent = ojo.dataset.estado;
+            document.getElementById('modal-ver-fecha').textContent  = `${ojo.dataset.fecha} ${ojo.dataset.hora}`;
+            document.getElementById('modal-ver-texto').textContent  = comentario || '(Sin comentario)';
+            document.getElementById('modal-ver-comentario').classList.remove('d-none');
+            return;
+        }
+    });
+}
 
 // ===== GUARDAR SEGUIMIENTO =====
 document.getElementById('guardar-seguimiento-btn')?.addEventListener('click', () => {

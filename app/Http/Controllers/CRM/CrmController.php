@@ -41,9 +41,9 @@ class CRMController extends Controller
          // ── LOGO PARA PDF ──
     $logoPath = public_path('images/LogoUMI-Blanco.png');
     $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+    $clasificaciones = \App\Models\Users\CareerClassification::orderBy('name')->get();
 
-
-    return view('crm.leads', compact('leads', 'ctps', 'logoBase64'));
+    return view('crm.leads', compact('leads', 'ctps', 'logoBase64', 'clasificaciones'));
     }
 
     public function exportar(Request $request)
@@ -528,11 +528,11 @@ class CRMController extends Controller
 
         $leads = $query->with(['seguimientos', 'ctp', 'carrera'])->orderBy('created_at', 'desc')->get();
         // ── LOGO PARA PDF ──
-        $logoPath   = public_path('images/LogoUMI-Azul.png');
-        $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-    
+    $logoPath = public_path('images/LogoUMI-Blanco.png');
+    $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+    $clasificaciones = \App\Models\Users\CareerClassification::orderBy('name')->get();
+    return view('crm.prospectos', compact('leads', 'logoBase64', 'clasificaciones'));
 
-    return view('crm.prospectos', compact('leads', 'logoBase64'));
     }
 
 

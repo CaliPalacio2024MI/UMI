@@ -9,27 +9,32 @@
    </div>
    <!-- Barra de Herramientas (Fechas, Buscador, Exportar) -->
    <div class="toolbar">
-      <div class="filtros-izquierda">
-         <!-- Fecha Inicio -->
-         <div class="input-group-custom">
-            <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-            <input type="date" class="input-custom" id="fecha-inicio">
-         </div>
-         <!-- Fecha Fin -->
-         <div class="input-group-custom">
-            <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-            <input type="date" class="input-custom" id="fecha-fin">
-         </div>
-         <!-- Buscador (Live Search) -->
-         <div class="input-group-custom search-wrapper">
-            <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
-            <input 
-               type="text" 
-               class="input-custom buscador" 
-               placeholder="Buscar"
-               >
-         </div>   
+   <div class="filtros-izquierda">
+    <!-- Fecha Inicio -->
+    <div class="input-group-custom">
+        <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+        <input type="date" class="input-custom" id="fecha-inicio">
     </div>
+    <!-- Fecha Fin -->
+    <div class="input-group-custom">
+        <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+        <input type="date" class="input-custom" id="fecha-fin">
+    </div>
+    <!-- Buscador -->
+    <div class="input-group-custom search-wrapper">
+        <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
+        <input type="text" class="input-custom buscador" placeholder="Buscar">
+    </div>
+    <!-- CHIPS CLASIFICACIÓN -->
+    <div class="filtros-clasificacion">
+        <button class="chip-filtro activo" data-clasificacion="todos">Todos</button>
+        @foreach($clasificaciones as $clasificacion)
+            <button class="chip-filtro" data-clasificacion="{{ $clasificacion->name }}">
+                {{ $clasificacion->name }}
+            </button>
+        @endforeach
+    </div>
+</div>
       <button class="btn-exportar">
       <img src="{{ asset('images/icons/export.svg') }}" alt="Search" width="16">
       <i class="fa fa-file-excel-o"></i> 
@@ -54,6 +59,7 @@
          <div class="table-body">
             @forelse($leads as $lead)
             <div class="table-row"
+            data-clasificacion="{{ $lead->carrera->classification->name ?? '' }}"
                data-id="{{ $lead->id }}"
                data-tutor-nombre="{{ $lead->tutor_nombre }}"
                data-tutor-paterno="{{ $lead->tutor_paterno }}"
@@ -416,16 +422,30 @@ const LOGO_BASE64 = "{{ $logoBase64 }}";
 });
 });
 
-    // Buscador
-    const buscador = document.querySelector('.buscador');
-    if (buscador) {
-        buscador.addEventListener('input', function() {
-            const texto = this.value.toLowerCase().trim();
-            document.querySelectorAll('.table-row').forEach(fila => {
-                fila.style.display = fila.innerText.toLowerCase().includes(texto) ? '' : 'none';
-            });
-        });
-    }
+    // Buscador + Filtro clasificación
+let filtroActivo = 'todos';
+
+const buscador = document.querySelector('.buscador');
+if (buscador) buscador.addEventListener('input', aplicarFiltros);
+
+document.querySelectorAll('.chip-filtro').forEach(chip => {
+    chip.addEventListener('click', function () {
+        document.querySelectorAll('.chip-filtro').forEach(c => c.classList.remove('activo'));
+        this.classList.add('activo');
+        filtroActivo = this.dataset.clasificacion;
+        aplicarFiltros();
+    });
+});
+
+function aplicarFiltros() {
+    const texto = buscador?.value.toLowerCase().trim() ?? '';
+    document.querySelectorAll('.table-row').forEach(fila => {
+        const coincideTexto  = fila.innerText.toLowerCase().includes(texto);
+        const coincideClasif = filtroActivo === 'todos' ||
+            (fila.dataset.clasificacion ?? '').toLowerCase() === filtroActivo.toLowerCase();
+        fila.style.display = (coincideTexto && coincideClasif) ? '' : 'none';
+    });
+}
     // Filtro por fechas
 const fechaInicio = document.getElementById('fecha-inicio');
 const fechaFin    = document.getElementById('fecha-fin');

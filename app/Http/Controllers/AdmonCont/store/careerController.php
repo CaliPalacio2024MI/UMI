@@ -163,7 +163,14 @@ class careerController extends Controller
     public function update(Request $request, Career $carrera)
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'name'         => 'required|string|max:255|unique:careers,name,' . $carrera->id,
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('careers', 'name')
+                    ->ignore($carrera->id)
+                    ->where('institution_id', $carrera->institution_id),
+            ],
             'official_id'  => 'required|string|max:255',
             'type'         => 'required|in:Presencial,En linea',
             'semesters'    => 'required|integer|min:1|max:8',
