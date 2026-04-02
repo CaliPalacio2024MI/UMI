@@ -488,10 +488,11 @@ function closeFacturaModal(modal) {
     });
 </script>
 {{-- Librerías globales para CRM Prospectos --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 @stack('scripts')
-
 </body>
 </html>
