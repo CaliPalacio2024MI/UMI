@@ -49,16 +49,16 @@
                         <td>{{ $registro->type ?? 'Sin datos'}}</td>
                         <td>
                             {{-- Botón VER --}}
-                            <button type="button" class="data-action-btn data-btn-view" data-view-materia-id="{{ $registro->id }}"><img src="{{asset('images/icons/eye-solid-full.svg')}}" alt="" style="width:22px;height:22px" loading="lazy"></button>
+                            <button type="button" class="data-action-btn data-btn-view" data-view-materia-id="{{ $registro->id }}"><img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="" style="width:22px;height:22px" loading="lazy"></button>
                             @include('layouts.ControlAdmin.Listas.materias.show', ['registro' => $registro])
                             {{-- Botón EDITAR --}}
                             <button type="button" class="data-action-btn data-btn-edit" data-materia-id="{{ $registro->id }}"><img src="{{asset('images/icons/pen-to-square-solid-full.svg')}}" alt="" style="width:22px;height:22px" loading="lazy"></button>
                             @include('layouts.ControlAdmin.Listas.materias.edit', ['registro' => $registro, 'carreras' => $carreras])
                             {{-- Botón ELIMINAR --}}
-                            <form action="{{ route('control.subjects.destroy', $registro) }}" method="POST" style="display: inline;">
+                            <form class="js-materia-delete-form" action="{{ route('control.subjects.destroy', $registro) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="data-action-btn data-btn-delete" onclick="return confirm('¿Estás seguro de eliminar este registro?')"><img src="{{asset('images/icons/Vector.svg')}}" alt="" style="width:22px;height:22px" loading="lazy"></button>
+                                <button type="submit" class="data-action-btn data-btn-delete" aria-label="Eliminar materia"><img src="{{asset('images/icons/Vector.svg')}}" alt="" style="width:22px;height:22px" loading="lazy"></button>
                             </form>
                         </td>
                     </tr>

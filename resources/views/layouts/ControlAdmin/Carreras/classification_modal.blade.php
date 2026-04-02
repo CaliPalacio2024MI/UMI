@@ -49,7 +49,7 @@
                     @enderror
                 </div>
                 <div class="modal-footer-custom mt-3">
-                    <button type="submit" class="submit-button">Guardar clasificación</button>
+                    <button type="submit" class="submit-button">+ Guardar</button>
                 </div>
             </form>
         </div>

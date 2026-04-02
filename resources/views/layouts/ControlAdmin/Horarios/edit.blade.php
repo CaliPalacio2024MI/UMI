@@ -42,7 +42,7 @@
                     <select id="docente_select" name="docente_id" required>
                         <option value="">Seleccione un Docente</option>
                         @foreach ($docentes as $docente)
-                            <option value="{{ $docente->id }}" data-career-id="{{ $docente->academicProfile->career_id ?? '' }}" @if($docente->id == $horario->user_id) selected @endif>{{ $docente->nombre }}</option>
+                            <option value="{{ $docente->id }}" data-career-id="{{ $docente->teachingCareerIdsCsv() }}" @if($docente->id == $horario->user_id) selected @endif>{{ $docente->nombre }}</option>
                         @endforeach
                     </select>
                 </div>

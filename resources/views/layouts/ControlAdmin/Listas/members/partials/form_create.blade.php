@@ -1,4 +1,4 @@
-<form method="POST" action="{{ route('control.teachers.store') }}" class="registration-form" id="form-registro-docente">
+<form method="POST" action="{{ route('control.teachers.store') }}" class="registration-form" id="form-registro-docente" data-index-url="{{ route('control.teachers.index') }}">
     @csrf
     @if ($errors->any())
         <div class="message-error" style="border: 1px solid #c00; padding: 10px; margin-bottom: 15px; background: #ffe0e0; border-radius: 8px;">
@@ -56,7 +56,10 @@
             <label for="modal_fecha_nacimiento">Fecha de Nacimiento</label>
             <input type="date" id="modal_fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento') }}" required>
         </div>
-        <div class="form-field"></div>
+        <div class="form-field">
+            <label for="modal_edad_docente">Edad</label>
+            <input type="text" id="modal_edad_docente" readonly tabindex="-1" value="" autocomplete="off" aria-live="polite" inputmode="numeric">
+        </div>
     </div>
 
     <h3><img src="{{ asset('images/icons/address-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Dirección</h3>
@@ -87,20 +90,26 @@
         <div class="form-field"></div>
     </div>
 
-    <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Carrera</h3>
+    @php
+        $oldModalCarreras = collect(old('carreras', []))->map(fn ($v) => (int) $v)->all();
+    @endphp
+    <h3><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Carreras</h3>
     <hr>
     <div class="form-group-triple">
-        <div class="form-field">
-            <select id="modal_carrera" name="carrera" required>
-                <option value="">Seleccione una Carrera</option>
+        <fieldset class="form-field docente-carreras-fieldset" style="grid-column: 1 / -1; border: none; padding: 0; margin: 0;">
+            <legend class="docente-carreras-legend"><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" width="18" height="18" style="vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Carreras</legend>
+            <div class="docente-carreras-checkboxes">
                 @foreach ($carreras as $carrera)
-                    <option value="{{ $carrera->id }}"{{ old('carrera') == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
+                    <label class="docente-carrera-checkbox-label">
+                        <input type="checkbox" id="modal_carrera_{{ $carrera->id }}" name="carreras[]" value="{{ $carrera->id }}" @checked(in_array((int) $carrera->id, $oldModalCarreras, true))>
+                        <span>{{ $carrera->name }}</span>
+                    </label>
                 @endforeach
-            </select>
-        </div>
+            </div>
+        </fieldset>
     </div>
 
     <div class="form-action-buttons" style="margin-top: 1rem;">
-        <button type="submit" class="submit-button">+ Agregar Docente</button>
+        <button type="submit" class="submit-button">+ Guardar</button>
     </div>
 </form>

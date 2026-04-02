@@ -25,8 +25,8 @@ class HorarioController extends Controller
 
         // 💡 Importante: Filtramos los usuarios para que solo sean docentes.
         // Asumiendo que tienes un campo 'role' o una tabla de roles
-        $docentes = User::with('academicProfile')->whereHas('roles', function ($query) {
-            $query->where('name', 'docente'); // Asumiendo que el campo 'name' del Role es 'docente'
+        $docentes = User::with(['academicProfile', 'teachingCareers'])->whereHas('roles', function ($query) {
+            $query->where('name', 'docente');
         })->get(); 
         
         // Las materias se cargan normalmente. 
@@ -128,6 +128,12 @@ class HorarioController extends Controller
         //dd($request->all(), $franjasData);
         // ¡Validación crítica! Asegurar que se haya añadido al menos una franja de tiempo
         if (empty($franjasData)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Añada al menos una franja horaria.',
+                ], 422);
+            }
             return redirect()->back()->withErrors(['franjas_json' => '']);
         }
 
@@ -162,10 +168,22 @@ class HorarioController extends Controller
             
             DB::commit();
 
-            return redirect()->route('control.schedules.index');
+            $message = 'Horario registrado correctamente.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => true, 'message' => $message]);
+            }
+            return redirect()
+                ->route('control.schedules.index', ['modal' => 'success'])
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Error al guardar el horario: ' . $e->getMessage(),
+                ], 500);
+            }
             return redirect()->back()->withInput()->withErrors(['error' => 'Error al guardar el horario: ' . $e->getMessage()]);
         }
     }
@@ -215,7 +233,7 @@ class HorarioController extends Controller
         $horario->load('franjas');
         $carreras = Career::all();
         $aulas = Facility::all();
-        $docentes = User::with('academicProfile')->whereHas('roles', function ($q) {
+        $docentes = User::with(['academicProfile', 'teachingCareers'])->whereHas('roles', function ($q) {
             $q->where('name', 'docente');
         })->get();
         $materias = Materia::all();
@@ -244,6 +262,12 @@ class HorarioController extends Controller
     $franjasData = json_decode($request->franjas_json, true);
     
     if (empty($franjasData)) {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Añada al menos una franja horaria.',
+            ], 422);
+        }
         return redirect()->back()->withInput()->withErrors(['franjas_json' => '']);
     }
 
@@ -277,17 +301,20 @@ class HorarioController extends Controller
 
         DB::commit();
 
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => true]);
+        $message = 'Horario actualizado correctamente.';
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+            return response()->json(['ok' => true, 'success' => true, 'message' => $message]);
         }
-        return redirect()->route('control.schedules.index');
+        return redirect()
+            ->route('control.schedules.index', ['modal' => 'success'])
+            ->with('success', $message);
 
     } catch (\Exception $e) {
         DB::rollBack();
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => false, 'message' => 'Error al actualizar el horario.'], 422);
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+            return response()->json(['ok' => false, 'success' => false, 'message' => 'Error al actualizar el horario.'], 422);
         }
         return redirect()->back()->withInput()->withErrors(['error' => 'Error al actualizar el horario.']);
     }
-}
+    }
 }

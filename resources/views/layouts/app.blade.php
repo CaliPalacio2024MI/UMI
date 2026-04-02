@@ -87,7 +87,6 @@
       @yield('content')
     </main>
   </div>
-  @stack('scripts')
 
   {{-- Modal Ver docente (en layout para que exista siempre con SPA) --}}
   <div id="teacherViewModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
@@ -142,6 +141,9 @@
     </div>
   </div>
   @endif
+
+  @include('layouts.components.career-success-modal')
+
 {{-- ======================= SCRIPT MAESTRO ======================= --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 

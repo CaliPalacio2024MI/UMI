@@ -14,7 +14,7 @@
         
         {{-- Cuerpo del formulario --}}
         <div class="form-body">
-            <form method="POST" action="{{ route('control.teachers.update', $user->id) }}" class="registration-form">
+            <form method="POST" action="{{ route('control.teachers.update', $user->id) }}" class="registration-form" id="form-edicion-docente" data-index-url="{{ route('control.teachers.index') }}">
                 @csrf
                 @method('PUT')
                 {{-- Manejo de Errores de Validación --}}
@@ -81,10 +81,10 @@
                         <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento',$user->fecha_nacimiento) }}" required>
                     </div>
 
-                    {{-- Edad --}}
-                    <div class="form-field">
-                        <label for="edad">Edad</label>
-                        <input type="number" id="edad" name="edad" value="{{ old('edad',$user->edad) }}" min="1" max="70" step="1">
+                    {{-- Edad (calculada desde fecha de nacimiento; no se envía, el servidor la recalcula al guardar) --}}
+                    <div class="form-field docente-edit-edad-field">
+                        <label for="docente_edit_edad">Edad</label>
+                        <input type="text" id="docente_edit_edad" readonly tabindex="-1" value="" autocomplete="off" aria-live="polite" inputmode="numeric">
                     </div>
                 </div>
                 
@@ -119,25 +119,30 @@
                     </div>
                 </div>
 
-                {{-- Sección: Contraseña y Carrera --}}
-                <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Acceso</h3>
-                <hr>
-
+                @php
+                    $carrerasSeleccionadas = old('carreras') !== null
+                        ? collect(old('carreras', []))->map(fn ($v) => (int) $v)->all()
+                        : $user->teachingCareers->pluck('id')->map(fn ($v) => (int) $v)->all();
+                    if ($carrerasSeleccionadas === [] && $user->academicProfile?->career_id) {
+                        $carrerasSeleccionadas = [(int) $user->academicProfile->career_id];
+                    }
+                @endphp
                 <div class="form-group-triple">
-                    {{-- Carrera --}}
-                    <div class="form-field">
-                        <label for="carrera">Carrera</label>
-                        <select id="carrera" name="carrera" required>
-                            <option value="">Seleccione una Carrera</option>
+                    <fieldset class="form-field docente-carreras-fieldset" style="grid-column: 1 / -1; border: none; padding: 0; margin: 0;">
+                        <legend class="docente-carreras-legend"><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" width="18" height="18" style="vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Carreras</legend>
+                        <div class="docente-carreras-checkboxes">
                             @foreach ($carreras as $carrera)
-                                <option value="{{ $carrera->id }}"{{ old('carrera', $user->academicProfile?->career_id) == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
+                                <label class="docente-carrera-checkbox-label">
+                                    <input type="checkbox" name="carreras[]" value="{{ $carrera->id }}" @checked(in_array((int) $carrera->id, $carrerasSeleccionadas, true))>
+                                    <span>{{ $carrera->name }}</span>
+                                </label>
                             @endforeach
-                        </select>
-                    </div>
+                        </div>
+                    </fieldset>
                 </div>
 
                 <div class="form-action-buttons">
-                    <button type="submit" class="submit-button">+ Actualizar</button>
+                    <button type="submit" class="submit-button">+ Guardar</button>
                 </div>
             </form>
         </div>

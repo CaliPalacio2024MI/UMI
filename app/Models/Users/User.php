@@ -153,7 +153,34 @@ class User extends Authenticatable
     {
         return $this->hasOne(AcademicProfile::class);
     }
-   
+
+    /** Carreras en las que imparte un docente (tabla pivote career_user). */
+    public function teachingCareers(): BelongsToMany
+    {
+        return $this->belongsToMany(Career::class, 'career_user', 'user_id', 'career_id');
+    }
+
+    /**
+     * IDs de carrera separados por comas (p. ej. filtro de docentes en horarios por carrera).
+     */
+    public function teachingCareerIdsCsv(): string
+    {
+        if ($this->relationLoaded('teachingCareers') && $this->teachingCareers->isNotEmpty()) {
+            return $this->teachingCareers->pluck('id')->unique()->sort()->values()->implode(',');
+        }
+        if ($this->exists) {
+            $ids = $this->teachingCareers()->pluck('id');
+            if ($ids->isNotEmpty()) {
+                return $ids->map(fn ($id) => (int) $id)->unique()->sort()->values()->implode(',');
+            }
+        }
+        if ($this->academicProfile?->career_id) {
+            return (string) (int) $this->academicProfile->career_id;
+        }
+
+        return '';
+    }
+
     public function corporateProfile(): HasOne
     {
         return $this->hasOne(CorporateProfile::class);

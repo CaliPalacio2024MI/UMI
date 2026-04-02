@@ -7,7 +7,7 @@
         
         <div class="modal-body-custom" id="modalBodyContent">
             
-            <form method="post" action="{{ route('control.subjects.update', $registro) }}">
+            <form class="js-materia-update-form" method="post" action="{{ route('control.subjects.update', $registro) }}">
                 @csrf 
                 @method('PUT')
 
@@ -89,7 +89,7 @@
                     </div>
                 </div>              
                 <div class="modal-footer-custom mt-3">
-                    <button type="submit" class="submit-button">+ Actualizar</button>
+                    <button type="submit" class="submit-button">+ Guardar</button>
                 </div>
             </form>
 

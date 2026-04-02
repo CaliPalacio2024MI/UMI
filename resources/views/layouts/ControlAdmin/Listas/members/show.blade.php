@@ -52,7 +52,15 @@
                     </div>
                     <div class="form-field">
                         <label for="edad">Edad</label>
-                        <input type="text" id="edad" value="{{ $user->edad ?? '—' }}" readonly>
+                        @php
+                            $edadVer = null;
+                            if ($user->fecha_nacimiento) {
+                                $edadVer = \Carbon\Carbon::parse($user->fecha_nacimiento)->age;
+                            } elseif ($user->edad !== null && $user->edad !== '') {
+                                $edadVer = (int) $user->edad;
+                            }
+                        @endphp
+                        <input type="text" id="edad" value="{{ $edadVer !== null ? $edadVer : '—' }}" readonly>
                     </div>
                 </div>
 
@@ -85,17 +93,22 @@
                     </div>
                 </div>
 
-                {{-- Sección: Acceso (Carrera) --}}
-                <h3><img src="{{ asset('images/icons/padlock-unlocked-outlined-svgrepo-com.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px" aria-hidden="true"> Acceso</h3>
-                <hr>
+                @php
+                    $carrerasNombres = $user->teachingCareers->isNotEmpty()
+                        ? $user->teachingCareers->pluck('name')
+                        : collect(array_filter([$user->academicProfile?->career?->name]));
+                    if ($carrerasNombres->isEmpty()) {
+                        $carrerasTextoVista = '—';
+                        $carrerasFilas = 2;
+                    } else {
+                        $carrerasTextoVista = $carrerasNombres->implode("\n");
+                        $carrerasFilas = max(2, min(10, $carrerasNombres->count()));
+                    }
+                @endphp
                 <div class="form-group-triple">
-                    <div class="form-field">
-                        <label for="carrera">Carrera</label>
-                        <input type="text" id="carrera" value="{{ $user->academicProfile?->career?->name ?? '—' }}" readonly>
-                    </div>
-                    <div class="form-field">
-                        <label>Estado</label>
-                        <input type="text" value="{{ isset($user->is_active) && $user->is_active ? 'Activo' : 'Inactivo' }}" readonly>
+                    <div class="form-field docente-carreras-view-field">
+                        <label for="carrera" class="docente-carreras-view-label"><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" width="18" height="18" aria-hidden="true"> Carreras</label>
+                        <textarea id="carrera" class="docente-carreras-view-text" rows="{{ $carrerasFilas }}" readonly>{{ $carrerasTextoVista }}</textarea>
                     </div>
                 </div>
             </div>

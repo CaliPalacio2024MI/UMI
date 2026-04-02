@@ -26,7 +26,7 @@
                 <span class="schedule-edit-header__title">Editar horario</span>
                 <button type="button" class="schedule-edit-close" id="schedule_edit_close" title="Salir de edición" aria-label="Salir de edición">✕</button>
             </div>
-            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
+            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-index-url="{{ route('control.schedules.index') }}" @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
                 @csrf
                 @if ($modoEdicion)
                     @method('PUT') 
@@ -62,7 +62,7 @@
                     <select id="docente_select" name="docente_id" required>
                         <option value="">Seleccione un Docente</option>
                         @foreach ($docentes as $docente)
-                            <option value="{{ $docente->id }}" data-career-id="{{ $docente->academicProfile->career_id ?? '' }}" @if ($modoEdicion && $docente->id == $horario->user_id) selected @endif>{{ $docente->nombre }}</option>
+                            <option value="{{ $docente->id }}" data-career-id="{{ $docente->teachingCareerIdsCsv() }}" @if ($modoEdicion && $docente->id == $horario->user_id) selected @endif>{{ $docente->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -142,7 +142,7 @@
                     </select>
                 </div>
                 <div class="schedule-submit">
-                    <button type="submit" id="save_schedule_btn" class="submit-button">{{ $modoEdicion ? '+ Actualizar' : '+ Agregar Horario' }}</button>
+                    <button type="submit" id="save_schedule_btn" class="submit-button">{{ $modoEdicion ? '+ Actualizar' : '+ Agregar' }}</button>
                 </div>
             </form>
         </div>
@@ -281,6 +281,11 @@
 
             // Materia: si hay carrera elegida, solo opciones de esa carrera; si no hay ninguna, el menú no muestra nada (solo una opción vacía)
             const materiasFiltradas = careerId === '' ? materiaOptions : materiaOptions.filter(o => o.careerId === careerId);
+            function docenteCoincideCarrera(csv, sel) {
+                if (!sel) return true;
+                if (!csv) return false;
+                return csv.split(',').map(s => s.trim()).filter(Boolean).includes(sel);
+            }
             materiaSelect.innerHTML = '';
             const optM0 = document.createElement('option');
             optM0.value = '';
@@ -296,7 +301,7 @@
             });
 
             // Docente: igual; si la carrera no tiene docentes, el menú no muestra nada
-            const docentesFiltrados = careerId === '' ? docenteOptions : docenteOptions.filter(o => o.careerId === careerId);
+            const docentesFiltrados = careerId === '' ? docenteOptions : docenteOptions.filter(o => docenteCoincideCarrera(o.careerId, careerId));
             docenteSelect.innerHTML = '';
             const optD0 = document.createElement('option');
             optD0.value = '';
@@ -402,7 +407,7 @@
             if (typeof updateAulaPlaceholderStyle === 'function') updateAulaPlaceholderStyle();
             if (window.initScheduleFormIfNeeded) window.initScheduleFormIfNeeded();
             var submitBtn = form.querySelector('#save_schedule_btn');
-            if (submitBtn) submitBtn.textContent = '+ Agregar Horario';
+            if (submitBtn) submitBtn.textContent = '+ Agregar';
         }
         document.getElementById('schedule_edit_close') && document.getElementById('schedule_edit_close').addEventListener('click', exitScheduleEditMode);
 
@@ -434,6 +439,8 @@
             var display = document.getElementById(displayId);
             var dropdown = document.getElementById(dropdownId);
             if (!wrap || !input || !display || !dropdown) return;
+            if (wrap.dataset.clockPickerInited === '1') return;
+            wrap.dataset.clockPickerInited = '1';
 
             var selectedRow = dropdown.querySelector('.time-picker-selected');
             var cols = dropdown.querySelectorAll('.time-picker-col');
@@ -509,10 +516,15 @@
         initClockPicker('hora_inicio', 'hora_inicio_display', 'hora_inicio_dropdown');
         initClockPicker('hora_fin', 'hora_fin_display', 'hora_fin_dropdown');
 
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.time-picker-dropdown.is-open').forEach(function(el) { el.classList.remove('is-open'); });
-        });
+        if (!window._scheduleTimePickerDocCloseBound) {
+            window._scheduleTimePickerDocCloseBound = true;
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.time-picker-dropdown.is-open').forEach(function(el) { el.classList.remove('is-open'); });
+            });
+        }
         document.querySelectorAll('.time-input-wrap').forEach(function(w) {
+            if (w.dataset.timeWrapStopProp === '1') return;
+            w.dataset.timeWrapStopProp = '1';
             w.addEventListener('click', function(e) { e.stopPropagation(); });
         });
 
@@ -520,6 +532,8 @@
             var input = document.getElementById(inputId);
             var display = document.getElementById(displayId);
             if (!input || !display) return;
+            if (input.dataset.timeDisplaySync === '1') return;
+            input.dataset.timeDisplaySync = '1';
             function update() { display.textContent = (input.value || '00:00').substring(0, 5); }
             input.addEventListener('input', update);
             update();

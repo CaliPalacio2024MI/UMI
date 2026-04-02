@@ -101,8 +101,8 @@ class MateriaController extends Controller
         // Asegúrate de que el modelo Materia tenga 'career_id' en $fillable
         Materia::create($dataToSave); 
 
-        // 4. REDIRECCIÓN
-        return Redirect::route('control.subjects.index') 
+        // 4. REDIRECCIÓN (modal global careerSuccessModal vía ?modal=success)
+        return Redirect::route('control.subjects.index', ['modal' => 'success'])
             ->with('success', '¡Materia creada exitosamente!');
     }
     public function update(Request $request, Materia $registro)
@@ -139,6 +139,13 @@ class MateriaController extends Controller
         ]);
 
         if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $validator->errors()->first() ?? 'Error de validación.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput()
@@ -152,17 +159,36 @@ class MateriaController extends Controller
         $validatedData['descripcion'] = $validatedData['descripcion'] ?? $registro->descripcion ?? '';
 
         // 3. ACTUALIZACIÓN
-        $registro->update($validatedData); 
+        $registro->update($validatedData);
+        $registro->load('career:id,name');
 
-        // 4. REDIRECCIÓN
-        return Redirect::route('control.subjects.index')
-            ->with('success', '¡Materia actualizada exitosamente!');
+        $message = '¡Materia actualizada exitosamente!';
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $message,
+                'row' => [
+                    'career_name' => $registro->career?->name ?? 'Sin datos',
+                    'nombre' => $registro->nombre,
+                    'creditos' => (string) $registro->creditos,
+                    'semestre' => (string) $registro->semestre,
+                    'type' => $registro->type,
+                ],
+            ]);
+        }
+
+        return Redirect::route('control.subjects.index', ['modal' => 'success'])
+            ->with('success', $message);
     }
 
-    public function destroy(Materia $registro)
+    public function destroy(Request $request, Materia $registro)
     {
         $registro->delete();
-        return Redirect::route('control.subjects.index')
-            ->with('success', 'Materia eliminada correctamente.');
+        $message = 'Materia eliminada correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+        return Redirect::route('control.subjects.index', ['modal' => 'success'])
+            ->with('success', $message);
     }
 }

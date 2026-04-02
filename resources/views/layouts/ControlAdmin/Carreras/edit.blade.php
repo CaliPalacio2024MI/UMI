@@ -37,8 +37,8 @@
                 <div class="form-field">
                     <label for="career_classification_id_{{ $career->id }}">Clasificación:</label>
                     <select id="career_classification_id_{{ $career->id }}" name="career_classification_id"
-                        class="@error('career_classification_id') validation-error @enderror">
-                        <option value="">Seleccione una clasificación</option>
+                        class="@error('career_classification_id') validation-error @enderror @if(blank($selClassId)) placeholder @endif">
+                        <option value="" class="placeholder-option">Seleccione una clasificación</option>
                         @foreach ($careerClassifications ?? [] as $clasificacion)
                             <option value="{{ $clasificacion->id }}" @selected((string) $selClassId === (string) $clasificacion->id)>
                                 {{ $clasificacion->name }}

@@ -86,7 +86,8 @@ class careerController extends Controller
                 : null,
         ]);
 
-        return redirect()->route('control.careers.index', [], 303)
+        return redirect()
+            ->route('control.careers.index', ['modal' => 'success'], 303)
             ->with('success', 'Carrera creada exitosamente.');
     }
 
