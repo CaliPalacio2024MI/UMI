@@ -11,12 +11,12 @@
        <form method="GET" action="{{ route('crm.estadisticas') }}">
         {{-- Header --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        
         <div class="header-top">
+            <h1>ESTADÍSTICOS</h1> 
+            <div class="header-acciones"> 
+                <!-- Fecha Inicio -->
 
-            <h1>ESTADÍSTICOS</h1>
-
-            <div class="header-actions">
-                    <!-- Fecha Inicio -->
                     <div class="input-group-custom input-fecha-header">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
@@ -28,15 +28,13 @@
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom"
                         onchange="this.form.submit()">
-                    </div>
 
+                    </div>  
                     <!-- Exportar -->
-                   <button type="button" class="btn-exportar"
-                    onclick="exportarExcel()">
-                    
-                    <img src="{{ asset('images/icons/export.svg') }}" width="16">
-                    Exportar
-                </button>
+                    <button type="button" class="btn-exportar"onclick="exportarExcel()">
+                        <img src="{{ asset('images/icons/export.svg') }}" width="16">
+                        Exportar
+                    </button>
             </div>
 
         </div>
@@ -46,7 +44,6 @@
             <div class="toolbar mb-8">
 
                 <div class="filtros-izquierda">
-                    
                     <!-- Filtro CTP -->
                    @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
 
