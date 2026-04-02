@@ -165,7 +165,7 @@
 
             <div class="card-resumen tiempo">
                 <div class="card-icon">
-                    <i class="fa-solid fa-clock"></i>
+                    <i class="fa-solid fa-percent"></i>
                 </div>
                 <div class="card-info">
                     <div class="card-titulo">Conversión General</div>
