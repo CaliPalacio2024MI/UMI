@@ -11,7 +11,6 @@
     <!-- Header -->
     <header class="public-header">
         <div class="header-logo">
-            <!-- Placeholder for Logo -->
             <img src="{{ asset('images/uhta-logo.png') }}" alt="UMI Universidad Mundo Imperial" onerror="this.style.display='none'; this.parentElement.innerText='UMI LOGO'">
         </div>
     </header>
@@ -83,9 +82,7 @@
                     <div class="form-group">
                         <label class="form-label">Correo electrónico:</label>
                         <div class="form-input-container">
-                            <input type="email" 
-                                name="tutor_email" 
-                                class="form-control">
+                            <input type="email" name="tutor_email" class="form-control">
                         </div>
                     </div>
                 </div>
@@ -122,35 +119,33 @@
                         </div>
                     </div>
 
+                    <!-- SELECT 1: Nivel educativo (clasificación) -->
                     <div class="form-group">
                         <label class="form-label">Nivel educativo:</label>
                         <div class="form-input-container">
-                            <select name="nivel_educativo" class="form-control">
-                                
+                            <select name="nivel_educativo" id="select-clasificacion" class="form-control">
                                 <option value="">Seleccione un nivel</option>
-
-                                <!-- Estos son ejemplos, luego se reemplazan con BD -->
-                                <option value="licenciatura">Licenciatura</option>
-                                <option value="maestria">Posgrado</option>
-                                <option value="doctorado">Maestría</option>
-                                <option value="tecnico">Doctorado</option>
+                                @foreach($clasificaciones as $clasificacion)
+                                    <option value="{{ $clasificacion->id }}">
+                                        {{ $clasificacion->name }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <!-- SELECT 2: Carrera (filtrada por clasificación) -->
+                    <div class="form-group" id="grupo-carrera" style="display: none;">
                         <label class="form-label">Plan de Estudio/Carrera:</label>
                         <div class="form-input-container">
-                            <select name="carrera_id" class="form-control" required>
-
+                            <select name="carrera_id" id="select-carrera" class="form-control" required>
                                 <option value="">Seleccione una carrera</option>
-
                                 @foreach($carreras as $carrera)
-                                    <option value="{{ $carrera->id }}">
+                                    <option value="{{ $carrera->id }}"
+                                            data-clasificacion="{{ $carrera->career_classification_id }}">
                                         {{ $carrera->name }}
                                     </option>
                                 @endforeach
-
                             </select>
                         </div>
                     </div>
@@ -171,12 +166,44 @@
     <!-- Footer -->
     <footer class="public-footer">
         <div class="footer-logo">
-             <!-- Placeholder for Footer Logo -->
-             <img src="{{ asset('images/LOGO3.png') }}" alt="Mundo Imperial" onerror="this.style.display='none'; this.parentElement.innerText='MUNDO IMPERIAL'">
+            <img src="{{ asset('images/LOGO3.png') }}" alt="Mundo Imperial" onerror="this.style.display='none'; this.parentElement.innerText='MUNDO IMPERIAL'">
         </div>
     </footer>
 
+    <script>
+        const selectClasificacion = document.getElementById('select-clasificacion');
+        const selectCarrera       = document.getElementById('select-carrera');
+        const opcionesCarrera     = Array.from(selectCarrera.querySelectorAll('option'));
+
+        const grupoCarrera = document.getElementById('grupo-carrera');
+
+        selectClasificacion.addEventListener('change', function () {
+            const clasificacionId = this.value;
+
+            // Limpiar selección actual de carrera
+            selectCarrera.value = '';
+
+            if (!clasificacionId) {
+                // Si no hay clasificación seleccionada, ocultar el select de carrera
+                grupoCarrera.style.display = 'none';
+                return;
+            }
+
+            // Filtrar opciones
+            opcionesCarrera.forEach(option => {
+                if (!option.value) {
+                    option.style.display = '';
+                } else if (option.dataset.clasificacion === clasificacionId) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+
+            // Mostrar el select de carrera
+            grupoCarrera.style.display = '';
+        });
+    </script>
+
 </body>
 </html>
-	
-

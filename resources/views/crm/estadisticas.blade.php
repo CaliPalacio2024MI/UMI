@@ -17,14 +17,14 @@
 
             <div class="header-actions">
                     <!-- Fecha Inicio -->
-                    <div class="input-group-custom">
+                    <div class="input-group-custom input-fecha-header">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
                             class="input-custom" onchange="this.form.submit()">
                     </div>
 
                     <!-- Fecha Fin -->
-                    <div class="input-group-custom">
+                    <div class="input-group-custom input-fecha-header">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom"
                         onchange="this.form.submit()">
@@ -103,21 +103,13 @@
                     <div class="input-group-custom select-wrapper filtro-carrera">
 
                         <select name="nivel_educativo" class="input-custom" onchange="this.form.submit()">
-
                             <option value="">Todos clasificación</option>
-
-                            <option value="licenciatura" {{ request('nivel_educativo') == 'licenciatura' ? 'selected' : '' }}>
-                                Licenciatura
-                            </option>
-
-                            <option value="maestria" {{ request('nivel_educativo') == 'maestria' ? 'selected' : '' }}>
-                                Posgrado
-                            </option>
-
-                            <option value="doctorado" {{ request('nivel_educativo') == 'doctorado' ? 'selected' : '' }}>
-                                Maestría
-                            </option>
-
+                            @foreach($clasificaciones as $clasificacion)
+                                <option value="{{ $clasificacion->id }}"
+                                    {{ request('nivel_educativo') == $clasificacion->id ? 'selected' : '' }}>
+                                    {{ $clasificacion->name }}
+                                </option>
+                            @endforeach
                         </select>
 
                     </div>
@@ -126,19 +118,14 @@
                     <div class="input-group-custom select-wrapper filtro-carrera">
 
                         <select name="carrera_id" class="input-custom" onchange="this.form.submit()">
-
                             <option value="">Todas las carreras</option>
-
                             @foreach($carreras as $carrera)
                                 <option value="{{ $carrera->id }}"
-                                    {{ request('carrera_id') == $carrera->id ? 'selected' : '' }}>
-
-                                    {{ \Illuminate\Support\Str::limit($carrera->nombre, 30) }}
-
-
+                                        data-clasificacion="{{ $carrera->career_classification_id }}"
+                                        {{ request('carrera_id') == $carrera->id ? 'selected' : '' }}>
+                                    {{ \Illuminate\Support\Str::limit($carrera->name, 30) }}
                                 </option>
                             @endforeach
-
                         </select>
 
                     </div>
@@ -914,4 +901,33 @@
         window.location = "{{ route('crm.estadisticas.exportar') }}?" + params;
     }
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectClasificacion = document.querySelector('select[name="nivel_educativo"]');
+        const selectCarrera       = document.querySelector('select[name="carrera_id"]');
+
+        if (selectClasificacion && selectCarrera) {
+            const opcionesCarrera = Array.from(selectCarrera.querySelectorAll('option'));
+
+            selectClasificacion.addEventListener('change', function () {
+                const clasificacionId = this.value;
+                selectCarrera.value = '';
+
+                opcionesCarrera.forEach(option => {
+                    if (!option.value) {
+                        option.style.display = '';
+                    } else if (!clasificacionId || option.dataset.clasificacion === clasificacionId) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+
+                selectClasificacion.closest('form').submit();
+            });
+        }
+    });
+</script>
+
 @endpush

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use Illuminate\Http\Request;
 use App\Models\Users\Career;
+use App\Models\Users\CareerClassification;
 
 class LeadPublicController extends Controller
 {
@@ -13,8 +14,9 @@ class LeadPublicController extends Controller
     public function create()
     {
         $carreras = Career::orderBy('name')->get();
+        $clasificaciones = CareerClassification::orderBy('name')->get();
 
-        return view('public.inscripcion', compact('carreras'));
+        return view('public.inscripcion', compact('carreras', 'clasificaciones'));
     }
 
     // Guarda el lead que viene del formulario

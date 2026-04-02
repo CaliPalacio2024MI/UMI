@@ -10,6 +10,7 @@ use App\Models\Lead;
 use App\Models\Users\User;
 use Carbon\Carbon;
 use App\Models\Carrera;
+use App\Models\Users\CareerClassification;
 use App\Exports\EstadisticasExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -244,6 +245,12 @@ class CRMController extends Controller
             $query->where('carrera_id', $request->carrera_id);
         }
 
+        if ($request->filled('nivel_educativo')) {
+            $query->whereHas('carrera', function ($q) use ($request) {
+                $q->where('career_classification_id', $request->nivel_educativo);
+            });
+        }
+
         // Traemos todos los leads que tienen al menos un seguimiento en el rango
         if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
             $query->whereHas('seguimientos', function ($q) use ($request) {
@@ -427,11 +434,16 @@ class CRMController extends Controller
         $alumnoPorMes    = $porMes['Alumno'];
 
         $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
-        $carreras = Carrera::orderBy('nombre')->get();
-        
+
+        $carreras = $request->filled('nivel_educativo')
+            ? \App\Models\Users\Career::where('career_classification_id', $request->nivel_educativo)->orderBy('name')->get()
+            : \App\Models\Users\Career::orderBy('name')->get();
+
+        $clasificaciones = \App\Models\Users\CareerClassification::orderBy('name')->get();
+                
         
         return view('crm.estadisticas', compact(
-            'leads', 'ctps', 'carreras',
+            'leads', 'ctps', 'carreras', 'clasificaciones',
             'totalLeads', 'totalFrio', 'totalCaliente', 'totalAspirante', 'totalAlumno',
             'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
             'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
@@ -581,20 +593,23 @@ class CRMController extends Controller
                 ->get();
 
                 $ctp->total_comisiones = $leads->sum(function ($lead) {
-                    $comision = Comision::where('producto', $lead->carrera?->nombre)->first();
+                    $comision = Comision::where('producto', $lead->carrera?->name)->first();
                     return $comision?->total ?? 0;
             });
 
         });
 
-        $comisiones = Comision::all();
+        $comisiones = Comision::join('career_classifications', 'comisiones.clasificacion', '=', 'career_classifications.id')
+        ->select('comisiones.*', 'career_classifications.name as clasificacion_nombre')
+        ->get();
 
-        $logoPath = public_path('images/logoUMI-Blanco.png');
+        $logoPath = public_path('images/logoUMI-Azul.png');
         $logoBase64 = base64_encode(file_get_contents($logoPath));
         
         return view('crm.comisiones', [
             'ctps'       => $ctps,
             'carreras'   => \App\Models\Users\Career::orderBy('name')->get(),
+            'clasificaciones' => \App\Models\Users\CareerClassification::orderBy('name')->get(),
             'comisiones' => $comisiones,
             'logoBase64' => $logoBase64,
         ]);
@@ -610,7 +625,16 @@ class CRMController extends Controller
             'total'         => ($request->precio * $request->porcentaje) / 100,
         ]);
 
-        return response()->json($comision);
+        $clasificacionNombre = \App\Models\Users\CareerClassification::find($comision->clasificacion)?->name;
+
+        return response()->json([
+            'id' => $comision->id,
+            'clasificacion' => $clasificacionNombre,
+            'producto' => $comision->producto,
+            'precio' => $comision->precio,
+            'porcentaje' => $comision->porcentaje,
+            'total' => $comision->total,
+        ]);
     }
 
     public function updateComision(Request $request, $id)
@@ -624,7 +648,16 @@ class CRMController extends Controller
             'total'         => ($request->precio * $request->porcentaje) / 100,
         ]);
 
-        return response()->json($comision);
+        $clasificacionNombre = \App\Models\Users\CareerClassification::find($comision->clasificacion)?->name;
+
+        return response()->json([
+            'id' => $comision->id,
+            'clasificacion' => $clasificacionNombre,
+            'producto' => $comision->producto,
+            'precio' => $comision->precio,
+            'porcentaje' => $comision->porcentaje,
+            'total' => $comision->total,
+        ]);
     }
 
     public function destroyComision($id)
@@ -639,20 +672,19 @@ class CRMController extends Controller
             ->whereHas('seguimientos', function ($q) {
                 $q->where('estado', 'Alumno');
             })
-            ->with('carrera')
+            ->with('carrera.classification') 
             ->get();
 
         $resultado = $leads->map(function ($lead) {
-            $comision = Comision::where('producto', $lead->carrera?->nombre)
-                                ->first();
+            $comision = Comision::where('producto', $lead->carrera?->name)->first(); // 👈 name
 
             return [
-                'clasificacion' => $lead->clasificacion ?? $comision?->clasificacion ?? 'Sin clasificación',
-                'producto'      => $lead->carrera?->nombre ?? 'Sin producto',
+                'clasificacion' => $lead->carrera?->classification?->name ?? 'Sin clasificación',
+                'producto'      => $lead->carrera?->name ?? 'Sin producto', // 👈 name
                 'alumno'        => $lead->alumno_nombre . ' ' . $lead->alumno_paterno,
                 'comision'      => $comision?->total ?? 0,
             ];
-        });
+        })->sortBy('clasificacion')->values();
 
         return response()->json([
             'data'  => $resultado,
