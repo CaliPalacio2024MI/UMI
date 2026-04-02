@@ -446,6 +446,16 @@ class CrmController extends Controller
         $aspirantePorMes = $porMes['Aspirante'];
         $alumnoPorMes    = $porMes['Alumno'];
 
+        // Total SIN filtro de estatus (para la dona)
+        $queryTotal = Lead::query();
+        if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
+        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
+            $queryTotal->where('ctp_id', $request->ctp_id);
+        if ($request->filled('carrera_id'))
+            $queryTotal->where('carrera_id', $request->carrera_id);
+
+        $totalSinFiltroEstatus = $queryTotal->count();
+
         $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
 
         $carreras = $request->filled('nivel_educativo')
@@ -461,7 +471,7 @@ class CrmController extends Controller
             'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
             'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
             'porcentajeFrio', 'porcentajeCaliente', 'porcentajeAspirante', 'porcentajeAlumno',
-            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno'
+            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus'
         ));
     }
     
