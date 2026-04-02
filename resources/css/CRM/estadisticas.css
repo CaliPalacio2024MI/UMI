@@ -47,23 +47,7 @@ body:has(.crm-estadisticas) .main-content {
     letter-spacing: -0.5px;
 }
 
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 
-/* Inputs de fecha en el header — más compactos */
-.header-actions .input-group-custom {
-    min-width: 100px !important;
-    max-width: 155px !important;
-    padding: 0 10px !important;
-}
-
-.header-actions .input-custom {
-    min-width: 0 !important;
-    width: 100% !important;
-}
 
 /* ================= TOOLBAR DE FILTROS ================= */
 .toolbar {
