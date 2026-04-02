@@ -5,7 +5,6 @@
     --leads-grid: 1.5fr 1.5fr 1.5fr 1fr 1fr;
 }
 
-/* Resetear todo el body y main-content */
 body:has(.crm-leads),
 body:has(.crm-leads) .main-content {
     overflow: hidden !important;
@@ -17,7 +16,6 @@ body:has(.crm-leads) .main-content {
 /* Fondo BLANCO general */
 .crm-leads {
     background-color: #ffffff;
-    /* 👈 clave */
     height: 100vh;
     padding: 30px;
     box-sizing: border-box;
@@ -63,7 +61,6 @@ body:has(.crm-leads) .main-content {
 .search-wrapper {
     position: relative;
     width: 775px;
-    /* 👈 tamaño tipo maqueta */
     max-width: 100%;
 }
 
@@ -83,7 +80,6 @@ body:has(.crm-leads) .main-content {
     width: 100%;
     border-radius: 30px;
     padding-left: 45px;
-    /* espacio para el icono */
     height: 42px;
     font-size: 15px;
     border: 1px solid #dee2e6;
@@ -106,12 +102,10 @@ body:has(.crm-leads) .main-content {
     min-height: 0;
 }
 
-/* Columna derecha con scroll propio si es necesario */
 #right-column {
     overflow-y: auto;
-    /* 👈 permite hacer scroll vertical */
-    max-height: 100%;
-    /* se asegura que no rompa el layout padre */
+    max-height: calc(100vh - 200px);
+    
 }
 
 /* CARDS */
@@ -126,16 +120,13 @@ body:has(.crm-leads) .main-content {
 
 .card-leads {
     background: transparent;
-    /* 👈 importante */
     box-shadow: none;
-    /* como en el maquetado */
 }
 
 .card-detalle {
     background: transparent;
     box-shadow: none;
     background: white;
-    /* 👈 AQUÍ va el blanco */
     border-radius: 18px;
     margin: 30px;
     padding: 0px;
@@ -162,7 +153,6 @@ body:has(.crm-leads) .main-content {
 .encabezado-fila {
     grid-template-columns: var(--leads-grid);
     align-items: center;
-    /* clave */
     padding: 16px 0 12px;
     gap: 0;
 
@@ -194,7 +184,6 @@ body:has(.crm-leads) .main-content {
     border-radius: 16px;
     padding: 20px;
     margin: 12px;
-    /* MUY IMPORTANTE: pequeño */
     flex: 1;
 }
 
@@ -280,7 +269,6 @@ body:has(.crm-leads) .main-content {
     border-radius: 18px;
     margin: 1px -6px 10px -6px;
     margin-top: -6px;
-    /* flota arriba */
 }
 
 /* Titulo lateral idéntico al de la izquierda */
@@ -294,8 +282,6 @@ body:has(.crm-leads) .main-content {
     margin: 0;
 }
 
-
-/* Responsivo */
 @media (max-width: 1399px) {
 
     .encabezado-fila,
@@ -366,9 +352,7 @@ body:has(.crm-leads) .main-content {
 
 .seguimiento-header {
     font-weight: 700;
-    /* Bold como en la imagen */
     color: #000;
-    /* Negro solido */
     padding: 14px 0;
     border-bottom: 1px solid #dcdfe3;
 }
@@ -386,14 +370,11 @@ body:has(.crm-leads) .main-content {
 }
 
 /* DATOS GENERALES */
-/* DATOS GENERALES */
 .datos-card {
     background: white;
     border-radius: 18px;
     padding: 20px;
-    /* Compactado: de 25px a 20px */
     margin: 10px;
-    /* Compactado: de 16px a 10px */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -402,9 +383,7 @@ body:has(.crm-leads) .main-content {
     color: #c18b54;
     font-weight: 700;
     margin-bottom: 15px;
-    /* Compactado: de 20px a 15px */
     font-size: 15px;
-    /* Compactado: de 16px a 15px */
 }
 
 /* Grid de 3 columnas para Nombres */
@@ -412,7 +391,6 @@ body:has(.crm-leads) .main-content {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
-    /* Compactado: de 10px a 8px */
     text-align: center;
 }
 
@@ -421,7 +399,6 @@ body:has(.crm-leads) .main-content {
     display: flex;
     justify-content: center;
     gap: 40px;
-    /* Compactado: de 60px a 40px */
     text-align: center;
 }
 
@@ -430,9 +407,7 @@ body:has(.crm-leads) .main-content {
     font-weight: 700;
     color: #000;
     margin-bottom: 2px;
-    /* Compactado */
     font-size: 13px;
-    /* Compactado: de 14px a 13px */
     word-break: break-word;  
     hyphens: auto;           
 }
@@ -441,14 +416,12 @@ body:has(.crm-leads) .main-content {
     margin: 0;
     color: #555;
     font-size: 13px;
-    /* Compactado: de 14px a 13px */
 }
 
 .separador-datos {
     border: 0;
     border-top: 1px solid #eee;
     margin: 15px 0;
-    /* Compactado: de 25px a 15px */
 }
 .modal-ctp {
     position: fixed;
@@ -512,7 +485,7 @@ body:has(.crm-leads) .main-content {
 /* GRID de 4 columnas para datos del tutor */
 .datos-grid-4 {
     display: grid;
-    grid-template-columns: 1fr 1fr;  /* 👈 2 columnas en vez de 4 */
+    grid-template-columns: 1fr 1fr; 
     gap: 14px;
     text-align: center;
     margin-top: 10px;
@@ -538,7 +511,7 @@ body:has(.crm-leads) .main-content {
 }
 
 .datos-card + .datos-card {
-    margin-top: 0px; /* el margin del propio .datos-card ya tiene 10px */
+    margin-top: 0px; 
 }
 
 .modal-asignado-label {
@@ -582,7 +555,6 @@ body:has(.crm-leads) .main-content {
     color: white;
 }
 
-/* TEXTAREA COMENTARIO */
 #ctp-comentario {
     width: 100%;
     border: 1px solid #dee2e6;
@@ -747,4 +719,30 @@ body:has(.crm-leads) .main-content {
     font-weight: 500;
     color: #185fa5;
     margin: 0;
+}
+.filtros-clasificacion { display: flex; gap: 8px; flex-wrap: wrap;  }
+.chip-filtro {
+    padding: 8px 18px;
+    border-radius: 30px;
+    border: 2px solid var(--crm-primary);
+    background: transparent;
+    color: var(--crm-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.chip-filtro:hover { background: rgba(44, 71, 112, 0.08); }
+.chip-filtro.activo { background: var(--crm-primary); color: white; }
+.search-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filtros-clasificacion {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 }

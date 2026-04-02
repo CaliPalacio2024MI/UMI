@@ -313,8 +313,12 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
                         // Comisiones: solo Master (ya está dentro del middleware master,coordinador_ctp,
                         // pero la vista solo la usa master
-                        Route::middleware(['role:master'])->group(function () {
+                        Route::middleware(['role:master,coordinador_ctp'])->group(function () {
                             Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
+                            Route::post('/comisiones', [CRMController::class, 'storeComision'])->name('comisiones.store');
+                            Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');  
+                            Route::delete('/comisiones/{id}', [CRMController::class, 'destroyComision'])->name('comisiones.destroy');
+                            Route::get('/comisiones/{ctpId}/detalle', [CRMController::class, 'detalleComision'])->name('comisiones.detalle');
                         });
 
                     // ASIGNAR CTP
@@ -328,6 +332,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                 });
 
                 Route::get('/crm/estadisticas/data', [EstadisticasController::class, 'data'])->name('crm.estadisticas.data');
+
+                Route::get('/estadisticas/exportar', [CRMController::class, 'exportar'])->name('estadisticas.exportar');
 
             });
 

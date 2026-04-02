@@ -429,3 +429,40 @@ body:has(.crm-comisiones) .main-content {
 }
 
 .mc-btn-agregar:hover { background: #162d4a; }
+
+
+
+.mc-celda {
+    text-align: center;
+}
+
+#modal-detalle-comision .modal-prospecto-header {
+    background-color: #1f3a63; /* azul elegante */
+    color: #ffffff;
+}
+
+/* Título "Monto de Conversión" */
+#modal-detalle-comision .modal-seccion-titulo {
+    background-color: #1f3a63; /* azul claro */
+    color: #fff;
+    padding: 8px;
+    border-radius: 12px;
+    font-style: normal;
+    font-weight: 700;
+}
+
+#modal-detalle-comision .mc-table-header {
+    background-color: transparent; /* quita el azul */
+    color: #111;
+}
+
+/* ===== TABLA DETALLE COMISIONES (4 columnas) ===== */
+#modal-detalle-comision .mc-table-header {
+    grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr;
+    background-color: #1f3a63;
+    color: #fff;
+}
+
+#modal-detalle-comision .mc-table-row {
+    grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr;
+}

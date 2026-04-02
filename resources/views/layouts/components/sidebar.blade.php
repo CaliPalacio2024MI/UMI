@@ -290,22 +290,22 @@
                 </li>
             @endif
 
-            {{-- Comisiones: solo Master --}}
-            @if($isMaster)
+            {{-- Comisiones: Master y Coordinador --}}
+            @if($isMaster || $isCoordinatorCTP)
                 <li class="{{ request()->routeIs('crm.comisiones') ? 'active-submenu' : '' }}">
                     <a href="{{ route('crm.comisiones') }}">Comisiones</a>
                 </li>
             @endif
 
             {{-- Estadísticas: Master, Coordinador y CTP --}}
-    @if($isMaster || $isCoordinatorCTP || $isCTP)
-        <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
-            <a href="{{ route('crm.estadisticas') }}">Estadísticas</a>
-        </li>
+                @if($isMaster || $isCoordinatorCTP || $isCTP)
+                    <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
+                        <a href="{{ route('crm.estadisticas') }}">Estadísticas</a>
+                    </li>
+                        @endif
+                    </ul>
+                </li>  {{-- ← este faltaba --}}
             @endif
-        </ul>
-    </li>  {{-- ← este faltaba --}}
-@endif
 <!--termina CRM-->
 
             {{-- 5. AJUSTES --}}

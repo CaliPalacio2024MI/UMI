@@ -8,38 +8,63 @@
 
 @section('content')
     <div class="crm-estadisticas">
-
+       <form method="GET" action="{{ route('crm.estadisticas') }}">
         {{-- Header --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <div class="header-top">
+
             <h1>ESTADÍSTICOS</h1>
-        </div>
 
-        {{-- Filters Bar --}}
-        <form method="GET" action="{{ route('crm.estadisticas') }}">
-            <div class="toolbar mb-8">
-
-                <div class="filtros-izquierda">
-
+            <div class="header-actions">
                     <!-- Fecha Inicio -->
-                    <div class="input-group-custom">
+                    <div class="input-group-custom input-fecha-header">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
                         <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                            class="input-custom">
+                            class="input-custom" onchange="this.form.submit()">
                     </div>
 
                     <!-- Fecha Fin -->
-                    <div class="input-group-custom">
+                    <div class="input-group-custom input-fecha-header">
                         <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                        <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom">
+                        <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom"
+                        onchange="this.form.submit()">
                     </div>
 
-                    <!-- Buscador -->
-                    @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
+                    <!-- Exportar -->
+                   <button type="button" class="btn-exportar"
+                    onclick="exportarExcel()">
+                    
+                    <img src="{{ asset('images/icons/export.svg') }}" width="16">
+                    Exportar
+                </button>
+            </div>
 
-                    <div class="input-group-custom search-wrapper">
-                        <img src="{{ asset('images/icons/search.svg') }}" width="16">
-                        <input type="text" name="buscar" value="{{ request('buscar') }}" class="input-custom" placeholder="Buscar por CTP">
+        </div>
+
+        {{-- Filters Bar --}}
+ 
+            <div class="toolbar mb-8">
+
+                <div class="filtros-izquierda">
+                    
+                    <!-- Filtro CTP -->
+                   @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
+
+                    <div class="input-group-custom select-wrapper">
+
+                        <select name="ctp_id" class="input-custom" onchange="this.form.submit()">
+
+                            <option value="">Todos los CTP</option>
+
+                            @foreach($ctps as $ctp)
+                                <option value="{{ $ctp->id }}"
+                                    {{ request('ctp_id') == $ctp->id ? 'selected' : '' }}>
+                                    {{ $ctp->nombre }}
+                                </option>
+                            @endforeach
+
+                        </select>
+
                     </div>
 
                     @endif
@@ -73,12 +98,39 @@
                         </select>
                     </div>
 
-                </div>
 
-                <button type="submit" class="btn-exportar">
-                    <i class="fa fa-file-excel-o"></i>
-                    Exportar
-                </button>
+                    <!-- Filtro Nivel Educativo -->
+                    <div class="input-group-custom select-wrapper filtro-carrera">
+
+                        <select name="nivel_educativo" class="input-custom" onchange="this.form.submit()">
+                            <option value="">Todos clasificación</option>
+                            @foreach($clasificaciones as $clasificacion)
+                                <option value="{{ $clasificacion->id }}"
+                                    {{ request('nivel_educativo') == $clasificacion->id ? 'selected' : '' }}>
+                                    {{ $clasificacion->name }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                    </div>
+
+                    <!-- Filtro Carrera -->
+                    <div class="input-group-custom select-wrapper filtro-carrera">
+
+                        <select name="carrera_id" class="input-custom" onchange="this.form.submit()">
+                            <option value="">Todas las carreras</option>
+                            @foreach($carreras as $carrera)
+                                <option value="{{ $carrera->id }}"
+                                        data-clasificacion="{{ $carrera->career_classification_id }}"
+                                        {{ request('carrera_id') == $carrera->id ? 'selected' : '' }}>
+                                    {{ \Illuminate\Support\Str::limit($carrera->name, 30) }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                    </div>
+
+                </div>
 
             </div>
         </form>
@@ -115,10 +167,9 @@
                 <div class="card-icon">
                     <i class="fa-solid fa-clock"></i>
                 </div>
-
                 <div class="card-info">
-                    <div class="card-titulo">Tiempo Promedio</div>
-                    <div class="card-numero contador" data-target="{{ $tiempoPromedio }}"></div>
+                    <div class="card-titulo">Conversión General</div>
+                    <div class="card-numero contador" data-target="{{ $porcentajeConversion }}">%</div>
                 </div>
             </div>
 
@@ -269,25 +320,25 @@
                         <div class="table-row-mini">
                             <div>Prospecto Frío</div>
                             <div>{{ $porcentajeFrio }}%</div>
-                            <div>{{ $promedioFrio }} días</div>
+                            <div>{{ $promedioFrio }}</div>
                         </div>
 
                         <div class="table-row-mini">
                             <div>Prospecto Caliente</div>
                             <div>{{ $porcentajeCaliente }}%</div>
-                            <div>{{ $promedioCaliente }} días</div>
+                            <div>{{ $promedioCaliente }}</div>
                         </div>
 
                         <div class="table-row-mini">
                             <div>Aspirante</div>
                             <div>{{ $porcentajeAspirante }}%</div>
-                            <div>{{ $promedioAspirante }} días</div>
+                            <div>{{ $promedioAspirante }}</div>
                         </div>
 
                         <div class="table-row-mini">
                             <div>Alumno</div>
                             <div>{{ $porcentajeAlumno }}%</div>
-                            <div>{{ $promedioAlumno }} días</div>
+                            <div>{{ $promedioAlumno }}</div>
                         </div>
 
                     </div>
@@ -838,4 +889,45 @@
     });
     
 </script>
+
+<script>
+    function exportarExcel() {
+
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+
+        const params = new URLSearchParams(formData).toString();
+
+        window.location = "{{ route('crm.estadisticas.exportar') }}?" + params;
+    }
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectClasificacion = document.querySelector('select[name="nivel_educativo"]');
+        const selectCarrera       = document.querySelector('select[name="carrera_id"]');
+
+        if (selectClasificacion && selectCarrera) {
+            const opcionesCarrera = Array.from(selectCarrera.querySelectorAll('option'));
+
+            selectClasificacion.addEventListener('change', function () {
+                const clasificacionId = this.value;
+                selectCarrera.value = '';
+
+                opcionesCarrera.forEach(option => {
+                    if (!option.value) {
+                        option.style.display = '';
+                    } else if (!clasificacionId || option.dataset.clasificacion === clasificacionId) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+
+                selectClasificacion.closest('form').submit();
+            });
+        }
+    });
+</script>
+
 @endpush
