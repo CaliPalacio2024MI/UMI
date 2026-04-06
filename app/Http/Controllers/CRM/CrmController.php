@@ -15,7 +15,7 @@ use App\Exports\EstadisticasExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 
-class CRMController extends Controller
+class CrmController extends Controller
 {
     public function leads()
     {
@@ -92,7 +92,11 @@ class CRMController extends Controller
 
         if ($request->filled('estatus')) {
             $query->whereHas('seguimientos', function ($q) use ($request) {
-                $q->where('estado', $request->estatus);
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                })->where('estado', $request->estatus);
             });
         }
 
@@ -248,6 +252,15 @@ class CRMController extends Controller
         if ($request->filled('nivel_educativo')) {
             $query->whereHas('carrera', function ($q) use ($request) {
                 $q->where('career_classification_id', $request->nivel_educativo);
+            });
+        }
+        if ($request->filled('estatus')) {
+            $query->whereHas('seguimientos', function ($q) use ($request) {
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                })->where('estado', $request->estatus);
             });
         }
 
@@ -452,7 +465,6 @@ class CRMController extends Controller
         ));
     }
     
-
     public function update(Request $request, Lead $lead)
     {
         $request->validate([
