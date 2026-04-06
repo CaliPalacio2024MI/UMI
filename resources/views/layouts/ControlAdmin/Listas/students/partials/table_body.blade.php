@@ -4,6 +4,32 @@
             $lead = $item->lead;
             $nombreCarrera = $lead->carrera->name ?? 'Sin carrera';
             $correoDesdeInscripcion = $item->lead_student_email ?? '';
+            $leadReqPaths = [
+                $lead->doc_acta_nacimiento,
+                $lead->doc_certificado_prepa,
+                $lead->doc_curp,
+                $lead->doc_ine,
+                $lead->doc_ficha_pago,
+            ];
+            $leadReqPresent = collect($leadReqPaths)->filter(fn ($p) => filled($p))->count();
+            $leadAnyRech = ! empty($lead->doc_acta_rechazado)
+                || ! empty($lead->doc_certificado_rechazado)
+                || ! empty($lead->doc_curp_rechazado)
+                || ! empty($lead->doc_ine_rechazado)
+                || ! empty($lead->doc_ficha_pago_rechazado);
+            if ($leadAnyRech) {
+                $acceptAspiranteDocState = 'rejected';
+            } elseif ($leadReqPresent === 0) {
+                $acceptAspiranteDocState = 'empty';
+            } else {
+                $acceptAspiranteDocState = 'partial';
+            }
+            $acceptAspiranteBtnTitles = [
+                'empty' => 'Sin documentos enviados aún',
+                'partial' => 'En revisión de documentos',
+                'rejected' => 'Hay documentos rechazados en revisión',
+            ];
+            $acceptAspiranteBtnTitle = $acceptAspiranteBtnTitles[$acceptAspiranteDocState];
         @endphp
         <tr class="table-row-lead-crm">
             <td style="font-family: monospace; font-size: 0.9rem; font-weight: bold;">
@@ -35,7 +61,8 @@
                         </span>
                     @endif
                     @if (!request()->routeIs('control.*'))
-                    <button type="button" class="add-time-slot-btn" aria-label="Aceptar aspirante"
+                    <button type="button" class="add-time-slot-btn accept-aspirante-btn accept-aspirante-btn--{{ $acceptAspiranteDocState }}" aria-label="Aceptar aspirante"
+                        title="{{ $acceptAspiranteBtnTitle }}"
                         data-action="accept-aspirante"
                         data-accept-url="{{ route('escolar.students.acceptAspirante', $lead->id) }}"
                         data-lead-name="{{ trim(($lead->alumno_nombre ?? '') . ' ' . ($lead->alumno_paterno ?? '') . ' ' . ($lead->alumno_materno ?? '')) }}"
@@ -109,6 +136,38 @@
     @else
         @php
             $user = $item->user ?? $item;
+            $prof = $user->academicProfile;
+            $userAcademicStatus = $prof?->status ?? 'Aspirante';
+            $userIsAcceptedAlumno = in_array($userAcademicStatus, ['Alumno', 'Alumno Activo'], true);
+            $userReqPaths = [
+                $prof?->doc_acta_nacimiento ?? $user->fallback_lead_doc_acta ?? null,
+                $prof?->doc_certificado_prepa ?? $user->fallback_lead_doc_cert ?? null,
+                $prof?->doc_curp ?? $user->fallback_lead_doc_curp ?? null,
+                $prof?->doc_ine ?? $user->fallback_lead_doc_ine ?? null,
+                $prof?->doc_ficha_pago ?? $user->fallback_lead_doc_ficha ?? null,
+            ];
+            $userReqPresent = collect($userReqPaths)->filter(fn ($p) => filled($p))->count();
+            $userAnyRech = (! empty($prof?->doc_acta_rechazado) || ! empty($user->fallback_lead_doc_rech_acta))
+                || (! empty($prof?->doc_certificado_rechazado) || ! empty($user->fallback_lead_doc_rech_cert))
+                || (! empty($prof?->doc_curp_rechazado) || ! empty($user->fallback_lead_doc_rech_curp))
+                || (! empty($prof?->doc_ine_rechazado) || ! empty($user->fallback_lead_doc_rech_ine))
+                || (! empty($prof?->doc_ficha_pago_rechazado) || ! empty($user->fallback_lead_doc_rech_ficha));
+            if ($userIsAcceptedAlumno) {
+                $acceptAspiranteDocState = 'alumno';
+            } elseif ($userAnyRech) {
+                $acceptAspiranteDocState = 'rejected';
+            } elseif ($userReqPresent === 0) {
+                $acceptAspiranteDocState = 'empty';
+            } else {
+                $acceptAspiranteDocState = 'partial';
+            }
+            $acceptAspiranteBtnTitles = [
+                'empty' => 'Sin documentos enviados aún',
+                'partial' => 'En revisión de documentos',
+                'rejected' => 'Hay documentos rechazados en revisión',
+                'alumno' => 'Aspirante aceptado como alumno',
+            ];
+            $acceptAspiranteBtnTitle = $acceptAspiranteBtnTitles[$acceptAspiranteDocState];
         @endphp
         <tr>
             <td style="font-family: monospace; font-size: 0.9rem; font-weight: bold;">
@@ -121,12 +180,9 @@
             <td style="font-weight: 700;">{{ $user->apellido_materno }}</td>
 
             <td style="text-align:center">
-                @php
-                    $status = $user->academicProfile->status ?? 'Aspirante';
-                @endphp
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
                     <span style="color: #000; font-weight: bold; border: none; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; width: fit-content;">
-                        {{ $status }}
+                        {{ $userAcademicStatus }}
                     </span>
                 </div>
             </td>
@@ -145,7 +201,8 @@
                         </a>
                     @endif
                 @if (!request()->routeIs('control.*'))
-                <button type="button" class="add-time-slot-btn" aria-label="Aceptar aspirante"
+                <button type="button" class="add-time-slot-btn accept-aspirante-btn accept-aspirante-btn--{{ $acceptAspiranteDocState }}" aria-label="Aceptar aspirante"
+                    title="{{ $acceptAspiranteBtnTitle }}"
                     data-action="accept-aspirante"
                     data-accept-url="{{ !empty($user->fallback_lead_id) ? route('escolar.students.acceptAspirante', $user->fallback_lead_id) : '' }}"
                     data-lead-name="{{ $user->nombre }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}"

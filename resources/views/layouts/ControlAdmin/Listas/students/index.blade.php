@@ -96,7 +96,7 @@
 <div id="studentDetailsModal" class="modal-overlay" style="display: none; z-index: 9999;">
     <div class="modal-container expediente-modal"> 
         <div class="modal-header">
-            <h3> Expediente del Alumno</h3>
+            <h3>Ver Expediente</h3>
             <button type="button" class="modal-close" onclick="closeStudentDetails()">&times;</button>
         </div>
         
@@ -164,7 +164,6 @@
                         <button id="btnDocCurp" class="doc-btn hidden"><i class="fa-solid fa-passport"></i> CURP</button>
                         <button id="btnDocIne" class="doc-btn hidden"><i class="fa-solid fa-id-card"></i> INE</button>
                         <button id="btnDocFicha" class="doc-btn hidden"><i class="fa-solid fa-file-invoice-dollar"></i> Ficha / comprobante de pago</button>
-                        <button id="btnDocFacturaXml" class="doc-btn hidden"><i class="fa-solid fa-file-pdf"></i> Factura PDF</button>
 
                         <div id="noDocsMsg" class="no-docs" style="display:none;">
                             No hay documentos digitales cargados.
@@ -183,7 +182,7 @@
 <div id="leadEditModal" class="modal-overlay" style="display: none; z-index: 9998;">
     <div class="modal-container expediente-modal">
         <div class="modal-header">
-            <h3>Expediente del Aspirante (Editar)</h3>
+            <h3>Editar Expediente</h3>
             <button type="button" class="modal-close" onclick="closeLeadEditModal()">&times;</button>
         </div>
         <div class="modal-body-scroll">
@@ -271,15 +270,6 @@
                                         <span>Rechazar Documento</span>
                                     </label>
                                     <input type="file" name="doc_ficha_pago" accept=".pdf" class="lead-doc-input">
-                                </div>
-                                <div class="lead-doc-item" data-doc-field="doc_factura_xml">
-                                    <label>Factura PDF</label>
-                                    <div class="lead-doc-links" id="leadDocXmlLink"></div>
-                                    <label class="lead-rechazar-doc-wrap">
-                                        <input type="checkbox" name="rechazar_doc_factura_xml" value="1" class="lead-rechazar-doc-cb">
-                                        <span>Rechazar Documento</span>
-                                    </label>
-                                    <input type="file" name="doc_factura_xml" accept=".pdf,application/pdf,.xml,text/xml,.txt" class="lead-doc-input">
                                 </div>
                             </div>
                         </div>
@@ -410,6 +400,70 @@
         line-height: 0;
         min-width: 28px;
         min-height: 28px;
+    }
+    /* Aceptar aspirante: colores por estado de documentación (solo esta lista) */
+    #umi-app-view button.accept-aspirante-btn.add-time-slot-btn {
+        box-shadow: none;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty {
+        background-color: #aeb4bd !important;
+        color: #fff !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty svg,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty .add-time-slot-btn__icon {
+        stroke: #fff !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty:hover:not(:active) {
+        background-color: #aeb4bd !important;
+    }
+    /* Documentación en revisión (aspirante): azul bajito */
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial {
+        background-color: #c5daf0 !important;
+        color: #1a3554 !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial svg,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial .add-time-slot-btn__icon {
+        stroke: #1a3554 !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial:hover:not(:active) {
+        background-color: #b1cbe8 !important;
+    }
+    /* Ya aceptado como alumno: azul marino fijo (no cambia en hover) */
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno {
+        background-color: #001f3f !important;
+        color: #fff !important;
+        cursor: default;
+        pointer-events: none;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno svg,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno .add-time-slot-btn__icon {
+        stroke: #fff !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno:hover,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno:active {
+        background-color: #001f3f !important;
+        color: #fff !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno:hover svg,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno:active svg,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno:hover .add-time-slot-btn__icon,
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--alumno:active .add-time-slot-btn__icon {
+        stroke: #fff !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--rejected {
+        background-color: #f0d56a !important;
+        color: #4a3b08 !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--rejected:hover:not(:active) {
+        background-color: #e8c85a !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.add-time-slot-btn:active {
+        background-color: #001f3f !important;
+        color: #fff !important;
+    }
+    #umi-app-view button.accept-aspirante-btn.add-time-slot-btn:active svg,
+    #umi-app-view button.accept-aspirante-btn.add-time-slot-btn:active .add-time-slot-btn__icon {
+        stroke: #fff !important;
     }
     /* Botones de acción: sin cambio de color al pasar el mouse */
     #umi-app-view button.btn-icon[data-action="open-expediente"]{
@@ -618,7 +672,7 @@
         border-bottom: 1px solid #DB5865;
     }
     #leadEditModal .lead-rechazar-doc-wrap {
-        display: none;
+        display: flex;
         align-items: center;
         gap: 8px;
         margin: 8px 0;
@@ -854,7 +908,6 @@
         configureBtn('btnDocCurp', data.docCurp, 'CURP');
         configureBtn('btnDocIne', data.docIne, 'INE');
         configureBtn('btnDocFicha', data.docFicha, 'Ficha de pago / comprobante');
-        configureBtn('btnDocFacturaXml', data.docXml, 'Factura PDF');
 
         document.getElementById('noDocsMsg').style.display = (docsCount === 0) ? 'block' : 'none';
         resetStudentDetailsTabsToPersonal();
@@ -962,17 +1015,15 @@
         setDocLink('leadDocCurpLink', data.docCurp, 'CURP');
         setDocLink('leadDocIneLink', data.docIne, 'INE');
         setDocLink('leadDocFichaLink', data.docFicha, 'Ficha');
-        setDocLink('leadDocXmlLink', data.docXml, 'Factura PDF');
 
         function leadEditSetRechazoRow(field, docUrl, rechVal) {
             var item = document.querySelector('#leadEditModal .lead-doc-item[data-doc-field="' + field + '"]');
             if (!item) return;
             var wrap = item.querySelector('.lead-rechazar-doc-wrap');
             var cb = wrap && wrap.querySelector('input[type=checkbox]');
-            var hasDoc = !!(docUrl && String(docUrl).trim() !== '');
             var wasRej = rechVal === '1' || rechVal === 1 || rechVal === true;
             if (wrap) {
-                wrap.style.display = (hasDoc || wasRej) ? 'flex' : 'none';
+                wrap.style.display = 'flex';
             }
             if (cb) {
                 cb.checked = wasRej;
@@ -983,7 +1034,6 @@
         leadEditSetRechazoRow('doc_curp', data.docCurp, data.docRechCurp);
         leadEditSetRechazoRow('doc_ine', data.docIne, data.docRechIne);
         leadEditSetRechazoRow('doc_ficha_pago', data.docFicha, data.docRechFicha);
-        leadEditSetRechazoRow('doc_factura_xml', data.docXml, data.docRechXml);
 
         document.querySelectorAll('#leadEditForm .lead-doc-input').forEach(function(inp) { inp.value = ''; });
         document.getElementById('leadEditModal').style.display = 'flex';
@@ -1084,7 +1134,7 @@
                 alumnoCurp: d.alumnoCurp,
                 docActa: d.docActa, docCert: d.docCert,
                 docCurp: d.docCurp, docIne: d.docIne,
-                docFicha: d.docFicha || '', docXml: d.docXml || ''
+                docFicha: d.docFicha || ''
             });
             return;
         }
@@ -1113,9 +1163,7 @@
                 docRechCurp: d.docRechCurp || '0',
                 docRechIne: d.docRechIne || '0',
                 docFicha: d.docFicha || '',
-                docXml: d.docXml || '',
-                docRechFicha: d.docRechFicha || '0',
-                docRechXml: d.docRechXml || '0'
+                docRechFicha: d.docRechFicha || '0'
             });
             return;
         }
