@@ -444,19 +444,33 @@
             
         </div>   
 
-        {{-- Columna lista de temas --}}                
-        <div class="topics-list">
-            <div class="topics-list-header">
-                <div style="margin-bottom: 5px;">
-                    <h3>Temas del Curso ({{ $course->topics->count() }})</h3>
-                    <p id="selection-context" style="font-size: 0.9em; color: #555; min-height: 1.2em;"></p>
-                </div>
-                <div class="content-btn" style="display: flex; gap: 8px; margin-bottom: 10px;">
-                        <button id="mode-topic" class="btn-topic" data-mode="topic">+ Añadir Tema </button>
-                        <button id="mode-subtopic" class="btn-subtopic" data-mode="subtopic" disabled>+ Añadir Subtema </button>
-                        <button id="mode-activity" class="btn-activities" data-mode="activity" disabled>+ Añadir Actividad </button>
-                </div>
+       {{-- Columna lista de temas --}}                
+<div class="topics-list">
+    <div class="topics-list-header">
+        <div style="margin-bottom: 5px;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px;">
+                <h3>Temas del Curso ({{ $course->topics->count() }})</h3>
+                
+                {{-- ✅ AGREGAR ESTO --}}
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input 
+                        type="checkbox" 
+                        name="show_welcome" 
+                        id="show_welcome"
+                        {{ $course->show_welcome ? 'checked' : '' }}
+                        style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 14px;">🐢 Mostrar bienvenida</span>
+                </label>
             </div>
+            
+            <p id="selection-context" style="font-size: 0.9em; color: #555; min-height: 1.2em;"></p>
+        </div>
+        <div class="content-btn" style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <button id="mode-topic" class="btn-topic" data-mode="topic">+ Añadir Tema </button>
+            <button id="mode-subtopic" class="btn-subtopic" data-mode="subtopic" disabled>+ Añadir Subtema </button>
+            <button id="mode-activity" class="btn-activities" data-mode="activity" disabled>+ Añadir Actividad </button>
+        </div>
+    </div>
                 
             {{-- Lista de temas y subtemas --}}
             <div class="topics-list-content" id="sortable-topics">
@@ -1578,6 +1592,58 @@ if (editFormDebug) {
     });
 }
 
+</script>
+
+<script>
+// ========== AUTO-GUARDAR CHECKBOX DE BIENVENIDA ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const showWelcomeCheckbox = document.getElementById('show_welcome');
+    
+    if (showWelcomeCheckbox) {
+        showWelcomeCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            const courseId = {{ $course->id }};
+            
+            console.log('🐢 Guardando show_welcome:', isChecked);
+            
+            // Crear FormData
+            const formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+            formData.append('_method', 'PUT');
+            formData.append('title', '{{ $course->title }}');
+            formData.append('description', `{!! addslashes($course->description ?? '') !!}`);
+            formData.append('show_welcome', isChecked ? '1' : '0');
+            
+            // Hacer petición AJAX
+            fetch(`/cursos/${courseId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la petición');
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('✅ Show welcome guardado correctamente');
+                
+                // Mostrar feedback visual (borde verde)
+                showWelcomeCheckbox.style.outline = '2px solid #4CAF50';
+                setTimeout(() => {
+                    showWelcomeCheckbox.style.outline = 'none';
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('❌ Error guardando show_welcome:', error);
+                alert('Error al guardar la configuración de bienvenida');
+                
+                // Revertir checkbox
+                showWelcomeCheckbox.checked = !isChecked;
+            });
+        });
+    }
+});
 </script>
 
 @endpush

@@ -363,6 +363,9 @@ public function show(Course $course)
                 ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
         }
 
+        // ✅ AGREGAR ESTA LÍNEA
+        $course->show_welcome = $request->has('show_welcome');
+
         return redirect()->route('Cursos.index')
             ->with('success', 'Curso actualizado exitosamente.');
     }

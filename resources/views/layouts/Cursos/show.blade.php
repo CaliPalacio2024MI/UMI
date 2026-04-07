@@ -4,6 +4,41 @@
 
 @section('content')
 
+<div id="welcomeModal" class="welcome-modal" style="display: none;">
+    <div class="welcome-modal-content">
+
+        <div class="turtles-container">
+
+            <!-- Toby -->
+    <div class="welcome-turtle-box">
+        <div class="welcome-turtle-wrapper">
+            <img src="{{ asset('videos/welcome/toby.png') }}" id="welcome-toby-static" class="welcome-turtle-static welcome-active">
+            <video id="welcome-toby-video" class="welcome-turtle-video" muted playsinline loop>
+                <source src="{{ asset('videos/tortuguita-hablando.webm') }}" type="video/webm">
+            </video>
+        </div>
+        <p class="welcome-turtle-name">Toby</p>
+    </div>
+
+    <!-- Mely -->
+    <div class="welcome-turtle-box">
+        <div class="welcome-turtle-wrapper">
+            <img src="{{ asset('videos/welcome/mely.png') }}" id="welcome-mely-static" class="welcome-turtle-static welcome-active">
+            <video id="welcome-mely-video" class="welcome-turtle-video" muted playsinline loop>
+                <source src="{{ asset('videos/tortuguita1-hablando.webm') }}" type="video/webm">
+            </video>
+        </div>
+        <p class="welcome-turtle-name">Mely</p>
+    </div>
+
+        </div>
+
+        <button class="welcome-skip-btn" onclick="closeWelcomeModal()">
+            Saltar presentación
+        </button>
+    </div>
+</div>
+
 {{-- Modal para validación de preguntas --}}
 <div id="questionModal" class="question-modal" style="display: none;">
     <div class="modal-overlay" onclick="closeQuestionModal()"></div>
@@ -3303,4 +3338,130 @@ function checkCrucigramaCompletion(activityId) {
 }
 </script>
 
+<script>
+// ========== SECUENCIA DE BIENVENIDA ==========
+const welcomeSequence = [
+    {
+        turtle: 'toby',
+        audio: "{{ asset('videos/welcome/audio1.mp3') }}"  // "Hola soy Toby"
+    },
+    {
+        turtle: 'mely',
+        audio: "{{ asset('videos/welcome/audio2.mp3') }}"  // "Y yo soy Mely..."
+    },
+    {
+        turtle: 'toby',
+        audio: "{{ asset('videos/welcome/audio3.mp3') }}"  // "Para esto solo..."
+    },
+    {
+        turtle: 'mely',
+        audio: "{{ asset('videos/welcome/audio4.mp3') }}"  // "Disfruta el curso"
+    }
+];
+
+let currentStepIndex = 0;
+let currentAudio = null;
+
+function resetTurtles() {
+    ['toby', 'mely'].forEach(turtle => {
+        const staticEl = document.getElementById(`welcome-${turtle}-static`);
+        const videoEl = document.getElementById(`welcome-${turtle}-video`);
+
+        if (!staticEl || !videoEl) return;
+
+        videoEl.classList.remove('welcome-active'); // Corregido
+        videoEl.pause();
+
+        staticEl.classList.remove('welcome-hidden'); // Corregido
+        staticEl.classList.add('welcome-active');    // Aseguramos que se vea
+    });
+}
+
+function showWelcomeModal() {
+    const modal = document.getElementById('welcomeModal');
+    modal.style.display = 'flex';
+
+    resetTurtles();
+
+    // 👇 ESPERA interacción
+    modal.addEventListener('click', startSequence, { once: true });
+}
+
+function startSequence() {
+    playWelcomeStep(0);
+}
+
+function playWelcomeStep(index) {
+    if (index >= welcomeSequence.length) {
+        setTimeout(() => { closeWelcomeModal(); }, 1000);
+        return;
+    }
+    
+    currentStepIndex = index;
+    const step = welcomeSequence[index];
+    const activeTurtle = step.turtle; 
+    const inactiveTurtle = activeTurtle === 'toby' ? 'mely' : 'toby';
+    
+    // Activa la tortuga que habla
+    const activeStatic = document.getElementById(`welcome-${activeTurtle}-static`);
+    const activeVideo = document.getElementById(`welcome-${activeTurtle}-video`);
+    
+    activeStatic.classList.remove('welcome-active');
+    activeStatic.classList.add('welcome-hidden');
+    activeVideo.classList.add('welcome-active');
+    activeVideo.play();
+    
+    // Desactiva la otra
+    const inactiveStatic = document.getElementById(`welcome-${inactiveTurtle}-static`);
+    const inactiveVideo = document.getElementById(`welcome-${inactiveTurtle}-video`);
+    
+    inactiveVideo.classList.remove('welcome-active');
+    inactiveVideo.pause();
+    inactiveStatic.classList.add('welcome-active');
+    inactiveStatic.classList.remove('welcome-hidden');
+    
+    if (currentAudio) { currentAudio.pause(); }
+    
+    currentAudio = new Audio(step.audio);
+    currentAudio.onended = () => {
+        activeVideo.classList.remove('welcome-active');
+        activeVideo.pause();
+        activeStatic.classList.add('welcome-active');
+        activeStatic.classList.remove('welcome-hidden');
+        
+        setTimeout(() => { playWelcomeStep(index + 1); }, 500);
+    };
+    
+    currentAudio.play().catch(e => console.error("Error al reproducir audio:", e));
+}
+
+function closeWelcomeModal() {
+    // Detener audio si está reproduciéndose
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    
+    // Detener videos
+    document.getElementById('welcome-toby-video').pause();
+    document.getElementById('welcome-mely-video').pause();
+    
+    // Cerrar modal
+    const modal = document.getElementById('welcomeModal');
+    modal.style.display = 'none';
+    
+    // Guardar en sessionStorage que ya vio la bienvenida
+    sessionStorage.setItem('welcomeSeen', 'true');
+}
+
+// Auto-mostrar modal al cargar la página (solo una vez por sesión)
+document.addEventListener('DOMContentLoaded', function() {
+    const alreadySeen = sessionStorage.getItem('welcomeSeen');
+    
+    if (!alreadySeen) {
+        showWelcomeModal();
+    }
+});
+
+</script>
 @endsection

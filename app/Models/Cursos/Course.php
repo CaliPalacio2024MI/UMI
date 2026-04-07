@@ -73,8 +73,13 @@ class Course extends Model
         'cert_sig_2_path',
         'cert_sig_1_name',
         'cert_sig_2_name',
+        'show_welcome', // ✅ AGREGAR ESTA LÍNEA
 
     ];
+
+    protected $casts = [
+    'show_welcome' => 'boolean', // ✅ AGREGAR ESTA LÍNEA
+];
 
     public function instructor()
     {
