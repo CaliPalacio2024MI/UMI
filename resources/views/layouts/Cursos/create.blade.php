@@ -122,7 +122,7 @@
         </div>
 
 
-        {{--Seleccion de Temas--}}
+        {{--Seleccion de Temas --}}
         <div class="form-group m-3">
             <label for="template_topics">Temas desde biblioteca</label>
 
@@ -137,7 +137,7 @@
             <small class="text-muted">
                 Puedes seleccionar varios manteniendo presionada la tecla CTRL.
             </small>
-        </div>
+        </div> 
 
         {{--Seleccion de Subtemas
         <div class="form-group m-3">

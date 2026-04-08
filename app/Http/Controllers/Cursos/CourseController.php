@@ -153,7 +153,7 @@ class CourseController extends Controller
             $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
 
             foreach ($selectedTemplates as $template){
-                Topics::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
+                Subtopic::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
             }
         }
 

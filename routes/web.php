@@ -130,11 +130,11 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
         Route::post('/actividades/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
-        Route::post('/topics/update-order', [TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
+        Route::post('/topics/update-order', [TopicController::class, 'updateOrder'])->name('topics.updateOrder');
 
         //Orden de temas (Arrastrar)
         Route::post('/topics/update-order',[TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
-        //Route::resource('templates', TopicTemplateController::class);
+        Route::resource('templates', TopicTemplateController::class);
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
 
