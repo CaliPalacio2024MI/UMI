@@ -9,6 +9,9 @@ use App\Models\Users\AcademicProfile;
 use App\Models\Users\Role;
 use App\Models\Users\Enrollment;
 use App\Models\Users\Period;
+use App\Models\AdmonCont\HorarioClase;
+use App\Models\AdmonCont\HorarioClaseOculta;
+use App\Support\HorarioResumenParser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -795,11 +798,32 @@ class studentController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $user->delete();
-        return back()->with('success', 'Usuario eliminado correctamente.');
+
+        if (!$user->roles()->where('name', 'estudiante')->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+            abort(403, 'Acceso no autorizado.');
+        }
+
+        try {
+            $user->delete();
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'No se pudo eliminar el alumno.'], 500);
+            }
+            throw $e;
+        }
+
+        $message = 'Alumno eliminado correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -1027,30 +1051,79 @@ class studentController extends Controller
 
         $q = trim((string) $request->input('q', ''));
         $dia = $request->input('dia');
+        $diaInt = ($dia !== null && $dia !== '') ? (int) $dia : null;
 
-        $horariosQuery = $user->horarioClases()
-            ->with(['carrera', 'materia', 'aula', 'franjas']);
+        // Registros guardados en Control → Clases (cajita): mismo alumno
+        $cajitaRows = HorarioClaseOculta::query()
+            ->where('alumno_id', (int) $user->id)
+            ->whereNotNull('horario_clase_id')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('horario_clase_id');
+
+        $materiaLabels = [];
+        $horarioResumenPorClase = [];
+        foreach ($cajitaRows as $row) {
+            $hid = (int) $row->horario_clase_id;
+            if ($hid > 0 && $row->materia_nombre !== null && $row->materia_nombre !== '') {
+                $materiaLabels[$hid] = $row->materia_nombre;
+            }
+            if ($hid > 0 && $row->horario_resumen !== null && trim((string) $row->horario_resumen) !== '') {
+                $horarioResumenPorClase[$hid] = $row->horario_resumen;
+            }
+        }
+
+        // Inscripciones (pivot). Sin filtrar por día en SQL: JSON/franjas pueden fallar y borrar la cajita del alumno.
+        $horarios = $user->horarioClases()
+            ->with(['carrera', 'materia', 'aula', 'franjas'])
+            ->get();
+
+        $idsExtra = $cajitaRows->pluck('horario_clase_id')
+            ->map(fn ($x) => (int) $x)
+            ->filter()
+            ->unique()
+            ->diff($horarios->pluck('id'))
+            ->values()
+            ->all();
+
+        if ($idsExtra !== []) {
+            $extras = HorarioClase::query()
+                ->with(['carrera', 'materia', 'aula', 'franjas'])
+                ->whereIn('id', $idsExtra)
+                ->get();
+            $horarios = $horarios->merge($extras)->unique('id')->values();
+        }
+
+        if ($diaInt !== null && $diaInt >= 1 && $diaInt <= 7) {
+            $horarios = $horarios->filter(function ($hc) use ($diaInt, $horarioResumenPorClase) {
+                return $this->horarioCubreDia($hc, $diaInt, $horarioResumenPorClase[$hc->id] ?? null);
+            })->values();
+        }
 
         if ($q !== '') {
-            $horariosQuery->where(function ($w) use ($q) {
-                $w->whereHas('materia', fn($m) => $m->where('nombre', 'LIKE', '%' . $q . '%'))
-                    ->orWhereHas('carrera', fn($c) => $c->where('name', 'LIKE', '%' . $q . '%'))
-                    ->orWhereHas('aula', fn($a) => $a->where('numero_aula', 'LIKE', '%' . $q . '%'));
-            });
-        }
+            $needle = mb_strtolower($q);
+            $horarios = $horarios->filter(function ($hc) use ($needle, $materiaLabels) {
+                $nombreMat = mb_strtolower((string) ($hc->materia->nombre ?? ''));
+                $label = mb_strtolower((string) ($materiaLabels[$hc->id] ?? ''));
+                $carrera = mb_strtolower((string) ($hc->carrera->name ?? ''));
+                $aulaBlob = \App\Support\AulaHorarioPresenter::searchBlob($hc->aula);
 
-        if ($dia !== null && $dia !== '') {
-            $diaInt = (int) $dia;
-            $horariosQuery->whereHas('franjas', function ($fr) use ($diaInt) {
-                $fr->whereRaw('JSON_CONTAINS(dias_semana, ?)', [json_encode($diaInt)]);
-            });
+                return str_contains($nombreMat, $needle)
+                    || str_contains($label, $needle)
+                    || str_contains($carrera, $needle)
+                    || str_contains($aulaBlob, $needle);
+            })->values();
         }
-
-        $horarios = $horariosQuery->get();
 
         if ($request->ajax()) {
             return view('layouts.ControlAdmin.Listas.members.partials.horarios_grilla_semanal', [
-                'user' => $user, 'horarios' => $horarios, 'q' => $q, 'dia' => $dia, 'esAlumno' => true,
+                'user' => $user,
+                'horarios' => $horarios,
+                'q' => $q,
+                'dia' => $dia,
+                'esAlumno' => true,
+                'materiaLabels' => $materiaLabels,
+                'horarioResumenPorClase' => $horarioResumenPorClase,
             ]);
         }
 
@@ -1060,6 +1133,42 @@ class studentController extends Controller
             'q' => $q,
             'dia' => $dia,
             'tituloHorario' => 'Horario de Alumno',
+            'materiaLabels' => $materiaLabels,
+            'horarioResumenPorClase' => $horarioResumenPorClase,
         ]);
+    }
+
+    /**
+     * ¿La clase imparte al día $diaInt (1–7)? Usa horario_resumen de cajita si existe; si no, franjas en BD.
+     */
+    private function horarioCubreDia(HorarioClase $hc, int $diaInt, ?string $resumen): bool
+    {
+        if ($resumen !== null && trim((string) $resumen) !== '') {
+            foreach (HorarioResumenParser::intervalsFromResumen($resumen) as $iv) {
+                if ((int) ($iv['dia'] ?? 0) === $diaInt) {
+                    return true;
+                }
+            }
+        }
+        foreach ($hc->franjas ?? [] as $f) {
+            $diasRaw = $f->dias_semana;
+            if (is_array($diasRaw)) {
+                $diasList = $diasRaw;
+            } elseif (is_string($diasRaw)) {
+                $dec = json_decode($diasRaw, true);
+                $diasList = is_array($dec) ? $dec : ($diasRaw !== '' ? preg_split('/\s*,\s*/', $diasRaw) : []);
+            } elseif ($diasRaw !== null && $diasRaw !== '') {
+                $diasList = [(int) $diasRaw];
+            } else {
+                $diasList = [];
+            }
+            foreach ($diasList as $d) {
+                if ((int) $d === $diaInt) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

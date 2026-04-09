@@ -549,14 +549,11 @@
     background-color: #ffffff; /* Fondo blanco */
 }
 
+/* Una sola línea vertical roja entre columnas (borde derecho de cada celda; sin borde en la última columna). */
 .tabla-base tbody td {
     border: none;
-    border-left: 3px solid #dc3545;
     border-right: 3px solid #dc3545;
     text-align: center;
-}
-.tabla-base tbody tr td:first-child {
-    border-left: none;
 }
 .tabla-base tbody tr td:last-child {
     border-right: none;
@@ -619,6 +616,20 @@
 .schedule-table .toolbar__search form,
 .schedule-table .toolbar__search .mb-4 {
     margin-bottom: 0 !important;
+}
+/* El campo ocupa todo el ancho disponible dentro de la caja (icono + input) */
+.schedule-table .toolbar__search #search-form {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+.schedule-table .toolbar__search #search-input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    margin-right: 0 !important;
 }
 .schedule-table .Table-view {
     margin-top: 1rem;
@@ -1632,9 +1643,197 @@
     stroke: #fff;
 }
 
-/* Tabla filtros Clases: nombre del alumno (col-materia) sin negrita */
+/* Tabla filtros: el .add-time-slot-btn global trae align-self: flex-end (horarios); aquí debe ir centrado */
+#form-filtros #clases-tabla-filtros .add-time-slot-btn {
+    align-self: center !important;
+    margin-top: 16px;
+}
+
+/* ============================================================
+   Clases — tabla de filtros (#clases-tabla-filtros): solo este
+   bloque (carga vía app.css; válido en SPA y recarga completa).
+   ============================================================ */
+#form-filtros .filtros-col-izq #clases-tabla-filtros {
+    max-width: 560px;
+}
+
+#form-filtros #clases-tabla-filtros {
+    background-color: #e8e8e8;
+    border-radius: 8px;
+    padding: 0 0.5rem 0.5rem 0.5rem;
+    min-height: 60px;
+    margin-top: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+    height: auto;
+    max-height: 390px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+#form-filtros #clases-tabla-filtros .filtros-tabla-scroll {
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 559px;
+}
+
+#form-filtros #clases-tabla-filtros table.tabla-base {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    min-width: 320px;
+    max-width: 559px;
+    height: auto;
+}
+
+/* Quitar 200px fijos de .tabla-base global en la primera columna (destrozaba el resto) */
+#form-filtros #clases-tabla-filtros table.tabla-base thead th:first-child,
+#form-filtros #clases-tabla-filtros table.tabla-base tbody td:first-child {
+    width: 30%;
+    min-width: 0 !important;
+    max-width: none;
+}
+
+#form-filtros #clases-tabla-filtros table.tabla-base th,
+#form-filtros #clases-tabla-filtros table.tabla-base td {
+    padding: 10px 8px;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+/* Filas de datos: sin líneas horizontales (Carrera, Alumno, Matrícula, Acciones); siguen los bordes rojos verticales globales */
+#form-filtros #clases-tabla-filtros table.tabla-base tbody td {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+#form-filtros #clases-tabla-filtros th.col-carrera,
+#form-filtros #clases-tabla-filtros td.col-carrera {
+    width: 30%;
+    max-width: none;
+}
+
+#form-filtros #clases-tabla-filtros .col-materia,
+#form-filtros #clases-tabla-filtros th.col-materia {
+    width: 34%;
+    max-width: none;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.4;
+    vertical-align: middle;
+    padding: 0.5em 6px;
+    text-align: center !important;
+}
+
+#form-filtros #clases-tabla-filtros th.col-materia {
+    vertical-align: middle !important;
+    color: #fff;
+}
+
+#form-filtros #clases-tabla-filtros th.col-matricula,
+#form-filtros #clases-tabla-filtros td.col-matricula {
+    width: 20%;
+    max-width: none;
+}
+
+#form-filtros #clases-tabla-filtros th.col-acciones,
+#form-filtros #clases-tabla-filtros td.col-acciones {
+    width: 16%;
+    min-width: 72px;
+    max-width: none;
+    padding: 0.4em 4px;
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+/* Centrar el check como Matrícula/Pendiente; "Seleccionar todo" absoluto arriba (no empuja el botón) */
+#form-filtros #clases-tabla-filtros td.col-acciones {
+    position: relative;
+}
+
+
+#form-filtros #clases-tabla-filtros td.col-carrera {
+    white-space: normal;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
 #form-filtros #clases-tabla-filtros td.col-materia {
     font-weight: normal;
+    color: #333;
+}
+
+#form-filtros #clases-tabla-filtros .col-acciones-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+#form-filtros #clases-tabla-filtros .col-acciones .col-acciones-wrap {
+    padding: 0;
+}
+
+#form-filtros #clases-tabla-filtros table.tabla-base td.col-acciones {
+    text-align: center;
+}
+
+#form-filtros #clases-tabla-filtros .btn-seleccionar-todo-clases {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    z-index: 1;
+    color: #ACACAC !important;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.6rem;
+    padding: 0;
+    line-height: 1.15;
+    display: block;
+    text-align: center;
+    width: max-content;
+    max-width: 100%;
+}
+
+#form-filtros #clases-tabla-filtros .btn-seleccionar-todo-clases:hover {
+    color: #888 !important;
+}
+
+@media (max-width: 991px) {
+    #form-filtros #clases-tabla-filtros {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    #form-filtros #clases-tabla-filtros table.tabla-base {
+        min-width: 280px;
+        font-size: 0.9rem;
+    }
+
+    #form-filtros #clases-tabla-filtros table.tabla-base th,
+    #form-filtros #clases-tabla-filtros table.tabla-base td {
+        padding: 8px 6px;
+    }
+}
+
+@media (max-width: 576px) {
+    #form-filtros #clases-tabla-filtros table.tabla-base th,
+    #form-filtros #clases-tabla-filtros table.tabla-base td {
+        padding: 6px 4px;
+        font-size: 0.85rem;
+    }
 }
 
 .schedule-submit {
@@ -1786,6 +1985,11 @@
 #horarioEditModal .schedule-lists {
     overflow: visible;
     max-height: none;
+    /* Sin marco tipo tarjeta (hereda de .creator-container.is-editing .schedule-lists) */
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
 }
 /* Contenido del modal Editar horario: formulario centrado y texto de selects centrado */
 #horarioEditContent .horario-edit-wrap {
@@ -2249,6 +2453,22 @@ select[name="semestre"] {
     color: white;
     transform: none;
     box-shadow: 0 3px 8px rgba(34, 63, 112, 0.35);
+}
+
+/* Errores de validación (incl. RVOE duplicado) arriba del formulario crear/editar carrera */
+#createCareerModal .error-message,
+[id^="editCareerModal_"] .error-message {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    padding: 12px 15px;
+    margin-bottom: 16px;
+}
+#createCareerModal .error-message-single,
+[id^="editCareerModal_"] .error-message-single {
+    margin: 0;
+    line-height: 1.4;
 }
 
 /* Modal clasificaciones de carrera: tamaño acotado y scroll interno */

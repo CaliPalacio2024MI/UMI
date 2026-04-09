@@ -10,9 +10,7 @@
             <form method="post" action="{{ route('control.careers.store') }}">
                 @csrf
 
-                @if($errors->any())
-                    <div class="error-message">Debe rellenar todo el formulario.</div>
-                @endif
+                @include('layouts.ControlAdmin.Carreras.partials.form_errors_alert')
 
                 <div class="form-field">
                     <label for="name">Nombre:</label>

@@ -261,8 +261,8 @@
                     </button>
                 @endif
                     <form action="{{ request()->routeIs('control.*') ? route('control.students.destroy', $user->id) : route('escolar.students.destroy', $user->id) }}" method="POST"
-                        style="display: inline-flex; margin: 0; align-items: center;"
-                        onsubmit="return confirm('¿Eliminar este alumno? Esta acción no se puede deshacer.');">
+                        class="js-alumno-delete-form"
+                        style="display: inline-flex; margin: 0; align-items: center;">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn-icon" title="Eliminar alumno"

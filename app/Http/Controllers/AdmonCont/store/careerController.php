@@ -24,7 +24,12 @@ class careerController extends Controller
             ? CareerClassification::where('institution_id', $institutionId)->orderBy('name')->get()
             : CareerClassification::orderBy('name')->get();
 
-        return view('layouts.ControlAdmin.Carreras.index', compact('careers', 'careerClassifications'));
+        // Evita caché del listado (p. ej. GET repetido ?modal=success tras varios DELETE);
+        // si el HTML sale de caché, el script del modal de éxito puede no ejecutarse y no verías el aviso.
+        return response()
+            ->view('layouts.ControlAdmin.Carreras.index', compact('careers', 'careerClassifications'))
+            ->header('Cache-Control', 'private, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
     public function create()
     {
@@ -39,8 +44,58 @@ class careerController extends Controller
 
     public function reticula(Career $carrera)
     {
-        return view('layouts.ControlAdmin.Carreras.reticula', compact('carrera'));
+        $institutionId = session('active_institution_id');
+        $institutionId = $institutionId ? (int) $institutionId : null;
+
+        $carreras = $institutionId
+            ? Career::where('institution_id', $institutionId)->orderBy('name')->get()
+            : Career::orderBy('name')->get();
+
+        if (!$carreras->firstWhere('id', $carrera->id)) {
+            $carreras = $carreras->push($carrera)->sortBy('name')->values();
+        }
+
+        $materias = $carrera->materias()
+            ->orderBy('semestre')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $grouped = $materias->groupBy(function ($m) {
+            $s = (int) ($m->semestre ?? 1);
+
+            return max(1, min(8, $s));
+        });
+
+        $porSemestre = [];
+        for ($s = 1; $s <= 8; $s++) {
+            $porSemestre[$s] = $grouped->get($s, collect())->values();
+        }
+
+        $totalMaterias = $materias->count();
+        $totalCreditos = (int) $materias->sum(fn ($m) => (int) ($m->creditos ?? 0));
+
+        $semestreLabels = [
+            1 => '1er Semestre',
+            2 => '2do Semestre',
+            3 => '3er Semestre',
+            4 => '4to Semestre',
+            5 => '5to Semestre',
+            6 => '6to Semestre',
+            7 => '7mo Semestre',
+            8 => '8vo Semestre',
+        ];
+
+        return view('layouts.ControlAdmin.Carreras.reticula', compact(
+            'carrera',
+            'carreras',
+            'porSemestre',
+            'totalMaterias',
+            'totalCreditos',
+            'semestreLabels'
+        ));
     }
+
     public function store(Request $request)
     {
         $institutionId = session('active_institution_id');
@@ -49,9 +104,18 @@ class careerController extends Controller
         }
         $institutionId = (int) $institutionId;
 
+        $request->merge([
+            'official_id' => trim((string) $request->input('official_id', '')),
+        ]);
+
         $request->validate([
             'name'         => 'required|string|max:255',
-            'official_id'  => 'required|string|max:255',
+            'official_id'  => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('careers', 'official_id'),
+            ],
             'description1' => 'required|string|max:500',
             'description2' => 'required|string|max:500',
             'description3' => 'required|string|max:500',
@@ -65,6 +129,7 @@ class careerController extends Controller
         ], [
             'name.required'         => 'El nombre de la carrera es obligatorio.',
             'official_id.required'  => 'El RVOE es obligatorio.',
+            'official_id.unique'    => 'Ya existe una carrera con ese número de acuerdo RVOE. Use otro valor.',
             'description1.required' => 'Profesionalización y empleabilidad es obligatorio.',
             'description2.required'  => 'Objetivo General es obligatorio.',
             'description3.required' => 'Elige Ser es obligatorio.',
@@ -163,6 +228,10 @@ class careerController extends Controller
 
     public function update(Request $request, Career $carrera)
     {
+        $request->merge([
+            'official_id' => trim((string) $request->input('official_id', '')),
+        ]);
+
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'name' => [
                 'required',
@@ -172,7 +241,12 @@ class careerController extends Controller
                     ->ignore($carrera->id)
                     ->where('institution_id', $carrera->institution_id),
             ],
-            'official_id'  => 'required|string|max:255',
+            'official_id'  => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('careers', 'official_id')->ignore($carrera->id),
+            ],
             'type'         => 'required|in:Presencial,En linea',
             'semesters'    => 'required|integer|min:1|max:8',
             'description1' => 'nullable|string|max:500',
@@ -187,6 +261,7 @@ class careerController extends Controller
             'name.required'   => 'El nombre de la carrera es obligatorio.',
             'name.unique'    => 'Ya existe una carrera con ese nombre.',
             'official_id.required' => 'El RVOE es obligatorio.',
+            'official_id.unique'   => 'Ya existe otra carrera con ese número de acuerdo RVOE. Use otro valor.',
         ]);
 
         if ($validator->fails()) {

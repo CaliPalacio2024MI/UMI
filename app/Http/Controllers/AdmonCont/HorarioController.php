@@ -11,7 +11,7 @@ use App\Models\AdmonCont\Materia;
 use App\Models\AdmonCont\HorarioClase;
 use App\Models\AdmonCont\HorarioFranja;
 use App\Models\AdmonCont\Facility;
-
+use App\Support\AulaHorarioPresenter;
 
 class HorarioController extends Controller
 {
@@ -19,7 +19,7 @@ class HorarioController extends Controller
     {
         // 1. Obtener los datos necesarios para los desplegables
         $carreras = Career::all();
-        $aulas = Facility::all();
+        $aulas = Facility::orderedForHorarios()->get();
         $query = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas']);
         $search = $request->search_query;
 
@@ -98,7 +98,10 @@ class HorarioController extends Controller
                 'carrera' => $horario->carrera->name ?? '—',
                 'materia' => $horario->materia->nombre ?? '—',
                 'docente' => $horario->user->nombre ?? '—',
-                'aula' => $horario->aula->numero_aula ?? '—',
+                'aula' => $horario->aula
+                    ? AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)
+                    : '—',
+                'aula_info' => AulaHorarioPresenter::toApiArray($horario->aula),
                 'franjas' => $franjas,
             ]);
         }
@@ -187,20 +190,36 @@ class HorarioController extends Controller
             return redirect()->back()->withInput()->withErrors(['error' => 'Error al guardar el horario: ' . $e->getMessage()]);
         }
     }
-    public function destroy(HorarioClase $horario){
-        // 💡 El Route Model Binding pasa directamente el objeto HorarioClase
-        
-        try {
-            $horario->delete(); // Elimina el registro maestro
-            
-            // La configuración 'onDelete('cascade')' en tu migración se encarga 
-            // de borrar automáticamente todas las filas de horario_franjas relacionadas.
+    public function destroy(HorarioClase $horario)
+    {
+        $request = request();
 
-            return redirect()->route('control.schedules.index');
-            
+        try {
+            $horario->delete();
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'ok' => true,
+                    'success' => true,
+                    'message' => 'Horario eliminado correctamente.',
+                ]);
+            }
+
+            return redirect()
+                ->route('control.schedules.index', ['modal' => 'success'], 303)
+                ->with('success', 'Horario eliminado correctamente.');
         } catch (\Exception $e) {
-            // Maneja cualquier error de base de datos
-            return redirect()->route('control.schedules.index')->withErrors(['error' => 'No se pudo eliminar el horario.']);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'ok' => false,
+                    'success' => false,
+                    'message' => 'No se pudo eliminar el horario.',
+                ], 500);
+            }
+
+            return redirect()
+                ->route('control.schedules.index')
+                ->withErrors(['error' => 'No se pudo eliminar el horario.']);
         }
     }
     /**
@@ -232,7 +251,7 @@ class HorarioController extends Controller
     {
         $horario->load('franjas');
         $carreras = Career::all();
-        $aulas = Facility::all();
+        $aulas = Facility::orderedForHorarios()->get();
         $docentes = User::with(['academicProfile', 'teachingCareers'])->whereHas('roles', function ($q) {
             $q->where('name', 'docente');
         })->get();

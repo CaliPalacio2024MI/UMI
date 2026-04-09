@@ -33,7 +33,7 @@
                 </div>
                 <div class="career-view-row">
                     <dt>Aula:</dt>
-                    <dd>{{ $clase->aula->numero_aula ?? '—' }}</dd>
+                    <dd>{{ \App\Support\AulaHorarioPresenter::tablaResumen($clase->aula) }}</dd>
                 </div>
                 <div class="career-view-row career-view-row--no-border">
                     <dt class="career-view-dt--gold">Franjas horarias:</dt>

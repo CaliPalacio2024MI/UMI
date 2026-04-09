@@ -112,7 +112,7 @@
                     <select id="aula_select" name="aula_id">
                         <option value="" class="select-placeholder">Seleccione Aula</option>
                         @foreach ($aulas as $aula)
-                            <option value="{{ $aula->id }}" @if($aula->id == $horario->aula_id) selected @endif>{{ $aula->numero_aula }}</option>
+                            <option value="{{ $aula->id }}" @if($aula->id == $horario->aula_id) selected @endif>{{ \App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($aula) }}</option>
                         @endforeach
                     </select>
                 </div>

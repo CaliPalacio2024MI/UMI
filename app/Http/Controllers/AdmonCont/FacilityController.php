@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AdmonCont\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\View\View;
 
 class FacilityController extends Controller
 {
     //Clase Index
-    public function index(){
-        $data = Facility::all();
+    public function index()
+    {
+        $data = Facility::orderedForHorarios()->get();
 
         return view('layouts.ControlAdmin.Infraestrucuta.index', compact('data'));
     }
@@ -19,22 +21,24 @@ class FacilityController extends Controller
         return view('layouts.ControlAdmin.Infraestrucuta.components.create');
     }
     public function store(Request $request){
-        // 1. Validación de los datos
-        $request->validate([
-            // string(10) | Debe ser requerido
-            'numero_aula' => 'required|string|max:10', 
-            // string(255) | Debe ser requerido
-            'seccion' => 'required|string|max:255', 
-            // integer | Es nullable en BD, pero si se envía debe ser entero
-            'capacidad' => 'nullable|integer|min:0', 
-            // string(100) | Es nullable en BD
-            'ubicacion' => 'nullable|string|max:100', 
-            // string(20) | Debe ser requerido y solo permitir los valores esperados
-            'tipo' => 'required|string|in:Aula,Laboratorio,Otro', 
+        $validated = $request->validate([
+            'numero_aula' => 'required|string|max:10',
+            'seccion' => 'nullable|string|max:255',
+            'capacidad' => 'nullable|integer|min:0',
+            'tipo' => 'required|string|in:Aula,Laboratorio,Otro',
         ]);
 
-        // 2. Creación del modelo (Ejemplo - Asumiendo que has definido $fillable en el modelo Facility)
-        $facility = Facility::create($request->all());
+        $seccion = isset($validated['seccion']) ? trim((string) $validated['seccion']) : '';
+        if ($seccion === '') {
+            $seccion = 'Sin sección';
+        }
+
+        $facility = Facility::create([
+            'numero_aula' => $validated['numero_aula'],
+            'seccion' => $seccion,
+            'capacidad' => $validated['capacidad'] ?? null,
+            'tipo' => $validated['tipo'],
+        ]);
 
         // 3. Devolver una respuesta JSON de éxito (Axios lo espera)
         return response()->json([
@@ -43,13 +47,65 @@ class FacilityController extends Controller
         ], 201); 
     }
 
-    public function destroy(Facility $facility)
+    public function show(Request $request, Facility $facility): View
     {
-        // Elimina el aula
+        if ($request->ajax()) {
+            return view('layouts.ControlAdmin.Infraestrucuta.components.show_detail', compact('facility'));
+        }
+
+        return view('layouts.ControlAdmin.Infraestrucuta.show', compact('facility'));
+    }
+
+    public function edit(Request $request, Facility $facility): View
+    {
+        if ($request->ajax()) {
+            return view('layouts.ControlAdmin.Infraestrucuta.components.edit_form', compact('facility'));
+        }
+
+        return view('layouts.ControlAdmin.Infraestrucuta.edit', compact('facility'));
+    }
+
+    public function update(Request $request, Facility $facility)
+    {
+        $validated = $request->validate([
+            'numero_aula' => 'required|string|max:10',
+            'seccion' => 'nullable|string|max:255',
+            'capacidad' => 'nullable|integer|min:0',
+            'tipo' => 'required|string|in:Aula,Laboratorio,Otro',
+        ]);
+
+        $seccion = isset($validated['seccion']) ? trim((string) $validated['seccion']) : '';
+        if ($seccion === '') {
+            $seccion = 'Sin sección';
+        }
+
+        $facility->update([
+            'numero_aula' => $validated['numero_aula'],
+            'seccion' => $seccion,
+            'capacidad' => $validated['capacidad'] ?? null,
+            'tipo' => $validated['tipo'],
+        ]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'message' => 'Aula actualizada correctamente.',
+            ], 200);
+        }
+
+        return redirect()
+            ->route('control.facilities.index', ['modal' => 'success'])
+            ->with('success', 'Aula actualizada correctamente.');
+    }
+
+    public function destroy(Request $request, Facility $facility)
+    {
         $facility->delete();
 
-        // Redirige de vuelta a la lista de aulas (la página principal)
-        // También puedes añadir un mensaje de sesión para mostrar una notificación.
-        return Redirect::route('Facilities.index')->with('success', 'Aula eliminada correctamente.');
+        $message = 'Aula eliminada correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+
+        return Redirect::route('control.facilities.index')->with('success', $message);
     }
 }

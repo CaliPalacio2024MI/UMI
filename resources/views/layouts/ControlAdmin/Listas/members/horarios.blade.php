@@ -15,7 +15,7 @@
             <a href="{{ isset($tituloHorario) && $tituloHorario === 'Horario de Alumno' ? (request()->routeIs('control.*') ? route('control.students.index') : route('escolar.students.index')) : route('control.teachers.index') }}" class="btn btn--secondary horario-close-btn" style="text-decoration: none; font-size: 1.5rem; line-height: 1; padding: 0.25rem 0.5rem; min-width: auto; color: #666;" aria-label="Cerrar">&times;</a>
         </div>
     </div>
-    @include('layouts.ControlAdmin.Listas.members.partials.horarios_body', ['user' => $user, 'horarios' => $horarios, 'esAlumno' => isset($tituloHorario) && $tituloHorario === 'Horario de Alumno'])
+    @include('layouts.ControlAdmin.Listas.members.partials.horarios_body', ['user' => $user, 'horarios' => $horarios, 'esAlumno' => isset($tituloHorario) && $tituloHorario === 'Horario de Alumno', 'materiaLabels' => $materiaLabels ?? [], 'horarioResumenPorClase' => $horarioResumenPorClase ?? []])
 </div>
 @endsection
 

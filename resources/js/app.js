@@ -393,33 +393,47 @@ async loadPage(url, updateHistory = true) {
 }
 
 // Modal global #careerSuccessModal (Carreras, Materias, clasificación AJAX) — layout app.blade.php
-function initCareerSuccessModal() {
+function showCareerSuccessModalIfMessagePresent() {
     const successModal = document.getElementById('careerSuccessModal');
     const successModalMessage = document.getElementById('careerSuccessModalMessage');
-    const successModalOk = document.getElementById('careerSuccessModalOk');
-    if (!successModal) return;
-
-    let isBackOrForward = false;
-    if (performance && typeof performance.getEntriesByType === 'function') {
-        const navEntries = performance.getEntriesByType('navigation');
-        if (navEntries && navEntries[0] && navEntries[0].type === 'back_forward') {
-            isBackOrForward = true;
-        }
-    }
-    if (!isBackOrForward && typeof window.careerSuccessMessage === 'string' && window.careerSuccessMessage && successModalMessage) {
+    if (!successModal || !successModalMessage) return;
+    if (typeof window.careerSuccessMessage === 'string' && window.careerSuccessMessage) {
         successModalMessage.textContent = window.careerSuccessMessage;
         successModal.style.display = 'flex';
     }
-    if (successModalOk) {
-        successModalOk.addEventListener('click', () => {
-            successModal.style.display = 'none';
+}
+
+function bindCareerSuccessModalOkOnce() {
+    const successModal = document.getElementById('careerSuccessModal');
+    const successModalOk = document.getElementById('careerSuccessModalOk');
+    if (!successModal || !successModalOk || successModalOk.dataset.boundCareerOk === '1') return;
+    successModalOk.dataset.boundCareerOk = '1';
+    successModalOk.addEventListener('click', () => {
+        successModal.style.display = 'none';
+        try {
+            delete window.careerSuccessMessage;
+        } catch (e) {
+            window.careerSuccessMessage = undefined;
+        }
+        const afterOk = window.afterCareerSuccessModalOk;
+        try {
+            delete window.afterCareerSuccessModalOk;
+        } catch (e) {
+            window.afterCareerSuccessModalOk = undefined;
+        }
+        if (typeof afterOk === 'function') {
             try {
-                delete window.careerSuccessMessage;
-            } catch (e) {
-                window.careerSuccessMessage = undefined;
+                afterOk();
+            } catch (err) {
+                console.error(err);
             }
-        });
-    }
+        }
+    });
+}
+
+function initCareerSuccessModal() {
+    bindCareerSuccessModalOkOnce();
+    showCareerSuccessModalIfMessagePresent();
 }
 
 // Inicializar cuando el DOM esté listo
@@ -427,6 +441,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initCareerSuccessModal();
     window.spaNav = new SimpleSPANavigation();
     window.navigateTo = (url) => window.spaNav.navigateTo(url);
+});
+
+// Tras restauración desde bfcache u orden de ejecución, el aviso debe mostrarse aunque no coincida con DOMContentLoaded solo.
+window.addEventListener('pageshow', () => {
+    bindCareerSuccessModalOkOnce();
+    showCareerSuccessModalIfMessagePresent();
 });
 
 // Limpiar al cerrar
@@ -629,6 +649,52 @@ document.addEventListener('submit', (e) => {
         });
 });
 
+// Eliminar aula (infraestructura): AJAX + careerSuccessModal + recarga al OK (plantillas por fila en sync)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-aula-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Eliminar esta aula?')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Aula eliminada correctamente.';
+                    window.afterCareerSuccessModalOk = function () {
+                        window.location.reload();
+                    };
+                    successModal.style.display = 'flex';
+                } else {
+                    window.location.reload();
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar la aula.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
 // Eliminar docente (lista): AJAX + careerSuccessModal (misma UX que materias)
 document.addEventListener('submit', (e) => {
     const form = e.target.closest('form.js-docente-delete-form');
@@ -665,6 +731,92 @@ document.addEventListener('submit', (e) => {
                 return;
             }
             const msg = (data && data.message) || 'No se pudo eliminar el docente.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Eliminar alumno (lista): AJAX + careerSuccessModal (misma UX que docentes)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-alumno-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Eliminar este alumno? Esta acción no se puede deshacer.')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const tr = form.closest('tr');
+                if (tr) tr.remove();
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Alumno eliminado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar el alumno.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Eliminar horario (lista Horarios): AJAX + careerSuccessModal (misma UX que materias/docentes)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-horario-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Está seguro de eliminar este horario? Esta acción es irreversible.')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && (data.ok === true || data.success === true)) {
+                const tr = form.closest('tr');
+                if (tr) tr.remove();
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Horario eliminado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar el horario.';
             window.alert(msg);
         })
         .catch(() => {
@@ -2053,6 +2205,11 @@ document.addEventListener('click', (e) => {
                 const data = await res.json().catch(() => ({}));
                 const ok = res.ok && (data.ok === true || data.success === true);
                 if (ok) {
+                    try {
+                        delete window.afterCareerSuccessModalOk;
+                    } catch (e) {
+                        window.afterCareerSuccessModalOk = undefined;
+                    }
                     const msg = data.message || 'Horario guardado correctamente.';
                     const showSuccessModal = () => {
                         const successModal = document.getElementById('careerSuccessModal');
@@ -2092,6 +2249,11 @@ document.addEventListener('click', (e) => {
                             })
                             .catch(() => showSuccessModal());
                     } else {
+                        if (form.closest('#horarioEditModal')) {
+                            window.afterCareerSuccessModalOk = function () {
+                                if (typeof onHorarioUpdated === 'function') onHorarioUpdated();
+                            };
+                        }
                         showSuccessModal();
                     }
                     return;

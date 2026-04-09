@@ -136,7 +136,7 @@
                         <option value="" class="select-placeholder">Seleccione Aula</option>
                     {{-- Aquí va el loop para cargar las carreras desde la BD --}}
                     @foreach ($aulas as $aula)
-                        <option value = "{{$aula->id}}" @if ($modoEdicion && $aula->id == $horario->aula_id) selected @endif>{{$aula->numero_aula}}</option>
+                        <option value = "{{$aula->id}}" @if ($modoEdicion && $aula->id == $horario->aula_id) selected @endif>{{ \App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($aula) }}</option>
                     @endforeach
                     
                     </select>
@@ -153,7 +153,7 @@
                     <input type="text" 
                         name="search_query" 
                         id="search-input" 
-                        class="form-control me-2" 
+                        class="form-control" 
                         placeholder="Buscar por..."
                         value="{{ request('search_query') }}"
                         autocomplete="off" {{-- Recomendado para búsquedas en tiempo real --}}>
@@ -201,7 +201,7 @@
                                                 <path d="M22.3364 0.648281C21.2991 -0.216094 19.6225 -0.216094 18.5852 0.648281L17.1596 1.83235L21.7964 5.69638L23.2221 4.50836C24.2593 3.64399 24.2593 2.24678 23.2221 1.38241L22.3364 0.648281ZM8.16538 9.33149C7.87646 9.57225 7.65386 9.86827 7.52598 10.1959L6.12403 13.7007C5.98668 14.0402 6.09561 14.4151 6.39874 14.6717C6.70186 14.9282 7.15181 15.015 7.56387 14.9006L11.7697 13.7323C12.1581 13.6257 12.5133 13.4402 12.8069 13.1995L20.7308 6.59233L16.0892 2.72436L8.16538 9.33149ZM4.54685 2.31783C2.03661 2.31783 0 4.015 0 6.10686V16.211C0 18.3028 2.03661 20 4.54685 20H16.6718C19.182 20 21.2186 18.3028 21.2186 16.211V12.4219C21.2186 11.7233 20.5413 11.1589 19.703 11.1589C18.8647 11.1589 18.1874 11.7233 18.1874 12.4219V16.211C18.1874 16.9096 17.5101 17.474 16.6718 17.474H4.54685C3.70852 17.474 3.03123 16.9096 3.03123 16.211V6.10686C3.03123 5.40826 3.70852 4.84385 4.54685 4.84385H9.09369C9.93202 4.84385 10.6093 4.27944 10.6093 3.58084C10.6093 2.88223 9.93202 2.31783 9.09369 2.31783H4.54685Z" fill="black"/>
                                             </svg>
                                         </a>
-                                        <form action="{{ route('control.schedules.destroy', $horario->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar este horario? Esta acción es irreversible.');">
+                                        <form action="{{ route('control.schedules.destroy', $horario->id) }}" method="POST" class="js-horario-delete-form" style="display:inline;">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-delete" title="Eliminar">
