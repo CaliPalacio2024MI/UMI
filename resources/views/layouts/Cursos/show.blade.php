@@ -34,7 +34,7 @@
 <aside class="course-menu">
     <h3>📚 {{ $course->title }}</h3>
 
-    @php
+        @php
         // Obtener topics y actividades independientes
         $independentActivities = \App\Models\Cursos\Activities::where('course_id', $course->id)
             ->whereNull('topic_id')
@@ -52,7 +52,7 @@
         }
         $allItems = $allItems->sortBy('order')->values();
 
-        // ✅ Contador para numerar SOLO los temas
+        // Contador para numerar SOLO los temas
         $topicNumber = 0;
     @endphp
 
@@ -98,58 +98,98 @@
 {{-- LIBRERÍA QR --}}
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-{{-- SCRIPT --}}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
     let html5QrCode = null;
     const qrModal = document.getElementById('qrModal');
+    const readerId = "reader";
 
     if (!qrModal) return;
 
-    qrModal.addEventListener('shown.bs.modal', () => {
+    // CUANDO SE ABRE EL MODAL
+    qrModal.addEventListener('shown.bs.modal', async () => {
 
-        html5QrCode = new Html5Qrcode("reader");
+        const reader = document.getElementById(readerId);
 
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
+        // Limpiar contenedor por si quedó algo
+        reader.innerHTML = "";
 
-            (decodedText) => {
-                alert("QR detectado: " + decodedText);
-                cerrarQR();
-            },
-            (errorMessage) => {}
-        );
+        html5QrCode = new Html5Qrcode(readerId);
+
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            console.log("Cámaras detectadas:", cameras);
+
+            if (!cameras || cameras.length === 0) {
+                alert(" No se detectó ninguna cámara");
+                return;
+            }
+
+            // Elegir cámara (trasera si existe)
+            const cameraId = cameras[cameras.length - 1].id;
+
+            await html5QrCode.start(
+                cameraId,
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }, //  CUADRO DE ESCANEO
+                    aspectRatio: 1.0
+                },
+                (decodedText) => {
+                    console.log("QR detectado:", decodedText);
+                    alert("QR detectado: " + decodedText);
+                    cerrarQR();
+                },
+                (errorMessage) => {
+                    // errores de escaneo (se ignoran)
+                }
+            );
+
+        } catch (error) {
+            console.error("Error al iniciar cámara:", error);
+            alert(" Error al acceder a la cámara. Revisa permisos.");
+        }
+
     });
 
-    function cerrarQR() {
+    //  FUNCIÓN PARA CERRAR
+    async function cerrarQR() {
         if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                html5QrCode.clear();
-            });
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+                html5QrCode = null;
+            } catch (e) {
+                console.warn("Error al cerrar cámara:", e);
+            }
         }
 
         const modal = bootstrap.Modal.getInstance(qrModal);
         if (modal) modal.hide();
     }
 
-    const btnCerrar = document.getElementById('btnCerrarQR');
-    if (btnCerrar) {
-        btnCerrar.addEventListener('click', cerrarQR);
-    }
+    //  BOTÓN CANCELAR / SALIR
+    document.addEventListener("click", function(e) {
+        if (e.target.closest("[data-bs-dismiss='modal']")) {
+            cerrarQR();
+        }
+    });
 
-    qrModal.addEventListener('hidden.bs.modal', () => {
+    // CUANDO SE CIERRA EL MODAL
+    qrModal.addEventListener('hidden.bs.modal', async () => {
         if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                html5QrCode.clear();
-            });
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+                html5QrCode = null;
+            } catch (e) {}
         }
     });
 
 });
 </script>
-    {{-- ===== VIEWER ===== --}}
+{{-- ===== VIEWER ===== --}}
     <main class="course-viewer">
 
         {{-- CONTROLS --}}
@@ -157,18 +197,153 @@ document.addEventListener("DOMContentLoaded", function () {
             <button id="btnPrev">⏮ Anterior</button>
             <button id="btnAutoplay">▶️ Autoplay</button>
             <button id="btnNext">⏭ Siguiente</button>
-            <button class="exit" onclick="window.history.back()">Salir</button>
-        </div>
-                {{--  CENTRO (QR) --}}
+            <div style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+
         @if(in_array($course->modality, ['presencial','hibrida']))
-        <div style="flex:1; display:flex; justify-content:center;">
-            <button class="btn-qr" data-bs-toggle="modal" data-bs-target="#qrModal">
-                <i class="fa-solid fa-qrcode"></i> Escanear QR
-            </button>
-        </div>
+        <button class="btn-qr" data-bs-toggle="modal" data-bs-target="#qrModal">
+            <i class="fa-solid fa-qrcode"></i> Escanear QR
+        </button>
         @endif
 
+        </div>
+            <button class="exit" onclick="window.history.back()">Salir</button>
+        </div>
+
     </div>
+
+
+    <!-- MODAL LISTAS -->
+    <div class="modal fade" id="listasModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Listas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="groups-container">
+
+                    <!-- DEPARTAMENTOS -->
+                    <div class="group-card">
+                        <h4>Departamentos</h4>
+                        <div class="grid">
+                            @foreach($departments as $department)
+                                <div class="card dept-card-modal" data-id="{{ $department->id }}">
+                                    {{ $department->name }}
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- PUESTOS -->
+                    <div class="group-card">
+                        <h4>Puestos</h4>
+                        <div id="workstations-modal" class="grid">
+                            <div class="empty">Selecciona un departamento</div>
+                        </div>
+                    </div>
+
+                    <!-- PARTICIPANTES -->
+                    <div class="group-card">
+                        <h4>Participantes</h4>
+                        <div id="participants-modal" class="grid">
+                            <div class="empty">Selecciona un puesto</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script> //JS listas
+document.addEventListener("DOMContentLoaded", function () {
+
+    const departments = @json($departments);
+
+    // CLICK EN DEPARTAMENTO
+    document.querySelectorAll('.dept-card-modal').forEach(card => {
+        card.addEventListener('click', function () {
+
+            let deptId = this.dataset.id;
+
+            // Activar selección
+            document.querySelectorAll('.dept-card-modal')
+                .forEach(c => c.classList.remove('active-card'));
+
+            this.classList.add('active-card');
+
+            let dept = departments.find(d => d.id == deptId);
+
+            let html = '';
+
+            if (!dept || !dept.workstations || dept.workstations.length === 0) {
+                html = `<div class="empty">No hay puestos</div>`;
+            } else {
+                dept.workstations.forEach(w => {
+                    html += `
+                        <div class="card work-card-modal" data-id="${w.id}">
+                            ${w.name}
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('workstations-modal').innerHTML = html;
+
+            // Reset participantes
+            document.getElementById('participants-modal').innerHTML =
+                `<div class="empty">Selecciona un puesto</div>`;
+
+            attachWorkEvents(dept);
+        });
+    });
+
+    // EVENTOS DE PUESTOS
+    function attachWorkEvents(dept) {
+
+        document.querySelectorAll('.work-card-modal').forEach(card => {
+            card.addEventListener('click', function () {
+
+                let workId = this.dataset.id;
+
+                document.querySelectorAll('.work-card-modal')
+                    .forEach(c => c.classList.remove('active-card'));
+
+                this.classList.add('active-card');
+
+                let workstation = dept.workstations.find(w => w.id == workId);
+
+                let html = '';
+
+                if (!workstation || !workstation.participants || workstation.participants.length === 0) {
+                    html = `<div class="empty">No hay participantes</div>`;
+                } else {
+
+                    html += `<strong>${dept.name} - ${workstation.name}</strong>`;
+
+                    workstation.participants.forEach(p => {
+                        html += `
+                            <div class="card">
+                                ${p.name}
+                            </div>
+                        `;
+                    });
+                }
+
+                document.getElementById('participants-modal').innerHTML = html;
+            });
+        });
+    }
+
+});
+</script>
 
 {{-- ===== MODAL FUERA ===== --}}
 @if(in_array($course->modality, ['presencial','hibrida']))
@@ -182,12 +357,14 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
 
             <div class="modal-body text-center">
-                <div id="reader" style="width:100%;"></div>
+
+                <div id="reader"></div>
+
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-danger" id="btnCerrarQR">
-                    Salir
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
                 </button>
             </div>
 
@@ -202,9 +379,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         @foreach ($course->topics as $topic)
             <section class="content-panel" id="content-topic-{{ $topic->id }}"
-                     data-show-turtle="{{ $topic->show_turtle ? '1' : '0' }}"
-                     data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}"
-                     @if($topic->video_segments) data-video-segments='@json($topic->video_segments)' @endif>
+                    data-show-turtle="{{ $topic->show_turtle ? '1' : '0' }}"
+                    data-turtle-voice="{{ $topic->turtle_voice ?? '0' }}"
+                    @if($topic->video_segments) data-video-segments='@json($topic->video_segments)' @endif>
                 @if($topic->show_title)
                     <h2>{{ $topic->title }}</h2>
                 @endif

@@ -198,6 +198,7 @@ class CourseController extends Controller
         $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
 
         $user = Auth::user();
+        $departments = Department::with('workstations')->get();
 
         // 2. Calcular Total de Items (CRUCIAL para el JS)
         $totalItems = 0;
@@ -256,6 +257,7 @@ class CourseController extends Controller
 
         // 5. Retornar vista con TODAS las variables
         return view('layouts.Cursos.show', compact(
+            'departments',
             'course',
             'progress',
             'totalItems',

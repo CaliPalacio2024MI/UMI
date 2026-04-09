@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Cursos\Course;
 use App\Models\Cursos\CourseSession;
+use App\Models\Users\Department;
+use Carbon\Carbon;
+use App\Models\Group;
 
 class CourseSessionController extends Controller
 {
@@ -15,58 +18,91 @@ class CourseSessionController extends Controller
             abort(403, 'Este curso no permite gestión de horarios');
         }
 
+        // sesiones
         $sessions = $course->sessions()->orderBy('date')->get();
+        // departamentos
+        $departments = Department::where('institution_id', session('active_institution_id'))->get();
+        // GRUPOS DEL CURSO
+        $groups = $course->groups;
 
-        return view('layouts.Cursos.sessions.index', compact('course', 'sessions'));
+        return view('layouts.Cursos.sessions.index', compact(
+            'course',
+            'sessions',
+            'departments',
+            'groups'
+        ));
     }
-   public function destroy($courseId, $sessionId)
+    public function assignGroup(Request $request)
     {
-    $session = CourseSession::where('course_id', $courseId)
-        ->where('id', $sessionId)
-        ->firstOrFail();
+        $session = CourseSession::findOrFail($request->session_id);
+        $session->groups()->syncWithoutDetaching([$request->group_id]);
 
-    $session->delete();
-
-    return redirect()->back()->with('success', 'Horario eliminado correctamente');
+        return back()->with(
+        'success',
+        'Grupo asignado'
+        );
     }
 
-public function toggle(Course $course, CourseSession $session)
-{
-    // Cambiar estado del horario
-    $session->attendance_enabled = !$session->attendance_enabled;
-    $session->save();
+    public function destroy($courseId, $sessionId)
+    {
+        $session = CourseSession::where('course_id', $courseId)
+            ->where('id', $sessionId)
+            ->firstOrFail();
 
-    // Revisar si hay horarios activos
-    $activeSessions = $course->sessions()
-        ->where('attendance_enabled', true)
-        ->count();
+        $session->delete();
 
-    if ($activeSessions == 0) {
-        $course->active = false;
-    } else {
-        $course->active = true;
+        return back()->with('success', 'Horario eliminado correctamente');
     }
 
-    $course->save();
+    public function toggle(Course $course, CourseSession $session)
+    {
+        $session->attendance_enabled = !$session->attendance_enabled;
+        $session->save();
 
-    return redirect()->back()->with('success', 'Estado del horario actualizado');
-}
+        $activeSessions = $course->sessions()
+            ->where('attendance_enabled', true)
+            ->count();
+
+        $course->active = $activeSessions > 0;
+        $course->save();
+
+        return back()->with('success', 'Estado del horario actualizado');
+    }
+
     public function update(Request $request, Course $course, CourseSession $session)
     {
         if ($session->course_id !== $course->id) {
-           abort(404);
+            abort(404);
         }
 
         $request->validate([
-           'date' => 'required|date',
-           'start_time' => 'required',
-           'end_time' => 'required',
+            'date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'required',
         ]);
 
+        $start = Carbon::parse($request->start_time);
+        $end = Carbon::parse($request->end_time);
+
+        if ($end <= $start) {
+            return back()->withErrors([
+                'error' => 'La hora fin debe ser mayor a la hora inicio'
+            ]);
+        }
+
+        // VALIDACIÓN EXACTA
+        $expectedEnd = $start->copy()->addHours($course->hours);
+
+        if (!$end->equalTo($expectedEnd)) {
+            return back()->withErrors([
+                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
+            ]);
+        }
+
         $session->update([
-           'date' => $request->date,
-           'start_time' => $request->start_time,
-           'end_time' => $request->end_time,
+            'date' => $request->date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
         ]);
 
         return back()->with('success', 'Horario actualizado correctamente');
@@ -80,18 +116,32 @@ public function toggle(Course $course, CourseSession $session)
             'end_time' => 'required',
         ]);
 
+        $start = Carbon::parse($request->start_time);
+        $end = Carbon::parse($request->end_time);
+
+        if ($end <= $start) {
+            return back()->withErrors([
+                'error' => 'La hora fin debe ser mayor a la hora inicio'
+            ]);
+        }
+
+        // VALIDACIÓN EXACTA
+        $expectedEnd = $start->copy()->addHours($course->hours);
+
+        if (!$end->equalTo($expectedEnd)) {
+            return back()->withErrors([
+                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
+            ]);
+        }
+
         CourseSession::create([
             'course_id' => $course->id,
             'date' => $request->date,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
             'attendance_enabled' => false,
-            'qr_token' => null,
         ]);
 
-        return redirect()
-            ->route('courses.sessions.index', $course->id)
-            ->with('success', 'Horario creado correctamente');
+        return back()->with('success', 'Horario creado correctamente');
     }
-
 }

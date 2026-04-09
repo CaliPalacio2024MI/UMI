@@ -2,362 +2,307 @@
 
 @section('title', 'Horarios - ' . $course->title)
 
+@vite(['resources/css/Cursos/horarios.css'])
+
 @section('content')
 
-<div class="container">
+<div class="container-fluid horarios-view">
 
-    <h1>Horarios del curso: {{ $course->title }}</h1>
+    {{-- ENCABEZADO --}}
+    <div style="margin-bottom: 25px;">
+        <h1 style="font-size: 28px; font-weight: 800; color: #1e293b;">
+            Horarios: {{ $course->title }}
+        </h1>
+        <p style="color: #64748b;">
+            Gestión de sesiones y control de asistencia
+        </p>
 
-    {{-- MENSAJES --}}
-    @if(session('success'))
-        <div class="alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert-error">
-            {{ session('error') }}
-        </div>
-    @endif
-
-
-<div class="horarios-layout">
-
-
-{{-- IZQUIERDA: TABLA DE HORARIOS --}}
-<div class="horarios-tabla">
-
-    <div class="card mt-4">
-        <h3>Horarios registrados</h3>
-
-        @if($sessions->isEmpty())
-            <p>No hay horarios registrados.</p>
-        @else
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Inicio</th>
-                        <th>Fin</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                @foreach($sessions as $session)
-
-                <tr style="{{ !$session->attendance_enabled ? 'background:#f2f2f2;' : '' }}">
-                    <td>{{ $session->date }}</td>
-                    <td>{{ $session->start_time }}</td>
-                    <td>{{ $session->end_time }}</td>
-
-                    <td style="display:flex; gap:10px; justify-content:center;">
-
-
-                        {{-- TOGGLE --}}
-                        <form action="{{ route('courses.sessions.toggle', [$course, $session]) }}"
-                              method="POST">
-                            @csrf
-                            @method('PATCH')
-
-                            <button type="submit"
-                                    style="border:none; background:none; cursor:pointer;">
-                                @if($session->attendance_enabled)
-                                    <i class="fa-solid fa-toggle-on"
-                                       style="color:green; font-size:20px;"></i>
-                                @else
-                                    <i class="fa-solid fa-toggle-off"
-                                       style="color:gray; font-size:20px;"></i>
-                                @endif
-                            </button>
-                        </form>
-
-                        {{-- EDITAR --}}
-                        @if($session->attendance_enabled)
-                            <button type="button"
-                                onclick="document.getElementById('edit-{{ $session->id }}').style.display='table-row';"
-                                style="border:none; background:none; cursor:pointer;">
-                                <i class="fa-regular fa-pen-to-square"
-                                   style="color:#2980b9; font-size:18px;"></i>
-                            </button>
-                        @else
-                            <i class="fa-regular fa-pen-to-square"
-                               style="color:#bdc3c7; font-size:18px;"></i>
-                        @endif
-
-                        {{-- ELIMINAR --}}
-                        @if($session->attendance_enabled)
-                            <form action="{{ route('courses.sessions.destroy', [$course, $session]) }}"
-                                  method="POST">
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="submit"
-                                    onclick="return confirm('¿Seguro que quieres eliminar este horario?')"
-                                    class="btn-delete">
-                                    <i class="fa-solid fa-delete-left"></i>
-                                </button>
-                            </form>
-                        @else
-                            <i class="fa-solid fa-delete-left"
-                               style="color:#bdc3c7;"></i>
-                        @endif
-                    </td>
-                </tr>
-
-                {{-- FILA EDITABLE --}}
-                @if($session->attendance_enabled)
-                <tr id="edit-{{ $session->id }}"
-                    style="display:none; background:#eef2f7;">
-                    <td colspan="4">
-
-                        <form action="{{ route('courses.sessions.update', [$course, $session]) }}"
-                              method="POST"
-                              style="display:flex; gap:10px; align-items:center; justify-content:center;">
-                            @csrf
-                            @method('PUT')
-
-                            <input type="date"
-                                   name="date"
-                                   value="{{ $session->date }}"
-                                   required>
-
-                            <input type="time"
-                                   name="start_time"
-                                   value="{{ $session->start_time }}"
-                                   required>
-
-                            <input type="time"
-                                   name="end_time"
-                                   value="{{ $session->end_time }}"
-                                   required>
-
-                            <button type="submit" class="btn-create">
-                                Guardar
-                            </button>
-
-                            <button type="button"
-                                class="btn-cancel"
-                                onclick="document.getElementById('edit-{{ $session->id }}').style.display='none';">
-                                Cancelar
-                            </button>
-
-                        </form>
-
-                    </td>
-                </tr>
-                @endif
-
-                @endforeach
-                </tbody>
-            </table>
-        @endif
-    </div>
-
-</div>
-
-
-
-{{-- DERECHA: FORMULARIO --}}
-<div class="horarios-form">
-
-    <div class="card">
-        <h3>Agregar nuevo horario</h3>
-
-        <form action="{{ route('courses.sessions.store', $course) }}" method="POST">
-            @csrf
-
-            <div>
-                <label>Fecha</label>
-                <input type="date" name="date" required>
-            </div>
-
-            <div>
-                <label>Hora inicio</label>
-                <input type="time" name="start_time" required>
-            </div>
-
-            <div>
-                <label>Hora fin</label>
-                <input type="time" name="end_time" required>
-            </div>
-
-            <button type="submit" class="btn-create">
-                Agregar Horario
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#crearGrupoModal">
+                <i class="fa-solid fa-plus"></i> Crear Grupo
             </button>
-        </form>
+
+            <a href="{{ route('groups.index') }}" class="btn btn-primary">
+                <i class="fa-solid fa-users"></i> Grupos
+            </a>
+        </div>
     </div>
 
+    {{-- ALERTA --}}
+    @if(session('success'))
+        <div style="padding: 15px; background-color: #dcfce7; color: #166534; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #22c55e;">
+            <i class="fas fa-check-circle"></i> {{ session('success') }}
+        </div>
+    @endif
+    @if($errors->any())
+    <div style="padding: 15px; background-color: #fee2e2; color: #991b1b; border-radius: 8px; margin-bottom: 15px;">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ $errors->first('error') }}
+    </div>
+    @endif
+
+    {{-- LAYOUT PRINCIPAL --}}
+    <div class="horarios-layout">
+
+        {{-- ================= TABLA ================= --}}
+        <div class="horarios-tabla-section">
+
+            <div class="card-custom">
+
+                <div class="card-header-custom">
+                    <i class="fas fa-list-ul"></i>
+                    <strong>Sesiones Registradas</strong>
+                </div>
+
+
+                <div class="table-responsive">
+                    <table class="table-custom-sessions">
+
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Inicio</th>
+                                <th>Fin</th>
+                                <th class="text-center">Asist.</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach($sessions as $session)
+
+                                <tr>
+                                    <td>{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}</td>
+
+                                    <td class="text-center">
+                                        <i class="fas {{ $session->attendance_enabled ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted' }}"></i>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <button onclick="toggleEditRow(event, '{{ $session->id }}')" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <i class="fas fa-trash-alt text-danger"></i>
+                                    </td>
+                                </tr>
+
+                                {{-- EDIT --}}
+                                <tr id="edit-row-{{ $session->id }}" style="display:none;" class="edit-row-active">
+                                    <td colspan="5">
+                                        <form action="{{ route('courses.sessions.update', [$course, $session]) }}" method="POST" style="display:flex; gap:10px;">
+                                            @csrf
+                                            @method('PUT')
+
+                                            <input type="date" name="date" class="form-control-custom" value="{{ $session->date }}">
+                                            <input type="time" name="start_time" class="form-control-custom" value="{{ $session->start_time }}">
+                                            <input type="time" name="end_time" class="form-control-custom" value="{{ $session->end_time }}">
+
+                                            <button class="btn btn-primary btn-sm">OK</button>
+                                        </form>
+                                    </td>
+                                </tr>
+
+                            @endforeach
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        {{-- ================= FORMULARIO ================= --}}
+
+        <div class="horarios-form-section">
+
+            <div class="card-custom">
+
+                {{-- HEADER --}}
+                <div class="header-accent-blue">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Nuevo Horario</span>
+                </div>
+
+                {{-- BODY --}}
+                <div style="padding:20px;">
+
+                    <form action="{{ route('courses.sessions.store', $course) }}" method="POST">
+                        @csrf
+
+                        <div class="form-group-custom">
+                            <label class="label-custom">Fecha de la sesión</label>
+                            <input type="date" name="date" class="form-control-custom" required>
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+    <div class="form-group-custom" style="flex:1;">
+        <label class="label-custom">Hora inicio</label>
+        <input type="time" name="start_time" id="start_time" class="form-control-custom" required>
+    </div>
+
+    <div class="form-group-custom" style="flex:1;">
+        <label class="label-custom">Hora fin</label>
+        <input type="time" name="end_time" id="end_time" class="form-control-custom" required readonly>
+    </div>
 </div>
 
+                        <button type="submit" class="btn-primary-custom">
+                            <i class="fas fa-save"></i>
+                            Registrar Horario
+                        </button>
 
-<style>
-.horarios-layout{
-    display:flex;
-    gap:30px;
-    margin-top:20px;
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="crearGrupoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+
+            {{-- HEADER --}}
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Grupo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            {{-- BODY --}}
+            <div class="modal-body">
+
+                <form action="{{ route('groups.store') }}" method="POST">
+                    @csrf
+
+                    {{-- DEPARTAMENTOS --}}
+                    <div class="mb-3">
+                        <label class="form-label">Departamentos</label>
+                        <select id="departments" name="departments[]" class="form-control" multiple required>
+                            @foreach($departments as $d)
+                                <option value="{{ $d->id }}">{{ $d->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- PUESTOS (DINÁMICOS) --}}
+                    <div class="mb-3">
+                        <label class="form-label">Puestos</label>
+                        <select id="workstations" name="workstations[]" class="form-control" multiple required>
+                            <option disabled>Selecciona un departamento primero</option>
+                        </select>
+                    </div>
+
+                    {{-- TIPO DE GRUPO --}}
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de grupo</label>
+                        <select name="type" class="form-control" required>
+                            <option value="abierto">Abierto</option>
+                            <option value="cerrado">Cerrado</option>
+                        </select>
+                    </div>
+
+                    {{-- PARTICIPANTES --}}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Mínimo participantes</label>
+                            <input type="number" name="min_participants" class="form-control" min="1" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Máximo participantes</label>
+                            <input type="number" name="max_participants" class="form-control" min="1" required>
+                        </div>
+                    </div>
+
+                    {{-- BOTÓN --}}
+                    <button type="submit" class="btn btn-primary w-100 mt-3">
+                        Guardar
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleEditRow(e, id) {
+    e.preventDefault();
+    const row = document.getElementById('edit-row-' + id);
+    row.style.display = (row.style.display === 'none') ? 'table-row' : 'none';
 }
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-/* TARJETAS */
-.card{
-    background:#fff;
-    border-radius:12px;
-    padding:20px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.08);
-}
+    const departmentsSelect = document.getElementById("departments");
+    const workstationsSelect = document.getElementById("workstations");
 
-/* TABLA */
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:15px;
-}
+    departmentsSelect.addEventListener("change", function () {
 
-thead{
-    background:#2c4a7a;
-    color:#fff;
-}
+        const selected = Array.from(this.selectedOptions).map(o => o.value);
 
-th{
-    padding:12px;
-    font-size:14px;
-    letter-spacing:1px;
-}
+        fetch(`/api/workstations-by-departments`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ departments: selected })
+        })
+        .then(res => res.json())
+        .then(data => {
 
-td{
-    padding:12px;
-    text-align:center;
-    border-bottom:1px solid #eee;
-}
+            workstationsSelect.innerHTML = "";
 
-/* FILAS */
-tbody tr:hover{
-    background:#f8f9fc;
-    transition:0.2s;
-}
+            data.forEach(w => {
+                const option = document.createElement("option");
+                option.value = w.id;
+                option.textContent = w.name;
+                workstationsSelect.appendChild(option);
+            });
 
-/* ACCIONES */
-td:last-child{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:12px;
-}
+        });
 
-/* BOTONES ICONOS */
-td button{
-    border:none;
-    background:none;
-    cursor:pointer;
-}
+    });
 
-/* ICONOS */
-.fa-toggle-on{ color:#27ae60; }
-.fa-toggle-off{ color:#95a5a6; }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-.fa-pen-to-square{
-    color:#2980b9;
-    transition:0.2s;
-}
+    const startInput = document.getElementById('start_time');
+    const endInput = document.getElementById('end_time');
 
-.fa-pen-to-square:hover{
-    transform:scale(1.2);
-}
+    if (!startInput) return;
 
-.btn-delete i{
-    color:#e74c3c;
-    transition:0.2s;
-}
+    startInput.addEventListener('change', function () {
 
-.btn-delete:hover i{
-    transform:scale(1.2);
-}
+        let hours = {{ $course->hours }};
+        let start = this.value;
 
-/* FORMULARIO */
-.horarios-form{
-    flex:1;
-}
+        if (!start) return;
 
-.horarios-form form{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-}
+        let [h, m] = start.split(':');
 
-.horarios-form label{
-    font-weight:600;
-    font-size:14px;
-}
+        let date = new Date();
+        date.setHours(parseInt(h));
+        date.setMinutes(parseInt(m));
 
-.horarios-form input{
-    width:100%;
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #ccc;
-    outline:none;
-    transition:0.2s;
-}
+        date.setHours(date.getHours() + hours);
 
-.horarios-form input:focus{
-    border-color:#2c4a7a;
-    box-shadow:0 0 0 2px rgba(44,74,122,0.2);
-}
+        let endH = String(date.getHours()).padStart(2, '0');
+        let endM = String(date.getMinutes()).padStart(2, '0');
 
-/* BOTON PRINCIPAL */
-.btn-create{
-    background:#2c4a7a;
-    color:#fff;
-    border:none;
-    padding:12px;
-    border-radius:10px;
-    font-weight:bold;
-    cursor:pointer;
-    transition:0.2s;
-}
-
-.btn-create:hover{
-    background:#1f3560;
-    transform:scale(1.03);
-}
-
-/* BOTON CANCELAR */
-.btn-cancel {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.btn-cancel:hover {
-    background-color: #c0392b;
-}
-
-/* ALERTAS */
-.alert-success {
-    background-color: #d4edda;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
-
-.alert-error {
-    background-color: #f8d7da;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
-
-/* RESPONSIVE */
-@media (max-width: 900px){
-    .horarios-layout{
-        flex-direction:column;
-    }
-}
-
-</style>
-
+        endInput.value = `${endH}:${endM}`;
+    });
+});
+</script>
 @endsection
