@@ -4,7 +4,7 @@
 
 
 @section('content')
-@vite(['resources/css/Cursos/createCourses.css']) 
+@vite(['resources/css/Cursos/createCourses.css'])
 
 <div class="create-course-container">
     <h1 class="page-title">Crear Nuevo Curso</h1>
@@ -21,10 +21,8 @@
     @endif
 
     <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
-    @csrf
-<input type="hidden" name="institution_id" value="{{ $currentInstitution->id }}">
-
-
+        @csrf
+        <input type="hidden" name="institution_id" value="{{ $currentInstitution->id }}">
 
         {{-- Título --}}
         <div class="form-group">
@@ -38,60 +36,53 @@
             <textarea id="description" name="description" rows="4" required>{{ old('description') }}</textarea>
         </div>
 
-        {{-- Campos especiales para Universidad Mundo Imperial --}}
-        @if ($currentInstitution->name == 'Universidad Mundo Imperial')
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label for="hours">Horas</label>
-                    <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
-                </div>
+        {{-- Modalidad--}}
+        <div class="form-group">
+            <label for="modality">Modalidad</label>
+            <select id="modality" name="modality" required>
+                <option value="" disabled selected>Selecciona la modalidad</option>
+                <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
+                <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
+                <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
+            </select>
+        </div>
 
-                <div class="form-group flex-1">
-                    <label for="credits">Créditos</label>
-                    <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
-                </div>
-            </div>
+      {{-- Campos especiales para Universidad Mundo Imperial --}}
+    @if ($currentInstitution->name == 'Universidad Mundo Imperial')
 
-            <div class="form-group">
-                <label for="career_id">Carrera</label>
-                <select name="career_id" id="career_id" required>
-                    <option value="" disabled selected>Selecciona la Carrera</option>
-                    @foreach($currentInstitution->careers as $career)
-                        <option value="{{ $career->id }}" {{ old('career_id') == $career->id ? 'selected' : '' }}>
-                            {{ $career->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+    <div class="form-row">
+        <div class="form-group flex-1">
+            <label for="hours">Horas</label>
+            <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
+        </div>
 
-        @else
-            <div class="form-group">
-                <label for="hours">Horas</label>
-                <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
-            </div>
+        <div class="form-group flex-1">
+            <label for="credits">Créditos</label>
+            <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
+        </div>
+    </div>
 
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label for="department_id">Dirigido a Departamento</label>
-                    <select name="department_id" id="department_id" required>
-                        <option value="" disabled selected>Selecciona el Departamento</option>
-                        @foreach($currentInstitution->departments as $department)
-                            <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
-                                {{ $department->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+    <div class="form-group">
+        <label for="career_id">Carrera</label>
+        <select name="career_id" id="career_id" required>
+            <option value="" disabled selected>Selecciona la Carrera</option>
+            @foreach($currentInstitution->careers as $career)
+                <option value="{{ $career->id }}" {{ old('career_id') == $career->id ? 'selected' : '' }}>
+                    {{ $career->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-                <div class="form-group flex-1">
-                    <label for="workstation_id">Dirigido al Puesto</label>
-                    <select name="workstation_id" id="workstation_id" disabled>
-                        <option value="" selected>Primero selecciona un departamento</option>
-                        <option value="">Todos los Puestos del Departamento</option>
-                    </select>
-                </div>
-            </div>
-        @endif
+@else
+
+    {{-- SOLO HORAS --}}
+    <div class="form-group">
+        <label for="hours">Horas</label>
+        <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
+    </div>
+
+@endif
 
         <div class="form-row">
             <div class="form-group" >
@@ -130,15 +121,26 @@
             </div>
         </div>
 
-<div class="form-group">
-    <label>Archivo del Tema (Video, PDF, PPT)</label>
-    <input 
-        type="file" 
-        name="file_path" 
-        accept="video/*,.pdf,.doc,.docx,.ppt,.pptx"
-    >
-</div>
+        {{--Seleccion de Temas--}}
+        <div class="form-group m-3">
+            <label for="template_topics">Temas desde biblioteca</label>
 
+            <select name="template_topics[]" id="template_topics" class="form-control" multiple>
+
+                @if(isset($templates))
+    @foreach($templates as $template)
+        <option value="{{ $template->id }}">
+            {{ $template->title }}
+        </option>
+    @endforeach
+@endif
+
+            </select>
+
+            <small class="text-muted">
+                Puedes seleccionar varios manteniendo presionada la tecla CTRL.
+            </small>
+        </div>
 
         <button type="submit" class="btn-submit">
             Guardar Curso
@@ -193,7 +195,7 @@
     }
 
     /* ============================
-       4. Inicializador 
+       4. Inicializador
     ============================ */
     if (departmentSelect) {
 

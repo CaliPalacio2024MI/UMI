@@ -20,6 +20,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use App\Models\SubtopicTemplate;
 use App\Models\Cursos\Subtopic;;
+use App\Models\Schedule; 
 
 class CourseController extends Controller
 {
@@ -63,12 +64,15 @@ class CourseController extends Controller
         }
 
          // Traer todos los horarios registrados
+     // Traer todos los horarios registrados
     $schedules = Schedule::all();
+
 
     // Enviar también $schedules a la vista
     return view('layouts.Cursos.create', compact(
         'currentInstitution',
         'departmentWorkstationsMap',
+        'department',
         'schedules'
      ));
     }
@@ -218,6 +222,7 @@ public function show(Course $course)
         'isEnrolled',
         'finalExamActivity',
         'finalExamData',
+        'department',
         'userCompletions'
     ));
 }
@@ -355,6 +360,9 @@ public function show(Course $course)
             }
         }
 
+        // ✅ AGREGAR ESTA LÍNEA
+        $course->show_welcome = $request->has('show_welcome');
+
         Log::info('Curso actualizado', ['course_id' => $course->id, 'user_id' => Auth::id()]);
 
         // Redirigir según la acción solicitada
@@ -363,8 +371,7 @@ public function show(Course $course)
                 ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
         }
 
-        // ✅ AGREGAR ESTA LÍNEA
-        $course->show_welcome = $request->has('show_welcome');
+        
 
         return redirect()->route('Cursos.index')
             ->with('success', 'Curso actualizado exitosamente.');

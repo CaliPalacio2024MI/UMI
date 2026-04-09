@@ -1211,3 +1211,200 @@ body {
         font-size: 20px;
     }
 }
+
+/* ===== BOTON QR ===== */
+.btn-qr {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+
+
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+
+    color: white;
+    font-weight: 500;
+    font-size: 14px;
+
+    transition: all 0.2s ease;
+}
+
+/* Hover */
+.btn-qr:hover {
+    background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+    transform: translateY(-1px);
+}
+
+/* Click */
+.btn-qr:active {
+    transform: scale(0.97);
+}
+
+/* Icono */
+.btn-qr i {
+    font-size: 16px;
+}
+
+/* ===== FIX DEFINITIVO MODALES ===== */
+
+/* Bootstrap default correcto */
+.modal {
+    z-index: 1055 !important;
+}
+
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
+/* Asegura interacción */
+.modal-dialog,
+.modal-content,
+.modal-body {
+    pointer-events: auto !important;
+}
+
+/* Evita que algo tape el modal */
+body.modal-open * {
+    pointer-events: none;
+}
+
+/* PERO permite interacción dentro del modal */
+body.modal-open .modal,
+body.modal-open .modal * {
+    pointer-events: auto !important;
+}
+/* DESACTIVA LA TORTUGA CUANDO HAY MODAL */
+body.modal-open .turtle-container {
+    display: none !important;
+}
+
+/* ===== CONTENEDOR GENERAL (FIX) ===== */
+#listasModal .groups-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    padding: 10px;
+    background: #f5f7fb;
+
+    position: relative;
+    z-index: 1;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    #listasModal .groups-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ===== CONTENEDORES DE BLOQUES (Similares al contenedor de la tabla) ===== */
+.group-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0; /* Quitamos padding para que el título luzca como cabecera */
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    overflow: hidden;
+    height: fit-content;
+}
+
+/* Título estilo Cabecera de Tabla */
+.group-card h4 {
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Icono sutil antes del texto del título (opcional si usas FontAwesome) */
+.group-card h4::before {
+    content: '≡';
+    color: #3b82f6;
+    font-size: 20px;
+}
+
+/* ===== CUERPO DE LA "TABLA" ===== */
+.grid {
+    display: flex;
+    flex-direction: column;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 10px; /* Espacio interno para que las "filas" no toquen el borde */
+}
+
+/* ===== FILAS (Antes eran Cards) ===== */
+.card {
+    display: grid;
+    grid-template-columns: 1fr auto; /* Texto a la izquierda, flecha o info a la derecha */
+    align-items: center;
+    padding: 12px 18px;
+    background: #ffffff;
+    border: none;
+    border-bottom: 1px solid #f1f5f9; /* Separador de fila */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 0; /* Sin redondeo para que parezcan filas de tabla */
+}
+
+/* Redondear solo la primera y última para estética */
+.card:first-child { border-radius: 8px 8px 0 0; }
+.card:last-child { border-radius: 0 0 8px 8px; border-bottom: none; }
+
+/* Hover estilo Tabla Horarios */
+.card:hover {
+    background: #f8fafc;
+    transform: none; /* Sin salto, más sobrio */
+}
+
+/* Estado Activo (Inspirado en tu imagen 2) */
+.active-card {
+    background: #f1f5f9 !important;
+    border-left: 4px solid #0d2b6f; /* Indicador lateral azul */
+}
+
+.active-card .card-title {
+    color: #0d2b6f !important;
+    font-weight: 700;
+}
+
+/* Textos internos */
+.card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.card-text {
+    font-size: 11px;
+    color: #94a3b8;
+    grid-column: 1; /* Debajo del título */
+}
+
+/* ===== ESTADO VACÍO ===== */
+.empty {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    padding: 40px 20px;
+}
+
+/* ===== SCROLL DISCRETO ===== */
+.grid::-webkit-scrollbar {
+    width: 4px;
+}
+
+.grid::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
