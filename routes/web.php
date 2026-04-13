@@ -41,7 +41,7 @@ use App\Http\Controllers\SubtopicTemplateController;
 use App\Http\Controllers\GroupsController;
 use App\Http\Controllers\Api\GroupDataController;
 use App\Http\Controllers\WorkstationController;
-use App\Http\Controllers\GroupController;
+use App\Http\Controllers\Group\GroupController;
 
 
 
@@ -148,11 +148,13 @@ Route::middleware(['auth'])->group(function () {
 
         // Grupos
         Route::post('/api/workstations-by-departments', [WorkstationController::class, 'byDepartments']);
-        Route::resource('groups', GroupsController::class);
         Route::post('/groups', [GroupsController::class, 'store'])->name('groups.store');
         Route::delete('/groups/{group}', [GroupsController::class, 'destroy'])->name('groups.destroy');
         Route::get('/groups/{group}/edit', [GroupsController::class, 'edit'])->name('groups.edit');
         Route::put('/groups/{group}', [GroupsController::class, 'update'])->name('groups.update');
+        Route::get('/session/{id}/participants', function ($id) {$group = \App\Models\Group::whereHas('sessions', function ($q) use ($id) {$q->where('course_session_id', $id);})->with('participants')->first();return response()->json($group ? $group->participants : []);});
+        Route::post('/groups/add-participants', [App\Http\Controllers\GroupsController::class, 'addParticipants'])->name('groups.addParticipants');
+        Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
 
         // Vista principal
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
@@ -162,6 +164,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/workstations/{id}/participants', [GroupDataController::class, 'participants']);
         Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
         Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
+        Route::get('/sessions/{id}/group-data', [CourseSessionController::class, 'getGroupData']);
 
     });
 // ===============================

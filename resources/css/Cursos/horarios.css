@@ -142,6 +142,37 @@
 .btn-primary-custom:hover {
     background: #1e3a5f;
 }
+/* BOTÓN ELIMINAR SESIÓN */
+.btn-delete-session {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* HOVER */
+.btn-delete-session:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* CLICK */
+.btn-delete-session:active {
+    transform: scale(0.95);
+}
+
+/* ÍCONO */
+.btn-delete-session i {
+    font-size: 14px;
+}
 
 /* 7. RESPONSIVO: Para tablets y celulares */
 @media (max-width: 1024px) {
@@ -158,9 +189,8 @@
     }
 }
 .modal-dialog {
-    max-width: 700px;
+    max-width: 96vw;
 }
-
 .modal-body {
     max-height: 70vh;
     overflow-y: auto;

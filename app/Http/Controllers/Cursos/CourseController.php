@@ -65,10 +65,8 @@ class CourseController extends Controller
             return [$department->id => $department->workstations->toArray()];
         });
     }
-
+    //Para traer los temas de biblioteca
     $templates = TopicTemplate::orderBy('title')->get();
-    // Pasamos solo la institución actual a la vista.
-    return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
 
     // Traer todos los horarios registrados
     $schedules = Schedule::all();
@@ -77,8 +75,9 @@ class CourseController extends Controller
     return view('layouts.Cursos.create', compact(
         'currentInstitution',
         'departmentWorkstationsMap',
+        'templates',
         'schedules'
-     ));
+    ));
     }
 
     /**
@@ -150,7 +149,7 @@ class CourseController extends Controller
         //Copiar plantillas de subtema
         if ($request->has('template_subtopics')) {
 
-            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+            $selectedTemplates = SubtopicTemplate::whereIn('id', $request->template_subtopics)->get();
 
             foreach ($selectedTemplates as $template){
                 Subtopic::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);

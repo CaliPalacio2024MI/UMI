@@ -144,7 +144,7 @@
             <label for="template_subtopics">Subtemas desde biblioteca</label>
 
             <select name="template_subtopics[]" id="template_subtopics" class="form-control" multiple>
-                @foreach($subtopicTemplates as $subtopics)
+                @foreach($subtopicstemplate as $subtopics)
                 <option value="{{ $subtopics->id }}">
                     {{ $subtopics->title }}
                 </option>

@@ -9,6 +9,9 @@ use App\Models\Cursos\CourseSession;
 use App\Models\Users\Department;
 use Carbon\Carbon;
 use App\Models\Group;
+use App\Models\Users\User;
+
+
 
 class CourseSessionController extends Controller
 {
@@ -24,12 +27,15 @@ class CourseSessionController extends Controller
         $departments = Department::where('institution_id', session('active_institution_id'))->get();
         // GRUPOS DEL CURSO
         $groups = $course->groups;
+        $users = User::where('institution_id', session('active_institution_id'))->get();
+
 
         return view('layouts.Cursos.sessions.index', compact(
             'course',
             'sessions',
             'departments',
-            'groups'
+            'groups',
+            'users'
         ));
     }
     public function assignGroup(Request $request)
@@ -143,5 +149,50 @@ class CourseSessionController extends Controller
         ]);
 
         return back()->with('success', 'Horario creado correctamente');
+    }
+
+    public function storeGroup(Request $request)
+    {
+        $session = CourseSession::find($request->session_id);
+
+        if (!$session) {
+            return response()->json(['error' => 'Session not found'], 404);
+        }
+
+        $group = $session->groups()->first();
+
+        if (!$group) {
+            $group = Group::create([
+                'type' => $request->type,
+                'min_participants' => $request->min_participants,
+                'max_participants' => $request->max_participants,
+                'institution_id' => session('active_institution_id'),
+            ]);
+
+            $group->sessions()->attach($session->id);
+        }
+
+        $group->departments()->sync($request->departments);
+        $group->workstations()->sync($request->workstations);
+
+        return back()->with('success', 'Grupo asignado correctamente al horario');
+    }
+    public function getGroupData($id)
+    {
+        $session = CourseSession::with([
+            'groups.departments',
+            'groups.workstations'
+        ])->find($id);
+
+        if (!$session || $session->groups->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $group = $session->groups->first();
+
+        return response()->json([
+            'departments' => $group->departments,
+            'workstations' => $group->workstations,
+        ]);
     }
 }

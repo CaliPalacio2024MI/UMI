@@ -13,6 +13,7 @@ use App\Models\Users\Workstation;
 use App\Models\Users\Department;
 use App\Models\Users\Career;
 use App\Models\Cursos\Course;
+use App\Models\Group;
 
 
 /**
@@ -118,6 +119,10 @@ class Course extends Model
     {
         return $this->belongsToMany(\App\Models\Schedule::class);
 
+    }
+    public function groups()
+    {
+        return $this->hasMany(Group::class);
     }
 
     /**
