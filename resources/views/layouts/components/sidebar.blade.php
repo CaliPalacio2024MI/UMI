@@ -19,14 +19,14 @@
 
         // --- 2. ROLES ---
         $isMaster       = $user->hasActiveRole('master');
-        $isControlAdmin = $user->hasActiveRole('control_administrativo'); 
-        
+        $isControlAdmin = $user->hasActiveRole('control_administrativo');
+
         // Agrupando "Control Administrativo" y "Gerente TH"
         $isControlGroup = $isControlAdmin || $user->hasActiveRole('gerente_th');
-        
+
         // Agrupando "Docente" y "Gerente Capacitación"
         $isDocenteGroup = $user->hasActiveRole('docente') || $user->hasActiveRole('gerente_capacitacion');
-        
+
         // Agrupando "Estudiante" y "Anfitrión"
         $isStudentGroup = $user->hasActiveRole('estudiante') || $user->hasActiveRole('anfitrion');
 
@@ -116,7 +116,7 @@
                         <li class="{{ request()->routeIs('MiInformacion.historial') ? 'active-submenu' : '' }}">
                             <a href="{{ route('MiInformacion.historial') }}">Historial Académico</a>
                         </li>
-                       
+
                         {{-- Opciones Extra (Boletas) --}}
                         @if($isDocenteGroup || $isStudentGroup)
                              <li class="{{ request()->routeIs('MiInformacion.boletas') ? 'active-submenu' : '' }}">
@@ -147,7 +147,7 @@
                     </span>
                     <span class="text">Cursos</span>
                 </a>
-                
+
                 {{-- Submenú --}}
                 <ul class="submenu">
                     {{-- Opción 1: Cursos Disponibles (Ruta original) --}}
@@ -155,9 +155,10 @@
                         <a href="{{ route('Cursos.index') }}">Cursos Disponibles</a>
                     </li>
 
+
                     {{-- Opción 2: Mis Certificados (Nueva Ruta) --}}
                     <li class="{{ request()->routeIs('courses.certificates.index') ? 'active-submenu' : '' }}">
-                        <a href="{{ route('courses.certificates.index') }}">Mis Certificados</a> 
+                        <a href="{{ route('courses.certificates.index') }}">Mis Certificados</a>
                     </li>
                     {{--Boton bilbioteca de temas--}}
                     <li>
@@ -187,7 +188,7 @@
                         </span>
                         <span class="text">Facturación</span>
                     </a>
-                    
+
                     <ul class="submenu">
                         <li class="{{ request()->routeIs('Facturacion.*') ? 'active-submenu' : '' }}">
                             <a href="{{ route('Facturacion.index') }}">Facturacion</a>
@@ -219,7 +220,7 @@
                         </span>
                         <span class="text">Control Administrativo</span>
                     </a>
-                    
+
                     <ul class="submenu">
                         {{-- Orden: Control Académico → Control Escolar → Planeación y Vinculación --}}
                         @if($canSeeAcademico)

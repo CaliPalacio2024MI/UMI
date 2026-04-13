@@ -7,15 +7,23 @@
 @section('content')
 
 <div class="container-fluid horarios-view">
-
     {{-- ENCABEZADO --}}
-    <div style="margin-bottom: 25px;">
-        <h1 style="font-size: 28px; font-weight: 800; color: #1e293b;">
-            Horarios: {{ $course->title }}
-        </h1>
-        <p style="color: #64748b;">
-            Gestión de sesiones y control de asistencia
-        </p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+
+        {{-- IZQUIERDA (TÍTULO) --}}
+        <div>
+            <h1 style="font-size: 28px; font-weight: 800; color: #1e293b;">
+                Horarios: {{ $course->title }}
+            </h1>
+            <p style="color: #64748b;">
+                Gestión de sesiones y control de asistencia
+            </p>
+        </div>
+        {{-- DERECHA (BOTÓN SALIR) --}}
+        <a href="{{ route('courses.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+                Salir
+        </a>
     </div>
 
     {{-- ALERTA --}}
@@ -68,7 +76,24 @@
 
                             {{-- ASISTENCIA --}}
                             <td class="text-center">
-                                <i class="fas {{ $session->attendance_enabled ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted' }}"></i>
+
+                                <form action="{{ route('courses.sessions.toggle', [$course, $session]) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+
+                                    <button type="submit" style="background:none; border:none; cursor:pointer;">
+
+                                        <i class="fas
+                                            {{ $session->attendance_enabled
+                                                ? 'fa-toggle-on text-success'
+                                                : 'fa-toggle-off text-muted'
+                                            }}"
+                                            style="font-size:22px;">
+                                        </i>
+
+                                    </button>
+                                </form>
+
                             </td>
 
                             {{-- ACCIONES --}}
@@ -79,33 +104,12 @@
                                         class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button
-                                    class="btn btn-sm btn-warning"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#crearGrupoModal"
-                                    onclick="setGrupoSession(
-                                        '{{ $session->id }}',
-                                        '{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}',
-                                        '{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}',
-                                        '{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}'
-                                        )">
-                                    <i class="fa-solid fa-plus"></i>  Grupo
-                                </button>
 
                                 {{-- AGREGAR PARTICIPANTES --}}
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#participantsModal"
-                                    onclick="setParticipantsSession(
-                                    '{{ $session->id }}',
-                                    '{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}',
-                                    '{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}',
-                                    '{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}'
-                                    )">
+                                <a href="{{ route('sessions.groups', $session->id) }}"
+                                    class="btn btn-sm btn-success">
                                     <i class="fa-solid fa-user-plus"></i>
-                                </button>
+                                </a>
 
                                 <form action="{{ route('courses.sessions.destroy', [$course->id, $session->id]) }}" method="POST">
                                     @csrf
@@ -175,7 +179,7 @@
 
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora fin</label>
-                                <input type="time" name="end_time" id="end_time" class="form-control-custom" required>
+                                <input type="time" name="end_time" id="end_time" class="form-control-custom" readonly>
                             </div>
                         </div>
 
@@ -192,272 +196,58 @@
         </div>
 
     </div>
- </div>
- <div class="modal fade" id="participantsModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5>
-                    Participantes -
-                    <span id="participantsHorarioInfo"></span>
-                </h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-
-                <form action="{{ route('groups.addParticipants') }}" method="POST">
-                    @csrf
-
-                        <input type="hidden" name="session_id" id="participants_session_id">
-                        <div class="mb-3">
-                            <label>Departamentos</label>
-                            <select id="participants_departments" class="form-control" multiple></select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Puestos</label>
-                            <select id="participants_workstations" class="form-control" multiple></select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>ID Participantes</label>
-                            <select name="users[]" class="form-control" multiple required>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}">
-                                        {{ $user->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <button class="btn btn-primary w-100">
-                            Guardar participantes
-                        </button>
-
-                    </form>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="crearGrupoModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-
-                {{-- HEADER --}}
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        Horario:
-                       <span id="modalHorarioInfo" style="font-weight:600; color:#38bdf8;"></span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
-
-                <form action="{{ route('sessions.group.store') }}" method="POST">
-                    @csrf
-
-                    <input type="hidden" name="session_id" id="session_id">
-
-                    <div class="row">
-
-                       {{-- COLUMNA 1 --}}
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Departamentos</label>
-                                <select id="departments" name="departments[]" class="form-control" multiple required>
-                                    @foreach($departments as $d)
-                                        <option value="{{ $d->id }}">{{ $d->name }}</option>
-                                    @endforeach
-                                </select>
-                          </div>
-                        </div>
-
-                        {{-- COLUMNA 2 --}}
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">Puestos</label>
-                                <select id="workstations" name="workstations[]" class="form-control" multiple required>
-                                    <option disabled>Selecciona un departamento primero</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {{-- COLUMNA 3 --}}
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label>Afitriones</label>
-                                <select name="users[]" class="form-control" multiple required>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">
-                                            {{ $user->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                    </div>
-
-                   {{-- SEGUNDA FILA --}}
-                    <div class="row mt-3">
-
-                        <div class="col-md-6">
-                            <label class="form-label">Tipo de grupo</label>
-                            <select name="type" class="form-control" required>
-                                <option value="abierto">Abierto</option>
-                                <option value="cerrado">Cerrado</option>
-                           </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Mínimo</label>
-                            <input type="number" name="min_participants" class="form-control" min="1" required>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Máximo</label>
-                            <input type="number" name="max_participants" class="form-control" min="1" required>
-                        </div>
-
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 mt-4">
-                        Guardar
-                    </button>
-
-                </form>
-
-            </div>
-
-        </div>
-    </div>
-</div>
 </div>
 
 <script>
-// EDIT ROW
-function toggleEditRow(e, id) {
-    e.preventDefault();
-    const row = document.getElementById('edit-row-' + id);
-    row.style.display = (row.style.display === 'none') ? 'table-row' : 'none';
-}
-</script>
-
-<script>
-// DEPARTAMENTOS → PUESTOS
 document.addEventListener("DOMContentLoaded", function () {
 
-    const departmentsSelect = document.getElementById("departments");
-    const workstationsSelect = document.getElementById("workstations");
+    // ==============================
+    // 1. EDITAR FILA (toggle)
+    // ==============================
+    window.toggleEditRow = function (e, id) {
+        e.preventDefault();
 
-    if (!departmentsSelect) return;
+        const row = document.getElementById('edit-row-' + id);
 
-    departmentsSelect.addEventListener("change", function () {
+        if (!row) return;
 
-        const selected = Array.from(this.selectedOptions).map(o => o.value);
+        row.style.display =
+            (row.style.display === 'none' || row.style.display === '')
+            ? 'table-row'
+            : 'none';
+    };
 
-        fetch(`/api/workstations-by-departments`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": "{{ csrf_token() }}"
-            },
-            body: JSON.stringify({ departments: selected })
-        })
-        .then(res => res.json())
-        .then(data => {
 
-            workstationsSelect.innerHTML = "";
+    // ==============================
+    // 2. HORA AUTOMÁTICA
+    // ==============================
+    const startInput = document.getElementById("start_time");
+    const endInput   = document.getElementById("end_time");
 
-            data.forEach(w => {
-                const option = document.createElement("option");
-                option.value = w.id;
-                option.textContent = w.name;
-                workstationsSelect.appendChild(option);
-            });
+    const courseHours = {{ $course->hours ?? 0 }};
 
+    if (startInput && endInput) {
+
+        startInput.addEventListener("change", function () {
+
+            if (!this.value) return;
+
+            let [h, m] = this.value.split(":").map(Number);
+
+            let date = new Date();
+            date.setHours(h);
+            date.setMinutes(m);
+
+            // sumar horas del curso
+            date.setHours(date.getHours() + courseHours);
+
+            let endH = String(date.getHours()).padStart(2, '0');
+            let endM = String(date.getMinutes()).padStart(2, '0');
+
+            endInput.value = `${endH}:${endM}`;
         });
-
-    });
+    }
 
 });
-</script>
-
-<script>
-// AUTO CALCULAR HORA FIN
-document.addEventListener('DOMContentLoaded', function () {
-
-    const startInput = document.getElementById('start_time');
-    const endInput = document.getElementById('end_time');
-
-    if (!startInput) return;
-
-    startInput.addEventListener('change', function () {
-
-        let hours = {{ $course->hours }};
-        let start = this.value;
-
-        if (!start) return;
-
-        let [h, m] = start.split(':');
-
-        let date = new Date();
-        date.setHours(parseInt(h));
-        date.setMinutes(parseInt(m));
-
-        date.setHours(date.getHours() + hours);
-
-        let endH = String(date.getHours()).padStart(2, '0');
-        let endM = String(date.getMinutes()).padStart(2, '0');
-
-        endInput.value = `${endH}:${endM}`;
-    });
-});
-</script>
-<script>
-function setParticipantsSession(id, date, start, end) {
-
-    document.getElementById('participants_session_id').value = id;
-
-    document.getElementById('participantsHorarioInfo').innerText =
-        `${date} | ${start} - ${end}`;
-
-    // FETCH DATA DEL GRUPO
-    fetch(`/sessions/${id}/group-data`)
-    .then(res => res.json())
-    .then(data => {
-
-        let depSelect = document.getElementById('participants_departments');
-        let workSelect = document.getElementById('participants_workstations');
-
-        depSelect.innerHTML = '';
-        workSelect.innerHTML = '';
-
-        data.departments.forEach(d => {
-            let option = new Option(d.name, d.id);
-            depSelect.add(option);
-        });
-
-        data.workstations.forEach(w => {
-            let option = new Option(w.name, w.id);
-            workSelect.add(option);
-        });
-
-    });
-}
-</script>
-<script>
-function setGrupoSession(id, date, start, end) {
-
-    document.getElementById('session_id').value = id;
-
-    document.getElementById('modalHorarioInfo').innerText =
-        `${date} | ${start} - ${end}`;
-}
 </script>
 @endsection

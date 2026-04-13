@@ -96,6 +96,17 @@ class CourseSessionController extends Controller
             ]);
         }
 
+
+        // VALIDACIÓN EXACTA
+        $expectedEnd = $start->copy()->addHours($course->hours);
+
+        if (!$end->equalTo($expectedEnd)) {
+            return back()->withErrors([
+                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
+            ]);
+        }
+
+
         $session->update([
             'date' => $request->date,
             'start_time' => $request->start_time,
@@ -119,6 +130,16 @@ class CourseSessionController extends Controller
         if ($end <= $start) {
             return back()->withErrors([
                 'error' => 'La hora fin debe ser mayor a la hora inicio'
+            ]);
+        }
+
+
+        // VALIDACIÓN EXACTA
+        $expectedEnd = $start->copy()->addHours($course->hours);
+
+        if (!$end->equalTo($expectedEnd)) {
+            return back()->withErrors([
+                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
             ]);
         }
 
@@ -177,4 +198,27 @@ class CourseSessionController extends Controller
             'workstations' => $group->workstations,
         ]);
     }
+    public function groups($session)
+{
+    $session = CourseSession::findOrFail($session);
+
+    $departments = Department::with('workstations')
+        ->where('institution_id', session('active_institution_id'))
+        ->get();
+
+    $users = User::where('institution_id', session('active_institution_id'))
+        ->get();
+
+    $group = $session->groups()->first();
+
+    return view('groups.index', [
+        'session' => $session,
+        'departments' => $departments,
+        'users' => $users,
+        'selectedDepartments' => $group ? $group->departments->pluck('id')->toArray() : [],
+        'selectedWorkstations' => $group ? $group->workstations->pluck('id')->toArray() : [],
+        'selectedUsers' => $group ? $group->users->pluck('id')->toArray() : [],
+    ]);
+}
+
 }

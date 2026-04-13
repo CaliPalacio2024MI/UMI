@@ -25,7 +25,7 @@ use App\Models\Cursos\Course;
 use App\Models\Cursos\Completion;
 use App\Models\AdmonCont\HorarioClase;
 use App\Models\AdmonCont\HorarioClaseOculta;
-use App\Models\Users\Department;  
+use App\Models\Users\Department;
 use App\Models\Users\Workstation;
 
 /**
@@ -268,11 +268,13 @@ class User extends Authenticatable
 
         $seen = [];
         foreach ($userContexts as $context) {
+
             $key = $context->institution_id . '_' . $context->role_id;
             if (isset($seen[$key])) {
                 continue;
             }
             $seen[$key] = true;
+
             $contexts[] = (array) $context;
         }
 

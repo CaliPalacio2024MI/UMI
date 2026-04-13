@@ -49,7 +49,7 @@
                     <div class="btn-display">
 
                        {{-- Gestionar Horarios --}}
-                        @if(in_array($courses->modality, ['presencial', 'hibrida']))
+                        @if(in_array($courses->modality, ['presencial']))
                             <a href="{{ route('courses.sessions.index', $courses) }}" class="btn-action">
                                 <i class="fa-regular fa-clock"></i>
                             </a>
