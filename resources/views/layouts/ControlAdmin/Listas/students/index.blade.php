@@ -209,7 +209,7 @@
                             <div class="detail-item"><label>Ap. Materno:</label><input type="text" name="alumno_materno" id="leadAlumnoMaterno" required style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
                             <div class="detail-item"><label>CURP:</label><input type="text" name="alumno_curp" id="leadAlumnoCurp" maxlength="18" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
                             <div class="detail-item"><label>Teléfono:</label><input type="text" name="telefono1" id="leadTelefono1" required maxlength="20" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
-                            <div class="detail-item"><label>Correro:</label><input type="email" name="alumno_email" id="leadAlumnoEmail" autocomplete="off" placeholder="Correo del alumno (inscripción o edición aquí)" title="Se guarda en la cuenta del estudiante al pulsar Guardar cambios" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:260px;"></div>
+                            <div class="detail-item"><label>Correro:</label><input type="email" name="alumno_email" id="leadAlumnoEmail" autocomplete="off" placeholder="Correo del alumno (inscripción o edición aquí)" title="Se guarda en la cuenta del estudiante al pulsar + Guardar" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:260px;"></div>
                         </div>
                         <div id="leadEditTabAcademico" class="lead-edit-tab-panel" role="tabpanel" aria-labelledby="leadEditTabBtnAcademico">
                             <div class="detail-item"><label>Carrera:</label>
@@ -229,45 +229,50 @@
                                 <div class="lead-doc-item" data-doc-field="doc_acta_nacimiento">
                                     <label>Acta Nacimiento</label>
                                     <div class="lead-doc-links" id="leadDocActaLink"></div>
-                                    <label class="lead-rechazar-doc-wrap">
-                                        <input type="checkbox" name="rechazar_doc_acta_nacimiento" value="1" class="lead-rechazar-doc-cb">
-                                        <span>Rechazar Documento</span>
+                                    <label class="lead-aceptar-doc-wrap">
+                                        <input type="hidden" name="aceptar_doc_acta_nacimiento" value="0">
+                                        <input type="checkbox" name="aceptar_doc_acta_nacimiento" value="1" class="lead-aceptar-doc-cb">
+                                        <span>Aceptar Documento</span>
                                     </label>
                                     <input type="file" name="doc_acta_nacimiento" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
                                 </div>
                                 <div class="lead-doc-item" data-doc-field="doc_certificado_prepa">
                                     <label>Certificado Prepa</label>
                                     <div class="lead-doc-links" id="leadDocCertLink"></div>
-                                    <label class="lead-rechazar-doc-wrap">
-                                        <input type="checkbox" name="rechazar_doc_certificado_prepa" value="1" class="lead-rechazar-doc-cb">
-                                        <span>Rechazar Documento</span>
+                                    <label class="lead-aceptar-doc-wrap">
+                                        <input type="hidden" name="aceptar_doc_certificado_prepa" value="0">
+                                        <input type="checkbox" name="aceptar_doc_certificado_prepa" value="1" class="lead-aceptar-doc-cb">
+                                        <span>Aceptar Documento</span>
                                     </label>
                                     <input type="file" name="doc_certificado_prepa" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
                                 </div>
                                 <div class="lead-doc-item" data-doc-field="doc_curp">
                                     <label>CURP</label>
                                     <div class="lead-doc-links" id="leadDocCurpLink"></div>
-                                    <label class="lead-rechazar-doc-wrap">
-                                        <input type="checkbox" name="rechazar_doc_curp" value="1" class="lead-rechazar-doc-cb">
-                                        <span>Rechazar Documento</span>
+                                    <label class="lead-aceptar-doc-wrap">
+                                        <input type="hidden" name="aceptar_doc_curp" value="0">
+                                        <input type="checkbox" name="aceptar_doc_curp" value="1" class="lead-aceptar-doc-cb">
+                                        <span>Aceptar Documento</span>
                                     </label>
                                     <input type="file" name="doc_curp" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
                                 </div>
                                 <div class="lead-doc-item" data-doc-field="doc_ine">
                                     <label>INE</label>
                                     <div class="lead-doc-links" id="leadDocIneLink"></div>
-                                    <label class="lead-rechazar-doc-wrap">
-                                        <input type="checkbox" name="rechazar_doc_ine" value="1" class="lead-rechazar-doc-cb">
-                                        <span>Rechazar Documento</span>
+                                    <label class="lead-aceptar-doc-wrap">
+                                        <input type="hidden" name="aceptar_doc_ine" value="0">
+                                        <input type="checkbox" name="aceptar_doc_ine" value="1" class="lead-aceptar-doc-cb">
+                                        <span>Aceptar Documento</span>
                                     </label>
                                     <input type="file" name="doc_ine" accept=".pdf,.jpg,.jpeg,.png" class="lead-doc-input">
                                 </div>
                                 <div class="lead-doc-item" data-doc-field="doc_ficha_pago">
                                     <label>Ficha de pago / comprobante (PDF)</label>
                                     <div class="lead-doc-links" id="leadDocFichaLink"></div>
-                                    <label class="lead-rechazar-doc-wrap">
-                                        <input type="checkbox" name="rechazar_doc_ficha_pago" value="1" class="lead-rechazar-doc-cb">
-                                        <span>Rechazar Documento</span>
+                                    <label class="lead-aceptar-doc-wrap">
+                                        <input type="hidden" name="aceptar_doc_ficha_pago" value="0">
+                                        <input type="checkbox" name="aceptar_doc_ficha_pago" value="1" class="lead-aceptar-doc-cb">
+                                        <span>Aceptar Documento</span>
                                     </label>
                                     <input type="file" name="doc_ficha_pago" accept=".pdf" class="lead-doc-input">
                                 </div>
@@ -276,8 +281,7 @@
                     </div>
                 </div>
                 <div class="lead-edit-form-actions">
-                    <button type="button" class="btn btn--secondary" onclick="closeLeadEditModal()">Cancelar</button>
-                    <button type="submit" class="btn btn--primary">Guardar cambios</button>
+                    <button type="submit" class="btn btn--primary">+ Guardar</button>
                 </div>
             </form>
         </div>
@@ -671,7 +675,7 @@
         padding-bottom: 12px;
         border-bottom: 1px solid #DB5865;
     }
-    #leadEditModal .lead-rechazar-doc-wrap {
+    #leadEditModal .lead-aceptar-doc-wrap {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -682,7 +686,7 @@
         font-weight: 500;
         line-height: 1.2;
     }
-    #leadEditModal .lead-rechazar-doc-wrap input.lead-rechazar-doc-cb {
+    #leadEditModal .lead-aceptar-doc-wrap input.lead-aceptar-doc-cb {
         margin: 0;
         flex-shrink: 0;
         width: 1.05em;
@@ -700,8 +704,7 @@
 
     /* Botones modal editar aspirante: azul marino, forma ovalada */
     #leadEditModal .btn,
-    #leadEditModal button.btn--primary,
-    #leadEditModal button.btn--secondary {
+    #leadEditModal button.btn--primary {
         background: #223F70;
         color: #fff;
         border: 1px solid #fff;
@@ -712,8 +715,7 @@
         transition: background 0.2s;
     }
     #leadEditModal .btn:hover,
-    #leadEditModal button.btn--primary:hover,
-    #leadEditModal button.btn--secondary:hover {
+    #leadEditModal button.btn--primary:hover {
         background: #1a3258;
     }
 
@@ -734,6 +736,11 @@
         color: #2980b9;
         text-decoration: none;
         font-size: 0.85rem;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font: inherit;
     }
     #leadEditModal .lead-doc-links .btn-ver-doc:hover {
         text-decoration: underline;
@@ -1002,38 +1009,44 @@
             var el = document.getElementById(id);
             el.innerHTML = '';
             if (url && url.trim() !== '') {
-                var a = document.createElement('a');
-                a.href = url;
-                a.target = '_blank';
-                a.className = 'btn-ver-doc';
-                a.innerHTML = '<i class="fa-regular fa-file-pdf"></i> Ver documento';
-                el.appendChild(a);
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-ver-doc';
+                btn.innerHTML = '<i class="fa-regular fa-file-pdf"></i> Ver documento';
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openDocViewer(url, title);
+                });
+                el.appendChild(btn);
             }
         }
-        setDocLink('leadDocActaLink', data.docActa, 'Acta');
-        setDocLink('leadDocCertLink', data.docCert, 'Certificado');
+        setDocLink('leadDocActaLink', data.docActa, 'Acta de Nacimiento');
+        setDocLink('leadDocCertLink', data.docCert, 'Certificado Preparatoria');
         setDocLink('leadDocCurpLink', data.docCurp, 'CURP');
         setDocLink('leadDocIneLink', data.docIne, 'INE');
-        setDocLink('leadDocFichaLink', data.docFicha, 'Ficha');
+        setDocLink('leadDocFichaLink', data.docFicha, 'Ficha de pago / comprobante');
 
-        function leadEditSetRechazoRow(field, docUrl, rechVal) {
+        function leadEditSetAceptacionRow(field, docUrl, rechVal) {
             var item = document.querySelector('#leadEditModal .lead-doc-item[data-doc-field="' + field + '"]');
             if (!item) return;
-            var wrap = item.querySelector('.lead-rechazar-doc-wrap');
+            var wrap = item.querySelector('.lead-aceptar-doc-wrap');
             var cb = wrap && wrap.querySelector('input[type=checkbox]');
             var wasRej = rechVal === '1' || rechVal === 1 || rechVal === true;
+            var hasDoc = docUrl && String(docUrl).trim() !== '';
             if (wrap) {
                 wrap.style.display = 'flex';
             }
             if (cb) {
-                cb.checked = wasRej;
+                // Marcado = aceptado: documento presente y no rechazado en BD.
+                cb.checked = hasDoc && !wasRej;
             }
         }
-        leadEditSetRechazoRow('doc_acta_nacimiento', data.docActa, data.docRechActa);
-        leadEditSetRechazoRow('doc_certificado_prepa', data.docCert, data.docRechCert);
-        leadEditSetRechazoRow('doc_curp', data.docCurp, data.docRechCurp);
-        leadEditSetRechazoRow('doc_ine', data.docIne, data.docRechIne);
-        leadEditSetRechazoRow('doc_ficha_pago', data.docFicha, data.docRechFicha);
+        leadEditSetAceptacionRow('doc_acta_nacimiento', data.docActa, data.docRechActa);
+        leadEditSetAceptacionRow('doc_certificado_prepa', data.docCert, data.docRechCert);
+        leadEditSetAceptacionRow('doc_curp', data.docCurp, data.docRechCurp);
+        leadEditSetAceptacionRow('doc_ine', data.docIne, data.docRechIne);
+        leadEditSetAceptacionRow('doc_ficha_pago', data.docFicha, data.docRechFicha);
 
         document.querySelectorAll('#leadEditForm .lead-doc-input').forEach(function(inp) { inp.value = ''; });
         document.getElementById('leadEditModal').style.display = 'flex';
@@ -1073,19 +1086,19 @@
         });
     })();
 
-    (function initLeadDocRechazoFileUncheck() {
+    (function initLeadDocAceptacionFileCheck() {
         var modal = document.getElementById('leadEditModal');
         if (!modal) return;
         modal.addEventListener('change', function(e) {
-            if (e.target.classList.contains('lead-doc-input') || e.target.classList.contains('lead-rechazar-doc-cb')) {
+            if (e.target.classList.contains('lead-doc-input') || e.target.classList.contains('lead-aceptar-doc-cb')) {
                 var df = document.getElementById('leadEditDocsInteracted');
                 if (df) df.value = '1';
             }
             if (!e.target.classList.contains('lead-doc-input')) return;
             if (e.target.files && e.target.files.length) {
                 var item = e.target.closest('.lead-doc-item');
-                var cb = item && item.querySelector('.lead-rechazar-doc-cb');
-                if (cb) cb.checked = false;
+                var cb = item && item.querySelector('.lead-aceptar-doc-cb');
+                if (cb) cb.checked = true;
             }
         });
     })();
@@ -1183,25 +1196,31 @@
             return;
         }
 
-        // --- CASO B: CERRAR (Botón X) ---
-        if (event.target.closest('#modalInscripcion .modal-close')) {
-            cerrarModalInscripcion();
-            return;
-        }
-        if (event.target.closest('.modal-close')) {
-            closeStudentDetails();
-            closeLeadEditModal();
-            closeAcceptAspiranteModal();
-            closeDocViewer();
+        // --- CASO B: CERRAR (Botón X) — solo el modal afectado (no cerrar expediente al cerrar el PDF) ---
+        const modalCloseBtn = event.target.closest('.modal-close');
+        if (modalCloseBtn) {
+            if (modalCloseBtn.closest('#docViewerModal')) {
+                closeDocViewer();
+            } else if (modalCloseBtn.closest('#modalInscripcion')) {
+                cerrarModalInscripcion();
+            } else if (modalCloseBtn.closest('#leadEditModal')) {
+                closeLeadEditModal();
+            } else if (modalCloseBtn.closest('#acceptAspiranteModal')) {
+                closeAcceptAspiranteModal();
+            } else if (modalCloseBtn.closest('#studentDetailsModal')) {
+                closeStudentDetails();
+            }
             return;
         }
 
         // --- CASO C: CERRAR (Clic afuera / Fondo oscuro) ---
         if (event.target.classList.contains('modal-overlay')) {
-            if (event.target.id === 'modalInscripcion') cerrarModalInscripcion();
-            else if (event.target.id === 'leadEditModal') closeLeadEditModal();
-            else if (event.target.id === 'acceptAspiranteModal') closeAcceptAspiranteModal();
-            else { closeStudentDetails(); closeDocViewer(); }
+            const oid = event.target.id;
+            if (oid === 'modalInscripcion') cerrarModalInscripcion();
+            else if (oid === 'leadEditModal') closeLeadEditModal();
+            else if (oid === 'acceptAspiranteModal') closeAcceptAspiranteModal();
+            else if (oid === 'docViewerModal') closeDocViewer();
+            else if (oid === 'studentDetailsModal') closeStudentDetails();
             return;
         }
     });
@@ -1318,7 +1337,7 @@
         })
         .catch(function(err) { alert(err.message); })
         .finally(function() {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText || 'Guardar cambios'; }
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText || '+ Guardar'; }
         });
     });
 

@@ -124,7 +124,7 @@
                                 title="Ver" 
                                 class="btn-icon btn-view"
                                 data-id="{{ $item->id }}">
-                                <img src="{{ asset('images/icons/eye-solid-full.svg') }}" alt="Ver"> 
+                                <img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="Ver"> 
                             </a>
                             @endif
 

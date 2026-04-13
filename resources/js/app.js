@@ -1889,8 +1889,16 @@ function initHorariosCareerFilterForContainer(container) {
         docentesFiltered.forEach((d) => docenteSelect.appendChild(new Option(d.text, d.value, false)));
         if (!resetValues && savedMateriaId && materiasFiltered.some((m) => m.value === savedMateriaId)) materiaSelect.value = savedMateriaId;
         if (!resetValues && savedDocenteId && docentesFiltered.some((d) => d.value === savedDocenteId)) docenteSelect.value = savedDocenteId;
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
     }
     carreraSelect.addEventListener('change', () => filterByCareer(true));
+    materiaSelect.addEventListener('change', () => {
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
+    });
     filterByCareer(false);
 }
 document.addEventListener('click', (e) => {
@@ -2285,6 +2293,114 @@ function scheduleSyncPreviewSelection() {
     const form = document.getElementById('schedule_form');
     if (form && typeof scheduleUpdatePreviewSelection === 'function') scheduleUpdatePreviewSelection(form);
 }
+function scheduleUpdateAulaPlaceholderStyle(aulaSel) {
+    if (!aulaSel) return;
+    if (aulaSel.value === '') aulaSel.classList.add('select-placeholder');
+    else aulaSel.classList.remove('select-placeholder');
+}
+
+window.refreshScheduleAulaOptionsFromForm = function (form) {
+    if (!form) form = document.getElementById('schedule_form');
+    if (!form) return;
+    const url = form.getAttribute('data-aulas-url');
+    const aulaSel = form.querySelector('#aula_select');
+    const carreraSel = form.querySelector('#carrera_select');
+    const materiaSel = form.querySelector('#materia_select');
+    if (!aulaSel) return;
+    if (!url) {
+        scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        return;
+    }
+    const careerId = carreraSel && carreraSel.value;
+    const materiaId = materiaSel && materiaSel.value;
+    let prevAula = String(aulaSel.value || '').trim();
+    if (!prevAula) {
+        const persisted = form.getAttribute('data-initial-aula-id');
+        if (persisted && String(persisted).trim() !== '') {
+            prevAula = String(persisted).trim();
+        }
+    }
+    if (!careerId || !materiaId) {
+        aulaSel.innerHTML = '';
+        aulaSel.appendChild(new Option('Seleccione el Aula', '', true, true));
+        aulaSel.disabled = false;
+        scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        return;
+    }
+    aulaSel.disabled = true;
+    aulaSel.innerHTML = '';
+    aulaSel.appendChild(new Option('Cargando…', '', true, true));
+    let u;
+    try {
+        u = new URL(url, window.location.origin);
+    } catch (e) {
+        aulaSel.innerHTML = '';
+        aulaSel.appendChild(new Option('Error de configuración', '', true, true));
+        aulaSel.disabled = false;
+        return;
+    }
+    u.searchParams.set('career_id', careerId);
+    u.searchParams.set('materia_id', materiaId);
+    fetch(u.toString(), {
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+    })
+        .then((r) => {
+            if (!r.ok) throw new Error('bad');
+            return r.json();
+        })
+        .then((data) => {
+            const list = data && data.aulas ? data.aulas : [];
+            aulaSel.innerHTML = '';
+            if (!list.length) {
+                aulaSel.appendChild(new Option('Seleccione el Aula', '', true, true));
+                if (prevAula) {
+                    const fb = form.getAttribute('data-initial-aula-label');
+                    if (fb) {
+                        aulaSel.appendChild(new Option(fb, String(prevAula), false, false));
+                        aulaSel.value = String(prevAula);
+                    }
+                }
+                if (form.getAttribute('data-initial-aula-id')) {
+                    form.removeAttribute('data-initial-aula-id');
+                    form.removeAttribute('data-initial-aula-label');
+                }
+                aulaSel.disabled = false;
+                scheduleUpdateAulaPlaceholderStyle(aulaSel);
+                return;
+            }
+            aulaSel.appendChild(new Option('Seleccione el Aula', '', true, true));
+            list.forEach((a) => {
+                aulaSel.appendChild(new Option(a.label, String(a.id), false));
+            });
+            const inList = prevAula && list.some((x) => String(x.id) === String(prevAula));
+            if (prevAula && !inList) {
+                const fb = form.getAttribute('data-initial-aula-label');
+                if (fb) {
+                    aulaSel.appendChild(new Option(fb, String(prevAula), false, false));
+                }
+            }
+            const canSelect = prevAula && Array.from(aulaSel.options).some((o) => String(o.value) === String(prevAula));
+            if (canSelect) {
+                aulaSel.value = String(prevAula);
+            } else {
+                aulaSel.value = '';
+            }
+            if (form.getAttribute('data-initial-aula-id')) {
+                form.removeAttribute('data-initial-aula-id');
+                form.removeAttribute('data-initial-aula-label');
+            }
+            aulaSel.disabled = false;
+            scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        })
+        .catch(() => {
+            aulaSel.innerHTML = '';
+            aulaSel.appendChild(new Option('Error al cargar aulas', '', true, true));
+            aulaSel.disabled = false;
+            scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        });
+};
+
 function initHorariosCareerFilter() {
     const carreraSelect = document.getElementById('carrera_select');
     const materiaSelect = document.getElementById('materia_select');
@@ -2320,8 +2436,16 @@ function initHorariosCareerFilter() {
         docentesFiltered.forEach((d) => docenteSelect.appendChild(new Option(d.text, d.value, false)));
         if (!resetValues && savedMateriaId && materiasFiltered.some((m) => m.value === savedMateriaId)) materiaSelect.value = savedMateriaId;
         if (!resetValues && savedDocenteId && docentesFiltered.some((d) => d.value === savedDocenteId)) docenteSelect.value = savedDocenteId;
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
     }
     carreraSelect.addEventListener('change', () => filterByCareer(true));
+    materiaSelect.addEventListener('change', () => {
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
+    });
     filterByCareer(false);
 }
 

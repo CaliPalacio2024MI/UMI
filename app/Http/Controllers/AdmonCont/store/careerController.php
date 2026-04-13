@@ -126,6 +126,7 @@ class careerController extends Controller
                 'integer',
                 Rule::exists('career_classifications', 'id')->where(fn ($q) => $q->where('institution_id', $institutionId)),
             ],
+            'monto_mensualidad' => 'required|numeric|min:0|max:99999999.99',
         ], [
             'name.required'         => 'El nombre de la carrera es obligatorio.',
             'official_id.required'  => 'El RVOE es obligatorio.',
@@ -135,7 +136,11 @@ class careerController extends Controller
             'description3.required' => 'Elige Ser es obligatorio.',
             'type.required'         => 'Debe seleccionar la modalidad.',
             'semesters.required'    => 'Debe seleccionar el número de semestres.',
+            'monto_mensualidad.required' => 'El monto de mensualidad es obligatorio.',
         ]);
+
+        $monto = round((float) $request->monto_mensualidad, 2);
+        $sem = (int) $request->semesters;
 
         Career::create([
             'name'           => $request->name,
@@ -144,11 +149,13 @@ class careerController extends Controller
             'description2'  => $request->description2,
             'description3'  => $request->description3,
             'type'           => $request->type,
-            'semesters'      => $request->semesters,
+            'semesters'      => $sem,
             'institution_id' => $institutionId,
             'career_classification_id' => $request->filled('career_classification_id')
                 ? (int) $request->career_classification_id
                 : null,
+            'monto_mensualidad' => $monto,
+            'cargo_monetario' => round($monto * $sem, 2),
         ]);
 
         return redirect()
@@ -257,6 +264,7 @@ class careerController extends Controller
                 'integer',
                 Rule::exists('career_classifications', 'id')->where(fn ($q) => $q->where('institution_id', $carrera->institution_id)),
             ],
+            'monto_mensualidad' => 'nullable|numeric|min:0|max:99999999.99',
         ], [
             'name.required'   => 'El nombre de la carrera es obligatorio.',
             'name.unique'    => 'Ya existe una carrera con ese nombre.',
@@ -278,6 +286,10 @@ class careerController extends Controller
         $data['career_classification_id'] = $request->filled('career_classification_id')
             ? (int) $request->career_classification_id
             : null;
+        $monto = $request->filled('monto_mensualidad') ? round((float) $request->monto_mensualidad, 2) : null;
+        $sem = (int) $request->semesters;
+        $data['monto_mensualidad'] = $monto;
+        $data['cargo_monetario'] = $monto !== null ? round($monto * $sem, 2) : null;
         $carrera->update($data);
 
         return redirect()

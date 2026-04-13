@@ -26,7 +26,7 @@
                 <span class="schedule-edit-header__title">Editar horario</span>
                 <button type="button" class="schedule-edit-close" id="schedule_edit_close" title="Salir de edición" aria-label="Salir de edición">✕</button>
             </div>
-            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-index-url="{{ route('control.schedules.index') }}" @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
+            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-index-url="{{ route('control.schedules.index') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($modoEdicion && $horario->aula_id) data-initial-aula-id="{{ $horario->aula_id }}" @endif @if($modoEdicion && $horario->aula_id && $horario->aula) data-initial-aula-label="{{ e(\App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)) }}" @endif @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
                 @csrf
                 @if ($modoEdicion)
                     @method('PUT') 
@@ -132,13 +132,8 @@
                 </div>
                 <div class = "schedule-list-select">
                     <label for = "aula_select">Aula</label>
-                    <select id="aula_select" name="aula_id">
-                        <option value="" class="select-placeholder">Seleccione Aula</option>
-                    {{-- Aquí va el loop para cargar las carreras desde la BD --}}
-                    @foreach ($aulas as $aula)
-                        <option value = "{{$aula->id}}" @if ($modoEdicion && $aula->id == $horario->aula_id) selected @endif>{{ \App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($aula) }}</option>
-                    @endforeach
-                    
+                    <select id="aula_select" name="aula_id" class="select-placeholder">
+                        <option value="">Seleccione el Aula</option>
                     </select>
                 </div>
                 <div class="schedule-submit">
@@ -258,90 +253,6 @@
     // Franjas horarias (añadir, eliminar, guardar, vista previa e inicial en edición) se gestionan en app.js (delegación + data-initial-franjas).
     document.addEventListener('DOMContentLoaded', function() {
 
-        // Filtrar Materia y Docente por carrera: solo mostrar opciones de esa carrera; si no hay, el menú no muestra nada
-        const carreraSelect = document.getElementById('carrera_select');
-        const materiaSelect = document.getElementById('materia_select');
-        const docenteSelect = document.getElementById('docente_select');
-
-        const materiaOptions = Array.from(materiaSelect.querySelectorAll('option')).filter(o => o.value !== '').map(o => ({
-            value: o.value,
-            careerId: String(o.getAttribute('data-career-id') || ''),
-            text: o.textContent.trim()
-        }));
-        const docenteOptions = Array.from(docenteSelect.querySelectorAll('option')).filter(o => o.value !== '').map(o => ({
-            value: o.value,
-            careerId: String(o.getAttribute('data-career-id') || ''),
-            text: o.textContent.trim()
-        }));
-
-        function actualizarMateriaYDocente(resetValues) {
-            const careerId = (carreraSelect && carreraSelect.value) ? String(carreraSelect.value) : '';
-            const materiaVal = materiaSelect.value;
-            const docenteVal = docenteSelect.value;
-
-            // Materia: si hay carrera elegida, solo opciones de esa carrera; si no hay ninguna, el menú no muestra nada (solo una opción vacía)
-            const materiasFiltradas = careerId === '' ? materiaOptions : materiaOptions.filter(o => o.careerId === careerId);
-            function docenteCoincideCarrera(csv, sel) {
-                if (!sel) return true;
-                if (!csv) return false;
-                return csv.split(',').map(s => s.trim()).filter(Boolean).includes(sel);
-            }
-            materiaSelect.innerHTML = '';
-            const optM0 = document.createElement('option');
-            optM0.value = '';
-            optM0.textContent = 'Seleccione una Materia';
-            materiaSelect.appendChild(optM0);
-            materiasFiltradas.forEach(o => {
-                const opt = document.createElement('option');
-                opt.value = o.value;
-                opt.setAttribute('data-career-id', o.careerId);
-                opt.textContent = o.text;
-                if (!resetValues && materiaVal === o.value) opt.selected = true;
-                materiaSelect.appendChild(opt);
-            });
-
-            // Docente: igual; si la carrera no tiene docentes, el menú no muestra nada
-            const docentesFiltrados = careerId === '' ? docenteOptions : docenteOptions.filter(o => docenteCoincideCarrera(o.careerId, careerId));
-            docenteSelect.innerHTML = '';
-            const optD0 = document.createElement('option');
-            optD0.value = '';
-            optD0.textContent = 'Seleccione un Docente';
-            docenteSelect.appendChild(optD0);
-            docentesFiltrados.forEach(o => {
-                const opt = document.createElement('option');
-                opt.value = o.value;
-                opt.setAttribute('data-career-id', o.careerId);
-                opt.textContent = o.text;
-                if (!resetValues && docenteVal === o.value) opt.selected = true;
-                docenteSelect.appendChild(opt);
-            });
-
-            if (resetValues) {
-                materiaSelect.value = '';
-                docenteSelect.value = '';
-            }
-        }
-
-        if (carreraSelect) {
-            carreraSelect.addEventListener('change', function() {
-                actualizarMateriaYDocente(true);
-            });
-            actualizarMateriaYDocente(false);
-        }
-
-        // Placeholder gris para "Seleccione Aula" (aula es opcional, sin required)
-        const aulaSelect = document.getElementById('aula_select');
-        function updateAulaPlaceholderStyle() {
-            if (aulaSelect) {
-                if (aulaSelect.value === '') aulaSelect.classList.add('select-placeholder');
-                else aulaSelect.classList.remove('select-placeholder');
-            }
-        }
-        if (aulaSelect) {
-            aulaSelect.addEventListener('change', updateAulaPlaceholderStyle);
-            updateAulaPlaceholderStyle();
-        }
-
         // Modal Ver horario: delegación en tbody (los botones se inyectan por búsqueda)
         document.getElementById('horarios-tbody') && document.getElementById('horarios-tbody').addEventListener('click', function(e) {
             var btnVer = e.target.closest('a.btn-view[data-show-url]');
@@ -404,7 +315,7 @@
             var aulaSelectEl = document.getElementById('aula_select');
             if (docenteSelect) docenteSelect.value = '';
             if (aulaSelectEl) aulaSelectEl.value = '';
-            if (typeof updateAulaPlaceholderStyle === 'function') updateAulaPlaceholderStyle();
+            if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') window.refreshScheduleAulaOptionsFromForm(form);
             if (window.initScheduleFormIfNeeded) window.initScheduleFormIfNeeded();
             var submitBtn = form.querySelector('#save_schedule_btn');
             if (submitBtn) submitBtn.textContent = '+ Agregar';

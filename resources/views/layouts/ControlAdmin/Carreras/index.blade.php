@@ -83,7 +83,32 @@
 {{-- Script JS para abrir/cerrar (el mismo de antes) --}}
 @push('scripts')
     <script>
+        function careerUpdateCargoMonetario(form) {
+            if (!form) return;
+            var monto = form.querySelector('.js-career-monto');
+            var sem = form.querySelector('.js-career-semestres');
+            var out = form.querySelector('.js-career-cargo-out');
+            if (!monto || !sem || !out) return;
+            var m = parseFloat(monto.value);
+            var s = parseInt(sem.value, 10) || 0;
+            out.value = (isNaN(m) || s < 1) ? '' : (m * s).toFixed(2);
+        }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-monto')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+        });
+        document.addEventListener('change', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-semestres')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form .js-career-monto').forEach(function(el) {
+                careerUpdateCargoMonetario(el.closest('form'));
+            });
             
             // --- 1. LÓGICA DEL MODAL DE CREACIÓN (Singular) ---
             

@@ -5,6 +5,9 @@
 @vite(['resources/css/courses.css', 'resources/js/app.js'])
 
 @section('content')
+@php
+    $carreras = $carreras ?? collect();
+@endphp
 <div class="container">
     <div class="content-header">
         <div class="content-title">
@@ -22,24 +25,23 @@
             @method('PUT')
 
             <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="numero_aula">Número de Aula</label>
-                <input type="text" id="numero_aula" name="numero_aula" class="form-control" maxlength="10" required value="{{ old('numero_aula', $facility->numero_aula) }}">
+                <label for="nombre_aula">Nombre del aula</label>
+                <input type="text" id="nombre_aula" name="nombre_aula" class="form-control" maxlength="255" required value="{{ old('nombre_aula', $facility->nombre_aula) }}">
             </div>
             <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="tipo">Tipo</label>
-                <select id="tipo" name="tipo" class="form-control" required>
-                    @foreach (['Aula', 'Laboratorio', 'Otro'] as $t)
-                        <option value="{{ $t }}" @selected(old('tipo', $facility->tipo) === $t)>{{ $t }}</option>
+                <label for="career_id">Carrera</label>
+                <select id="career_id" name="career_id" class="form-control">
+                    <option value="">Ingrese la carrera</option>
+                    @foreach ($carreras as $c)
+                        <option value="{{ $c->id }}" @selected(old('career_id', $facility->career_id) == $c->id)>{{ $c->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="seccion">Sección</label>
-                <input type="text" id="seccion" name="seccion" class="form-control" maxlength="255" value="{{ old('seccion', $facility->seccion === 'Sin sección' ? '' : $facility->seccion) }}" placeholder="Opcional">
-            </div>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="capacidad">Capacidad</label>
-                <input type="number" id="capacidad" name="capacidad" class="form-control" min="0" value="{{ old('capacidad', $facility->capacidad) }}">
+                <label for="tipo_materia">Materia</label>
+                <select id="tipo_materia" name="tipo_materia" class="form-control" data-preselected="{{ e($facility->tipo_materia ?? '') }}">
+                    <option value="">Cargando…</option>
+                </select>
             </div>
 
             @if ($errors->any())
@@ -57,6 +59,27 @@
     </div>
 </div>
 @push('scripts')
+@include('layouts.ControlAdmin.Infraestrucuta.components._aulas_materias_select_script')
+<script>
+(function () {
+    function initAulaEditFullPageMaterias() {
+        var car = document.getElementById('career_id');
+        var mat = document.getElementById('tipo_materia');
+        if (!car || !mat || typeof window.umiAulasFillMateriaSelect !== 'function') {
+            return;
+        }
+        window.umiAulasFillMateriaSelect(car.value || '', mat, mat.getAttribute('data-preselected') || '');
+        car.addEventListener('change', function () {
+            window.umiAulasFillMateriaSelect(car.value || '', mat, '');
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAulaEditFullPageMaterias);
+    } else {
+        initAulaEditFullPageMaterias();
+    }
+})();
+</script>
 <script>
 (function () {
     if (window.__umiFacilityEditFullPageSubmitBound) {

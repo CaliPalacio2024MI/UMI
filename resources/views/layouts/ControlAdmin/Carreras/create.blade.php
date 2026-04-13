@@ -71,12 +71,26 @@
 
                     <div class="form-field lists">
                         <label for="semesters">No. de semestres:</label>
-                        <select id="semesters" name="semesters" class="@error('semesters') validation-error @enderror">
+                        <select id="semesters" name="semesters" class="js-career-semestres @error('semesters') validation-error @enderror">
                             @for ($i = 1; $i <= 8; $i++)
-                                <option value="{{ $i }}" {{ old('semesters') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                                <option value="{{ $i }}" {{ old('semesters', 1) == $i ? 'selected' : '' }}>{{ $i }}</option>
                             @endfor
                         </select>
                     </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="monto_mensualidad">Monto mensualidad:</label>
+                    <input type="number" id="monto_mensualidad" name="monto_mensualidad" step="0.01" min="0"
+                        placeholder="0.00"
+                        class="js-career-monto @error('monto_mensualidad') validation-error @enderror"
+                        value="{{ old('monto_mensualidad') }}">
+                </div>
+                <div class="form-field">
+                    <label for="createCareerCargoMonetario">Cargo monetario:</label>
+                    <input type="text" id="createCareerCargoMonetario" class="js-career-cargo-out" readonly tabindex="-1"
+                        value=""
+                        style="background: #f5f5f5; cursor: default;">
                 </div>
 
                 <div class="modal-footer-custom mt-3">

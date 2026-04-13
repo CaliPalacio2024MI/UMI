@@ -46,7 +46,17 @@ class Institution extends Model
     protected $fillable = [
         'name',
         'logo_path',
+        'is_administrativo',
+        'is_universidad',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_administrativo' => 'boolean',
+            'is_universidad' => 'boolean',
+        ];
+    }
 
     public function users(): BelongsToMany
     {

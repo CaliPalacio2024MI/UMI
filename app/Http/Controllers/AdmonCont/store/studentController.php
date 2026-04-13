@@ -267,16 +267,21 @@ class studentController extends Controller
                         : "documentos/leads/{$lead->id}";
                     $data[$campo] = $request->file($campo)->store($pathBase, 'public');
                     $data[$flagCol] = false;
-                } elseif ($request->boolean('rechazar_' . $campo)) {
+                } elseif (! $request->has('aceptar_' . $campo)) {
+                    // Campo no enviado por el formulario (ej. factura XML fuera del modal): no tocar archivo ni bandera.
+                    $data[$campo] = $lead->$campo;
+                    $data[$flagCol] = (bool) $lead->$flagCol;
+                } elseif ($request->boolean('aceptar_' . $campo)) {
+                    // Checkbox marcado = documento aceptado (conservar archivo si existe).
+                    $data[$campo] = $lead->$campo;
+                    $data[$flagCol] = false;
+                } else {
+                    // Sin marcar = rechazado (eliminar archivo si existe).
                     if ($lead->$campo) {
                         Storage::disk('public')->delete($lead->$campo);
                     }
                     $data[$campo] = null;
                     $data[$flagCol] = true;
-                } else {
-                    // Conservar ruta existente al marcar solo "no rechazado" (evita pérdidas al guardar la pestaña de documentos).
-                    $data[$campo] = $lead->$campo;
-                    $data[$flagCol] = false;
                 }
             }
         }

@@ -11,34 +11,24 @@ use App\Models\AdmonCont\Facility;
 class AulaHorarioPresenter
 {
     /**
-     * Texto del <option> en el select de aula del formulario de horario:
-     * solo la sección (ej. 2~A). Si no hay sección, el número de aula.
+     * Texto de la opción en el select de aula del formulario de horario.
      */
     public static function selectOptionSoloSeccion(Facility $f): string
     {
-        $seccion = trim((string) ($f->seccion ?? ''));
-        if ($seccion !== '' && $seccion !== 'Sin sección') {
-            return $seccion;
-        }
+        $n = trim((string) ($f->nombre_aula ?? ''));
 
-        return (string) ($f->numero_aula ?? '');
+        return $n !== '' ? $n : '—';
     }
 
     /** Etiqueta legible completa (listados, API label, etc.). */
     public static function selectLabel(Facility $f): string
     {
-        $seccion = trim((string) ($f->seccion ?? ''));
-        $seccionPart = ($seccion !== '' && $seccion !== 'Sin sección') ? $seccion : null;
-
         $parts = array_filter([
-            $f->numero_aula,
-            $seccionPart,
-            ($f->tipo ?? '') !== '' && ($f->tipo ?? '') !== 'Aula' ? $f->tipo : null,
-            $f->ubicacion ? (string) $f->ubicacion : null,
-            $f->capacidad !== null ? 'Cap. ' . $f->capacidad : null,
+            trim((string) ($f->nombre_aula ?? '')) ?: null,
+            $f->tipo_materia ? trim((string) $f->tipo_materia) : null,
         ]);
 
-        return $parts !== [] ? implode(' — ', $parts) : (string) ($f->numero_aula ?? '');
+        return $parts !== [] ? implode(' — ', $parts) : '—';
     }
 
     /** Una línea legible en grillas / tarjetas (horario maestro o alumno). */
@@ -48,13 +38,9 @@ class AulaHorarioPresenter
             return '—';
         }
 
-        $base = 'Aula ' . $f->numero_aula;
-        $extra = array_filter([
-            $f->ubicacion ? '(' . $f->ubicacion . ')' : null,
-            ($f->tipo ?? '') !== '' && ($f->tipo ?? '') !== 'Aula' ? $f->tipo : null,
-        ]);
+        $n = trim((string) ($f->nombre_aula ?? ''));
 
-        return $extra === [] ? $base : $base . ' ' . implode(' ', $extra);
+        return $n !== '' ? $n : '—';
     }
 
     /** Celda tipo tabla (listados compactos). */
@@ -76,11 +62,9 @@ class AulaHorarioPresenter
 
         return [
             'id' => $f->id,
-            'numero_aula' => $f->numero_aula,
-            'seccion' => $f->seccion,
-            'ubicacion' => $f->ubicacion,
-            'tipo' => $f->tipo,
-            'capacidad' => $f->capacidad,
+            'nombre_aula' => $f->nombre_aula,
+            'tipo_materia' => $f->tipo_materia,
+            'career_id' => $f->career_id,
             'label' => self::selectLabel($f),
         ];
     }
@@ -93,11 +77,8 @@ class AulaHorarioPresenter
         }
 
         return mb_strtolower(trim(implode(' ', array_filter([
-            (string) ($f->numero_aula ?? ''),
-            (string) ($f->seccion ?? ''),
-            (string) ($f->ubicacion ?? ''),
-            (string) ($f->tipo ?? ''),
-            $f->capacidad !== null ? (string) $f->capacidad : '',
+            (string) ($f->nombre_aula ?? ''),
+            (string) ($f->tipo_materia ?? ''),
         ]))));
     }
 }

@@ -38,6 +38,14 @@
                     <dt>No. de semestres</dt>
                     <dd>{{ $career->semesters ?? '—' }}</dd>
                 </div>
+                <div class="career-view-row">
+                    <dt>Monto mensualidad</dt>
+                    <dd>{{ $career->monto_mensualidad !== null ? '$' . number_format((float) $career->monto_mensualidad, 2) : '—' }}</dd>
+                </div>
+                <div class="career-view-row">
+                    <dt>Cargo monetario</dt>
+                    <dd>{{ $career->cargo_monetario !== null ? '$' . number_format((float) $career->cargo_monetario, 2) : '—' }}</dd>
+                </div>
             </dl>
         </div>
     </div>

@@ -54,7 +54,12 @@ class teacherController extends Controller
             'name',
             'id'
         ];
-        
+        // En belongsToMany la pivote también tiene `id`; el SELECT debe calificar columnas de `careers`.
+        $teachingCareerColumns = array_map(
+            static fn (string $col): string => 'careers.' . $col,
+            $careerColumns
+        );
+
         // --- Ejecución de la Consulta ---
         
         $dataList = User::query()
@@ -71,8 +76,8 @@ class teacherController extends Controller
             ->with(['academicProfile.career' => function (Relation $query) use ($careerColumns) {
                 $query->select($careerColumns);
             }])
-            ->with(['teachingCareers' => function (Relation $query) use ($careerColumns) {
-                $query->select($careerColumns);
+            ->with(['teachingCareers' => function (Relation $query) use ($teachingCareerColumns) {
+                $query->select($teachingCareerColumns);
             }])
             ->get();
 
@@ -95,6 +100,10 @@ class teacherController extends Controller
         $userColumns = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'telefono', 'RFC', 'fecha_nacimiento', 'edad', 'address_id'];
         $academicColumns = ['user_id', 'status', 'career_id', 'departamento'];
         $careerColumns = ['id', 'name'];
+        $teachingCareerColumnsExport = array_map(
+            static fn (string $col): string => 'careers.' . $col,
+            $careerColumns
+        );
 
         $dataList = User::query()
             ->whereHas('roles', function (Builder $query) use ($roleName) {
@@ -108,8 +117,8 @@ class teacherController extends Controller
             ->with(['academicProfile.career' => function (Relation $query) use ($careerColumns) {
                 $query->select($careerColumns);
             }])
-            ->with(['teachingCareers' => function (Relation $query) use ($careerColumns) {
-                $query->select($careerColumns);
+            ->with(['teachingCareers' => function (Relation $query) use ($teachingCareerColumnsExport) {
+                $query->select($teachingCareerColumnsExport);
             }])
             ->get();
 

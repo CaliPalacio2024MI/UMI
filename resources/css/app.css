@@ -13,6 +13,7 @@
 @import './Control Admin/base.css';
 @import './Control Admin/aulas.css';
 @import './ControlEsc/base.css';
+@import './ControlEsc/boletas.css';
 @import './billing.css';
 @import './Mi_Informacion/clases.css';
 @import './Mi_Informacion/horario.css';

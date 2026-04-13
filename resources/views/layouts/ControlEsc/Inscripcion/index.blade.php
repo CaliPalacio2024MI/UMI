@@ -229,6 +229,7 @@
                             @foreach ($carreras as $carrera)
                                 <option value="{{ $carrera->id }}"
                                         data-semesters="{{ (int) ($carrera->semesters ?? 1) }}"
+                                        data-cargo-monetario="{{ $carrera->cargo_monetario !== null ? (float) $carrera->cargo_monetario : '' }}"
                                         {{ old('carrera_id', $alumno->carrera_id ?? '') == $carrera->id ? 'selected' : '' }}>
                                     {{ $carrera->name }}
                                 </option>
@@ -344,7 +345,7 @@
                                 <label for="modal_concepto" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</label>
                                 <select id="modal_concepto" name="concepto" class="filter-select" style="width: 100%; padding: 8px;">
                                     <option value="" data-amount="">-- Seleccione un concepto --</option>
-                                    <option value="Inscripción de nuevo ingreso" data-amount="80000">Inscripción de nuevo ingreso</option>
+                                    <option value="Inscripción" data-from-career="1">Inscripción</option>
                                     @if(isset($conceptosDisponibles) && $conceptosDisponibles->isNotEmpty())
                                         @foreach($conceptosDisponibles as $c)
                                             <option value="{{ $c->concept }}" data-amount="{{ $c->amount }}">
@@ -355,7 +356,7 @@
                                 </select>
 
                                 {{-- 3. Monto --}}
-                                <label for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto:</label>
+                                <label for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto de tiempo normal:</label>
                                 <input type="text" 
                                        id="modal_monto_visible" 
                                        readonly 
@@ -389,12 +390,6 @@
                                     <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_ficha_pago) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver ficha actual</a></div>
                                 @endif
 
-                                <label for="modal_archivo_xml" style="font-weight:bold; display:block; margin-top:14px;">Factura PDF:</label>
-                                @if(isset($alumno) && !empty($alumno->doc_factura_xml_rechazado ?? false))
-                                    <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Factura rechazada — adjunta un PDF nuevo.</p>
-                                @endif
-                                <input type="file" id="modal_archivo_xml" name="archivo_xml" accept=".pdf,application/pdf" style="width: 100%;">
-                                <small style="color: #666;">Solo archivos .pdf</small>
                                 @if(isset($alumno) && ($alumno->doc_factura_xml ?? false))
                                     <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_factura_xml) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver factura actual</a></div>
                                 @endif
@@ -465,7 +460,7 @@
         const conceptoSelect = document.getElementById('modal_concepto');
         const montoVisible = document.getElementById('modal_monto_visible');
         const montoHidden = document.getElementById('modal_monto');
-
+        const carreraSelect = document.getElementById('carrera_id');
 
         // --- LÓGICA DE FACTURACIÓN (DESPLIEGUE DEL MENÚ) ---
         // Esta función ahora muestra/oculta el bloque de detalles de la factura.
@@ -487,25 +482,41 @@
             });
         }
 
-        // Listener para el selector de concepto: actualiza el monto
-        if (conceptoSelect) {
-            conceptoSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const amount = selectedOption.getAttribute('data-amount');
-                
-                if (montoVisible && montoHidden) {
-                    if (amount) {
-                        // Formatear el monto para visualización
-                        montoVisible.value = '$ ' + parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                        montoHidden.value = amount; // Valor limpio para el backend
-                    } else {
-                        montoVisible.value = '$ 0.00';
-                        montoHidden.value = '';
-                    }
-                }
-            });
+        function obtenerCargoMonetarioCarreraSeleccionada() {
+            if (!carreraSelect || carreraSelect.selectedIndex < 0) return null;
+            const opt = carreraSelect.options[carreraSelect.selectedIndex];
+            const raw = opt && opt.getAttribute('data-cargo-monetario');
+            if (raw === null || raw === '') return null;
+            const n = parseFloat(raw);
+            return isNaN(n) ? null : n;
         }
 
+        function aplicarMontoFacturacion() {
+            if (!conceptoSelect || !montoVisible || !montoHidden) return;
+            const selectedOption = conceptoSelect.options[conceptoSelect.selectedIndex];
+            const usaCarrera = selectedOption && selectedOption.getAttribute('data-from-career') === '1';
+            let amount = null;
+            if (usaCarrera) {
+                amount = obtenerCargoMonetarioCarreraSeleccionada();
+            } else {
+                const a = selectedOption && selectedOption.getAttribute('data-amount');
+                if (a !== null && a !== '') {
+                    const n = parseFloat(a);
+                    amount = isNaN(n) ? null : n;
+                }
+            }
+            if (amount !== null && amount >= 0) {
+                montoVisible.value = '$ ' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                montoHidden.value = String(amount);
+            } else {
+                montoVisible.value = '$ 0.00';
+                montoHidden.value = '';
+            }
+        }
+
+        if (conceptoSelect) {
+            conceptoSelect.addEventListener('change', aplicarMontoFacturacion);
+        }
 
         // Factura obligatoria por defecto al cargar
         if (checkFactura && billingDetails) {
@@ -545,7 +556,6 @@
 
         // --- LÓGICA: semestre a inscribir ---
         // En nuevo registro de aspirante siempre semestre 1; en reinscripción se mantiene el valor del servidor
-        const carreraSelect = document.getElementById('carrera_id');
         const inputSemestre = document.getElementById('semestre');
         const formInscripcion = document.getElementById('inscriptionForm');
         const esNuevoRegistro = formInscripcion && formInscripcion.getAttribute('data-es-nuevo-registro') === '1';
@@ -566,9 +576,16 @@
         }
 
         if (carreraSelect && inputSemestre) {
-            carreraSelect.addEventListener('change', actualizarSemestreSegunCarrera);
+            carreraSelect.addEventListener('change', function() {
+                actualizarSemestreSegunCarrera();
+                aplicarMontoFacturacion();
+            });
             actualizarSemestreSegunCarrera();
+        } else if (carreraSelect) {
+            carreraSelect.addEventListener('change', aplicarMontoFacturacion);
         }
+
+        aplicarMontoFacturacion();
 
     }
     ejecutarLogicaInscripcion();

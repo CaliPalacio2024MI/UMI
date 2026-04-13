@@ -28,7 +28,7 @@
         </div>
     </div>
     <template id="aulasCreateFormTemplate">
-        @include('layouts.ControlAdmin.Infraestrucuta.components.create')
+        @include('layouts.ControlAdmin.Infraestrucuta.components.create', ['carreras' => $carreras ?? collect()])
     </template>
     @endif
     @if(session('success'))
@@ -44,10 +44,9 @@
             <table class="tabla-base tabla-rayas tabla-bordes tabla-aulas" style="width: 100%;">
                 <thead class="encabezado-tabla">
                     <tr>
-                        <th>Número</th>
-                        <th>Tipo</th>
-                        <th>Sección</th>
-                        <th>Capacidad</th>
+                        <th>Nombre del aula</th>
+                        <th>Carrera</th>
+                        <th>Materia</th>
                         @if(Auth::user()->hasAnyRole(['master']))
                             <th class="aulas-tabla-acciones">Acciones</th>
                         @endif
@@ -56,16 +55,12 @@
                 <tbody class="cuerpo-tabla">
                     @foreach ($data as $item)
                         <tr>
-                            <td>{{ $item->numero_aula }}</td>
-                            <td>{{ $item->tipo }}</td>
-                            <td>{{ $item->seccion }}</td>
-                            <td>{{ $item->capacidad ?? '—' }}</td>
+                            <td>{{ $item->nombre_aula ?? '—' }}</td>
+                            <td>{{ $item->career->name ?? '—' }}</td>
+                            <td>{{ $item->tipo_materia ? $item->tipo_materia : '—' }}</td>
                             @if(Auth::user()->hasAnyRole(['master']))
                                 <td class="aulas-tabla-acciones">
                                     <div class="aulas-acciones">
-                                        <button type="button" class="aulas-accion-icon aulas-open-show-modal" title="Ver" aria-label="Ver detalle de aula" data-aulas-show-template="aulas-show-detail-template-{{ $item->id }}" data-modal-title="Aula {{ $item->numero_aula }}">
-                                            <img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="" width="22" height="22" loading="lazy">
-                                        </button>
                                         <button type="button" class="aulas-accion-icon aulas-open-edit-modal" title="Editar" aria-label="Editar aula" data-aulas-edit-template="aulas-edit-form-template-{{ $item->id }}">
                                             <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="" width="22" height="22" loading="lazy">
                                         </button>
@@ -87,16 +82,14 @@
         @if(Auth::user()->hasAnyRole(['master']))
             @foreach ($data as $item)
                 <template id="aulas-edit-form-template-{{ $item->id }}">
-                    @include('layouts.ControlAdmin.Infraestrucuta.components.edit_form', ['facility' => $item])
-                </template>
-                <template id="aulas-show-detail-template-{{ $item->id }}">
-                    @include('layouts.ControlAdmin.Infraestrucuta.components.show_detail', ['facility' => $item])
+                    @include('layouts.ControlAdmin.Infraestrucuta.components.edit_form', ['facility' => $item, 'carreras' => $carreras ?? collect()])
                 </template>
             @endforeach
         @endif
     @endif
 </div>
 @push('scripts')
+@include('layouts.ControlAdmin.Infraestrucuta.components._aulas_materias_select_script')
 <script>
 (function () {
     /* Navegación SPA: el HTML de Aulas se inyecta en #main-content y este script se ejecuta entonces;
@@ -114,7 +107,6 @@
 
         const MODAL_TITLE_CREATE = 'Agregar Nueva Aula';
         const MODAL_TITLE_EDIT = 'Editar aula';
-        const MODAL_TITLE_SHOW_FALLBACK = 'Detalle de la aula';
 
         const hideModal = () => {
             if (modal) {
@@ -167,6 +159,12 @@
             }
             if (!injectCreateFormFromTemplate()) {
                 modalBodyContent.innerHTML = '<p style="color:red;">No se pudo cargar el formulario.</p>';
+            } else if (typeof window.umiAulasFillMateriaSelect === 'function') {
+                const carSel = modalBodyContent.querySelector('#createFacilityForm #career_id');
+                const matSel = modalBodyContent.querySelector('#createFacilityForm #tipo_materia');
+                if (carSel && matSel) {
+                    window.umiAulasFillMateriaSelect(carSel.value || '', matSel, null);
+                }
             }
             modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');
@@ -181,32 +179,19 @@
             }
             if (!injectBodyFromTemplateId(templateId)) {
                 modalBodyContent.innerHTML = '<p style="color:red;">No se pudo abrir el formulario de edición.</p>';
+            } else if (typeof window.umiAulasFillMateriaSelect === 'function') {
+                const ef = modalBodyContent.querySelector('#editFacilityForm');
+                if (ef) {
+                    const cs = ef.querySelector('#edit_career_id');
+                    const ms = ef.querySelector('#edit_tipo_materia');
+                    if (cs && ms) {
+                        window.umiAulasFillMateriaSelect(cs.value || '', ms, ms.getAttribute('data-preselected') || '');
+                    }
+                }
             }
             modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');
         };
-
-        const showDetailModal = (templateId, titleText) => {
-            if (!modal || !modalBodyContent || !templateId) {
-                return;
-            }
-            if (modalTitleEl) {
-                modalTitleEl.textContent = titleText && titleText.trim() ? titleText.trim() : MODAL_TITLE_SHOW_FALLBACK;
-            }
-            if (!injectBodyFromTemplateId(templateId)) {
-                modalBodyContent.innerHTML = '<p style="color:red;">No se pudo mostrar el detalle.</p>';
-            }
-            modal.classList.add('is-visible');
-            modal.setAttribute('aria-hidden', 'false');
-        };
-
-        document.querySelectorAll('.aulas-open-show-modal').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const tid = btn.getAttribute('data-aulas-show-template');
-                const title = btn.getAttribute('data-modal-title');
-                showDetailModal(tid, title);
-            });
-        });
 
         document.querySelectorAll('.aulas-open-edit-modal').forEach(function (btn) {
             btn.addEventListener('click', function () {

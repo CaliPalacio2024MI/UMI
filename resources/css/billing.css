@@ -1,3 +1,14 @@
+/* Acordeón por mes (facturación): sin cambiar colores/bordes del bloque; solo quitar marcador nativo del <summary> */
+.monthly-block-details > summary.month-header {
+    list-style: none;
+    outline: none;
+    border-bottom: none;
+    box-shadow: none;
+}
+.monthly-block-details > summary.month-header::-webkit-details-marker {
+    display: none;
+}
+
 /* =========================================
    1. ESTILOS GENERALES Y ESTRUCTURA
    ========================================= */
@@ -282,24 +293,24 @@ table tbody tr.billing-main-row:hover { background-color: #f1f3f5; }
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden;
 }
 
-/* Estilos comunes para Summary */
-.period-accordion summary,
-.user-accordion summary {
+/* Estilos comunes para Summary (solo filas principales de período y alumno; no encabezados mensuales anidados) */
+.period-accordion > details > summary,
+.user-accordion > details > summary {
     cursor: pointer; font-weight: 600;
     display: flex; justify-content: space-between; align-items: center;
     list-style: none; transition: background-color 0.2s;
 }
 summary::-webkit-details-marker, summary::marker { display: none; }
 
-/* Acordeón de Periodo (Nivel 1) */
-.period-accordion summary {
+/* Acordeón de Periodo (Nivel 1) — solo el <details> período, no los meses dentro de usuarios */
+.period-accordion > details > summary {
     padding: 18px 25px; font-size: 1.1rem;
     background-color: #f8f9fa; color: #333;
     border-bottom: 1px solid #e0e0e0;
 }
-.period-accordion details:last-child summary { border-bottom: none; }
-.period-accordion summary:hover { background-color: #f1f3f5; }
-.period-accordion details[open] > summary {
+.period-accordion > details:last-child > summary { border-bottom: none; }
+.period-accordion > details > summary:hover { background-color: #f1f3f5; }
+.period-accordion > details[open] > summary {
     background-color: #f1f3f5; border-bottom: 1px solid #e0e0e0;
 }
 
@@ -312,12 +323,13 @@ summary::-webkit-details-marker, summary::marker { display: none; }
     margin-top: 0; box-shadow: none; border-radius: 8px; border: 1px solid #e9ecef;
 }
 
-.user-accordion summary {
+/* Solo la fila de alumno (details hijo directo), no los <details> mensuales anidados en .user-details */
+.user-accordion > details > summary {
     padding: 14px 20px;
     background-color: #223F70; color: #FFFFFF;
 }
-.user-accordion summary:hover { background-color: #1a3055; }
-.user-accordion details[open] > summary {
+.user-accordion > details > summary:hover { background-color: #1a3055; }
+.user-accordion > details[open] > summary {
     background-color: #1a3055; border-bottom: 1px solid #152744;
 }
 
@@ -508,7 +520,8 @@ button.btn-sm-add {
 
 @media (max-width: 768px) {
     .main { padding: 20px 15px; }
-    .period-accordion summary, .user-accordion summary {
+    .period-accordion > details > summary,
+    .user-accordion > details > summary {
         flex-direction: column; align-items: flex-start; gap: 5px;
     }
     .user-accordion .user-role { margin-left: 0; margin-top: 5px; }

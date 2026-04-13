@@ -219,14 +219,29 @@ if (formFactura) {
             }
         }
 
-        // --- 3. VALIDACIÓN Monto ---
+        // --- 3. VALIDACIÓN Monto (catálogo: hidden #modal_monto; extra: #modal_monto_ext) ---
         if (valid) {
-            const montoEl = document.getElementById('modal_monto');
-            if (montoEl) {
-                const montoVal = montoEl.value;
-                if (!montoVal || parseFloat(montoVal) <= 0) {
+            const montoExt = document.getElementById('modal_monto_ext');
+            const montoHidden = document.getElementById('modal_monto');
+            let montoVal = '';
+            if (montoExt && !montoExt.disabled && montoExt.hasAttribute('name')) {
+                montoVal = montoExt.value;
+            } else if (montoHidden && !montoHidden.disabled) {
+                montoVal = montoHidden.value;
+            }
+            if (!montoVal || parseFloat(montoVal) <= 0) {
+                valid = false;
+                errorMessage = 'No se pudo validar el monto de la inscripción. Revise carrera y concepto, o por favor reinténtelo más tarde.';
+            }
+        }
+
+        // --- 3b. Concepto libre (factura extra en Facturación) ---
+        if (valid) {
+            const conceptExt = document.getElementById('modal_concepto_ext');
+            if (conceptExt && !conceptExt.disabled && conceptExt.hasAttribute('name')) {
+                if (!String(conceptExt.value || '').trim()) {
                     valid = false;
-                    errorMessage = 'El monto no es válido. Selecciona un concepto nuevamente.';
+                    errorMessage = 'Indique el concepto de la factura.';
                 }
             }
         }
@@ -246,6 +261,7 @@ if (formFactura) {
     document.addEventListener('change', (e) => {
         if (e.target.id === 'modal_concepto') {
             const select = e.target;
+            if (select.disabled) return;
             const inputReal = document.getElementById('modal_monto');
             const inputVisible = document.getElementById('modal_monto_visible');
             
@@ -270,6 +286,35 @@ if (formFactura) {
                     inputVisible.value = '';
                 }
             }
+        }
+    });
+
+    /* Factura extra: cargo monetario = monto de tiempo normal × (porcentaje moratorio ÷ 100) */
+    function recalcCargoMoratorioFacturaExtra() {
+        const montoEl = document.getElementById('modal_monto_ext');
+        const pctEl = document.getElementById('modal_porcentaje_cargo_moratorio');
+        const cargoEl = document.getElementById('modal_cargo_monetario');
+        if (!montoEl || !pctEl || !cargoEl) return;
+        if (montoEl.disabled || pctEl.disabled) return;
+        const rawM = String(montoEl.value || '').trim().replace(',', '.');
+        const rawP = String(pctEl.value || '').trim().replace(',', '.');
+        if (rawM === '' || rawP === '') {
+            cargoEl.value = '';
+            return;
+        }
+        const m = parseFloat(rawM);
+        const p = parseFloat(rawP);
+        if (isNaN(m) || isNaN(p) || m < 0 || p < 0) {
+            cargoEl.value = '';
+            return;
+        }
+        const cargo = m * (p / 100);
+        cargoEl.value = (Math.round(cargo * 100) / 100).toFixed(2);
+    }
+
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'modal_monto_ext' || e.target.id === 'modal_porcentaje_cargo_moratorio') {
+            recalcCargoMoratorioFacturaExtra();
         }
     });
 
@@ -369,6 +414,97 @@ function fillAndOpenModal(modal, btn) {
         // 6. Periodo
         if (btn.dataset.periodId) {
             setVal('#modal_period_id', btn.dataset.periodId);
+        }
+
+        // 7. Factura extra (EXT-) vs mensualidad (MEN-): concepto/monto manual solo en EXT (vista Facturación)
+        const dualConcept = modal.querySelector('#modal_concepto_ext_wrap');
+        if (dualConcept) {
+            const conceptMen = modal.querySelector('#modal_concepto_men_wrap');
+            const conceptExt = modal.querySelector('#modal_concepto_ext_wrap');
+            const selectConcept = modal.querySelector('#modal_concepto');
+            const inputConceptExt = modal.querySelector('#modal_concepto_ext');
+            const montoMen = modal.querySelector('#modal_monto_men_wrap');
+            const montoExt = modal.querySelector('#modal_monto_ext_wrap');
+            const montoHidden = modal.querySelector('#modal_monto');
+            const montoVis = modal.querySelector('#modal_monto_visible');
+            const montoExtInput = modal.querySelector('#modal_monto_ext');
+            const montoLabel = modal.querySelector('#modal_monto_label');
+            if (prefix === 'MEN-') {
+                if (conceptMen) conceptMen.style.display = '';
+                if (conceptExt) conceptExt.style.display = 'none';
+                if (selectConcept) {
+                    selectConcept.disabled = false;
+                    selectConcept.setAttribute('name', 'concepto');
+                    selectConcept.required = true;
+                }
+                if (inputConceptExt) {
+                    inputConceptExt.value = '';
+                    inputConceptExt.disabled = true;
+                    inputConceptExt.removeAttribute('name');
+                }
+                if (montoMen) montoMen.style.display = '';
+                if (montoExt) montoExt.style.display = 'none';
+                if (montoVis) montoVis.readOnly = true;
+                if (montoHidden) {
+                    montoHidden.disabled = false;
+                    montoHidden.setAttribute('name', 'monto');
+                    montoHidden.required = true;
+                }
+                if (montoExtInput) {
+                    montoExtInput.value = '';
+                    montoExtInput.disabled = true;
+                    montoExtInput.removeAttribute('name');
+                }
+                if (montoLabel) {
+                    montoLabel.textContent = 'Monto:';
+                    montoLabel.setAttribute('for', 'modal_monto_visible');
+                }
+            } else {
+                if (conceptMen) conceptMen.style.display = 'none';
+                if (conceptExt) conceptExt.style.display = '';
+                if (selectConcept) {
+                    selectConcept.disabled = true;
+                    selectConcept.removeAttribute('name');
+                    selectConcept.required = false;
+                }
+                if (inputConceptExt) {
+                    inputConceptExt.disabled = false;
+                    inputConceptExt.setAttribute('name', 'concepto');
+                    inputConceptExt.required = true;
+                }
+                if (montoMen) montoMen.style.display = 'none';
+                if (montoExt) montoExt.style.display = '';
+                if (montoHidden) {
+                    montoHidden.value = '';
+                    montoHidden.disabled = true;
+                    montoHidden.removeAttribute('name');
+                }
+                if (montoVis) montoVis.value = '';
+                if (montoExtInput) {
+                    montoExtInput.disabled = false;
+                    montoExtInput.setAttribute('name', 'monto');
+                    montoExtInput.required = true;
+                }
+                if (montoLabel) {
+                    montoLabel.textContent = 'Monto de tiempo normal:';
+                    montoLabel.setAttribute('for', 'modal_monto_ext');
+                }
+            }
+        }
+
+        // 8. Moratorios: solo factura extra (EXT-)
+        const extraWrap = modal.querySelector('#modal_factura_extra_only');
+        const pctEl = modal.querySelector('#modal_porcentaje_cargo_moratorio');
+        const cargoEl = modal.querySelector('#modal_cargo_monetario');
+        if (prefix === 'MEN-') {
+            if (extraWrap) extraWrap.style.display = 'none';
+            if (pctEl) { pctEl.value = ''; pctEl.disabled = true; }
+            if (cargoEl) { cargoEl.value = ''; cargoEl.disabled = true; }
+        } else {
+            if (extraWrap) extraWrap.style.display = '';
+            if (pctEl) pctEl.disabled = false;
+            if (cargoEl) cargoEl.disabled = false;
+            recalcCargoMoratorioFacturaExtra();
         }
     }
     

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\AdmonCont;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use App\Models\Users\Career;
 use App\Models\Users\User;
 use App\Models\AdmonCont\Materia;
@@ -15,11 +17,61 @@ use App\Support\AulaHorarioPresenter;
 
 class HorarioController extends Controller
 {
+    /**
+     * Aulas de infraestructura que coinciden con carrera + materia (facilities.career_id + tipo_materia = nombre materia).
+     */
+    public function aulasDisponibles(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'career_id' => 'required|integer|exists:careers,id',
+            'materia_id' => 'required|integer|exists:materias,id',
+        ]);
+
+        $materia = Materia::query()->findOrFail((int) $validated['materia_id']);
+        if ((int) $materia->career_id !== (int) $validated['career_id']) {
+            return response()->json(['aulas' => []]);
+        }
+
+        $nombre = trim((string) $materia->nombre);
+        $aulas = Facility::query()
+            ->where('career_id', (int) $validated['career_id'])
+            ->where('tipo_materia', $nombre)
+            ->orderBy('nombre_aula')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json([
+            'aulas' => $aulas->map(fn ($f) => [
+                'id' => $f->id,
+                'label' => AulaHorarioPresenter::selectOptionSoloSeccion($f),
+            ])->values(),
+        ]);
+    }
+
+    private function assertAulaCoincideCarreraMateria(Request $request): void
+    {
+        if (! $request->filled('aula_id')) {
+            return;
+        }
+
+        $materia = Materia::query()->findOrFail((int) $request->materia_id);
+        $ok = Facility::query()
+            ->where('id', (int) $request->aula_id)
+            ->where('career_id', (int) $request->carrera_id)
+            ->where('tipo_materia', trim((string) $materia->nombre))
+            ->exists();
+
+        if (! $ok) {
+            throw ValidationException::withMessages([
+                'aula_id' => ['El aula no corresponde a la carrera y materia seleccionadas.'],
+            ]);
+        }
+    }
+
     public function index(Request $request)
     {
         // 1. Obtener los datos necesarios para los desplegables
         $carreras = Career::all();
-        $aulas = Facility::orderedForHorarios()->get();
         $query = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas']);
         $search = $request->search_query;
 
@@ -60,16 +112,9 @@ class HorarioController extends Controller
         $horarios = $query->get();
         // 2. ¿Qué necesitamos hacer ahora con estos datos ($carreras, $aulas, $docentes, $materias)?
         return view('layouts.ControlAdmin.Horarios.index', [
-            // Aquí van tus variables
-            // 1. carreras
             'carreras' => $carreras,
-            // 2. materias
             'materias' => $materias,
-            // 3. docentes
             'docentes' => $docentes,
-            // 4. aulas
-            'aulas' => $aulas,
-            // 5. Horarios
             'horarios' => $horarios,
         ]);
     }
@@ -124,6 +169,8 @@ class HorarioController extends Controller
             'carrera_id.required' => 'Seleccione una carrera.',
             'franjas_json.required' => '',
         ]);
+
+        $this->assertAulaCoincideCarreraMateria($request);
         
         // Decodificar las franjas (el array temporal de JS)
         $franjasData = json_decode($request->franjas_json, true);
@@ -249,14 +296,13 @@ class HorarioController extends Controller
 
     public function edit(Request $request, HorarioClase $horario)
     {
-        $horario->load('franjas');
+        $horario->load(['franjas', 'aula']);
         $carreras = Career::all();
-        $aulas = Facility::orderedForHorarios()->get();
         $docentes = User::with(['academicProfile', 'teachingCareers'])->whereHas('roles', function ($q) {
             $q->where('name', 'docente');
         })->get();
         $materias = Materia::all();
-        $data = compact('carreras', 'materias', 'docentes', 'aulas', 'horario');
+        $data = compact('carreras', 'materias', 'docentes', 'horario');
         if ($request->ajax() || $request->wantsJson()) {
             return view('layouts.ControlAdmin.Horarios.edit_partial', $data);
         }
@@ -276,6 +322,8 @@ class HorarioController extends Controller
         'carrera_id.required' => 'Seleccione una carrera.',
         'franjas_json.required' => '',
     ]);
+
+    $this->assertAulaCoincideCarreraMateria($request);
     
     // Decodificar las franjas (el array temporal de JS)
     $franjasData = json_decode($request->franjas_json, true);

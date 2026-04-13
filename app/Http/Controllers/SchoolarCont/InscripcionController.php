@@ -219,6 +219,7 @@ class InscripcionController extends Controller
             'curp.required' => 'El campo CURP es obligatorio.',
             'curp.size' => 'La CURP debe tener exactamente 18 caracteres.',
             'curp.unique' => 'Esta CURP ya está registrada.',
+            'monto.required' => 'No se pudo validar el monto de la inscripción. Revise carrera y concepto, o por favor reinténtelo más tarde.',
         ];
         $validator = Validator::make($request->all(), $rules, $messages);
         if ($validator->fails()) {

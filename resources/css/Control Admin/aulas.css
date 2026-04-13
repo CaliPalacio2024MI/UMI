@@ -32,25 +32,22 @@
 .tabla-aulas.tabla-base tbody td {
     text-align: center;
 }
+/* Columnas: Nombre del aula | Carrera | Tipo de Materia | (Acciones master) */
 .tabla-aulas.tabla-base thead th:nth-child(1),
 .tabla-aulas.tabla-base tbody td:nth-child(1) {
-    width: 11%;
+    width: 28%;
 }
 .tabla-aulas.tabla-base thead th:nth-child(2),
 .tabla-aulas.tabla-base tbody td:nth-child(2) {
-    width: 18%;
+    width: 32%;
 }
 .tabla-aulas.tabla-base thead th:nth-child(3),
 .tabla-aulas.tabla-base tbody td:nth-child(3) {
-    width: 35%;
-}
-.tabla-aulas.tabla-base thead th:nth-child(4),
-.tabla-aulas.tabla-base tbody td:nth-child(4) {
-    width: 14%;
+    width: 22%;
 }
 .tabla-aulas.tabla-base thead th.aulas-tabla-acciones,
 .tabla-aulas.tabla-base tbody td.aulas-tabla-acciones {
-    width: 22%;
+    width: 18%;
 }
 .aulas-acciones {
     display: flex;
@@ -141,13 +138,15 @@
     box-shadow: none !important;
     outline: none;
 }
-#createFacilityForm select#tipo:invalid {
+/* Opción vacía "Ingrese la carrera": texto gris hasta elegir una carrera */
+#createFacilityForm select#career_id:has(> option[value=""]:checked),
+#editFacilityForm select#edit_career_id:has(> option[value=""]:checked),
+#facilityEditFullPageForm select#career_id:has(> option[value=""]:checked) {
     color: #6b7280;
 }
-#createFacilityForm select#tipo:valid {
-    color: #212529;
-}
-#createFacilityForm select#tipo option {
+#createFacilityForm select#career_id option,
+#editFacilityForm select#edit_career_id option,
+#facilityEditFullPageForm select#career_id option {
     color: #212529;
 }
 .aulas-acciones button.aulas-accion-icon {

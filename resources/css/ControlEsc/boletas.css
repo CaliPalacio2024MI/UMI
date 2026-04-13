@@ -1,0 +1,139 @@
+/* Boletas de calificaciones (Control Escolar) — alineado al mockup */
+
+.boletas-esc {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 2rem;
+}
+
+/* Título: mismo patrón que Carreras (.content-title h3 en Control Admin/base.css) */
+#umi-app-view.boletas-esc > .content-title h3 {
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+}
+
+.boletas-esc__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.boletas-esc__toolbar-spacer {
+    flex: 1;
+    min-width: 8px;
+}
+
+.boletas-esc__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 999px;
+    padding: 10px 16px;
+    min-height: 44px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.boletas-esc__pill--dark {
+    background: var(--umi-blue-dark, #223f70);
+    border-color: var(--umi-blue-dark, #223f70);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(34, 63, 112, 0.25);
+}
+
+.boletas-esc__pill--dark select {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    outline: none;
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.boletas-esc__pill--dark select option {
+    color: #111;
+    background: #fff;
+}
+
+.boletas-esc__export {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 10px 20px;
+    min-height: 44px;
+    background: var(--umi-blue-dark, #223f70);
+    color: #fff !important;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 10px rgba(34, 63, 112, 0.25);
+}
+
+.boletas-esc__export:hover {
+    filter: brightness(1.08);
+}
+
+.boletas-esc__card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.boletas-esc__table-wrap {
+    overflow-x: auto;
+}
+
+.boletas-esc table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.boletas-esc thead th {
+    background: var(--umi-blue-dark, #223f70);
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    padding: 14px 12px;
+}
+
+/* Sobreescribe base.css (#umi-app-view thead th { text-transform: uppercase }) */
+#umi-app-view.boletas-esc table thead th {
+    text-transform: none;
+}
+
+/* Bordes horizontales blancos (evita gris de base.css en #umi-app-view) */
+#umi-app-view.boletas-esc table tbody td {
+    padding: 14px 12px;
+    text-align: center;
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #fff;
+    vertical-align: middle;
+}
+
+.boletas-esc tbody td:first-child {
+    text-align: left;
+    font-weight: 600;
+}
+
+.boletas-esc .boletas-col-divider {
+    border-left: 2px solid #c93030;
+}
+
+.boletas-esc tbody tr:hover td {
+    background: #fafbfc;
+}
+
+.boletas-esc__meta {
+    font-size: 0.88rem;
+    color: #555;
+    margin-bottom: 0.75rem;
+}

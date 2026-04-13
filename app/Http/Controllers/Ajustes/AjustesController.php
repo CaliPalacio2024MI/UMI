@@ -132,7 +132,9 @@ class AjustesController extends Controller
         switch ($seccion) {
             case 'institutions':
                 $request->validate(['name' => 'required|string|max:255|unique:institutions']);
-                $data = $request->all(); 
+                $data = $request->all();
+                $data['is_administrativo'] = $request->boolean('is_administrativo');
+                $data['is_universidad'] = $request->boolean('is_universidad');
 
                 if ($request->hasFile('logo_path')) {
                     $data['logo_path'] = $request->file('logo_path')->store('logos/institutions', 'public');
@@ -391,6 +393,8 @@ public function update(Request $request, $seccion, $id)
         switch ($seccion) {
             case 'institutions':
                 $data = $request->all();
+                $data['is_administrativo'] = $request->boolean('is_administrativo');
+                $data['is_universidad'] = $request->boolean('is_universidad');
                 $request->validate(['name' => 'required|string|max:255|unique:institutions,name,' . $id]);
                 if ($request->hasFile('logo_path')) {
                     if ($item->logo_path) Storage::disk('public')->delete($item->logo_path);

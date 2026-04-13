@@ -52,7 +52,14 @@ class Career extends Model
         'semesters', // <--- ✅ CORRECTO: Plural, como en tu BD
         'institution_id', // Agregado por seguridad ya que está en tu BD
         'career_classification_id',
-        'credits'         // Agregado por seguridad
+        'credits',         // Agregado por seguridad
+        'monto_mensualidad',
+        'cargo_monetario',
+    ];
+
+    protected $casts = [
+        'monto_mensualidad' => 'decimal:2',
+        'cargo_monetario' => 'decimal:2',
     ];
 
     // --- RELACIONES ---

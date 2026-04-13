@@ -31,7 +31,8 @@ use App\Http\Controllers\AdmonCont\store\careerController;
 use App\Http\Controllers\AdmonCont\MateriaController;
 use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
-use App\Http\Controllers\SchoolarCont\MatriculaController; 
+use App\Http\Controllers\SchoolarCont\MatriculaController;
+use App\Http\Controllers\SchoolarCont\BoletaCalificacionController; 
 
 // --- Controladores CRM ---
 use App\Http\Controllers\CRM\CRMController;
@@ -180,6 +181,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             
             // 4. Futuros Módulos (Becas, Titulación...)
             // Route::get('/becas', ...);
+
+            Route::get('/boletas-calificaciones', [BoletaCalificacionController::class, 'index'])->name('boletas.index');
+            Route::get('/boletas-calificaciones/export', [BoletaCalificacionController::class, 'export'])->name('boletas.export');
         });
 
 
@@ -222,12 +226,14 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/aulas', [FacilityController::class, 'index'])->name('facilities.index');
             Route::get('/aulas/crear', [FacilityController::class, 'createForm'])->name('facilities.create');
             Route::post('/aulas', [FacilityController::class, 'store'])->name('facilities.store');
+            Route::get('/aulas/materias-por-carrera', [FacilityController::class, 'materiasPorCarrera'])->name('facilities.materiasPorCarrera');
             Route::get('/aulas/{facility}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
             Route::put('/aulas/{facility}', [FacilityController::class, 'update'])->name('facilities.update');
             Route::get('/aulas/{facility}', [FacilityController::class, 'show'])->name('facilities.show');
             Route::delete('/aulas/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
             
             Route::get('/horarios/{horario}/edit-data', [HorarioController::class, 'editData'])->name('schedules.editData');
+            Route::get('/horarios/aulas-disponibles', [HorarioController::class, 'aulasDisponibles'])->name('schedules.aulasDisponibles');
             Route::resource('horarios', HorarioController::class)->names('schedules');
 
             // Clases (asignar alumnos a horarios) — Control Académico

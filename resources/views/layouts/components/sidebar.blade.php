@@ -143,10 +143,8 @@
             @if(!$isCoordinatorCTP && !$isCTP)
             @if($hasFacturacionSubmenu)
                 {{-- CASO A: Master y Control Administrativo (Con submenú flotante) --}}
-                <li class="has-submenu submenu-flotante {{ request()->routeIs('Facturacion.*') ? 'active' : '' }}">
-                    
-                    {{-- El enlace principal lleva al Index (Panel General) --}}
-                    <a href="{{ route('Facturacion.index') }}">
+                <li class="has-submenu submenu-flotante {{ request()->routeIs('Facturacion.*', 'facturacion.conceptos.*') ? 'active' : '' }}">
+                    <a href="#">
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
                         </span>
@@ -155,14 +153,14 @@
                     
                     {{-- SUBMENÚ FLOTANTE A LA DERECHA --}}
                     <ul class="submenu">
-                        <li class="{{ request()->routeIs('facturacion.conceptos.*') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('facturacion.conceptos.index') }}">Conceptos y Montos</a>
+                        <li class="{{ request()->routeIs('Facturacion.index') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('Facturacion.index') }}">Conceptos y Montos</a>
                         </li>
                     </ul>
                 </li>
             @else
                 {{-- CASO B: Alumnos, Docentes (Enlace directo sin submenú) --}}
-                <li class="@if(request()->routeIs('Facturacion.*')) active @endif">
+                <li class="@if(request()->routeIs('Facturacion.*', 'facturacion.conceptos.*')) active @endif">
                     <a href="{{ route('Facturacion.index') }}">
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
@@ -221,14 +219,11 @@
                             <li class="has-submenu {{ request()->routeIs('escolar.*') ? 'active open' : '' }}">
                                 <a href="#">Control Escolar</a>
                                 <ul class="submenu">
-                                    <li class="{{ request()->routeIs('escolar.inscripcion.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('escolar.inscripcion.index') }}">Inscripción/Reinscripción</a>
-                                    </li>
                                     <li class="{{ request()->routeIs('escolar.students.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('escolar.students.index') }}">Alumnos</a>
                                     </li>
-                                    <li class="{{ request()->is('control-escolar/boletas*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Boletas de calificaciones</a>
+                                    <li class="{{ request()->routeIs('escolar.boletas.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('escolar.boletas.index') }}">Boletas de calificaciones</a>
                                     </li>
                                     <li class="{{ request()->is('control-escolar/becas*') ? 'active-submenu' : '' }}">
                                         <a href="#">Becas</a>

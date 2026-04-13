@@ -3,14 +3,14 @@
 @section('title', 'Editar horario')
 
 @section('vite')
-    @vite(['resources/css/app.css', 'resources/css/Control Admin/horario-edit.css', 'resources/js/horario-edit.js'])
+    @vite(['resources/css/app.css', 'resources/css/Control Admin/horario-edit.css', 'resources/js/app.js'])
 @endsection
 
 @section('content')
 <div class="horario-edit-wrap">
     <div class="creator-container is-editing" id="creator_container">
         <div class="schedule-lists">
-            <form id="schedule_form" method="POST" action="{{ route('control.schedules.update', $horario->id) }}" data-store-url="{{ route('control.schedules.store') }}" @if($horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
+            <form id="schedule_form" method="POST" action="{{ route('control.schedules.update', $horario->id) }}" data-store-url="{{ route('control.schedules.store') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($horario->aula_id) data-initial-aula-id="{{ $horario->aula_id }}" @endif @if($horario->aula_id && $horario->aula) data-initial-aula-label="{{ e(\App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)) }}" @endif @if($horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
                 @csrf
                 @method('PUT')
                 @error('franjas_json')
@@ -109,11 +109,8 @@
 
                 <div class="schedule-list-select">
                     <label for="aula_select">Aula</label>
-                    <select id="aula_select" name="aula_id">
-                        <option value="" class="select-placeholder">Seleccione Aula</option>
-                        @foreach ($aulas as $aula)
-                            <option value="{{ $aula->id }}" @if($aula->id == $horario->aula_id) selected @endif>{{ \App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($aula) }}</option>
-                        @endforeach
+                    <select id="aula_select" name="aula_id" class="select-placeholder">
+                        <option value="">Cargando aulas…</option>
                     </select>
                 </div>
 

@@ -1943,6 +1943,40 @@
     max-width: 460px;
 }
 
+/* Modales crear / editar carrera: no crecen de más; scroll interno en el formulario */
+#createCareerModal.modal-overlay,
+[id^="editCareerModal_"].modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+#createCareerModal .modal-content-container,
+[id^="editCareerModal_"] .modal-content-container {
+    margin: auto;
+    width: min(100%, 600px);
+    max-width: 600px;
+    max-height: min(92vh, 880px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+#createCareerModal .modal-header-custom,
+[id^="editCareerModal_"] .modal-header-custom {
+    flex-shrink: 0;
+}
+#createCareerModal .modal-body-custom,
+[id^="editCareerModal_"] .modal-body-custom {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
+}
+
 /* Clases para mostrar/ocultar con JavaScript */
 .modal-overlay.is-visible {
     display: block; /* Muestra el modal */
@@ -2061,7 +2095,9 @@
 #createCareerModal .form-field > label[for="career_classification_id"],
 #createCareerModal .form-field > label[for="description1"],
 #createCareerModal .form-field > label[for="description2"],
-#createCareerModal .form-field > label[for="description3"] {
+#createCareerModal .form-field > label[for="description3"],
+#createCareerModal .form-field > label[for="monto_mensualidad"],
+#createCareerModal .form-field > label[for="createCareerCargoMonetario"] {
     color: #BC8A55;
 }
 
@@ -2128,6 +2164,39 @@
     border: none;
     border-bottom: 2px solid #DB5865;
     border-radius: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+/* Monto mensualidad (number): un solo trazo rojo abajo; lados en blanco (como el resto del formulario) */
+#createCareerModal .form-field input.js-career-monto[type="number"],
+[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"] {
+    padding: 5px 8px;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff !important;
+    color: #212529;
+    border: 1px solid #fff !important;
+    border-bottom: 2px solid #DB5865 !important;
+    border-top-color: #fff !important;
+    border-left-color: #fff !important;
+    border-right-color: #fff !important;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    -moz-appearance: textfield;
+}
+#createCareerModal .form-field input.js-career-monto[type="number"]::-webkit-outer-spin-button,
+#createCareerModal .form-field input.js-career-monto[type="number"]::-webkit-inner-spin-button,
+[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]::-webkit-outer-spin-button,
+[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#createCareerModal .form-field input.js-career-monto[type="number"]:focus,
+[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]:focus {
+    border-color: #fff !important;
+    border-bottom-color: #DB5865 !important;
     outline: none;
     box-shadow: none;
 }

@@ -89,13 +89,34 @@
                     {{-- 7. Semestres (select) --}}
                     <div class="lists form-field">
                         <label for="semesters_{{ $career->id }}">No. de semestres:</label>
-                        <select id="semesters_{{ $career->id }}" name="semesters" class="@error('semesters') validation-error @enderror">
+                        <select id="semesters_{{ $career->id }}" name="semesters" class="js-career-semestres @error('semesters') validation-error @enderror">
                             @php $currentSemesters = old('semesters', $career->semesters); @endphp
                             @for ($i = 1; $i <= 8; $i++)
                             <option value="{{ $i }}" {{ $currentSemesters == $i ? 'selected' : '' }}>{{ $i }}</option>
                             @endfor
                         </select>
                     </div>
+                </div>
+
+                @php
+                    $montoEdit = old('monto_mensualidad', $career->monto_mensualidad);
+                    $semEdit = (int) old('semesters', $career->semesters);
+                    $cargoPreview = ($montoEdit !== null && is_numeric($montoEdit))
+                        ? number_format((float) $montoEdit * max(1, $semEdit), 2, '.', '')
+                        : '';
+                @endphp
+                <div class="form-field">
+                    <label for="monto_mensualidad_{{ $career->id }}">Monto mensualidad:</label>
+                    <input type="number" id="monto_mensualidad_{{ $career->id }}" name="monto_mensualidad" step="0.01" min="0"
+                        placeholder="0.00"
+                        class="js-career-monto @error('monto_mensualidad') validation-error @enderror"
+                        value="{{ $montoEdit !== null && is_numeric($montoEdit) ? $montoEdit : '' }}">
+                </div>
+                <div class="form-field">
+                    <label for="cargo_monetario_{{ $career->id }}">Cargo monetario:</label>
+                    <input type="text" id="cargo_monetario_{{ $career->id }}" class="js-career-cargo-out" readonly tabindex="-1"
+                        value="{{ $cargoPreview }}"
+                        style="background: #f5f5f5; cursor: default;">
                 </div>
                 
                 <div class="modal-footer-custom mt-3">
