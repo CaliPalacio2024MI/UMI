@@ -85,3 +85,4 @@ class Activities extends Model
 
 
 }
+

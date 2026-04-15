@@ -39,7 +39,7 @@
 }
 
 .context-switcher {
-  position: relative; 
+  position: relative;
   margin-left: 15px;
 }
 
@@ -64,9 +64,9 @@
 }
 
 .context-switcher-menu {
-    display: none; 
+    display: none;
     position: absolute;
-    top: 100%; 
+    top: 100%;
     right: 0;
     background: white;
     border: 1px solid #ddd;

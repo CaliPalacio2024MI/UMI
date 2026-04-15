@@ -4,7 +4,36 @@
 
 @section('content')
 
-<div class="modal fade" id="listasModal" tabindex="-1">
+{{-- ===== MODAL FUERA ===== --}}
+@if(in_array($course->modality, ['presencial','hibrida']))
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Escanear Código QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+
+                <div id="reader"></div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- MODAL LISTAS -->
+    <div class="modal fade" id="listasModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
 
@@ -53,6 +82,7 @@
     </div>
 </div>
 
+@if($course->show_welcome)
 <div id="welcomeModal" class="welcome-modal" style="display: none;">
     <div class="welcome-modal-content">
 
@@ -68,7 +98,6 @@
         </div>
         <p class="welcome-turtle-name">Toby</p>
     </div>
-
     <!-- Mely -->
     <div class="welcome-turtle-box">
         <div class="welcome-turtle-wrapper">
@@ -87,6 +116,7 @@
         </button>
     </div>
 </div>
+@endif
 
 {{-- Modal para validación de preguntas --}}
 <div id="questionModal" class="question-modal" style="display: none;">
@@ -177,112 +207,59 @@
             </div>
         @endif
     @endforeach
+
+{{-- EXAMEN FINAL --}}
+@if($finalExamActivity)
+    <a href="#content-final-exam" 
+       class="syllabus-link {{ $progress >= 51 ? '' : 'locked' }}" 
+       data-target="#content-final-exam"
+       @if($progress < 51) onclick="event.preventDefault(); alert('Debes completar el curso para acceder al examen final.');" @endif>
+        
+        @if($finalExamData)
+            ✅ Examen Final ({{ $finalExamData->score }}%)
+        @elseif($progress >= 100)
+            🏆 Examen Final
+        @else
+            🔒 Examen Final ({{ round($progress) }}%)
+        @endif
+
+    </a>
+@endif
+    
 </aside>
-
-{{-- LIBRERÍA QR --}}
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    let html5QrCode = null;
-    const qrModal = document.getElementById('qrModal');
-    const readerId = "reader";
-
-    if (!qrModal) return;
-
-    // CUANDO SE ABRE EL MODAL
-    qrModal.addEventListener('shown.bs.modal', async () => {
-
-        const reader = document.getElementById(readerId);
-
-        // Limpiar contenedor por si quedó algo
-        reader.innerHTML = "";
-
-        html5QrCode = new Html5Qrcode(readerId);
-
-        try {
-            const cameras = await Html5Qrcode.getCameras();
-            console.log("Cámaras detectadas:", cameras);
-
-            if (!cameras || cameras.length === 0) {
-                alert(" No se detectó ninguna cámara");
-                return;
-            }
-
-            // Elegir cámara (trasera si existe)
-            const cameraId = cameras[cameras.length - 1].id;
-
-            await html5QrCode.start(
-                cameraId,
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }, //  CUADRO DE ESCANEO
-                    aspectRatio: 1.0
-                },
-                (decodedText) => {
-                    console.log("QR detectado:", decodedText);
-                    alert("QR detectado: " + decodedText);
-                    cerrarQR();
-                },
-                (errorMessage) => {
-                    // errores de escaneo (se ignoran)
-                }
-            );
-
-        } catch (error) {
-            console.error("Error al iniciar cámara:", error);
-            alert(" Error al acceder a la cámara. Revisa permisos.");
-        }
-
-    });
-
-    //  FUNCIÓN PARA CERRAR
-    async function cerrarQR() {
-        if (html5QrCode) {
-            try {
-                await html5QrCode.stop();
-                await html5QrCode.clear();
-                html5QrCode = null;
-            } catch (e) {
-                console.warn("Error al cerrar cámara:", e);
-            }
-        }
-
-        const modal = bootstrap.Modal.getInstance(qrModal);
-        if (modal) modal.hide();
-    }
-
-    //  BOTÓN CANCELAR / SALIR
-    document.addEventListener("click", function(e) {
-        if (e.target.closest("[data-bs-dismiss='modal']")) {
-            cerrarQR();
-        }
-    });
-
-    // CUANDO SE CIERRA EL MODAL
-    qrModal.addEventListener('hidden.bs.modal', async () => {
-        if (html5QrCode) {
-            try {
-                await html5QrCode.stop();
-                await html5QrCode.clear();
-                html5QrCode = null;
-            } catch (e) {}
-        }
-    });
-
-});
-</script>
 
     {{-- ===== VIEWER ===== --}}
     <main class="course-viewer">
 
         {{-- CONTROLS --}}
         <div class="course-controls">
-            <button id="btnPrev">⏮ Anterior</button>
-            <button id="btnAutoplay">▶️ Autoplay</button>
-            <button id="btnNext">⏭ Siguiente</button>
-            <button class="exit" onclick="window.history.back()">Salir</button>
-        </div>
+    <button id="btnPrev">⏮ Anterior</button>
+    <button id="btnAutoplay">▶️ Autoplay</button>
+    <button id="btnNext">⏭ Siguiente</button>
+
+    <div class="right-controls">
+
+        @if(in_array($course->modality, ['presencial','hibrida']))
+        <button class="btn-qr" data-bs-toggle="modal" data-bs-target="#qrModal">
+            <i class="fa-solid fa-qrcode"></i> Escanear QR
+        </button>
+        @endif
+
+        {{-- 🔥 NUEVO BOTÓN GUÍA --}}
+        @if($course->guide_material_path)
+            <button class="btn-guide" onclick="openGuide('{{ asset('storage/' . $course->guide_material_path) }}')">
+        📘 Guía del curso
+    </button>
+        @else
+            <button class="btn-guide" onclick="showNoGuideMessage()">
+                📘 Guía del curso
+            </button>
+        @endif
+
+        <button class="exit" onclick="window.history.back()">Salir</button>
+
+    </div>
+</div>
 
         <div class="course-progress">
             <div class="course-progress-bar"></div>
@@ -1121,16 +1098,394 @@ document.addEventListener("DOMContentLoaded", function () {
         </section>
     @endforeach
 
+    {{-- ========== EXAMEN FINAL ========== --}}
+@if($finalExamActivity)
+<section class="content-panel" id="content-final-exam" style="display: none;">
+    @if($progress >= 51)
+        <h2>{{ $finalExamActivity->title }}</h2>
+        <p>{{ $finalExamActivity->description }}</p>
+        
+        @if($finalExamData)
+            {{-- Ya completó el examen --}}
+            <div style="background: #d4edda; border: 2px solid #28a745; border-radius: 10px; padding: 20px; text-align: center;">
+                <h3 style="color: #155724; margin: 0 0 10px 0;">✅ ¡Examen Completado!</h3>
+                <p style="margin: 0; font-size: 1.1em;">Calificación: <strong>{{ $finalExamData->score }}%</strong></p>
+                <p style="margin: 5px 0 0 0; color: #666;">Completado el {{ $finalExamData->created_at->format('d/m/Y H:i') }}</p>
+            </div>
+        @else
+            {{-- Aún no lo completa --}}
+            <div class="game-container">
+                {{-- EXAMEN --}}
+                    @if($finalExamActivity && strtolower($finalExamActivity->type) === 'examen')
+                        <div class="game-container examen-container">
+                            <div class="exam-navigation">
+                                <button type="button" class="exam-nav-btn" id="prevQuestion-{{ $finalExamActivity->id }}" disabled>
+                                    ⬅ Anterior
+                                </button>
+                                <span class="question-counter" id="counter-{{ $finalExamActivity->id }}">
+                                    Pregunta <span class="current">1</span> de <span class="total">{{ count($finalExamActivity->content['questions'] ?? []) }}</span>
+                                </span>
+                                <button type="button" class="exam-nav-btn" id="nextQuestion-{{ $finalExamActivity->id }}">
+                                    Siguiente ➡
+                                </button>
+                            </div>
+                            
+                            <form class="examen-form" data-activity-id="{{ $finalExamActivity->id }}" data-total="{{ count($finalExamActivity->content['questions'] ?? []) }}">
+                                @csrf
+                                @foreach ($finalExamActivity->content['questions'] ?? [] as $qIndex => $question)
+                                    <div class="question-item" data-question="{{ $qIndex }}" style="{{ $qIndex === 0 ? '' : 'display: none;' }}">
+                                        <h4>{{ $qIndex + 1 }}. {{ $question['question'] }}</h4>
+                                        <div class="options-container">
+                                            @foreach ($question['options'] ?? [] as $optIndex => $option)
+                                                <label class="option-label">
+                                                    <input type="radio" name="question_{{ $qIndex }}" value="{{ $optIndex }}" required>
+                                                    <span>{{ $option }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <button type="submit" class="btn-submit" id="submitExam-{{ $finalExamActivity->id }}" style="display: none;">
+                                    Finalizar Examen
+                                </button>
+                            </form>
+                            <div class="result-message"></div>
+                        </div>
+                    @endif
+            </div>
+        @endif
+    @else
+        {{-- Curso no completado --}}
+        <div style="background: #f8d7da; border: 2px solid #dc3545; border-radius: 10px; padding: 40px; text-align: center;">
+            <h2 style="color: #721c24; margin: 0 0 15px 0;">🔒 Examen Final Bloqueado</h2>
+            <p style="font-size: 1.2em; margin: 0 0 20px 0;">Debes completar el curso para desbloquear el examen final.</p>
+            <div style="background: white; border-radius: 10px; padding: 15px; max-width: 400px; margin: 0 auto;">
+                <div style="background: #e9ecef; border-radius: 10px; height: 30px; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {{ $progress }}%; transition: width 0.3s;"></div>
+                </div>
+                <p style="margin: 10px 0 0 0; color: #666; font-weight: bold;">{{ round($progress) }}% completado</p>
+            </div>
+        </div>
+    @endif
+</section>
+@endif
+
 
     </main>
 
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    let html5QrCode = null;
+    const qrModal = document.getElementById('qrModal');
+    const readerId = "reader";
+
+    if (!qrModal) return;
+
+    // CUANDO SE ABRE EL MODAL
+    qrModal.addEventListener('shown.bs.modal', async () => {
+
+        const reader = document.getElementById(readerId);
+
+        // Limpiar contenedor por si quedó algo
+        reader.innerHTML = "";
+
+        html5QrCode = new Html5Qrcode(readerId);
+
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            console.log("Cámaras detectadas:", cameras);
+
+            if (!cameras || cameras.length === 0) {
+                alert(" No se detectó ninguna cámara");
+                return;
+            }
+
+            // Elegir cámara (trasera si existe)
+            const cameraId = cameras[cameras.length - 1].id;
+
+            await html5QrCode.start(
+                cameraId,
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }, //  CUADRO DE ESCANEO
+                    aspectRatio: 1.0
+                },
+                (decodedText) => {
+                    console.log("QR detectado:", decodedText);
+                    alert("QR detectado: " + decodedText);
+                    cerrarQR();
+                },
+                (errorMessage) => {
+                    // errores de escaneo (se ignoran)
+                }
+            );
+
+        } catch (error) {
+            console.error("Error al iniciar cámara:", error);
+            alert(" Error al acceder a la cámara. Revisa permisos.");
+        }
+
+    });
+
+    //  FUNCIÓN PARA CERRAR
+    async function cerrarQR() {
+        if (html5QrCode) {
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+                html5QrCode = null;
+            } catch (e) {
+                console.warn("Error al cerrar cámara:", e);
+            }
+        }
+
+        const modal = bootstrap.Modal.getInstance(qrModal);
+        if (modal) modal.hide();
+    }
+
+    //  BOTÓN CANCELAR / SALIR
+    document.addEventListener("click", function(e) {
+        if (e.target.closest("[data-bs-dismiss='modal']")) {
+            cerrarQR();
+        }
+    });
+
+    // CUANDO SE CIERRA EL MODAL
+    qrModal.addEventListener('hidden.bs.modal', async () => {
+        if (html5QrCode) {
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+                html5QrCode = null;
+            } catch (e) {}
+        }
+    });
+
+});
+</script>
+
+{{-- ========== FUNCIONES DE LA TORTUGUITA ========== --}}
+<script>
+function showTurtle() {
+    let turtle = document.getElementById('turtle-mascot');
+    
+    // CORREGIDO: 0 = masculina, 1 = femenina
+    const turtleVideo = window.currentTurtleIndex === 0 
+        ? "{{ asset('videos/tortuguita-hablando.webm') }}"      // MASCULINA
+        : "{{ asset('videos/tortuguita1-hablando.webm') }}";    // FEMENINA
+    
+    console.log(`🐢 Mostrando tortuguita ${window.currentTurtleIndex}`);
+    
+    if (!turtle) {
+        turtle = document.createElement('div');
+        turtle.id = 'turtle-mascot';
+        turtle.className = 'turtle-container';
+        turtle.innerHTML = `
+            <div class="turtle-wrapper">
+                <video autoplay loop muted playsinline class="turtle-video">
+                    <source src="${turtleVideo}" type="video/webm">
+                </video>
+            </div>
+        `;
+        document.body.appendChild(turtle);
+    } else {
+        const video = turtle.querySelector('.turtle-video source');
+        if (video) {
+            video.src = turtleVideo;
+            turtle.querySelector('.turtle-video').load();
+        }
+    }
+    
+    turtle.classList.add('active');
+    
+    const video = turtle.querySelector('.turtle-video');
+    if (video) {
+        video.play();
+    }
+}
+
+// NUEVA FUNCIÓN: Mostrar tortuguita SILENCIOSA específica durante videos
+function showTurtleWithVoice(voiceIndex) {
+    let turtle = document.getElementById('turtle-mascot');
+    
+    // CORREGIDO: 0 = masculina, 1 = femenina
+    const turtleVideo = voiceIndex === 0 
+        ? "{{ asset('videos/tortuguita-hablando.webm') }}"      // MASCULINA
+        : "{{ asset('videos/tortuguita1-hablando.webm') }}";    // FEMENINA
+    
+    console.log(`🐢 Mostrando tortuguita SILENCIOSA: voz ${voiceIndex}`);
+    
+    if (!turtle) {
+        turtle = document.createElement('div');
+        turtle.id = 'turtle-mascot';
+        turtle.className = 'turtle-container';
+        turtle.innerHTML = `
+            <div class="turtle-wrapper">
+                <video autoplay loop muted playsinline class="turtle-video">
+                    <source src="${turtleVideo}" type="video/webm">
+                </video>
+            </div>
+        `;
+        document.body.appendChild(turtle);
+    } else {
+        const video = turtle.querySelector('.turtle-video source');
+        if (video) {
+            video.src = turtleVideo;
+            turtle.querySelector('.turtle-video').load();
+        }
+    }
+    
+    turtle.classList.add('active');
+    turtle.querySelector('.turtle-video')?.play();
+}
+
+function hideTurtle() {
+    const turtle = document.getElementById('turtle-mascot');
+    if (turtle) {
+        turtle.classList.remove('active');
+        
+        const video = turtle.querySelector('.turtle-video');
+        if (video) {
+            video.pause();
+        }
+    }
+}
+
+async function readPdf(url) {
+    const speakBtn = document.getElementById('btnSpeak');
+    
+    try {
+        window.isReading = true;
+        if (speakBtn) {
+            speakBtn.textContent = '⏸ Detener';
+            speakBtn.style.background = '#ff5252';
+        }
+        
+        const loadingTask = pdfjsLib.getDocument(url);
+        const pdf = await loadingTask.promise;
+
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const strings = content.items.map(item => item.str).join(' ');
+            fullText += strings + ' ';
+        }
+
+        fullText = fullText.replace(/\s+/g, ' ').trim();
+
+        speakWithElevenLabs(
+            fullText.substring(0, 5000),
+            () => showTurtle(),
+            () => {
+                hideTurtle();
+                window.isReading = false;
+                if (speakBtn) {
+                    speakBtn.textContent = '🔊 Leer';
+                    speakBtn.style.background = '';
+                }
+            }
+        );
+
+    } catch (error) {
+        console.error(error);
+        hideTurtle();
+        window.isReading = false;
+        if (speakBtn) {
+            speakBtn.textContent = '🔊 Leer';
+            speakBtn.style.background = '';
+        }
+        speak('No se pudo leer el PDF.');
+    }
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const btn = document.getElementById('btnSpeak');
+    if(!btn) return;
+
+    btn.addEventListener('click', async () => {
+        if (window.isReading) {
+            window.speechSynthesis.cancel();
+            if (window.currentAudio) {
+                window.currentAudio.pause();
+                window.currentAudio = null;
+            }
+            hideTurtle();
+            window.isReading = false;
+            btn.textContent = '🔊 Leer';
+            btn.style.background = '';
+            return;
+        }
+
+        const panel = document.querySelector('.content-panel:not([style*="display: none"])');
+        if (!panel) {
+            alert('No hay contenido visible');
+            return;
+        }
+
+        const iframes = panel.querySelectorAll('iframe');
+        console.log('🔍 Iframes encontrados:', iframes.length);
+        
+        for (let iframe of iframes) {
+            console.log('📄 Revisando iframe:', iframe.src);
+            if (iframe.src && iframe.src.toLowerCase().includes('.pdf')) {
+                console.log('✅ PDF encontrado, leyendo...');
+                readPdf(iframe.src);
+                return;
+            }
+        }
+
+        let text = panel.innerText.replace(/\s+/g, ' ').trim();
+
+        if (!text || text.length < 10) {
+            alert('No hay suficiente texto para leer');
+            return;
+        }
+
+        speak(text);
+    });
+
+});
+
+function speak(text) {
+    const speakBtn = document.getElementById('btnSpeak');
+    
+    window.isReading = true;
+    if (speakBtn) {
+        speakBtn.textContent = '⏸ Detener';
+        speakBtn.style.background = '#ff5252';
+    }
+    
+    speakWithElevenLabs(
+        text,
+        () => showTurtle(),
+        () => {
+            hideTurtle();
+            window.isReading = false;
+            if (speakBtn) {
+                speakBtn.textContent = '🔊 Leer';
+                speakBtn.style.background = '';
+            }
+        }
+    );
+}
+</script>
 
 <script>
 // ====== CONFIGURACIÓN ELEVENLABS ======
-const ELEVENLABS_API_KEY = 'sk';
+const ELEVENLABS_API_KEY = 'sk_abdb547b1e48007a9557c9ee79f33b4c226d583598ada4db';
 
 // VOCES ALTERNADAS - Una para cada tortuguita
 const ELEVENLABS_VOICES = [
@@ -1607,21 +1962,22 @@ video.addEventListener('ended', function videoEnded() {
                 textToRead = textToRead.trim();
                 
                 if (textToRead.length > 10) {
-                    speakWithElevenLabs(
-                        textToRead,
-                        () => {},
-                        () => {
-                            if (autoplayActive) {
-                                setTimeout(() => {
-                                    video.currentTime = 0;
-                                    video.play().catch(() => {
-                                        if (autoplayActive) advanceToNext();
-                                    });
-                                }, 1000);
-                            }
-                        }
-                    );
-                } else {
+    speakWithElevenLabs(
+        textToRead,
+        () => showTurtle(), // ✅ MOSTRAR tortuguita al leer
+        () => {
+            hideTurtle(); // ✅ OCULTAR al terminar de leer
+            if (autoplayActive) {
+                setTimeout(() => {
+                    video.currentTime = 0;
+                    video.play().catch(() => {
+                        if (autoplayActive) advanceToNext();
+                    });
+                }, 1000);
+            }
+        }
+    );
+}else {
                     video.currentTime = 0;
                     video.play();
                 }
@@ -1662,21 +2018,22 @@ for (let iframe of allIframes) {
                         textToRead = textToRead.trim();
                         
                         if (textToRead.length > 10) {
-                            speakWithElevenLabs(
-                                textToRead,
-                                () => {},
-                                () => {
-                                    if (autoplayActive) {
-                                        setTimeout(() => {
-                                            video.currentTime = 0;
-                                            video.play().catch(() => {
-                                                if (autoplayActive) advanceToNext();
-                                            });
-                                        }, 1000);
-                                    }
-                                }
-                            );
-                        } else {
+    speakWithElevenLabs(
+        textToRead,
+        () => showTurtle(), // ✅ MOSTRAR tortuguita al leer
+        () => {
+            hideTurtle(); // ✅ OCULTAR al terminar de leer
+            if (autoplayActive) {
+                setTimeout(() => {
+                    video.currentTime = 0;
+                    video.play().catch(() => {
+                        if (autoplayActive) advanceToNext();
+                    });
+                }, 1000);
+            }
+        }
+    );
+} else {
                             video.currentTime = 0;
                             video.play();
                         }
@@ -1956,216 +2313,6 @@ for (let iframe of allIframes) {
 });
 </script>
 
-{{-- ========== FUNCIONES DE LA TORTUGUITA ========== --}}
-<script>
-function showTurtle() {
-    let turtle = document.getElementById('turtle-mascot');
-    
-    // CORREGIDO: 0 = masculina, 1 = femenina
-    const turtleVideo = window.currentTurtleIndex === 0 
-        ? "{{ asset('videos/tortuguita-hablando.webm') }}"      // MASCULINA
-        : "{{ asset('videos/tortuguita1-hablando.webm') }}";    // FEMENINA
-    
-    console.log(`🐢 Mostrando tortuguita ${window.currentTurtleIndex}`);
-    
-    if (!turtle) {
-        turtle = document.createElement('div');
-        turtle.id = 'turtle-mascot';
-        turtle.className = 'turtle-container';
-        turtle.innerHTML = `
-            <div class="turtle-wrapper">
-                <video autoplay loop muted playsinline class="turtle-video">
-                    <source src="${turtleVideo}" type="video/webm">
-                </video>
-            </div>
-        `;
-        document.body.appendChild(turtle);
-    } else {
-        const video = turtle.querySelector('.turtle-video source');
-        if (video) {
-            video.src = turtleVideo;
-            turtle.querySelector('.turtle-video').load();
-        }
-    }
-    
-    turtle.classList.add('active');
-    
-    const video = turtle.querySelector('.turtle-video');
-    if (video) {
-        video.play();
-    }
-}
-
-// NUEVA FUNCIÓN: Mostrar tortuguita SILENCIOSA específica durante videos
-function showTurtleWithVoice(voiceIndex) {
-    let turtle = document.getElementById('turtle-mascot');
-    
-    // CORREGIDO: 0 = masculina, 1 = femenina
-    const turtleVideo = voiceIndex === 0 
-        ? "{{ asset('videos/tortuguita-hablando.webm') }}"      // MASCULINA
-        : "{{ asset('videos/tortuguita1-hablando.webm') }}";    // FEMENINA
-    
-    console.log(`🐢 Mostrando tortuguita SILENCIOSA: voz ${voiceIndex}`);
-    
-    if (!turtle) {
-        turtle = document.createElement('div');
-        turtle.id = 'turtle-mascot';
-        turtle.className = 'turtle-container';
-        turtle.innerHTML = `
-            <div class="turtle-wrapper">
-                <video autoplay loop muted playsinline class="turtle-video">
-                    <source src="${turtleVideo}" type="video/webm">
-                </video>
-            </div>
-        `;
-        document.body.appendChild(turtle);
-    } else {
-        const video = turtle.querySelector('.turtle-video source');
-        if (video) {
-            video.src = turtleVideo;
-            turtle.querySelector('.turtle-video').load();
-        }
-    }
-    
-    turtle.classList.add('active');
-    turtle.querySelector('.turtle-video')?.play();
-}
-
-function hideTurtle() {
-    const turtle = document.getElementById('turtle-mascot');
-    if (turtle) {
-        turtle.classList.remove('active');
-        
-        const video = turtle.querySelector('.turtle-video');
-        if (video) {
-            video.pause();
-        }
-    }
-}
-
-async function readPdf(url) {
-    const speakBtn = document.getElementById('btnSpeak');
-    
-    try {
-        window.isReading = true;
-        if (speakBtn) {
-            speakBtn.textContent = '⏸ Detener';
-            speakBtn.style.background = '#ff5252';
-        }
-        
-        const loadingTask = pdfjsLib.getDocument(url);
-        const pdf = await loadingTask.promise;
-
-        let fullText = '';
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            const strings = content.items.map(item => item.str).join(' ');
-            fullText += strings + ' ';
-        }
-
-        fullText = fullText.replace(/\s+/g, ' ').trim();
-
-        speakWithElevenLabs(
-            fullText.substring(0, 5000),
-            () => showTurtle(),
-            () => {
-                hideTurtle();
-                window.isReading = false;
-                if (speakBtn) {
-                    speakBtn.textContent = '🔊 Leer';
-                    speakBtn.style.background = '';
-                }
-            }
-        );
-
-    } catch (error) {
-        console.error(error);
-        hideTurtle();
-        window.isReading = false;
-        if (speakBtn) {
-            speakBtn.textContent = '🔊 Leer';
-            speakBtn.style.background = '';
-        }
-        speak('No se pudo leer el PDF.');
-    }
-}
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-
-    const btn = document.getElementById('btnSpeak');
-    if(!btn) return;
-
-    btn.addEventListener('click', async () => {
-        if (window.isReading) {
-            window.speechSynthesis.cancel();
-            if (window.currentAudio) {
-                window.currentAudio.pause();
-                window.currentAudio = null;
-            }
-            hideTurtle();
-            window.isReading = false;
-            btn.textContent = '🔊 Leer';
-            btn.style.background = '';
-            return;
-        }
-
-        const panel = document.querySelector('.content-panel:not([style*="display: none"])');
-        if (!panel) {
-            alert('No hay contenido visible');
-            return;
-        }
-
-        const iframes = panel.querySelectorAll('iframe');
-        console.log('🔍 Iframes encontrados:', iframes.length);
-        
-        for (let iframe of iframes) {
-            console.log('📄 Revisando iframe:', iframe.src);
-            if (iframe.src && iframe.src.toLowerCase().includes('.pdf')) {
-                console.log('✅ PDF encontrado, leyendo...');
-                readPdf(iframe.src);
-                return;
-            }
-        }
-
-        let text = panel.innerText.replace(/\s+/g, ' ').trim();
-
-        if (!text || text.length < 10) {
-            alert('No hay suficiente texto para leer');
-            return;
-        }
-
-        speak(text);
-    });
-
-});
-
-function speak(text) {
-    const speakBtn = document.getElementById('btnSpeak');
-    
-    window.isReading = true;
-    if (speakBtn) {
-        speakBtn.textContent = '⏸ Detener';
-        speakBtn.style.background = '#ff5252';
-    }
-    
-    speakWithElevenLabs(
-        text,
-        () => showTurtle(),
-        () => {
-            hideTurtle();
-            window.isReading = false;
-            if (speakBtn) {
-                speakBtn.textContent = '🔊 Leer';
-                speakBtn.style.background = '';
-            }
-        }
-    );
-}
-</script>
 
 {{-- ========== CUESTIONARIO HANDLER ========== --}}
 <script>
@@ -3608,7 +3755,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 
-<script>
+<script> //JS listas
 document.addEventListener("DOMContentLoaded", function () {
 
     const departments = @json($departments);
@@ -3689,5 +3836,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
+</script>
+
+<script>
+function openGuide(url) {
+    window.open(url, '_blank');
+}
+
+function showNoGuideMessage() {
+    alert("Este curso no cuenta con una guía disponible 📭");
+}
 </script>
 @endsection

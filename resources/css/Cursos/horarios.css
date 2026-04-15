@@ -1,0 +1,202 @@
+/* resources/css/Cursos/horarios.css */
+
+/* 1. CONFIGURACIÓN GENERAL */
+.horarios-view {
+    padding: 20px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* 2. LAYOUT PRINCIPAL: Mantiene tabla y formulario lado a lado */
+.horarios-layout {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;   /* CRÍTICO: Evita que el formulario se baje */
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+/* 3. SECCIONES (Proporciones) */
+.horarios-tabla-section {
+    flex: 1;             /* La tabla ocupa el espacio sobrante */
+    min-width: 0;        /* Permite que la tabla se encoja si es necesario */
+}
+
+.horarios-form-section {
+    width: 320px;        /* Ancho fijo para el formulario */
+    flex-shrink: 0;      /* Evita que el formulario se aplaste */
+}
+
+/* 4. TARJETAS (CARDS) */
+.card-custom {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+/* Cabecera de la sección de tabla */
+.card-header-custom {
+    padding: 15px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Cabecera azul para el formulario */
+.header-accent-blue {
+    background: #2f4b7c !important;
+    color: white !important;
+    padding: 15px 20px;
+}
+
+/* 5. ESTILOS DE LA TABLA */
+.table-custom-sessions {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Encabezado Azul Solicitado */
+.table-custom-sessions thead th {
+    background: #2f4b7c; /* Azul profesional */
+    color: #ffffff;      /* Texto blanco */
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 14px 15px;
+    text-align: left;
+    border: none;
+    letter-spacing: 0.5px;
+}
+
+/* Redondear esquinas del encabezado azul */
+.table-custom-sessions thead tr:first-child th:first-child {
+    border-top-left-radius: 10px;
+}
+.table-custom-sessions thead tr:first-child th:last-child {
+    border-top-right-radius: 10px;
+}
+
+/* Celdas de la tabla */
+.table-custom-sessions tbody td {
+    padding: 14px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* Fila de edición */
+.edit-row-active {
+    background-color: #f1f5f9 !important;
+    border-left: 4px solid #3b82f6;
+}
+
+/* 6. FORMULARIOS Y BOTONES */
+.form-group-custom {
+    margin-bottom: 15px;
+}
+
+.label-custom {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.form-control-custom {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.form-control-custom:focus {
+    outline: none;
+    border-color: #2f4b7c;
+    box-shadow: 0 0 0 3px rgba(47, 75, 124, 0.1);
+}
+
+.btn-primary-custom {
+    width: 100%;
+    background: #2f4b7c;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+
+.btn-primary-custom:hover {
+    background: #1e3a5f;
+}
+/* BOTÓN ELIMINAR SESIÓN */
+.btn-delete-session {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* HOVER */
+.btn-delete-session:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* CLICK */
+.btn-delete-session:active {
+    transform: scale(0.95);
+}
+
+/* ÍCONO */
+.btn-delete-session i {
+    font-size: 14px;
+}
+
+/* 7. RESPONSIVO: Para tablets y celulares */
+@media (max-width: 1024px) {
+    .horarios-layout {
+        flex-direction: column; /* Se ponen uno bajo otro solo en pantallas chicas */
+        flex-wrap: wrap;
+    }
+    .horarios-tabla-section, .horarios-form-section {
+        width: 100%;
+        flex: 0 0 100%;
+    }
+    .horarios-form-section {
+        order: -1; /* El formulario sale arriba en móviles para facilitar el registro */
+    }
+}
+.modal-dialog {
+    max-width: 96vw;
+}
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+select[multiple] {
+    max-height: 120px;
+    overflow-y: auto;
+}

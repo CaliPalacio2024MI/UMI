@@ -151,31 +151,43 @@
             </div>
         </div>
 
-        {{-- CERTIFICADO --}}
-        <h2 class="section-title">Configuración del Certificado</h2>
-
-        <div class="form-group">
-            <label class="file-upload-label">Imagen de Fondo</label>
-            <input type="file" name="cert_bg_image">
+        {{-- CERTIFICADO - IMAGEN DE FONDO --}}
+<div class="form-group">
+    <label class="file-upload-label" for="cert_bg_image">
+        Imagen de Fondo del Certificado
+    </label>
+    <input 
+        type="file" 
+        id="cert_bg_image" 
+        name="cert_bg_image" 
+        accept="image/*">
+    
+    @if ($course->cert_bg_image_path ?? $course->cert_background_path)
+        <div class="current-file-box" style="margin-top: 10px;">
+            <small>Imagen actual:</small><br>
+            <img src="{{ asset('storage/' . ($course->cert_bg_image_path ?? $course->cert_background_path)) }}"
+                 style="max-width: 250px; border-radius: 8px; border: 1px solid #ddd;">
         </div>
+    @endif
+</div>
 
         <div class="form-row">
-            <div class="form-group">
-                <label class="file-upload-label">Firma 1</label>
-                <input type="file" name="cert_sig_1_image">
-                <input type="text" name="cert_sig_1_name"
-                       value="{{ old('cert_sig_1_name', $course->cert_sig_1_name) }}"
-                       placeholder="Nombre / Cargo">
-            </div>
+    <div class="form-group">
+        <label class="file-upload-label" for="cert_sig_1_image">Firma 1</label>
+        <input type="file" id="cert_sig_1_image" name="cert_sig_1_image" accept="image/png,image/jpeg">
+        <input type="text" name="cert_sig_1_name" 
+               value="{{ old('cert_sig_1_name', $course->cert_sig_1_name) }}"
+               placeholder="Nombre / Cargo">
+    </div>
 
-            <div class="form-group">
-                <label class="file-upload-label">Firma 2</label>
-                <input type="file" name="cert_sig_2_image">
-                <input type="text" name="cert_sig_2_name"
-                       value="{{ old('cert_sig_2_name', $course->cert_sig_2_name) }}"
-                       placeholder="Nombre / Cargo">
-            </div>
-        </div>
+    <div class="form-group">
+        <label class="file-upload-label" for="cert_sig_2_image">Firma 2</label>
+        <input type="file" id="cert_sig_2_image" name="cert_sig_2_image" accept="image/png,image/jpeg">
+        <input type="text" name="cert_sig_2_name" 
+               value="{{ old('cert_sig_2_name', $course->cert_sig_2_name) }}"
+               placeholder="Nombre / Cargo">
+    </div>
+</div>
 
         {{-- BOTONES --}}
         <div class="form-row">
@@ -190,63 +202,22 @@
 
     </form>
 </div>
-@endsection
-
-
-@push('scripts')
 <script>
-
-    // 1. Datos pasados desde el controlador
-    const departmentWorkstations = @json($departmentWorkstationsMap);
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    const label = document.querySelector(`label[for="${input.id}"]`);
     
-    // 2. Referencias a los <select>
-    const departmentSelect = document.getElementById('department_id');
-    const workstationSelect = document.getElementById('workstation_id');
-    
-    // 3. ID del puesto que ya estaba guardado (si existe)
-    let selectedWorkstationId = "{{ old('workstation_id', $selectedFilters['workstation_id']) }}";
-
-    // 4. Función para poblar los puestos
-    function populateWorkstations(selectedDepartmentId) {
-        if (!workstationSelect) return; 
-
-        // Limpiamos opciones anteriores (dejamos la opción "Todos los puestos")
-        while (workstationSelect.options.length > 1) {
-            workstationSelect.remove(1);
+    input.addEventListener('change', () => {
+        if (input.files[0]) {
+            // Opcional: mostrar nombre debajo
+            let nameTag = input.nextElementSibling;
+            if (!nameTag || !nameTag.classList.contains('file-name')) {
+                nameTag = document.createElement('p');
+                nameTag.className = 'file-name';
+                input.after(nameTag);
+            }
+            nameTag.textContent = input.files[0].name;
         }
-
-        if (selectedDepartmentId && departmentWorkstations[selectedDepartmentId]) {
-            workstationSelect.disabled = false;
-            
-            const workstations = departmentWorkstations[selectedDepartmentId];
-            
-            workstations.forEach(function (workstation) {
-                const option = new Option(workstation.name, workstation.id);
-                // Si este puesto es el que estaba guardado, lo seleccionamos
-                if (workstation.id == selectedWorkstationId) {
-                    option.selected = true;
-                }
-                workstationSelect.add(option);
-            });
-        } else {
-            workstationSelect.disabled = true;
-        }
-    }
-
-    // 5. Escuchar cambios en el <select> de departamento
-    if (departmentSelect) {
-        departmentSelect.addEventListener('change', function () {
-            // Importante: Si el usuario cambia el depto, ya no queremos
-            // forzar la selección del puesto guardado anteriormente.
-            selectedWorkstationId = null; 
-            populateWorkstations(this.value);
-        });
-    }
-
-    // 6. Ejecutar la función una vez al cargar la página
-    //    para rellenar los puestos del departamento que ya estaba seleccionado.
-    if (departmentSelect) {
-        populateWorkstations(departmentSelect.value);
-    }
+    });
+});
 </script>
-@endpush
+@endsection

@@ -1,4 +1,4 @@
-* { 
+* {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -166,13 +166,13 @@ label[for="password"] {
     .login-container {
         flex-direction: column;
     }
-    
+
     .login-left {
         flex: 0.3;
         border-right: none;
         border-bottom: 3px solid #004080;
     }
-    
+
     .login-right {
         flex: 0.7;
         padding: 20px;
@@ -184,5 +184,5 @@ label[for="password"] {
         height: 100%;
     }
 
-    
+
 }

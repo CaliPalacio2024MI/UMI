@@ -370,7 +370,7 @@
                     {{-- Archivo --}}
                     <div class="form-group">
                         <label for="edit-file">Reemplazar Archivo (Opcional)</label>
-                        <input type="file" id="edit-file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
+                        <input type="file" id="edit-file" name="file_path" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                         <div id="current-file-info" style="margin-top: 5px;">
                             <small id="current-file-text"></small>
                             {{-- Campo oculto para mantener el file_path actual si no se sube nuevo archivo --}}
@@ -451,15 +451,16 @@
             <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px;">
                 <h3>Temas del Curso ({{ $course->topics->count() }})</h3>
                 
-                {{-- ✅ AGREGAR ESTO --}}
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input 
                         type="checkbox" 
                         name="show_welcome" 
                         id="show_welcome"
+                        data-course-id="{{ $course->id }}"
                         {{ $course->show_welcome ? 'checked' : '' }}
                         style="width: 18px; height: 18px; cursor: pointer;">
                     <span style="font-size: 14px;">🐢 Mostrar bienvenida</span>
+</label>
                 </label>
             </div>
             
@@ -1564,6 +1565,40 @@ if (editAddBtn) {
     editAddBtn.addEventListener('click', () => addSegment('edit', '', '', '0'));
 }
 
+// ✅ Limpiar segmentos vacíos antes de enviar
+const segmentInputs = editForm.querySelectorAll('[name^="video_segments"]');
+const segmentsToRemove = [];
+
+// Agrupar por índice
+const segmentsByIndex = {};
+segmentInputs.forEach(input => {
+    const match = input.name.match(/video_segments\[(\d+)\]/);
+    if (match) {
+        const index = match[1];
+        if (!segmentsByIndex[index]) {
+            segmentsByIndex[index] = {};
+        }
+        
+        if (input.name.includes('[start]')) segmentsByIndex[index].start = input.value;
+        if (input.name.includes('[end]')) segmentsByIndex[index].end = input.value;
+        if (input.name.includes('[turtle]')) segmentsByIndex[index].turtle = input.value;
+    }
+});
+
+// Eliminar segmentos incompletos
+Object.keys(segmentsByIndex).forEach(index => {
+    const segment = segmentsByIndex[index];
+    
+    // Si está vacío o incompleto, eliminarlo
+    if (!segment.start || !segment.end || segment.turtle === undefined) {
+        console.log(`🗑️ Eliminando segmento ${index} incompleto:`, segment);
+        
+        // Remover los inputs de ese índice
+        const inputsToRemove = editForm.querySelectorAll(`[name^="video_segments[${index}]"]`);
+        inputsToRemove.forEach(input => input.remove());
+    }
+});
+
 
 // 🔍 DEBUG TEMPORAL - Ver qué se envía en edición
 const editFormDebug = document.getElementById('edit-topic-form');
@@ -1597,52 +1632,60 @@ if (editFormDebug) {
 <script>
 // ========== AUTO-GUARDAR CHECKBOX DE BIENVENIDA ==========
 document.addEventListener('DOMContentLoaded', function() {
-    const showWelcomeCheckbox = document.getElementById('show_welcome');
+    const checkbox = document.getElementById('show_welcome');
     
-    if (showWelcomeCheckbox) {
-        showWelcomeCheckbox.addEventListener('change', function() {
-            const isChecked = this.checked;
-            const courseId = {{ $course->id }};
-            
-            console.log('🐢 Guardando show_welcome:', isChecked);
-            
-            // Crear FormData
-            const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-            formData.append('_method', 'PUT');
-            formData.append('title', '{{ $course->title }}');
-            formData.append('description', `{!! addslashes($course->description ?? '') !!}`);
-            formData.append('show_welcome', isChecked ? '1' : '0');
-            
-            // Hacer petición AJAX
-            fetch(`/cursos/${courseId}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error en la petición');
-                }
-                return response.text();
-            })
-            .then(data => {
-                console.log('✅ Show welcome guardado correctamente');
-                
-                // Mostrar feedback visual (borde verde)
-                showWelcomeCheckbox.style.outline = '2px solid #4CAF50';
-                setTimeout(() => {
-                    showWelcomeCheckbox.style.outline = 'none';
-                }, 1000);
-            })
-            .catch(error => {
-                console.error('❌ Error guardando show_welcome:', error);
-                alert('Error al guardar la configuración de bienvenida');
-                
-                // Revertir checkbox
-                showWelcomeCheckbox.checked = !isChecked;
-            });
-        });
+    if (!checkbox) {
+        console.warn('Checkbox show_welcome no encontrado');
+        return;
     }
+
+    const courseId = checkbox.dataset.courseId;
+    const originalValue = {{ $course->show_welcome ? 'true' : 'false' }};
+
+    console.log('🐢 Checkbox inicializado - Valor original:', originalValue);
+
+    checkbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+
+        console.log('🔄 Cambiando a:', isChecked);
+
+        const formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('show_welcome', isChecked ? '1' : '0');
+
+        fetch(`/cursos/${courseId}/welcome`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('✅ Respuesta del servidor:', data);
+
+            if (data.success) {
+                // Feedback visual
+                checkbox.style.outline = '3px solid #4CAF50';
+                
+                setTimeout(() => {
+                    checkbox.style.outline = 'none';
+                    
+                    // Recargar solo si cambió el valor
+                    if (isChecked !== (originalValue === 'true')) {
+                        console.log('🔄 Recargando página para actualizar vista...');
+                        setTimeout(() => location.reload(), 600);
+                    }
+                }, 800);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            alert('Error al guardar la configuración');
+            checkbox.checked = !isChecked; // revertir
+        });
+    });
 });
 </script>
 

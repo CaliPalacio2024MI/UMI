@@ -23,7 +23,7 @@ use App\Models\Users\AcademicProfile;
 use App\Models\Users\CorporateProfile;
 use App\Models\Cursos\Course;
 use App\Models\Cursos\Completion;
-use App\Models\Users\Department;  
+use App\Models\Users\Department;
 use App\Models\Users\Workstation;
 
 /**
@@ -92,7 +92,7 @@ class User extends Authenticatable
         'telefono',
         'fecha_nacimiento',
         'edad',
-        'is_active', // <--- ¡ESTE ES EL IMPORTANTE QUE FALTABA!
+        'is_active',
         'address_id',
         'institution_id',
         'department_id',
@@ -110,7 +110,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'created_at' => 'datetime', 
+            'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
     }
@@ -128,11 +128,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Billing::class);
     }
+    public function groups()
+    {
+       return $this->belongsToMany(\App\Models\Group::class);
+    }
 
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles_institution', 'user_id', 'role_id')
-                    ->withPivot('institution_id', 'is_active') 
+                    ->withPivot('institution_id', 'is_active')
                     ->withTimestamps();
     }
 
@@ -145,12 +149,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Address::class);
     }
-    
+
     public function academicProfile(): HasOne
     {
         return $this->hasOne(AcademicProfile::class);
     }
-   
+
     public function corporateProfile(): HasOne
     {
         return $this->hasOne(CorporateProfile::class);
@@ -185,7 +189,7 @@ class User extends Authenticatable
         ->where('user_roles_institution.user_id', $this->id)
         ->where('roles.name', $roleName)
         ->where('user_roles_institution.is_active', true)
-        ->exists();    
+        ->exists();
     }
 
     public function hasAnyRole(array $roles): bool
@@ -219,7 +223,7 @@ class User extends Authenticatable
         ->get();
 
         foreach ($userContexts as $context) {
-            $contexts[] = (array) $context; 
+            $contexts[] = (array) $context;
         }
 
         return $contexts;

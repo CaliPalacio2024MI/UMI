@@ -65,7 +65,7 @@ body {
     padding: 8px 14px;
     border: 1px solid #ced4da;
     /* REDONDEO COMPLETO PARA PÍLDORA */
-    border-radius: 20px !important; 
+    border-radius: 20px !important;
     /* FIN REDONDEO */
     font-size: 14px;
     transition: all 0.2s;
@@ -100,13 +100,14 @@ body {
     align-items: flex-end;
 }
 
+
 /* Estilo UNIFICADO (PÍLDORA AZUL) para los 3 botones de FILTROS */
 .action-group .btn {
     height: 42px;
     padding: 0 20px;
     border: none;
     /* PÍLDORA Y COLOR AZUL UNIFICADO */
-    border-radius: 20px !important; 
+    border-radius: 20px !important;
     background-color: #223F70 !important;
     color: white !important;
     /* FIN ESTILO UNIFICADO */
@@ -201,13 +202,13 @@ table tbody tr.billing-main-row:hover { background-color: #f1f3f5; }
 
 /* --- TÍTULO DEL MODAL (ACTUALIZADO A COLOR #223F70 y 26px) --- */
 .modal-content h2 {
-    flex-shrink: 0; 
-    padding: 20px 25px; 
-    margin: 0 0 15px 0; 
-    
+    flex-shrink: 0;
+    padding: 20px 25px;
+    margin: 0 0 15px 0;
+
     color: #223F70; /* Azul institucional */
-    
-    text-align: center; 
+
+    text-align: center;
     font-family: 'Poppins', sans-serif;
     font-size: 26px;   /* Tamaño solicitado */
     font-weight: 600;   /* Negrita */
@@ -236,7 +237,7 @@ table tbody tr.billing-main-row:hover { background-color: #f1f3f5; }
     box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.modal-content input:focus, 
+.modal-content input:focus,
 .modal-content select:focus {
     border-color: #223F70; outline: none;
     box-shadow: 0 0 0 3px rgba(34, 63, 112, 0.15);
@@ -257,14 +258,14 @@ table tbody tr.billing-main-row:hover { background-color: #f1f3f5; }
 
 /* Botón Guardar en Modal (AZUL #223F70) */
 .modal-content button.guardar {
-    flex-shrink: 0; 
+    flex-shrink: 0;
     background: #223F70; /* Azul institucional */
     color: #fff;
-    border: none; padding: 12px; width: 100%; border-radius: 0 0 12px 12px; 
+    border: none; padding: 12px; width: 100%; border-radius: 0 0 12px 12px;
     cursor: pointer; font-size: 16px; font-weight: bold;
     margin-top: 0; border-top: 1px solid #eee; transition: background-color 0.2s;
 }
-.modal-content button.guardar:hover { 
+.modal-content button.guardar:hover {
     background: #1a3158; /* Mismo hover que otros botones */
 }
 
@@ -334,8 +335,8 @@ summary::-webkit-details-marker, summary::marker { display: none; }
 
 /* --- FLECHAS (TRIÁNGULOS) --- */
 .arrow-icon {
-    transition: transform 0.2s ease-in-out; 
-    display: inline-block; 
+    transition: transform 0.2s ease-in-out;
+    display: inline-block;
     font-size: 1em;
     color: #6c757d;
 }
@@ -350,18 +351,18 @@ details[open] > summary .arrow-icon {
 #openModalBtn {
     padding: 10px 20px;
     border: none;
-    border-radius: 20px; 
+    border-radius: 20px;
     cursor: pointer;
     font-weight: 500;
     font-size: 0.9em;
     transition: background-color 0.2s ease, transform 0.1s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: #223F70; 
+    background-color: #223F70;
     color: white;
 }
 
 #openModalBtn:hover {
-    background-color: #1a3158; 
+    background-color: #1a3158;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
@@ -382,34 +383,34 @@ details[open] > summary .arrow-icon {
    ========================================= */
 
 /* Botón Grande "Agregar Factura Extra" */
-.js-trigger-factura { 
+.js-trigger-factura {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    
+
     /* PÍLDORA Y COLOR AZUL UNIFICADO */
-    background-color: #223F70 !important; 
+    background-color: #223F70 !important;
     color: #FFFFFF !important;
     border: none;
-    border-radius: 20px !important; 
-    padding: 8px 24px; 
-    
+    border-radius: 20px !important;
+    padding: 8px 24px;
+
     /* Tipografía */
     font-family: 'Poppins', sans-serif;
-    font-weight: 500; 
-    font-size: 14px; 
+    font-weight: 500;
+    font-size: 14px;
     line-height: 1.5;
-    
+
     /* Comportamiento */
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-decoration: none;
 }
 
 /* Efecto Hover */
 .js-trigger-factura:hover {
-    background-color: #1a3055 !important; 
+    background-color: #1a3055 !important;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     transform: translateY(-1px);
 }
@@ -418,10 +419,10 @@ details[open] > summary .arrow-icon {
 button.btn-sm-add {
     padding: 5px 15px !important;
     font-size: 12px !important;
-    border-radius: 20px !important; 
-    height: auto; 
-    min-width: auto; 
-    background-color: #223F70 !important; 
+    border-radius: 20px !important;
+    height: auto;
+    min-width: auto;
+    background-color: #223F70 !important;
 }
 
 
@@ -471,7 +472,7 @@ button.btn-sm-add {
     display: block; margin-top: 10px; margin-bottom: 5px;
     font-weight: 600; font-size: 14px;
 }
-.add-payment-form input, 
+.add-payment-form input,
 .add-payment-form textarea {
     width: 100%; padding: 8px 10px;
     border: 1px solid #ccc; border-radius: 5px;
@@ -481,14 +482,14 @@ button.btn-sm-add {
 
 /* Botón Guardar Abono*/
 .add-payment-form .guardar-abono {
-    background: #223F70; 
-    color: white; 
-    border-radius: 5px; 
+    background: #223F70;
+    color: white;
+    border-radius: 5px;
     padding: 10px 15px;
-    border: none; 
+    border: none;
     cursor: pointer;
-    margin-top: 15px; 
-    font-weight: 600; 
+    margin-top: 15px;
+    font-weight: 600;
     width: 100%;
     transition: background-color 0.2s;
 }
@@ -546,5 +547,5 @@ button.btn-sm-add {
     display: flex;
     align-items: center;
     /* Controla el espacio entre elementos directamente */
-    gap: 15px; 
+    gap: 15px;
 }

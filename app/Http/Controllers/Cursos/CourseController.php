@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\StoreCourseRequest; 
 use App\Models\Cursos\Course;
 use App\Models\Users\Institution;
+use App\Models\Schedule;
 use App\Models\Users\Department;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -18,9 +19,10 @@ use Illuminate\Http\JsonResponse; // <-- Importante
 use App\Models\Cursos\Activities;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
+use App\Models\TopicTemplate;
 use App\Models\SubtopicTemplate;
+use App\Models\Cursos\Topics;
 use App\Models\Cursos\Subtopic;;
-use App\Models\Schedule; 
 
 class CourseController extends Controller
 {
@@ -63,16 +65,17 @@ class CourseController extends Controller
             });
         }
 
+        $templates = TopicTemplate::orderBy('title')->get();
+        // Pasamos solo la institución actual a la vista.
+        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
+
          // Traer todos los horarios registrados
-     // Traer todos los horarios registrados
-    $schedules = Schedule::all();
+        $schedules = Schedule::all();
 
-
-    // Enviar también $schedules a la vista
-    return view('layouts.Cursos.create', compact(
+        // Enviar también $schedules a la vista
+        return view('layouts.Cursos.create', compact(
         'currentInstitution',
         'departmentWorkstationsMap',
-        'department',
         'schedules'
      ));
     }
@@ -134,18 +137,46 @@ class CourseController extends Controller
 
         $course = Course::create($courseData);
 
+        //Copiar plantillas de tema
+        if ($request->has('template_topics')) {
+
+            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+
+            foreach ($selectedTemplates as $template){
+                Topics::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
+            }
+        }
+
+        //Copiar plantillas de subtema
+        if ($request->has('template_subtopics')) {
+
+            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+
+            foreach ($selectedTemplates as $template){
+                Subtopic::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
+            }
+        }
+
         if ($request->filled('career_id')) {
             // sync() adjunta el ID y quita cualquier otro que no esté en el array
             $course->careers()->sync([$request->career_id]);
         } 
-        elseif ($request->filled('department_id')) {
-            $course->departments()->sync([$request->department_id]);
-            
-            // Si se especificó un puesto, guardarlo.
-            if ($request->filled('workstation_id')) {
-                $course->workstations()->sync([$request->workstation_id]);
-            }
+         elseif ($request->filled('department_ids')) {
+
+           // Guardar múltiples departamentos
+           $course->departments()->sync($request->department_ids);
+
+          // Guardar múltiples puestos (opcional)
+          if ($request->filled('workstation_ids')) {
+
+             $cleanIds = array_filter($request->workstation_ids);
+
+            if (!empty($cleanIds)) {
+             $course->workstations()->sync($cleanIds);
         }
+    }
+
+}
 
         Log::info('Curso creado exitosamente', [
             'course_id' => $course->id,
@@ -166,16 +197,23 @@ public function show(Course $course)
     $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
 
     $user = Auth::user();
+    $departments = Department::with('workstations')->get();
 
-    $totalItems = 0;
-    foreach ($course->topics as $topic) {
-        if ($topic->file_path) $totalItems++;
-        $totalItems += $topic->activities->where('is_final_exam', false)->count();
-        foreach ($topic->subtopics as $sub) {
-            if ($sub->file_path) $totalItems++;
-            $totalItems += $sub->activities->count();
-        }
+    // ✅ Contar SOLO actividades (no PDFs/videos)
+$totalItems = 0;
+foreach ($course->topics as $topic) {
+    $totalItems += $topic->activities->where('is_final_exam', false)->count();
+    foreach ($topic->subtopics as $sub) {
+        $totalItems += $sub->activities->count();
     }
+}
+
+// ✅ Contar actividades independientes (no finales)
+$totalItems += \App\Models\Cursos\Activities::where('course_id', $course->id)
+    ->whereNull('topic_id')
+    ->whereNull('subtopic_id')
+    ->where('is_final_exam', false)
+    ->count();
 
     $progress = 0;
     $isEnrolled = false;
@@ -186,11 +224,22 @@ public function show(Course $course)
         $isEnrolled = $user->courses->contains($course->id);
 
         if (!$isEnrolled) {
-            $user->courses()->attach($course->id, ['progress' => 0]);
+            // ✅ Registrar INICIO del curso (primera vez)
+            $user->courses()->attach($course->id, [
+                'progress' => 0,
+                'started_at' => now() // ✅ Registrar fecha/hora de inicio
+            ]);
         } else {
             $pivotRow = $user->courses()->where('course_id', $course->id)->first();
             if ($pivotRow && $pivotRow->pivot) {
                 $progress = $pivotRow->pivot->progress;
+                
+                // ✅ Si no tiene started_at (usuarios antiguos), registrarlo ahora
+                if (!$pivotRow->pivot->started_at) {
+                    $user->courses()->updateExistingPivot($course->id, [
+                        'started_at' => now()
+                    ]);
+                }
             }
         }
 
@@ -200,6 +249,28 @@ public function show(Course $course)
                 'id'   => $item->completable_id
             ];
         });
+
+        // ✅ Calcular progreso basado en actividades completadas
+$completedActivities = $user->completions()
+    ->where('completable_type', Activities::class)
+    ->whereIn('completable_id', function($query) use ($course) {
+        $query->select('id')
+              ->from('activities')
+              ->where('course_id', $course->id)
+              ->where('is_final_exam', false);
+    })
+    ->count();
+
+if ($totalItems > 0) {
+    $progress = round(($completedActivities / $totalItems) * 100, 2);
+} else {
+    $progress = 0;
+}
+
+// ✅ Actualizar progreso en la tabla pivot
+$user->courses()->updateExistingPivot($course->id, [
+    'progress' => $progress
+]);
 
         $finalExamActivity = $course->finalExam;
         if ($finalExamActivity) {
@@ -212,17 +283,17 @@ public function show(Course $course)
         $finalExamActivity = $course->finalExam;
     }
 
-    $topics = $course->topics; // ✅ CLAVE
+    $topics = $course->topics;
 
     return view('layouts.Cursos.show', compact(
+        'departments',
         'course',
-        'topics',        // ✅ CLAVE
+        'topics',        
         'progress',
         'totalItems',
         'isEnrolled',
         'finalExamActivity',
         'finalExamData',
-        'department',
         'userCompletions'
     ));
 }
@@ -314,6 +385,7 @@ public function show(Course $course)
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'credits' => $creditsRule,
+            'modality' => 'required|in:presencial,virtual,hibrida',
             'hours' => 'required|integer|min:0|max:1000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960', 
@@ -360,9 +432,6 @@ public function show(Course $course)
             }
         }
 
-        // ✅ AGREGAR ESTA LÍNEA
-        $course->show_welcome = $request->has('show_welcome');
-
         Log::info('Curso actualizado', ['course_id' => $course->id, 'user_id' => Auth::id()]);
 
         // Redirigir según la acción solicitada
@@ -371,11 +440,26 @@ public function show(Course $course)
                 ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
         }
 
-        
-
         return redirect()->route('Cursos.index')
             ->with('success', 'Curso actualizado exitosamente.');
     }
+
+    public function updateWelcome(Request $request, Course $course)
+{
+    $activeInstitutionId = session('active_institution_id');
+
+    if ($course->institution_id != $activeInstitutionId) {
+        abort(403, 'No autorizado.');
+    }
+
+    $course->show_welcome = $request->input('show_welcome') == '1';
+    $course->save();
+
+    return response()->json([
+        'success' => true,
+        'show_welcome' => $course->show_welcome
+    ]);
+}
 
     /**
      * Eliminar curso

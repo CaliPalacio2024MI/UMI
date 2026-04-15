@@ -32,6 +32,13 @@ use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController; 
 
 
+//Grupos
+use App\Http\Controllers\GroupsController;
+use App\Http\Controllers\Api\GroupDataController;
+use App\Http\Controllers\WorkstationController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\Cursos\CourseSessionController;
+
 Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
 //Filtrado de practicantes
 Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
@@ -118,6 +125,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit'); 
         Route::put('/temas/{topic}', [TopicsController::class, 'update'])->name('topics.update');
         Route::delete('/temas/{topic}', [TopicsController::class, 'destroy'])->name('topics.destroy');
+        // routes/web.php
+        Route::post('/cursos/{course}/welcome', [CourseController::class, 'updateWelcome'])->name('course.update.welcome')->middleware('auth');
         
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
@@ -129,18 +138,15 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
         Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
         
-        //Lector QR
-        Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
-
         // Grupos
         Route::post('/api/workstations-by-departments', [WorkstationController::class, 'byDepartments']);
-        Route::resource('groups', GroupController::class);
         Route::post('/groups', [GroupsController::class, 'store'])->name('groups.store');
         Route::delete('/groups/{group}', [GroupsController::class, 'destroy'])->name('groups.destroy');
         Route::get('/groups/{group}/edit', [GroupsController::class, 'edit'])->name('groups.edit');
         Route::put('/groups/{group}', [GroupsController::class, 'update'])->name('groups.update');
-
-
+        Route::get('/session/{id}/participants', function ($id) {$group = \App\Models\Group::whereHas('sessions', function ($q) use ($id) {$q->where('course_session_id', $id);})->with('participants')->first();return response()->json($group ? $group->participants : []);});
+        Route::post('/groups/add-participants', [App\Http\Controllers\GroupsController::class, 'addParticipants'])->name('groups.addParticipants');
+        Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
         // Vista principal
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
 
@@ -149,9 +155,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/workstations/{id}/participants', [GroupDataController::class, 'participants']);
         Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
         Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
-        
-    });
+        Route::get('/sessions/{id}/group-data', [CourseSessionController::class, 'getGroupData']);
 
+    });
     // ===============================
     // HORARIOS (SESIONES PRESENCIALES)
     // ===============================
@@ -160,7 +166,6 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     Route::delete('/courses/{course}/sessions/{session}',[CourseSessionController::class, 'destroy'])->name('courses.sessions.destroy');
     Route::patch('/cursos/{course}/horarios/{session}/toggle',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'toggle'])->name('courses.sessions.toggle');
     Route::put('/cursos/{course}/horarios/{session}',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'update'])->name('courses.sessions.update');
-
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
     // Estas rutas atrapan {course}, por eso van AL FINAL de la sección de cursos
     Route::get('/cursos', [CourseController::class, 'index'])->name('Cursos.index');

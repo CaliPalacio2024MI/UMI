@@ -130,10 +130,10 @@
                     {{--Boton bilbioteca de temas--}}
                     <li>
                         <a href="{{ route('templates.index') }}">
-                            <span>Biblioteca de TEMAS</span>
+                            <span>Biblioteca de temas</span>
                         </a>
                     </li>
-                     {{--Boton bilbioteca de temas--}}
+                     {{--Boton bilbioteca de subtemas--}}
                     <li>
                         <a href="{{ route('subtopics_template.index') }}">
                             <span>Biblioteca de subtemas</span>

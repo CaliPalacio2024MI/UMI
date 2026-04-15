@@ -11,6 +11,8 @@ use App\Models\Users\Institution;
 use App\Models\Users\Workstation;
 use App\Models\Users\Department;
 use App\Models\Users\Career;
+use App\Models\Cursos\Course;
+use App\Models\Group;
 
 
 /**
@@ -63,6 +65,7 @@ class Course extends Model
         'title',
         'description',
         'credits',
+        'modality',
         'hours',
         'instructor_id',
         'institution_id',
@@ -96,6 +99,11 @@ class Course extends Model
         return $this->hasMany(Topics::class, 'course_id');
     }
 
+    public function sessions()
+    {
+        return $this->hasMany(CourseSession::class);
+    }
+
     // Relación polimórfica para las carreras
     public function careers()
     {
@@ -112,6 +120,16 @@ class Course extends Model
     public function workstations()
     {
         return $this->morphedByMany(Workstation::class, 'targetable');
+    }
+
+    public function schedules()
+    {
+        return $this->belongsToMany(\App\Models\Schedule::class);
+
+    }
+    public function groups()
+    {
+        return $this->hasMany(Group::class);
     }
 
     /**
