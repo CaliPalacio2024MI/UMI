@@ -325,8 +325,9 @@ class CrmController extends Controller
 
         /* ===========================
         TIEMPO PROMEDIO POR ESTADO
-        Criterio: desde que entró al estado actual → hasta hoy
-        Solo leads cuyo estado actual coincide con el estado
+        Criterio: tiempo REAL que cada lead estuvo en cada estado
+        - Si ya avanzó al siguiente: fecha_entrada_siguiente - fecha_entrada_estado
+        - Si sigue en ese estado: hoy - fecha_entrada_estado
         =========================== */
 
         $tiempos = [
@@ -342,23 +343,30 @@ class CrmController extends Controller
 
             if ($seguimientos->isEmpty()) continue;
 
-            // Estado actual = último seguimiento
-            $ultimoSeg   = $seguimientos->last();
-            $estadoActual = $ultimoSeg->estado;
+            // Convertir a array indexado para poder acceder al siguiente
+            $segs = $seguimientos->values();
 
-            if (!isset($tiempos[$estadoActual])) continue;
+            foreach ($segs as $index => $seg) {
 
-            // Fecha en que entró a ese estado actual
-            $fechaEntradaEstado = Carbon::parse(
-                $ultimoSeg->fecha . ' ' . $ultimoSeg->hora
-            );
+                $estado = $seg->estado;
 
-            // Segundos desde que entró al estado hasta hoy
-            $segundos = $fechaEntradaEstado->diffInSeconds($hoy);
+                if (!isset($tiempos[$estado])) continue;
 
-            $tiempos[$estadoActual][] = $segundos;
+                $fechaEntrada = Carbon::parse($seg->fecha . ' ' . $seg->hora);
+
+                // Si existe un seguimiento posterior, usamos su fecha como fecha de salida
+                // Si no existe (es el último = estado actual), usamos hoy
+                $siguiente = $segs->get($index + 1);
+
+                $fechaSalida = $siguiente
+                    ? Carbon::parse($siguiente->fecha . ' ' . $siguiente->hora)
+                    : $hoy;
+
+                $segundos = $fechaEntrada->diffInSeconds($fechaSalida);
+
+                $tiempos[$estado][] = $segundos;
+            }
         }
-
         $convertirSegundos = function (float $segundos): string {
             $seg  = (int) $segundos;
             $dias = intdiv($seg, 86400);
