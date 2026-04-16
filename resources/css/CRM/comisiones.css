@@ -321,7 +321,7 @@ body:has(.crm-comisiones) .main-content {
 
 .btn-cerrar-modal:hover { color: #333; }
 
-/* Campos */
+
 .mc-campo { margin-bottom: 20px; }
 
 .mc-label {
@@ -413,7 +413,7 @@ body:has(.crm-comisiones) .main-content {
     color: #333;
 }
 
-/* Footer botón */
+
 .mc-footer { text-align: center; padding-top: 8px; }
 
 .mc-btn-agregar {
@@ -437,13 +437,13 @@ body:has(.crm-comisiones) .main-content {
 }
 
 #modal-detalle-comision .modal-prospecto-header {
-    background-color: #1f3a63; /* azul elegante */
+    background-color: #1f3a63; 
     color: #ffffff;
 }
 
-/* Título "Monto de Conversión" */
+
 #modal-detalle-comision .modal-seccion-titulo {
-    background-color: #1f3a63; /* azul claro */
+    background-color: #1f3a63; 
     color: #fff;
     padding: 8px;
     border-radius: 12px;
@@ -452,7 +452,7 @@ body:has(.crm-comisiones) .main-content {
 }
 
 #modal-detalle-comision .mc-table-header {
-    background-color: transparent; /* quita el azul */
+    background-color: transparent; 
     color: #111;
 }
 
@@ -466,3 +466,4 @@ body:has(.crm-comisiones) .main-content {
 #modal-detalle-comision .mc-table-row {
     grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr;
 }
+

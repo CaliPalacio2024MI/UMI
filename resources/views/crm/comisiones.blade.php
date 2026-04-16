@@ -226,10 +226,10 @@ const LOGO_BASE64 = "data:image/png;base64,{{ $logoBase64 }}";
     fechaFin?.addEventListener('change',    aplicarFiltros);
 
     document.querySelectorAll('.icon-calendar').forEach(icon => {
-        icon.addEventListener('click', function () {
-            this.nextElementSibling?.showPicker();
+            icon.addEventListener('click', function () {
+                this.nextElementSibling?.showPicker();
+            });
         });
-    });
 
     // ===== MODAL % COMISIÓN — ABRIR/CERRAR =====
     const modalComision  = document.getElementById('modal-comision');
