@@ -327,3 +327,27 @@ select.input-custom {
     align-items: center;
     gap: 14px;
 }
+.input-fecha-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.fecha-display {
+    font-size: 14px;
+    color: #555;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.input-fecha {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}

@@ -307,9 +307,15 @@ function aplicarFiltros() {
 function puedeEditarSeguimiento() {
     const filaActiva = document.querySelector('.fila-lead.activo');
     if (!filaActiva) return false;
+
+    // Master y coordinador pueden editar cualquier lead
+    if (['master', 'coordinador_ctp'].includes(window.ROLE_ACTIVO)) return true;
+
+    // CTP solo puede editar sus leads asignados
     if (window.ROLE_ACTIVO === 'ctp') {
         return filaActiva.dataset.ctp == "{{ auth()->id() }}";
     }
+
     return false;
 }
 
