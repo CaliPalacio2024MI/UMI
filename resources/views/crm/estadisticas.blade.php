@@ -14,18 +14,24 @@
             
             <div class="header-acciones"> 
                 <!-- Fecha Inicio -->
-                    <div class="input-group-custom input-fecha-header">
-                        <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                        <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                            class="input-custom" onchange="this.form.submit()">
-                    </div>
+<div class="input-group-custom input-fecha-header">
+    <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
+    <span class="fecha-display">
+        {{ request('fecha_inicio') ? \Carbon\Carbon::parse(request('fecha_inicio'))->format('d/m/Y') : 'Fecha inicio' }}
+    </span>
+    <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
+        class="input-custom input-fecha" onchange="this.form.submit()">
+</div>
 
-                    <!-- Fecha Fin -->
-                    <div class="input-group-custom input-fecha-header">
-                        <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                        <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom"
-                        onchange="this.form.submit()">
-                    </div>  
+<!-- Fecha Fin -->
+<div class="input-group-custom input-fecha-header">
+    <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
+    <span class="fecha-display">
+        {{ request('fecha_fin') ? \Carbon\Carbon::parse(request('fecha_fin'))->format('d/m/Y') : 'Fecha fin' }}
+    </span>
+    <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}"
+        class="input-custom input-fecha" onchange="this.form.submit()">
+</div>
         <!-- Exportar -->
             <button type="button" class="btn-exportar"onclick="exportarExcel()">
                 <img src="{{ asset('images/icons/export.svg') }}" width="16">
