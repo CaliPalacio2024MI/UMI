@@ -7,12 +7,16 @@
         <div class="modal-body-custom modal-view-materia__body">
             <dl class="materia-view-dl">
                 <div class="materia-view-row">
-                    <dt>Carrera:</dt>
-                    <dd>{{ $registro->career?->name ?? '—' }}</dd>
+                    <dt>Materia:</dt>
+                    <dd>{{ $registro->nombre ?? '—' }}</dd>
                 </div>
                 <div class="materia-view-row">
-                    <dt>Nombre:</dt>
-                    <dd>{{ $registro->nombre ?? '—' }}</dd>
+                    <dt>Clasificación:</dt>
+                    <dd>{{ $registro->career?->classification?->name ?? '—' }}</dd>
+                </div>
+                <div class="materia-view-row">
+                    <dt>Carrera:</dt>
+                    <dd>{{ $registro->career?->name ?? '—' }}</dd>
                 </div>
                 <div class="materia-view-row">
                     <dt>No. de créditos:</dt>
@@ -25,6 +29,22 @@
                 <div class="materia-view-row">
                     <dt>Modalidad:</dt>
                     <dd>{{ $registro->type ?? '—' }}</dd>
+                </div>
+                <div class="materia-view-row">
+                    <dt>Descripción general:</dt>
+                    <dd>{{ filled($registro->descripcion) ? $registro->descripcion : '—' }}</dd>
+                </div>
+                <div class="materia-view-row">
+                    <dt>Objetivo:</dt>
+                    <dd>{{ filled($registro->objetivo) ? $registro->objetivo : '—' }}</dd>
+                </div>
+                <div class="materia-view-row">
+                    <dt>Temario:</dt>
+                    <dd>{{ filled($registro->temario) ? $registro->temario : '—' }}</dd>
+                </div>
+                <div class="materia-view-row">
+                    <dt>Infografía:</dt>
+                    <dd>{{ filled($registro->infografia) ? $registro->infografia : '—' }}</dd>
                 </div>
             </dl>
         </div>

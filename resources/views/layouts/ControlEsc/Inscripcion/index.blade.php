@@ -120,7 +120,7 @@
                             <div style="width:72px; height:72px; border-radius:50%; background:#eaf7ea; margin: 0 auto 14px; display:flex; align-items:center; justify-content:center; border: 3px solid #cfe6c8; color:#2e7d32; font-size: 38px; font-weight: 800;">
                                 ✓
                             </div>
-                            <h3 style="margin: 0; color:#223F70; font-size: 1.25rem;">Espere su hora</h3>
+                            <h3 style="margin: 0; color:#223F70; font-size: 1.25rem;">Información enviada con éxito</h3>
                             <p style="margin: 10px 0 0; color:#666; font-weight: 600; line-height: 1.5;">
                                 Tu registro está en espera de aprobación por Control Escolar.
                             </p>
@@ -227,9 +227,14 @@
                         <select name="carrera_id" id="carrera_id" required>
                             <option value="">Seleccione una carrera...</option>
                             @foreach ($carreras as $carrera)
+                                @php
+                                    $precioTotalCarrera = (($carrera->pricing_mode ?? 'uniform') === 'per_month')
+                                        ? (float) collect(is_array($carrera->monthly_prices) ? $carrera->monthly_prices : [])->sum()
+                                        : ((float) ($carrera->monto_mensualidad ?? 0) * (int) ($carrera->semesters ?? 0));
+                                @endphp
                                 <option value="{{ $carrera->id }}"
                                         data-semesters="{{ (int) ($carrera->semesters ?? 1) }}"
-                                        data-cargo-monetario="{{ $carrera->cargo_monetario !== null ? (float) $carrera->cargo_monetario : '' }}"
+                                        data-cargo-monetario="{{ $precioTotalCarrera > 0 ? $precioTotalCarrera : '' }}"
                                         {{ old('carrera_id', $alumno->carrera_id ?? '') == $carrera->id ? 'selected' : '' }}>
                                     {{ $carrera->name }}
                                 </option>
@@ -379,7 +384,7 @@
                             </div>
 
                             {{-- Archivos de facturación: fuera del bloque colapsable para poder corregir sin volver a marcar la casilla --}}
-                            <div class="billing-files-block" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(231,76,60,0.35);">
+                            <div id="billing-files-block" class="billing-files-block" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(231,76,60,0.35);">
                                 <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:6px;">Ficha de pago / comprobante (PDF):</label>
                                 @if(isset($alumno) && !empty($alumno->doc_ficha_pago_rechazado ?? false))
                                     <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un PDF nuevo.</p>
@@ -393,6 +398,9 @@
                                 @if(isset($alumno) && ($alumno->doc_factura_xml ?? false))
                                     <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_factura_xml) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver factura actual</a></div>
                                 @endif
+                                <small id="billing-files-help" style="display:block; color:#666; margin-top:8px;">
+                                    Estos archivos solo se adjuntan cuando el estado está en "Pagada".
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -461,6 +469,8 @@
         const montoVisible = document.getElementById('modal_monto_visible');
         const montoHidden = document.getElementById('modal_monto');
         const carreraSelect = document.getElementById('carrera_id');
+        const statusSelect = document.getElementById('modal_status');
+        const billingFilesBlock = document.getElementById('billing-files-block');
 
         // --- LÓGICA DE FACTURACIÓN (DESPLIEGUE DEL MENÚ) ---
         // Esta función ahora muestra/oculta el bloque de detalles de la factura.
@@ -472,6 +482,18 @@
                     billingDetails.style.display = 'none';
                 }
             }
+            toggleBillingFilesByStatus();
+        }
+
+        function toggleBillingFilesByStatus() {
+            if (!billingFilesBlock || !statusSelect || !checkFactura) return;
+            const estado = (statusSelect.value || '').trim().toLowerCase();
+            const debeMostrar = checkFactura.checked && estado === 'pagada';
+            billingFilesBlock.style.display = debeMostrar ? 'block' : 'none';
+            billingFilesBlock.querySelectorAll('input[type="file"]').forEach(function(inp) {
+                inp.disabled = !debeMostrar;
+                if (!debeMostrar) inp.value = '';
+            });
         }
         
         // Listener para el checkbox de Factura: establece que el usuario lo ha cambiado
@@ -480,6 +502,9 @@
                 this.dataset.userChanged = 'true'; // El usuario ha interactuado
                 toggleFactura();
             });
+        }
+        if (statusSelect) {
+            statusSelect.addEventListener('change', toggleBillingFilesByStatus);
         }
 
         function obtenerCargoMonetarioCarreraSeleccionada() {
@@ -523,6 +548,7 @@
             checkFactura.checked = true;
             billingDetails.style.display = 'block';
         }
+        toggleBillingFilesByStatus();
 
         // --- LÓGICA CÁLCULO DE EDAD ---
         if (inputFechaNac && inputEdad) {

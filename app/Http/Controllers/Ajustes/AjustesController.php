@@ -222,7 +222,26 @@ class AjustesController extends Controller
                 'nombre' => 'required|string|max:255',
                 'apellido_paterno' => 'required|string|max:255',
                 'apellido_materno' => 'nullable|string|max:255',
-                'RFC' => ['required', 'string', 'min:'.$rfcMin, 'max:'.$rfcMax, 'regex:/^[A-ZÑ0-9]+$/iu'],
+                'RFC' => [
+                    'required',
+                    'string',
+                    'min:'.$rfcMin,
+                    'max:'.$rfcMax,
+                    function ($attribute, $value, $fail) use ($tipoCreacion) {
+                        $v = strtoupper(trim((string) $value));
+                        $isCurp = (bool) preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $v);
+                        $isRfc = (bool) preg_match('/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/', $v);
+                        if ($tipoCreacion === 'alumno') {
+                            if (! $isCurp && ! $isRfc) {
+                                $fail('Para alumno, capture una CURP válida (18) o RFC válido.');
+                            }
+                        } else {
+                            if (! $isRfc) {
+                                $fail('Capture un RFC válido (persona física/moral).');
+                            }
+                        }
+                    },
+                ],
                 'role_id' => 'required|exists:roles,id',
                 'institution_id' => 'required|exists:institutions,id',
                 'department_id' => 'nullable|exists:departments,id',
@@ -231,6 +250,19 @@ class AjustesController extends Controller
                
             ]);
             $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
+
+            // Restricción: Máster en contexto Universidad no puede crear usuarios para Propiedades desde aquí.
+            $activeInstitutionId = (int) session('active_institution_id');
+            $activeInstitutionName = (string) session('active_institution_name');
+            if (
+                Auth::user()?->hasActiveRole('master')
+                && $activeInstitutionName === 'Universidad Mundo Imperial'
+                && (int) $validatedData['institution_id'] !== $activeInstitutionId
+            ) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'institution_id' => 'Desde Universidad solo puedes crear usuarios para la unidad activa.',
+                ]);
+            }
  
             $selectedRole = Role::find($validatedData['role_id']);
             if ($tipoCreacion === 'alumno') {
@@ -309,9 +341,18 @@ class AjustesController extends Controller
                 }
 
                 $request->validate([
-                    'password' => 'required|string|min:8',
+                    'password' => [
+                        'required',
+                        'string',
+                        'min:8',
+                        'regex:/[a-z]/',
+                        'regex:/[A-Z]/',
+                        'regex:/[0-9]/',
+                        'regex:/[^A-Za-z0-9]/',
+                    ],
                 ], [
                     'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                    'password.regex' => 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
                 ]);
  
                
@@ -343,9 +384,14 @@ class AjustesController extends Controller
  
          
             $user->roles()->syncWithoutDetaching([
-                $role_id_to_add => ['institution_id' => $institution_id_to_add]
+                $role_id_to_add => ['institution_id' => $institution_id_to_add, 'is_active' => true],
             ]);
- 
+
+            $user->update([
+                'role_id' => $role_id_to_add,
+                'institution_id' => $institution_id_to_add,
+            ]);
+
             $message .= ' y asignado correctamente.';
  
            
@@ -467,7 +513,26 @@ public function update(Request $request, $seccion, $id)
                     'nombre' => 'required|string|max:255',
                     'apellido_paterno' => 'required|string|max:255',
                     'apellido_materno' => 'nullable|string|max:255',
-                    'RFC' => ['required', 'string', 'min:'.$rfcMin, 'max:'.$rfcMax, 'regex:/^[A-ZÑ0-9]+$/iu'],
+                    'RFC' => [
+                        'required',
+                        'string',
+                        'min:'.$rfcMin,
+                        'max:'.$rfcMax,
+                        function ($attribute, $value, $fail) use ($tipoCreacion) {
+                            $v = strtoupper(trim((string) $value));
+                            $isCurp = (bool) preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $v);
+                            $isRfc = (bool) preg_match('/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/', $v);
+                            if ($tipoCreacion === 'alumno') {
+                                if (! $isCurp && ! $isRfc) {
+                                    $fail('Para alumno, capture una CURP válida (18) o RFC válido.');
+                                }
+                            } else {
+                                if (! $isRfc) {
+                                    $fail('Capture un RFC válido (persona física/moral).');
+                                }
+                            }
+                        },
+                    ],
                     'role_id' => 'required|exists:roles,id',
                     'institution_id' => 'required|exists:institutions,id',
                     'department_id' => 'nullable|exists:departments,id',
@@ -477,6 +542,19 @@ public function update(Request $request, $seccion, $id)
 
                 $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
                 $u = $validatedData['RFC'];
+
+                // Restricción: Máster en contexto Universidad no puede mover/asignar usuarios a Propiedades desde aquí.
+                $activeInstitutionId = (int) session('active_institution_id');
+                $activeInstitutionName = (string) session('active_institution_name');
+                if (
+                    Auth::user()?->hasActiveRole('master')
+                    && $activeInstitutionName === 'Universidad Mundo Imperial'
+                    && (int) $validatedData['institution_id'] !== $activeInstitutionId
+                ) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'institution_id' => 'Desde Universidad solo puedes asignar usuarios a la unidad activa.',
+                    ]);
+                }
 
                 if (User::where('id', '!=', $item->id)
                     ->where(function ($q) use ($u) {
@@ -497,9 +575,17 @@ public function update(Request $request, $seccion, $id)
                 // 3. Validación de Contraseña (AQUÍ SÍ VA)
                 if (!empty($request->password)) {
                     $request->validate([
-                        'password' => 'string|min:8'
+                        'password' => [
+                            'string',
+                            'min:8',
+                            'regex:/[a-z]/',
+                            'regex:/[A-Z]/',
+                            'regex:/[0-9]/',
+                            'regex:/[^A-Za-z0-9]/',
+                        ]
                     ], [
                         'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                        'password.regex' => 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
                     ]);
                     
                     $validatedData['password'] = Hash::make($request->password);
@@ -776,7 +862,11 @@ public function update(Request $request, $seccion, $id)
                 break;
                 
             case 'users':
-                $data['institutions'] = Institution::orderBy('name')->get(); 
+                if ($user->hasActiveRole('master') && $data['isActiveInstitutionUniversity']) {
+                    $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
+                } else {
+                    $data['institutions'] = Institution::orderBy('name')->get();
+                }
                 
                
                 $data['all_roles'] = Role::orderBy('display_name')->get(); 

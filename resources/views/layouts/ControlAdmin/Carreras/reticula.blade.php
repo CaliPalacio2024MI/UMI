@@ -30,7 +30,7 @@
     background: #e8ecef; border-radius: 20px; padding: 1rem 1rem 1.25rem;
     box-shadow: 0 4px 14px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
 }
-/* Una sola barra azul para los 8 semestres */
+/* Una sola barra azul para todos los semestres configurados */
 .reticula-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -39,7 +39,7 @@
 .reticula-head-bar {
     display: flex;
     width: 100%;
-    min-width: calc(8 * 120px + 7 * 10px);
+    min-width: calc(var(--reticula-semesters, 8) * 120px + (var(--reticula-semesters, 8) - 1) * 10px);
     background: #223F70;
     color: #fff;
     border-radius: 14px 14px 0 0;
@@ -64,10 +64,10 @@
 }
 .reticula-grid {
     display: grid;
-    grid-template-columns: repeat(8, minmax(120px, 1fr));
+    grid-template-columns: repeat(var(--reticula-semesters, 8), minmax(120px, 1fr));
     gap: 10px;
     width: 100%;
-    min-width: calc(8 * 120px + 7 * 10px);
+    min-width: calc(var(--reticula-semesters, 8) * 120px + (var(--reticula-semesters, 8) - 1) * 10px);
     padding-top: 10px;
 }
 .reticula-col { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -92,6 +92,35 @@
 .reticula-card-code {
     font-size: 0.72rem; color: #6b7280; font-family: ui-monospace, monospace; margin: 0;
 }
+.reticula-card-actions {
+    margin-top: 6px;
+}
+.reticula-info-btn {
+    border: 1px solid #223F70;
+    background: #fff;
+    color: #223F70;
+    font-size: 0.72rem;
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+.reticula-materia-modal .modal-content-container {
+    max-width: 640px;
+}
+.reticula-materia-modal .reticula-materia-list {
+    display: grid;
+    gap: 10px;
+}
+.reticula-materia-modal .reticula-materia-row dt {
+    color: #BC8A55;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.reticula-materia-modal .reticula-materia-row dd {
+    margin: 0;
+    color: #2d3748;
+    white-space: pre-wrap;
+}
 .reticula-footer {
     display: flex; justify-content: flex-end; margin-top: 0.75rem;
 }
@@ -104,8 +133,8 @@
     color: #111; border: 1px solid #dee2e6; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 @media (max-width: 1200px) {
-    .reticula-grid { grid-template-columns: repeat(8, minmax(108px, 1fr)); min-width: calc(8 * 108px + 7 * 10px); }
-    .reticula-head-bar { min-width: calc(8 * 108px + 7 * 10px); }
+    .reticula-grid { grid-template-columns: repeat(var(--reticula-semesters, 8), minmax(108px, 1fr)); min-width: calc(var(--reticula-semesters, 8) * 108px + (var(--reticula-semesters, 8) - 1) * 10px); }
+    .reticula-head-bar { min-width: calc(var(--reticula-semesters, 8) * 108px + (var(--reticula-semesters, 8) - 1) * 10px); }
     .reticula-head-cell { min-width: 108px; }
 }
 @media (max-width: 768px) {
@@ -138,22 +167,61 @@
         </div>
     </div>
 
-    <div class="reticula-board">
+    <div class="reticula-board" style="--reticula-semesters: {{ $totalSemesters }};">
         <div class="reticula-scroll">
             <div class="reticula-head-bar" role="row" aria-label="Semestres">
-                @for ($s = 1; $s <= 8; $s++)
+                @for ($s = 1; $s <= $totalSemesters; $s++)
                     <div class="reticula-head-cell">{{ $semestreLabels[$s] ?? ($s . 'º Sem.') }}</div>
                 @endfor
             </div>
             <div class="reticula-grid">
-                @for ($s = 1; $s <= 8; $s++)
+                @for ($s = 1; $s <= $totalSemesters; $s++)
                     <div class="reticula-col">
                         <div class="reticula-col-body">
                             @forelse ($porSemestre[$s] ?? [] as $mat)
-                                <article class="reticula-card {{ $s === 8 ? 'reticula-card--ultimo' : '' }}">
+                                <article class="reticula-card {{ $s === $totalSemesters ? 'reticula-card--ultimo' : '' }}">
                                     <h4 class="reticula-card-title">{{ $mat->nombre }}</h4>
                                     <p class="reticula-card-code">{{ filled($mat->clave) ? $mat->clave : 'Matrixxxxx' }}</p>
+                                    <div class="reticula-card-actions">
+                                        <button type="button" class="reticula-info-btn js-open-reticula-materia" data-reticula-materia-id="{{ $mat->id }}">Ver info</button>
+                                    </div>
                                 </article>
+                                <div id="reticulaMateriaModal_{{ $mat->id }}" class="modal-overlay reticula-materia-modal">
+                                    <div class="modal-content-container">
+                                        <div class="modal-header-custom">
+                                            <h5>Información de la materia</h5>
+                                            <button type="button" class="close-custom" aria-label="Cerrar">&times;</button>
+                                        </div>
+                                        <div class="modal-body-custom">
+                                            <dl class="reticula-materia-list">
+                                                <div class="reticula-materia-row">
+                                                    <dt>Materia</dt>
+                                                    <dd>{{ $mat->nombre ?? '—' }}</dd>
+                                                </div>
+                                                <div class="reticula-materia-row">
+                                                    <dt>Semestre</dt>
+                                                    <dd>{{ $mat->semestre ?? $s }}</dd>
+                                                </div>
+                                                <div class="reticula-materia-row">
+                                                    <dt>Descripción general</dt>
+                                                    <dd>{{ filled($mat->descripcion) ? $mat->descripcion : '—' }}</dd>
+                                                </div>
+                                                <div class="reticula-materia-row">
+                                                    <dt>Objetivo</dt>
+                                                    <dd>{{ filled($mat->objetivo) ? $mat->objetivo : '—' }}</dd>
+                                                </div>
+                                                <div class="reticula-materia-row">
+                                                    <dt>Temario</dt>
+                                                    <dd>{{ filled($mat->temario) ? $mat->temario : '—' }}</dd>
+                                                </div>
+                                                <div class="reticula-materia-row">
+                                                    <dt>Infografía</dt>
+                                                    <dd>{{ filled($mat->infografia) ? $mat->infografia : '—' }}</dd>
+                                                </div>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
                             @empty
                                 <div class="reticula-card reticula-card--vacío" aria-hidden="true">Sin materias</div>
                             @endforelse
@@ -171,3 +239,30 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.js-open-reticula-materia').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = btn.getAttribute('data-reticula-materia-id');
+            var modal = document.getElementById('reticulaMateriaModal_' + id);
+            if (modal) modal.style.display = 'flex';
+        });
+    });
+
+    document.querySelectorAll('.reticula-materia-modal .close-custom').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var modal = btn.closest('.modal-overlay');
+            if (modal) modal.style.display = 'none';
+        });
+    });
+
+    document.querySelectorAll('.reticula-materia-modal').forEach(function(modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+    });
+});
+</script>
+@endpush

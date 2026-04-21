@@ -14,8 +14,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -303,6 +303,13 @@ class teacherController extends Controller
         DB::beginTransaction();
 
         try {
+            $edadCalculada = null;
+            try {
+                $edadCalculada = Carbon::parse($request->fecha_nacimiento)->age;
+            } catch (\Throwable) {
+                $edadCalculada = null;
+            }
+
             // --- 1. GUARDAR LA DIRECCIÓN (MODELO ADDRESS) 📍 ---
             $address = Address::create([
                 'calle' => $request->calle,
@@ -313,26 +320,30 @@ class teacherController extends Controller
             ]);
 
             // --- 2. GUARDAR EL USUARIO (MODELO USER) 👤 ---
+            // Texto plano: el cast `password => hashed` del modelo aplica el hash una sola vez.
             $user = User::create([
                 'nombre' => $request->nombre,
                 'apellido_paterno' => $request->apellido_paterno,
                 'apellido_materno' => $request->apellido_materno,
                 'email' => $request->email,
-                'password' => Hash::make(Str::password(16)),
+                'password' => Str::password(24),
                 'RFC' => $request->RFC ?: null,
                 'telefono' => $request->telefono,
                 'fecha_nacimiento' => $request->fecha_nacimiento,
-                'edad' => $request->edad ?? null,
+                'edad' => $edadCalculada,
                 'address_id' => $address->id,
                 'institution_id' => $institutionId,
                 'is_active' => true,
             ]);
+
+            $user->institutions()->syncWithoutDetaching([$institutionId]);
 
             // --- 3. ASIGNAR EL ROL 'DOCENTE' (TABLA PIVOTE user_roles_institution) 🔑 ---
             $docenteRole = Role::where('name', 'docente')->firstOrFail();
 
             $user->roles()->attach($docenteRole->id, [
                 'institution_id' => $institutionId,
+                'is_active' => true,
             ]);
             // --- 4. GUARDAR EL PERFIL ACADÉMICO (MODELO ACADEMICPROFILE) 🎓 ---
 
@@ -353,10 +364,23 @@ class teacherController extends Controller
             return redirect()
                 ->route('control.teachers.index', ['modal' => 'success'], 303)
                 ->with('success', $message);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            report($e);
+            $code = (string) $e->errorInfo[1] ?? '';
+            $errMsg = ($code === '1062' || str_contains(strtolower($e->getMessage()), 'duplicate'))
+                ? 'Ya existe un usuario con ese correo o RFC. Use otros datos o revise la lista.'
+                : 'No se pudo guardar el docente. Intente de nuevo.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => $errMsg], 500);
+            }
+            return redirect()->route('control.teachers.index')->withInput()->with('error', $errMsg);
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
-            $errMsg = 'El RFC está mal o siga intentando.';
+            $errMsg = config('app.debug')
+                ? $e->getMessage()
+                : 'No se pudo guardar el docente. Intente de nuevo.';
             if ($request->expectsJson()) {
                 return response()->json(['ok' => false, 'message' => $errMsg], 500);
             }

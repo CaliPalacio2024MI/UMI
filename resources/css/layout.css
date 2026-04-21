@@ -122,6 +122,8 @@
 
 .main-content {
   flex: 1;
+  /* Permite que la columna central encoja por debajo del min-content de vistas anchas (p. ej. Horarios + tabla); evita “ensanchar” todo el layout. */
+  min-width: 0;
   min-height: 100vh;
   background: var(--page-bg);
   padding: 10px;

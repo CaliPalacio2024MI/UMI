@@ -223,7 +223,27 @@
                     </div>
                 </div>
 
-                {{-- VISUALIZACIÓN DE DOCUMENTOS --}}
+                {{-- VISUALIZACIÓN DE DOCUMENTOS (rutas relativas /storage/... para no depender de APP_URL/host) --}}
+                @php
+                    $umiRelPublic = static function (?string $path): string {
+                        if ($path === null || trim((string) $path) === '') {
+                            return '#';
+                        }
+                        $path = str_replace('\\', '/', trim((string) $path));
+                        if (filter_var($path, FILTER_VALIDATE_URL)) {
+                            $parsed = parse_url($path);
+                            $path = $parsed['path'] ?? '';
+                            if ($path === '') {
+                                return '#';
+                            }
+                        }
+                        $path = ltrim($path, '/');
+                        if (str_starts_with($path, 'storage/')) {
+                            $path = substr($path, strlen('storage/'));
+                        }
+                        return '/storage/'.$path;
+                    };
+                @endphp
                 <div class="docs-container" style="margin-top: 15px;">
                     <h4 style="color: #666; font-size: 0.9rem; text-transform: uppercase;">Documentos Cargados</h4>
                     
@@ -232,7 +252,7 @@
                         <div class="form-field">
                             <label>Acta Nacimiento</label>
                             @if($user->academicProfile->doc_acta_nacimiento)
-                                <a href="{{ Storage::url($user->academicProfile->doc_acta_nacimiento) }}" target="_blank" class="btn-ver-doc">
+                                <a href="{{ $umiRelPublic($user->academicProfile->doc_acta_nacimiento) }}" target="_blank" class="btn-ver-doc">
                                     <i class="fa-regular fa-file-pdf"></i> Ver Documento Actual
                                 </a>
                             @else
@@ -246,7 +266,7 @@
                         <div class="form-field">
                             <label>Certificado Prepa</label>
                             @if($user->academicProfile->doc_certificado_prepa)
-                                <a href="{{ Storage::url($user->academicProfile->doc_certificado_prepa) }}" target="_blank" class="btn-ver-doc">
+                                <a href="{{ $umiRelPublic($user->academicProfile->doc_certificado_prepa) }}" target="_blank" class="btn-ver-doc">
                                     <i class="fa-regular fa-file-pdf"></i> Ver Documento Actual
                                 </a>
                             @else
@@ -261,7 +281,7 @@
                         <div class="form-field">
                             <label>CURP</label>
                             @if($user->academicProfile->doc_curp)
-                                <a href="{{ Storage::url($user->academicProfile->doc_curp) }}" target="_blank" class="btn-ver-doc">
+                                <a href="{{ $umiRelPublic($user->academicProfile->doc_curp) }}" target="_blank" class="btn-ver-doc">
                                     <i class="fa-regular fa-file-pdf"></i> Ver Documento Actual
                                 </a>
                             @else
@@ -274,7 +294,7 @@
                         <div class="form-field">
                             <label>INE (Opcional)</label>
                             @if($user->academicProfile->doc_ine)
-                                <a href="{{ Storage::url($user->academicProfile->doc_ine) }}" target="_blank" class="btn-ver-doc">
+                                <a href="{{ $umiRelPublic($user->academicProfile->doc_ine) }}" target="_blank" class="btn-ver-doc">
                                     <i class="fa-regular fa-file-pdf"></i> Ver Documento Actual
                                 </a>
                             @else

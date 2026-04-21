@@ -48,15 +48,10 @@
 
                 {{-- Campo: No. Créditos --}}
                 <div class="form-field lists">
-                    <label for="creditos">No. de Creditos:</label>
-                    <select id="creditos" name="creditos" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
-                        @for ($i = 1; $i <= 10; $i++)
-                            <option 
-                                value="{{ $i }}" 
-                                {{ old('creditos', $registro->creditos) == $i ? 'selected' : '' }}
-                            >{{ $i }}</option>
-                        @endfor
-                    </select>
+                    <label for="creditos_{{ $registro->id }}">No. de créditos:</label>
+                    <input type="number" id="creditos_{{ $registro->id }}" name="creditos" min="1" step="1"
+                        class="js-materia-creditos @if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif"
+                        value="{{ old('creditos', $registro->creditos) }}">
                 </div>
 
                 <div class="options">
@@ -75,19 +70,31 @@
 
                     {{-- Campo: Semestre --}}
                     <div class="form-field lists">
-                        <label for="semestre">Semestre:</label>
-                        <select id="semestre" name="semestre" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
-                            @for ($i = 1; $i <= 8; $i++)
-                                <option 
-                                    value="{{ $i }}" 
-                                    {{ old('semestre', $registro->semestre) == $i ? 'selected' : '' }}
-                                >{{ $i }}</option>
-                            @endfor
-                        </select>
+                        <label for="semestre_{{ $registro->id }}">Semestre:</label>
+                        <input type="number" id="semestre_{{ $registro->id }}" name="semestre" min="1" step="1"
+                            class="js-materia-semestre @if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif"
+                            value="{{ old('semestre', $registro->semestre) }}">
                         <input type="hidden" name="clave" value="{{ old('clave', $registro->clave) }}">
-                        <input type="hidden" name="descripcion" value="{{ old('descripcion', $registro->descripcion) }}">
                     </div>
-                </div>              
+                </div>
+
+                <div class="form-field">
+                    <label for="descripcion_{{ $registro->id }}">Descripción general:</label>
+                    <textarea id="descripcion_{{ $registro->id }}" name="descripcion" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('descripcion', $registro->descripcion) }}</textarea>
+                </div>
+                <div class="form-field">
+                    <label for="objetivo_{{ $registro->id }}">Objetivo:</label>
+                    <textarea id="objetivo_{{ $registro->id }}" name="objetivo" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('objetivo', $registro->objetivo) }}</textarea>
+                </div>
+                <div class="form-field">
+                    <label for="temario_{{ $registro->id }}">Temario:</label>
+                    <textarea id="temario_{{ $registro->id }}" name="temario" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('temario', $registro->temario) }}</textarea>
+                </div>
+                <div class="form-field">
+                    <label for="infografia_{{ $registro->id }}">Infografía de la materia:</label>
+                    <textarea id="infografia_{{ $registro->id }}" name="infografia" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('infografia', $registro->infografia) }}</textarea>
+                </div>
+                              
                 <div class="modal-footer-custom mt-3">
                     <button type="submit" class="submit-button">+ Guardar</button>
                 </div>

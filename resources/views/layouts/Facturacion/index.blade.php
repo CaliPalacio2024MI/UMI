@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Facturación')
+@section('title', 'Estado de cuenta')
 
 @section('content')
 
-    <div class="main-header"> <h1>Facturación</h1> </div>
+    <div class="main-header"> <h1>Estado de cuenta</h1> </div>
 
     {{-- === Formulario de Filtros === --}}
     <form action="{{ route('Facturacion.index') }}" method="GET">
@@ -375,7 +375,10 @@
                         <option value="" data-amount="">   Seleccione un concepto   </option>
                         @if(isset($conceptosDisponibles))
                             @foreach($conceptosDisponibles as $c)
-                                <option value="{{ $c->concept }}" data-amount="{{ $c->amount }}">
+                                <option value="{{ $c->concept }}"
+                                        data-amount="{{ $c->amount }}"
+                                        data-porcentaje-cargo-moratorio="{{ $c->porcentaje_cargo_moratorio }}"
+                                        data-cargo-monetario="{{ $c->cargo_monetario }}">
                                     {{ $c->concept }}
                                 </option>
                             @endforeach
@@ -388,6 +391,7 @@
                            maxlength="255"
                            placeholder="Escriba el concepto"
                            autocomplete="off"
+                           readonly
                            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
                 </div>
 
@@ -407,6 +411,7 @@
                            step="0.01"
                            min="0"
                            placeholder="0.00"
+                           readonly
                            style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #333; box-sizing: border-box;">
                 </div>
 
@@ -419,6 +424,7 @@
                        inputmode="decimal"
                        autocomplete="off"
                        placeholder="0"
+                       readonly
                        style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; color: #333; box-sizing: border-box;">
 
                 <label for="modal_cargo_monetario" style="font-weight:bold; display:block; margin-top:10px;">Cargo monetario:</label>

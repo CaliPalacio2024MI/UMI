@@ -264,10 +264,14 @@ if (formFactura) {
             if (select.disabled) return;
             const inputReal = document.getElementById('modal_monto');
             const inputVisible = document.getElementById('modal_monto_visible');
+            const pctInput = document.getElementById('modal_porcentaje_cargo_moratorio');
+            const cargoInput = document.getElementById('modal_cargo_monetario');
             
             if (select && inputReal && inputVisible) {
                 const option = select.options[select.selectedIndex];
                 const precio = option.getAttribute('data-amount');
+                const porcentaje = option.getAttribute('data-porcentaje-cargo-moratorio');
+                const cargo = option.getAttribute('data-cargo-monetario');
 
                 if (precio) {
                     inputReal.value = precio;
@@ -285,6 +289,14 @@ if (formFactura) {
                     inputReal.value = '';
                     inputVisible.value = '';
                 }
+
+                // En factura extra, estos campos se muestran como solo visualización.
+                if (pctInput && !pctInput.disabled) {
+                    pctInput.value = (porcentaje !== null && String(porcentaje).trim() !== '') ? String(porcentaje) : '';
+                }
+                if (cargoInput && !cargoInput.disabled) {
+                    cargoInput.value = (cargo !== null && String(cargo).trim() !== '') ? String(cargo) : '';
+                }
             }
         }
     });
@@ -292,11 +304,15 @@ if (formFactura) {
     /* Factura extra: cargo monetario = monto de tiempo normal × (porcentaje moratorio ÷ 100) */
     function recalcCargoMoratorioFacturaExtra() {
         const montoEl = document.getElementById('modal_monto_ext');
+        const montoHidden = document.getElementById('modal_monto');
         const pctEl = document.getElementById('modal_porcentaje_cargo_moratorio');
         const cargoEl = document.getElementById('modal_cargo_monetario');
-        if (!montoEl || !pctEl || !cargoEl) return;
-        if (montoEl.disabled || pctEl.disabled) return;
-        const rawM = String(montoEl.value || '').trim().replace(',', '.');
+        if (!pctEl || !cargoEl) return;
+        const montoSource = (montoEl && !montoEl.disabled && String(montoEl.value || '').trim() !== '')
+            ? montoEl
+            : montoHidden;
+        if (!montoSource || montoSource.disabled || pctEl.disabled) return;
+        const rawM = String(montoSource.value || '').trim().replace(',', '.');
         const rawP = String(pctEl.value || '').trim().replace(',', '.');
         if (rawM === '' || rawP === '') {
             cargoEl.value = '';
@@ -416,7 +432,7 @@ function fillAndOpenModal(modal, btn) {
             setVal('#modal_period_id', btn.dataset.periodId);
         }
 
-        // 7. Factura extra (EXT-) vs mensualidad (MEN-): concepto/monto manual solo en EXT (vista Facturación)
+        // 7. Concepto/monto: siempre desde catálogo (sin captura libre).
         const dualConcept = modal.querySelector('#modal_concepto_ext_wrap');
         if (dualConcept) {
             const conceptMen = modal.querySelector('#modal_concepto_men_wrap');
@@ -429,66 +445,36 @@ function fillAndOpenModal(modal, btn) {
             const montoVis = modal.querySelector('#modal_monto_visible');
             const montoExtInput = modal.querySelector('#modal_monto_ext');
             const montoLabel = modal.querySelector('#modal_monto_label');
-            if (prefix === 'MEN-') {
-                if (conceptMen) conceptMen.style.display = '';
-                if (conceptExt) conceptExt.style.display = 'none';
-                if (selectConcept) {
-                    selectConcept.disabled = false;
-                    selectConcept.setAttribute('name', 'concepto');
-                    selectConcept.required = true;
-                }
-                if (inputConceptExt) {
-                    inputConceptExt.value = '';
-                    inputConceptExt.disabled = true;
-                    inputConceptExt.removeAttribute('name');
-                }
-                if (montoMen) montoMen.style.display = '';
-                if (montoExt) montoExt.style.display = 'none';
-                if (montoVis) montoVis.readOnly = true;
-                if (montoHidden) {
-                    montoHidden.disabled = false;
-                    montoHidden.setAttribute('name', 'monto');
-                    montoHidden.required = true;
-                }
-                if (montoExtInput) {
-                    montoExtInput.value = '';
-                    montoExtInput.disabled = true;
-                    montoExtInput.removeAttribute('name');
-                }
-                if (montoLabel) {
-                    montoLabel.textContent = 'Monto:';
-                    montoLabel.setAttribute('for', 'modal_monto_visible');
-                }
-            } else {
-                if (conceptMen) conceptMen.style.display = 'none';
-                if (conceptExt) conceptExt.style.display = '';
-                if (selectConcept) {
-                    selectConcept.disabled = true;
-                    selectConcept.removeAttribute('name');
-                    selectConcept.required = false;
-                }
-                if (inputConceptExt) {
-                    inputConceptExt.disabled = false;
-                    inputConceptExt.setAttribute('name', 'concepto');
-                    inputConceptExt.required = true;
-                }
-                if (montoMen) montoMen.style.display = 'none';
-                if (montoExt) montoExt.style.display = '';
-                if (montoHidden) {
-                    montoHidden.value = '';
-                    montoHidden.disabled = true;
-                    montoHidden.removeAttribute('name');
-                }
-                if (montoVis) montoVis.value = '';
-                if (montoExtInput) {
-                    montoExtInput.disabled = false;
-                    montoExtInput.setAttribute('name', 'monto');
-                    montoExtInput.required = true;
-                }
-                if (montoLabel) {
-                    montoLabel.textContent = 'Monto de tiempo normal:';
-                    montoLabel.setAttribute('for', 'modal_monto_ext');
-                }
+            if (conceptMen) conceptMen.style.display = '';
+            if (conceptExt) conceptExt.style.display = 'none';
+            if (selectConcept) {
+                selectConcept.disabled = false;
+                selectConcept.setAttribute('name', 'concepto');
+                selectConcept.required = true;
+            }
+            if (inputConceptExt) {
+                inputConceptExt.value = '';
+                inputConceptExt.disabled = true;
+                inputConceptExt.readOnly = true;
+                inputConceptExt.removeAttribute('name');
+            }
+            if (montoMen) montoMen.style.display = '';
+            if (montoExt) montoExt.style.display = 'none';
+            if (montoVis) montoVis.readOnly = true;
+            if (montoHidden) {
+                montoHidden.disabled = false;
+                montoHidden.setAttribute('name', 'monto');
+                montoHidden.required = true;
+            }
+            if (montoExtInput) {
+                montoExtInput.value = '';
+                montoExtInput.disabled = true;
+                montoExtInput.readOnly = true;
+                montoExtInput.removeAttribute('name');
+            }
+            if (montoLabel) {
+                montoLabel.textContent = 'Monto:';
+                montoLabel.setAttribute('for', 'modal_monto_visible');
             }
         }
 
@@ -502,7 +488,7 @@ function fillAndOpenModal(modal, btn) {
             if (cargoEl) { cargoEl.value = ''; cargoEl.disabled = true; }
         } else {
             if (extraWrap) extraWrap.style.display = '';
-            if (pctEl) pctEl.disabled = false;
+            if (pctEl) { pctEl.disabled = false; pctEl.readOnly = true; }
             if (cargoEl) cargoEl.disabled = false;
             recalcCargoMoratorioFacturaExtra();
         }

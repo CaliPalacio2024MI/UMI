@@ -23,18 +23,22 @@ class HorarioController extends Controller
     public function aulasDisponibles(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'career_id' => 'required|integer|exists:careers,id',
             'materia_id' => 'required|integer|exists:materias,id',
+            'career_id' => 'nullable|integer|exists:careers,id',
         ]);
 
         $materia = Materia::query()->findOrFail((int) $validated['materia_id']);
-        if ((int) $materia->career_id !== (int) $validated['career_id']) {
+        $careerIdEsperado = (int) $materia->career_id;
+        $careerId = isset($validated['career_id']) && $validated['career_id'] !== null && $validated['career_id'] !== ''
+            ? (int) $validated['career_id']
+            : $careerIdEsperado;
+        if ($careerId !== $careerIdEsperado) {
             return response()->json(['aulas' => []]);
         }
 
         $nombre = trim((string) $materia->nombre);
         $aulas = Facility::query()
-            ->where('career_id', (int) $validated['career_id'])
+            ->where('career_id', $careerIdEsperado)
             ->where('tipo_materia', $nombre)
             ->orderBy('nombre_aula')
             ->orderBy('id')
@@ -110,7 +114,7 @@ class HorarioController extends Controller
         }
 
         $horarios = $query->get();
-        // 2. ¿Qué necesitamos hacer ahora con estos datos ($carreras, $aulas, $docentes, $materias)?
+
         return view('layouts.ControlAdmin.Horarios.index', [
             'carreras' => $carreras,
             'materias' => $materias,
@@ -125,7 +129,7 @@ class HorarioController extends Controller
      */
     public function show(Request $request, HorarioClase $horario)
     {
-        $horario->load(['carrera', 'materia', 'user', 'aula', 'franjas']);
+        $horario->load(['carrera.classification', 'materia', 'user', 'aula', 'franjas']);
 
         if ($request->wantsJson() || $request->ajax()) {
             $diasNombres = ['1' => 'Lunes', '2' => 'Martes', '3' => 'Miércoles', '4' => 'Jueves', '5' => 'Viernes', '6' => 'Sábado', '7' => 'Domingo'];
@@ -141,6 +145,7 @@ class HorarioController extends Controller
 
             return response()->json([
                 'carrera' => $horario->carrera->name ?? '—',
+                'clasificacion' => $horario->carrera?->classification?->name ?? '—',
                 'materia' => $horario->materia->nombre ?? '—',
                 'docente' => $horario->user->nombre ?? '—',
                 'aula' => $horario->aula

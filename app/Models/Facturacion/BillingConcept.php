@@ -17,6 +17,8 @@ class BillingConcept extends Model
         'institution_id',
         'concept',
         'amount',
+        'porcentaje_cargo_moratorio',
+        'cargo_monetario',
         'description',
         'is_active',
     ];
@@ -24,5 +26,7 @@ class BillingConcept extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'amount'    => 'decimal:2',
+        'porcentaje_cargo_moratorio' => 'decimal:2',
+        'cargo_monetario' => 'decimal:2',
     ];
 }

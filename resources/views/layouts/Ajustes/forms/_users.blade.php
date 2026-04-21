@@ -265,6 +265,7 @@
                    name="RFC"
                    required
                    maxlength="{{ $tipoCreacion === 'alumno' ? 18 : 13 }}"
+                   minlength="{{ $tipoCreacion === 'alumno' ? 12 : 10 }}"
                    class="form-control @error('RFC') is-invalid @enderror"
                    value="{{ old('RFC', $item->RFC ?? '') }}"
                    style="width: 100%; text-transform: uppercase;"
@@ -289,6 +290,7 @@
                    id="password"
                    name="password"
                    class="form-control @error('password') is-invalid @enderror"
+                   minlength="8"
                    style="width: 100%;"
                    {{ isset($item) ? '' : 'required' }}>
         </div>
@@ -300,7 +302,9 @@
     @enderror
     
     @if(isset($item))
-        <small style="display: block; color: #555; margin-top: 6px;">Dejar en blanco para no cambiar la contraseña.</small>
+        <small style="display: block; color: #555; margin-top: 6px;">Dejar en blanco para no cambiar la contraseña. Si capturas una nueva: mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
+    @else
+        <small style="display: block; color: #555; margin-top: 6px;">Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
     @endif
 </div>
 

@@ -175,8 +175,10 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
             // 3. Matrículas
             Route::get('/matriculas', [MatriculaController::class, 'index'])->name('matriculas.index');
-            Route::put('/matriculas/{id}', [MatriculaController::class, 'update'])->name('matriculas.update');
+            Route::get('/matriculas/{id}', [MatriculaController::class, 'show'])->name('matriculas.show');
             Route::post('/matriculas/{id}/asignar', [MatriculaController::class, 'store'])->name('matriculas.store');
+            Route::put('/matriculas/{id}', [MatriculaController::class, 'update'])->name('matriculas.update');
+            Route::delete('/matriculas/{id}', [MatriculaController::class, 'destroy'])->name('matriculas.destroy');
             Route::post('/Matriculas/{id}/upload', [MatriculaController::class, 'uploadDocumento'])->name('documentacion.upload');
             
             // 4. Futuros Módulos (Becas, Titulación...)

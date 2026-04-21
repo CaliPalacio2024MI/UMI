@@ -133,6 +133,12 @@ class InscripcionController extends Controller
             if ($yaAceptado && !$bloqueadoPorAceptacion) {
                 return redirect()->route('dashboard');
             }
+
+            // Aspirante con envío pendiente y sin rechazos:
+            // mostrar vista de espera (sin formulario).
+            if ($bloqueadoPorAceptacion) {
+                return view('layouts.ControlEsc.Inscripcion.espera');
+            }
         }
 
         return view('layouts.ControlEsc.Inscripcion.index', compact(
@@ -360,17 +366,7 @@ class InscripcionController extends Controller
 
             $this->syncLeadFromStudentDocumentUpload($user, $rutasDocs, $docRechazoPorCampo);
 
-            Enrollment::create([
-                'user_id' => $user->id,
-                'career_id' => $request->carrera_id,
-                'semestre' => $perfil->semestre ?? 1,
-                'periodo' => $periodoActivo->id,
-                'status' => 'Pendiente',
-                'doc_acta_nacimiento' => $perfil->doc_acta_nacimiento,
-                'doc_certificado_prepa' => $perfil->doc_certificado_prepa,
-                'doc_curp' => $perfil->doc_curp,
-                'doc_ine' => $perfil->doc_ine,
-            ]);
+            $this->upsertPendingEnrollmentForUser($user, (int) $request->carrera_id, $periodoActivo, $perfil);
 
             // D. FACTURACIÓN DINÁMICA
             $mensajeExtra = "";
@@ -568,6 +564,43 @@ class InscripcionController extends Controller
         $user = User::findOrFail($id);
         $user->delete();
         return redirect()->route('escolar.students.index')->with('success', 'Usuario eliminado.');
+    }
+
+    /**
+     * Una sola fila de inscripción en espera por aspirante: actualiza la Pendiente existente
+     * o crea una; elimina duplicados Pendiente previos (mismo user_id).
+     */
+    private function upsertPendingEnrollmentForUser(User $user, int $carreraId, Period $periodoActivo, AcademicProfile $perfil): void
+    {
+        $attrs = [
+            'career_id' => $carreraId,
+            'semestre' => $perfil->semestre ?? 1,
+            'periodo' => $periodoActivo->id,
+            'status' => 'Pendiente',
+            'doc_acta_nacimiento' => $perfil->doc_acta_nacimiento,
+            'doc_certificado_prepa' => $perfil->doc_certificado_prepa,
+            'doc_curp' => $perfil->doc_curp,
+            'doc_ine' => $perfil->doc_ine,
+        ];
+
+        $pendientes = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'Pendiente')
+            ->orderBy('id')
+            ->get();
+
+        if ($pendientes->isEmpty()) {
+            Enrollment::create(array_merge($attrs, ['user_id' => $user->id]));
+
+            return;
+        }
+
+        $principal = $pendientes->first();
+        $principal->update($attrs);
+
+        foreach ($pendientes->skip(1) as $duplicado) {
+            $duplicado->delete();
+        }
     }
 
     private function subirDocumentos($request, $userId) {

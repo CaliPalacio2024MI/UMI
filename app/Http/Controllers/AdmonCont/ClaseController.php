@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdmonCont;
 
 use App\Http\Controllers\Controller;
 use App\Models\Users\Career;
+use App\Models\Users\CareerClassification;
 use App\Models\Users\User;
 use App\Models\AdmonCont\Materia;
 use App\Models\AdmonCont\HorarioClase;
@@ -17,24 +18,47 @@ use Illuminate\Http\Request;
 class ClaseController extends Controller
 {
     /**
-     * Index: filtros Carrera, Semestre, Materia.
+     * Index: filtros Clasificación, Carrera, Materia, Semestre (académico del alumno), Horario.
+     * El semestre del filtro restringe la tabla de alumnos (perfil académico), no la materia en retícula.
      * Si hay clase seleccionada: lista de alumnos disponibles (Alumno Activo) y panel de inscritos.
-     * Tabla de clases existentes con Ver / Editar / Eliminar.
      */
     public function index(Request $request)
     {
-        $carreras = Career::orderBy('name')->get();
+        $classificationId = $request->filled('career_classification_id') ? (int) $request->career_classification_id : null;
+        $clasificaciones = CareerClassification::orderBy('name')->get();
+
+        $carreras = Career::query()
+            ->when($classificationId, fn ($q) => $q->where('career_classification_id', $classificationId))
+            ->orderBy('name')
+            ->get();
+
         $carreraId = $request->filled('carrera_id') ? (int) $request->carrera_id : null;
+        if ($carreraId && !$carreras->firstWhere('id', $carreraId)) {
+            $carreraId = null;
+        }
+
         $semestre = $request->filled('semestre') ? $request->semestre : null;
         $materiaId = $request->filled('materia_id') ? (int) $request->materia_id : null;
+        if (!$carreraId) {
+            $materiaId = null;
+        }
 
         $semestresCarrera = range(1, 8);
 
         $materias = Materia::query()
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
-            ->when($semestre !== null && $semestre !== '', fn($q) => $q->where('semestre', $semestre))
             ->orderBy('nombre')
             ->get();
+
+        if ($materiaId && $carreraId) {
+            $materiaOk = Materia::query()
+                ->where('id', $materiaId)
+                ->where('career_id', $carreraId)
+                ->exists();
+            if (!$materiaOk) {
+                $materiaId = null;
+            }
+        }
 
         $clase = null;
         $alumnosDisponibles = collect();
@@ -81,7 +105,7 @@ class ClaseController extends Controller
             ->with(['carrera', 'materia', 'user', 'aula', 'franjas', 'alumnos'])
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
             ->when($materiaId, fn($q) => $q->where('materia_id', $materiaId))
-            ->when($semestre !== null && $semestre !== '', function ($q) use ($semestre) {
+            ->when(!$materiaId && $semestre !== null && $semestre !== '', function ($q) use ($semestre) {
                 $q->whereHas('materia', fn($mq) => $mq->where('semestre', $semestre));
             })
             ->orderBy('career_id')
@@ -233,6 +257,8 @@ class ClaseController extends Controller
         }
 
         return view('layouts.ControlAdmin.Clases.index', compact(
+            'clasificaciones',
+            'classificationId',
             'carreras',
             'materias',
             'clase',
@@ -258,7 +284,12 @@ class ClaseController extends Controller
      */
     public function create(Request $request)
     {
-        return redirect()->route('control.classes.index', $request->only(['carrera_id', 'semestre', 'materia_id']));
+        return redirect()->route('control.classes.index', $request->only([
+            'career_classification_id',
+            'carrera_id',
+            'semestre',
+            'materia_id',
+        ]));
     }
 
     /**
@@ -276,12 +307,15 @@ class ClaseController extends Controller
         $ids = $request->input('alumnos', []);
         $clase->alumnos()->syncWithoutDetaching($ids);
 
+        $clase->loadMissing('carrera');
+
         return redirect()
-            ->route('control.classes.index', [
+            ->route('control.classes.index', array_filter([
+                'career_classification_id' => $clase->carrera->career_classification_id,
                 'carrera_id' => $clase->career_id,
                 'semestre' => $clase->materia->semestre,
                 'materia_id' => $clase->materia_id,
-            ])
+            ], fn ($v) => $v !== null && $v !== ''))
             ->with('success', 'Alumnos agregados a la clase correctamente.');
     }
 
@@ -303,6 +337,7 @@ class ClaseController extends Controller
             'cajita_items.*.materia_nombre' => 'nullable|string|max:255',
             'cajita_items.*.horario_resumen' => 'nullable|string|max:2000',
             'cajita_items.*.alumno_nombre' => 'nullable|string|max:255',
+            'career_classification_id' => 'nullable|integer|exists:career_classifications,id',
             'carrera_id' => 'nullable|integer',
             'semestre' => 'nullable',
             'materia_id' => 'nullable|integer',
@@ -368,11 +403,7 @@ class ClaseController extends Controller
         $request->session()->forget('clases_ocultas');
 
         return redirect()
-            ->route('control.classes.index', array_filter([
-                'carrera_id' => $request->input('carrera_id'),
-                'semestre' => $request->input('semestre'),
-                'materia_id' => $request->input('materia_id'),
-            ], fn($v) => $v !== null && $v !== ''))
+            ->route('control.classes.index')
             ->with('success', 'Selección guardada correctamente.');
     }
 

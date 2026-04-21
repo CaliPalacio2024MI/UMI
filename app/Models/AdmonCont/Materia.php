@@ -20,6 +20,9 @@ class Materia extends Model
         'creditos',
         'career_id',
         'descripcion',
+        'objetivo',
+        'temario',
+        'infografia',
         'type',
         'semestre'
     ];

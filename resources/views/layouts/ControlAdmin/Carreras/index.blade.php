@@ -83,32 +83,136 @@
 {{-- Script JS para abrir/cerrar (el mismo de antes) --}}
 @push('scripts')
     <script>
+        function careerRenderMonthlyPriceInputs(form) {
+            if (!form) return;
+            var sem = form.querySelector('.js-career-semestres');
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var container = form.querySelector('.js-career-months-fields');
+            if (!sem || !mode || !container) return;
+
+            var totalMonths = parseInt(sem.value, 10) || 1;
+            totalMonths = Math.max(1, totalMonths);
+            var oldData = {};
+            try {
+                oldData = JSON.parse(container.getAttribute('data-old-monthly') || '{}') || {};
+            } catch (e) {
+                oldData = {};
+            }
+            var previousValues = {};
+            container.querySelectorAll('input.js-career-month-price').forEach(function(input) {
+                var month = input.getAttribute('data-month');
+                if (month) previousValues[month] = input.value;
+            });
+            container.innerHTML = '';
+            for (var month = 1; month <= totalMonths; month++) {
+                var row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.gap = '8px';
+                row.style.marginBottom = '6px';
+
+                var label = document.createElement('label');
+                label.textContent = 'Mes ' + month + ':';
+                label.style.minWidth = '60px';
+
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.min = '0';
+                input.placeholder = '0.00';
+                input.name = 'monthly_prices[' + month + ']';
+                input.setAttribute('data-month', String(month));
+                input.className = 'js-career-month-price';
+                input.style.width = '100%';
+                input.value = previousValues[String(month)] || oldData[String(month)] || '';
+
+                row.appendChild(label);
+                row.appendChild(input);
+                container.appendChild(row);
+            }
+            container.setAttribute('data-old-monthly', '{}');
+        }
+
+        function careerTogglePricingSections(form) {
+            if (!form) return;
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var uniformWrap = form.querySelector('.js-career-uniform-wrap');
+            var monthsWrap = form.querySelector('.js-career-months-wrap');
+            if (!mode || !uniformWrap || !monthsWrap) return;
+            var perMonth = mode.value === 'per_month';
+            uniformWrap.style.display = perMonth ? 'none' : '';
+            monthsWrap.style.display = perMonth ? '' : 'none';
+            if (perMonth) careerRenderMonthlyPriceInputs(form);
+        }
+
         function careerUpdateCargoMonetario(form) {
             if (!form) return;
             var monto = form.querySelector('.js-career-monto');
             var sem = form.querySelector('.js-career-semestres');
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var pct = form.querySelector('.js-career-porcentaje');
             var out = form.querySelector('.js-career-cargo-out');
-            if (!monto || !sem || !out) return;
-            var m = parseFloat(monto.value);
+            if (!sem || !out) return;
             var s = parseInt(sem.value, 10) || 0;
-            out.value = (isNaN(m) || s < 1) ? '' : (m * s).toFixed(2);
+            var p = pct ? parseFloat(pct.value) : 0;
+            p = isNaN(p) || p < 0 ? 0 : p;
+            if (mode && mode.value === 'per_month') {
+                var total = 0;
+                var hasValue = false;
+                form.querySelectorAll('.js-career-month-price').forEach(function(input) {
+                    var n = parseFloat(input.value);
+                    if (!isNaN(n) && n >= 0) {
+                        total += n;
+                        hasValue = true;
+                    }
+                });
+                out.value = (hasValue && s > 0) ? (total * (p / 100)).toFixed(2) : '';
+                return;
+            }
+            if (!monto) return;
+            var m = parseFloat(monto.value);
+            out.value = (isNaN(m) || s < 1) ? '' : ((m * s) * (p / 100)).toFixed(2);
         }
 
         document.addEventListener('input', function(e) {
             if (e.target.classList && e.target.classList.contains('js-career-monto')) {
                 careerUpdateCargoMonetario(e.target.closest('form'));
             }
+            if (e.target.classList && e.target.classList.contains('js-career-porcentaje')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
         });
         document.addEventListener('change', function(e) {
             if (e.target.classList && e.target.classList.contains('js-career-semestres')) {
+                careerRenderMonthlyPriceInputs(e.target.closest('form'));
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+            if (e.target.classList && e.target.classList.contains('js-career-pricing-mode')) {
+                var form = e.target.closest('form');
+                careerTogglePricingSections(form);
+                careerUpdateCargoMonetario(form);
+            }
+        });
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-month-price')) {
                 careerUpdateCargoMonetario(e.target.closest('form'));
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
+        function careerInitPricingForms() {
             document.querySelectorAll('form .js-career-monto').forEach(function(el) {
-                careerUpdateCargoMonetario(el.closest('form'));
+                var form = el.closest('form');
+                careerTogglePricingSections(form);
+                careerUpdateCargoMonetario(form);
             });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', careerInitPricingForms);
+        } else {
+            careerInitPricingForms();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
             
             // --- 1. LÓGICA DEL MODAL DE CREACIÓN (Singular) ---
             

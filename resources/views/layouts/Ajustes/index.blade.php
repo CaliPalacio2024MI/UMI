@@ -109,7 +109,7 @@
                             <td>{{ $item->nombre }}</td>
                             <td>{{ $item->apellido_paterno }}</td>
                             <td>{{ $item->apellido_materno }}</td>
-                            <td>{{ $item->roles->first()->display_name ?? 'Sin Rol' }}</td>
+                            <td>{{ $item->roleDisplayNameForAjustes() }}</td>
                             
                         @endif
                         

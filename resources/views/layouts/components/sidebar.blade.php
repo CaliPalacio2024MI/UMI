@@ -46,6 +46,13 @@
         $isCTP = $user->hasActiveRole('ctp');
         $isCoordinatorCTP = $user->hasActiveRole('coordinador_ctp');
 
+        // Usuario aspirante (rol estudiante aún no aceptado como alumno):
+        // debe ver sidebar sin módulos (solo logout y su nombre en header layout).
+        $activeRoleName = strtolower((string) session('active_role_name'));
+        $academicStatus = trim((string) ($user->academicProfile->status ?? ''));
+        $isAspiranteUser = $activeRoleName === 'estudiante'
+            && ! in_array($academicStatus, ['Alumno', 'Alumno Activo', 'Alumno Inactivo'], true);
+
     @endphp
 
     {{-- =================================================================== --}}
@@ -65,13 +72,14 @@
     {{-- MENÚ LATERAL --}}
     {{-- =================================================================== --}}
     <nav class="menu" aria-label="Menú principal">
+        @if(!$isAspiranteUser)
         <ul>
 
             {{-- 1. MI INFORMACIÓN --}}
             @if($isUniversity)
                 {{-- CASO UNIVERSIDAD: Muestra Submenú con Horario, Clases, etc. --}}
                 <li class="has-submenu {{ request()->routeIs('MiInformacion.*') ? 'active' : '' }}">
-                    <a href="#">
+                    <a href="{{ route('Facturacion.index') }}">
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/user-solid-full.svg') }}" alt="Info Icon" style="width:24px;height:24px" loading="lazy">
                         </span>
@@ -153,8 +161,11 @@
                     
                     {{-- SUBMENÚ FLOTANTE A LA DERECHA --}}
                     <ul class="submenu">
-                        <li class="{{ request()->routeIs('Facturacion.index') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('Facturacion.index') }}">Conceptos y Montos</a>
+                        <li class="{{ request()->routeIs('Facturacion.*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('Facturacion.index') }}">Estado de cuenta</a>
+                        </li>
+                        <li class="{{ request()->routeIs('facturacion.conceptos.*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('facturacion.conceptos.index') }}">Conceptos y montos</a>
                         </li>
                     </ul>
                 </li>
@@ -165,7 +176,7 @@
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
                         </span>
-                        <span class="text">Facturación</span>
+                        <span class="text">Estado de cuenta</span>
                     </a>
                 </li>
             @endif
@@ -224,6 +235,9 @@
                                     </li>
                                     <li class="{{ request()->routeIs('escolar.boletas.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('escolar.boletas.index') }}">Boletas de calificaciones</a>
+                                    </li>
+                                    <li class="{{ request()->routeIs('escolar.matriculas.*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('escolar.matriculas.index') }}">Matrículas</a>
                                     </li>
                                     <li class="{{ request()->is('control-escolar/becas*') ? 'active-submenu' : '' }}">
                                         <a href="#">Becas</a>
@@ -348,6 +362,7 @@
             @endif
 
         </ul>
+        @endif
     </nav>
 
     {{-- =================================================================== --}}

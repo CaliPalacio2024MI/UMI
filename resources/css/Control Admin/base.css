@@ -1,6 +1,9 @@
 .container{
     flex-grow: 1;
     padding: 20px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /*Botones*/
@@ -565,7 +568,7 @@
     min-width: 200px;
     width: 200px;
 }
-/* Solo en lista de Materias: primera columna (Carrera) un poco más ancha */
+/* Solo en lista de Materias: primera columna (Materia) un poco más ancha */
 .tabla-materias thead th:first-child,
 .tabla-materias tbody td:first-child {
     min-width: 200px;
@@ -610,8 +613,9 @@
     margin-left: 19px;
     margin-right: 19px;
     margin-bottom: 8px;
-    width: 680px;
+    width: 100%;
     max-width: 680px;
+    box-sizing: border-box;
 }
 .schedule-table .toolbar__search form,
 .schedule-table .toolbar__search .mb-4 {
@@ -634,9 +638,10 @@
 .schedule-table .Table-view {
     margin-top: 1rem;
     margin-bottom: 1.5rem;
-    max-width: 780px;
-    min-width: 680px;
-    flex: 0 1 auto;
+    width: 100%;
+    max-width: min(780px, 100%);
+    min-width: 0;
+    flex: 1 1 auto;
     min-height: 0;
     align-self: flex-start;
     padding: 0 0 6px 0;
@@ -644,7 +649,7 @@
     margin-right: 12px;
     max-height: 380px;
     overflow-y: scroll;
-    overflow-x: hidden;
+    overflow-x: auto;
     scrollbar-gutter: stable;
     scrollbar-color: #223f70 #e8eaed;
     scrollbar-width: thin;
@@ -666,7 +671,7 @@
 .schedule-table .Table-view .tabla-base.tabla-bordes {
     flex: 0 0 auto;
     min-height: 0;
-    min-width: 680px;
+    min-width: 520px;
     width: 100%;
 }
 #horarios-tbody td.text-center {
@@ -734,7 +739,9 @@
     margin-top: 1rem;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    flex: 1 1 400px;
+    min-width: 0;
+    max-width: 100%;
     min-height: 280px;
 }
 /* Al editar un horario: ocultar barra de búsqueda y tabla; solo se ve el formulario */
@@ -1142,24 +1149,25 @@
 }
 
 .creator-container {
-    /* 1. ABARCAR TODA LA PANTALLA */
     width: 100%;
-    min-height: 100vh; /* Asegura que abarque al menos la altura visible de la pantalla */
+    max-width: 100%;
+    min-width: 0;
+    min-height: 100vh;
     margin: 0;
     padding: 20px;
-    box-sizing: border-box; /* Incluye el padding en el ancho/alto */
+    box-sizing: border-box;
 
-    /* 2. DISTRIBUCIÓN EN DOS COLUMNAS (Flexbox) */
     display: flex;
-    gap: 30px; /* Espacio entre las dos columnas */
-    
-    /* Nota: Si ya estás usando .schedule-container, podrías renombrarlo a .creator-container */
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 30px;
 }
 
 /* Columna del formulario: ancho estable y un solo scroll para todo el menú (Carrera, Materia, Docente, Horario, Vista previa, Aula) */
 .schedule-lists {
-    min-width: 380px;
-    flex: 0 1 auto;
+    flex: 1 1 380px;
+    min-width: 0;
+    max-width: min(520px, 100%);
     max-height: calc(100vh - 7rem);
     overflow-y: auto;
     overflow-x: hidden;
@@ -1937,10 +1945,35 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Modal Agregar Materia: un poco más estrecho */
+/* Modal Agregar Materia: ancho máximo; scroll en el cuerpo (formulario) */
+#createMateriaModal.modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
 #createMateriaModal .modal-content-container {
-    width: 65%;
+    margin: auto;
+    width: min(100%, 460px);
     max-width: 460px;
+    max-height: min(92vh, 880px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+#createMateriaModal .modal-header-custom {
+    flex-shrink: 0;
+}
+#createMateriaModal .modal-body-custom,
+#createMateriaModal #modalBodyContent {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
 }
 
 /* Modales crear / editar carrera: no crecen de más; scroll interno en el formulario */
@@ -2093,11 +2126,21 @@
 #createCareerModal .form-field > label[for="name"],
 #createCareerModal .form-field > label[for="official_id"],
 #createCareerModal .form-field > label[for="career_classification_id"],
-#createCareerModal .form-field > label[for="description1"],
-#createCareerModal .form-field > label[for="description2"],
-#createCareerModal .form-field > label[for="description3"],
+#createCareerModal .form-field > label[for="description"],
+#createCareerModal .form-field > label[for="pricing_mode"],
 #createCareerModal .form-field > label[for="monto_mensualidad"],
+#createCareerModal .form-field > label[for="porcentaje_cargo_moratorio"],
 #createCareerModal .form-field > label[for="createCareerCargoMonetario"] {
+    color: #BC8A55;
+}
+
+#createCareerModal .form-field.js-career-months-wrap > label,
+#createCareerModal .js-career-months-fields label {
+    color: #BC8A55;
+}
+
+[id^="editCareerModal_"] .form-field.js-career-months-wrap > label,
+[id^="editCareerModal_"] .js-career-months-fields label {
     color: #BC8A55;
 }
 
@@ -2160,16 +2203,24 @@
 
 /* Inputs del modal crear carrera: sin cuadro, solo línea roja #DB5865 */
 #createCareerModal .form-field input[type="text"],
+#createCareerModal .form-field textarea,
 #createCareerModal .form-field select {
     border: none;
     border-bottom: 2px solid #DB5865;
     border-radius: 0;
     outline: none;
     box-shadow: none;
+    /* Misma tipografía en text y textarea (el UA suele diferir en textarea) */
+    font-family: 'Poppins', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
 }
 
-/* Monto mensualidad (number): un solo trazo rojo abajo; lados en blanco (como el resto del formulario) */
+/* Monto mensualidad / precios por mes (number): sin flechas; un solo trazo rojo abajo */
 #createCareerModal .form-field input.js-career-monto[type="number"],
+[id^="editCareerModal_"] .form-field input.js-career-month-price[type="number"],
+#createCareerModal .form-field input.js-career-month-price[type="number"],
 [id^="editCareerModal_"] .form-field input.js-career-monto[type="number"] {
     padding: 5px 8px;
     width: 100%;
@@ -2186,19 +2237,48 @@
     box-shadow: none;
     -moz-appearance: textfield;
 }
+/* No. de semestres: mismo estilo de línea pero CON flechas nativas (subir/bajar) */
+#createCareerModal .form-field input.js-career-semestres[type="number"],
+[id^="editCareerModal_"] .form-field input.js-career-semestres[type="number"] {
+    padding: 5px 8px;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff !important;
+    color: #212529;
+    border: 1px solid #fff !important;
+    border-bottom: 2px solid #DB5865 !important;
+    border-top-color: #fff !important;
+    border-left-color: #fff !important;
+    border-right-color: #fff !important;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+}
 #createCareerModal .form-field input.js-career-monto[type="number"]::-webkit-outer-spin-button,
 #createCareerModal .form-field input.js-career-monto[type="number"]::-webkit-inner-spin-button,
+[id^="editCareerModal_"] .form-field input.js-career-month-price[type="number"]::-webkit-outer-spin-button,
+[id^="editCareerModal_"] .form-field input.js-career-month-price[type="number"]::-webkit-inner-spin-button,
+#createCareerModal .form-field input.js-career-month-price[type="number"]::-webkit-outer-spin-button,
+#createCareerModal .form-field input.js-career-month-price[type="number"]::-webkit-inner-spin-button,
 [id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]::-webkit-outer-spin-button,
 [id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 #createCareerModal .form-field input.js-career-monto[type="number"]:focus,
-[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]:focus {
+[id^="editCareerModal_"] .form-field input.js-career-month-price[type="number"]:focus,
+#createCareerModal .form-field input.js-career-month-price[type="number"]:focus,
+[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]:focus,
+#createCareerModal .form-field input.js-career-semestres[type="number"]:focus,
+[id^="editCareerModal_"] .form-field input.js-career-semestres[type="number"]:focus {
     border-color: #fff !important;
     border-bottom-color: #DB5865 !important;
     outline: none;
     box-shadow: none;
+}
+
+#createCareerModal .form-field input.js-career-semestres[type="number"] {
+    color: #6c757d;
 }
 
 /* Label "No. de semestres" centrado */
@@ -2250,13 +2330,32 @@
     font-family: 'Poppins', sans-serif;
 }
 
-/* Placeholders un poco más a la izquierda */
+/* Texto del campo un poco más a la izquierda (textarea sin padding izq.: va aparte) */
 #createCareerModal #name,
-#createCareerModal #official_id,
-#createCareerModal #description1,
-#createCareerModal #description2,
-#createCareerModal #description3 {
+#createCareerModal #official_id {
     padding-left: 4px;
+}
+
+#createCareerModal #name::placeholder,
+#createCareerModal #official_id::placeholder,
+#createCareerModal #description::placeholder {
+    color: #ACACAC;
+    font-family: 'Poppins', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+    opacity: 1;
+}
+
+#createCareerModal #description,
+[id^="editCareerModal"] textarea[id^="description_"] {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 70px;
+    text-align: left;
+    /* Alineado más a la izquierda que los text (evita padding extra del UA + el 4px de name/official) */
+    padding: 5px 8px 5px 0;
 }
 
 .form-field select {
@@ -2270,9 +2369,7 @@
 
 /* Select carrera en modal Agregar Materia: solo "Seleccione una Carrera" en #ACACAC, el resto negro */
 #createMateriaModal #carrera_id,
-#createMateriaModal #nombre,
-#createMateriaModal #creditos,
-#createMateriaModal #semestre {
+#createMateriaModal #nombre {
     color: #212529;
     border: none;
     border-bottom: 2px solid #DB5865;
@@ -2287,13 +2384,83 @@
 #createMateriaModal #nombre::placeholder {
     color: #ACACAC;
 }
-/* Select cerrado: texto a la izquierda; menú desplegable: opciones centradas */
-#createMateriaModal #creditos {
-    text-align-last: left;
+
+/* Textareas (descripción, objetivo, temario, infografía): ancho completo y misma línea #DB5865 que nombre/carrera */
+#createMateriaModal .form-field textarea,
+[id^="editMateriaModal"] .form-field textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    color: #212529;
+    border: none;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    text-align: left;
+    padding: 5px 8px 5px 0;
+    resize: vertical;
+    font-family: 'Poppins', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    min-height: 4.75rem;
+}
+#createMateriaModal .form-field textarea::placeholder,
+[id^="editMateriaModal"] .form-field textarea::placeholder {
+    color: #ACACAC;
+    opacity: 1;
+}
+#createMateriaModal .form-field textarea:focus,
+[id^="editMateriaModal"] .form-field textarea:focus {
+    border-bottom-color: #DB5865;
+    outline: none;
+    box-shadow: none;
+}
+
+#createMateriaModal #descripcion,
+#createMateriaModal #objetivo,
+#createMateriaModal #temario,
+#createMateriaModal #infografia,
+[id^="editMateriaModal"] textarea[id^="descripcion_"],
+[id^="editMateriaModal"] textarea[id^="objetivo_"],
+[id^="editMateriaModal"] textarea[id^="temario_"],
+[id^="editMateriaModal"] textarea[id^="infografia_"] {
+    min-height: 1.75rem;
+}
+
+/* No. de créditos / semestre (number): flechas visibles; misma línea roja que carrera modal */
+#createMateriaModal .form-field input.js-materia-creditos[type="number"],
+#createMateriaModal .form-field input.js-materia-semestre[type="number"],
+[id^="editMateriaModal_"] .form-field input.js-materia-creditos[type="number"],
+[id^="editMateriaModal_"] .form-field input.js-materia-semestre[type="number"] {
+    padding: 5px 8px;
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff !important;
+    color: #212529;
+    border: 1px solid #fff !important;
+    border-bottom: 2px solid #DB5865 !important;
+    border-top-color: #fff !important;
+    border-left-color: #fff !important;
+    border-right-color: #fff !important;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    text-align: left;
     padding-left: 0;
 }
-#createMateriaModal #creditos option {
+#createMateriaModal .form-field input.js-materia-semestre[type="number"],
+[id^="editMateriaModal_"] .form-field input.js-materia-semestre[type="number"] {
     text-align: center;
+}
+#createMateriaModal .form-field input.js-materia-creditos[type="number"]:focus,
+#createMateriaModal .form-field input.js-materia-semestre[type="number"]:focus,
+[id^="editMateriaModal_"] .form-field input.js-materia-creditos[type="number"]:focus,
+[id^="editMateriaModal_"] .form-field input.js-materia-semestre[type="number"]:focus {
+    border-color: #fff !important;
+    border-bottom-color: #DB5865 !important;
+    outline: none;
+    box-shadow: none;
 }
 #createMateriaModal #carrera_id {
     text-align: left;
@@ -2315,8 +2482,9 @@
     color: #BC8A55;
 }
 
-/* Label "No. de semestres:" centrado en modal Agregar Materia */
-#createMateriaModal .form-field.lists label[for="semestre"] {
+/* Label "Semestre:" centrado en modales Agregar / Editar Materia */
+#createMateriaModal .form-field.lists label[for="semestre"],
+[id^="editMateriaModal"] .form-field.lists label[for^="semestre_"] {
     text-align: center;
     width: 100%;
 }
@@ -2356,13 +2524,6 @@ select[name="semesters"],
     text-align-last: center;
 }
 
-/* Select semestre (materias): valor centrado */
-#semestre,
-select[name="semestre"] {
-    text-align: center;
-    text-align-last: center;
-}
-
 /* Modal Editar Materia: línea roja recta #DB5865 en inputs y selects */
 [id^="editMateriaModal"] .form-field input[type="text"],
 [id^="editMateriaModal"] .form-field select {
@@ -2376,10 +2537,6 @@ select[name="semestre"] {
     color: #BC8A55;
     font-size: 1.05rem;
 }
-[id^="editMateriaModal"] .form-field label[for="semestre"] {
-    text-align: center;
-    width: 100%;
-}
 [id^="editMateriaModal"] #carrera_id {
     text-align: left;
     text-align-last: left;
@@ -2389,24 +2546,39 @@ select[name="semestre"] {
     text-align: left;
     padding-left: 0;
 }
-[id^="editMateriaModal"] #creditos {
-    text-align: left;
-    text-align-last: left;
-    padding-left: 0;
+
+/* Modal Editar Materia: scroll en el cuerpo del formulario */
+[id^="editMateriaModal"].modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
-[id^="editMateriaModal"] #creditos option {
-    text-align: center;
+[id^="editMateriaModal"] .modal-content-container {
+    margin: auto;
+    width: min(100%, 460px);
+    max-width: 460px;
+    max-height: min(92vh, 880px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+[id^="editMateriaModal"] .modal-header-custom {
+    flex-shrink: 0;
 }
 [id^="editMateriaModal"] .modal-body-custom,
 [id^="editMateriaModal"] #modalBodyContent {
-    overflow: visible;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
     padding-bottom: 1.5rem;
 }
-[id^="editMateriaModal"] .modal-content-container {
-    overflow: visible;
-    width: 65%;
-    max-width: 460px;
-}
+
 /* Radios Modalidad en modal Editar Materia: cuadrado ovalado con icono ✓ */
 [id^="editMateriaModal"] .form-field.Checkboxes input[type="radio"],
 [id^="editMateriaModal"] .Checkboxes.form-field input[type="radio"] {
@@ -2442,6 +2614,8 @@ select[name="semestre"] {
 
 /* Inputs y selects del modal Editar carrera: línea roja #DB5865, texto a la izquierda */
 [id^="editCareerModal"] .form-field input[type="text"],
+[id^="editCareerModal"] .form-field input[type="number"],
+[id^="editCareerModal"] .form-field textarea,
 [id^="editCareerModal"] .form-field select {
     border: none;
     border-bottom: 2px solid #DB5865;
@@ -2453,8 +2627,8 @@ select[name="semestre"] {
     padding-left: 0;
 }
 
-/* Select semestres en modal Editar carrera: centrado */
-[id^="editCareerModal"] select[id^="semesters_"] {
+/* Campo semestres en modal Editar carrera: centrado */
+[id^="editCareerModal"] [id^="semesters_"] {
     text-align: center;
     text-align-last: center;
 }
@@ -2757,15 +2931,30 @@ select[name="semestre"] {
     color: #333;
 }
 
-/* Modal Ver materia — solo lectura, estilo mejorado */
+/* Modal Ver materia — solo lectura; scroll en el cuerpo */
+.modal-overlay.modal-view-materia {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
 .modal-view-materia__container {
+    margin: auto;
+    width: min(100%, 440px);
     max-width: 440px;
+    max-height: min(92vh, 880px);
+    display: flex;
+    flex-direction: column;
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(34, 63, 112, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .modal-view-materia__header {
+    flex-shrink: 0;
     background: transparent;
     padding: 1rem 1.25rem;
 }
@@ -2792,7 +2981,12 @@ select[name="semestre"] {
 }
 
 .modal-view-materia__body {
-    padding: 1.5rem 1.25rem 1.5rem 0.25rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.5rem 1rem 1.5rem 0.25rem;
     background: #fff;
 }
 

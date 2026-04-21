@@ -31,8 +31,9 @@
         <table class="tabla-base tabla-rayas tabla-bordes tabla-materias">
             <thead class="encabezado-tabla">
                 <tr>
-                    <th>Carrera</th>
                     <th>Materia</th>
+                    <th>Clasificación</th>
+                    <th>Carrera</th>
                     <th>No. Créditos</th>
                     <th>Semestre</th>
                     <th>Modalidad</th>
@@ -42,8 +43,9 @@
             <tbody class="cuerpo-tabla">
                 @foreach ($dataList as $registro)
                     <tr> {{-- ¡NOTA: Agregué la etiqueta <tr> faltante! --}}
-                        <td>{{ $registro->career?->name ?? 'Sin datos'}}</td>
                         <td>{{ $registro->nombre ?? 'Sin datos'}}</td>
+                        <td>{{ $registro->career?->classification?->name ?? '—' }}</td>
+                        <td>{{ $registro->career?->name ?? 'Sin datos'}}</td>
                         <td>{{ $registro->creditos ?? 'Sin datos'}}</td>
                         <td>{{ $registro->semestre ?? 'Sin datos'}}</td>
                         <td>{{ $registro->type ?? 'Sin datos'}}</td>

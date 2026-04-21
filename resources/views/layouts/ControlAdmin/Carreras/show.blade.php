@@ -19,16 +19,8 @@
                     <dd>{{ $career->classification->name ?? '—' }}</dd>
                 </div>
                 <div class="career-view-row">
-                    <dt>Profesionalización y empleabilidad</dt>
-                    <dd>{{ $career->description1 ?? '—' }}</dd>
-                </div>
-                <div class="career-view-row">
-                    <dt>Objetivo General</dt>
-                    <dd>{{ $career->description2 ?? '—' }}</dd>
-                </div>
-                <div class="career-view-row">
-                    <dt>Elige Ser</dt>
-                    <dd>{{ $career->description3 ?? '—' }}</dd>
+                    <dt>Descripción</dt>
+                    <dd>{{ collect([$career->description1, $career->description2, $career->description3])->filter()->implode(' / ') ?: '—' }}</dd>
                 </div>
                 <div class="career-view-row">
                     <dt>Modalidad</dt>
@@ -39,11 +31,41 @@
                     <dd>{{ $career->semesters ?? '—' }}</dd>
                 </div>
                 <div class="career-view-row">
-                    <dt>Monto mensualidad</dt>
-                    <dd>{{ $career->monto_mensualidad !== null ? '$' . number_format((float) $career->monto_mensualidad, 2) : '—' }}</dd>
+                    <dt>Configuración de mensualidad</dt>
+                    <dd>{{ ($career->pricing_mode ?? 'uniform') === 'per_month' ? 'Precio distinto por mes' : 'Mismo precio para todos los meses' }}</dd>
                 </div>
                 <div class="career-view-row">
-                    <dt>Cargo monetario</dt>
+                    <dt>Porcentaje de cargo moratorio</dt>
+                    <dd>{{ $career->porcentaje_cargo_moratorio !== null ? number_format((float) $career->porcentaje_cargo_moratorio, 2) . '%' : '0.00%' }}</dd>
+                </div>
+                <div class="career-view-row">
+                    <dt>Monto mensualidad</dt>
+                    <dd>{{ ($career->pricing_mode ?? 'uniform') === 'uniform' && $career->monto_mensualidad !== null ? '$' . number_format((float) $career->monto_mensualidad, 2) : 'Variable por mes' }}</dd>
+                </div>
+                @if(($career->pricing_mode ?? 'uniform') === 'per_month')
+                    <div class="career-view-row">
+                        <dt>Detalle por mes</dt>
+                        <dd>
+                            @php
+                                $prices = is_array($career->monthly_prices) ? $career->monthly_prices : [];
+                            @endphp
+                            {{ collect($prices)->map(fn ($value, $month) => "Mes {$month}: $" . number_format((float) $value, 2))->implode(' | ') ?: '—' }}
+                        </dd>
+                    </div>
+                @endif
+                <div class="career-view-row">
+                    <dt>Precio total carrera</dt>
+                    <dd>
+                        @php
+                            $precioTotal = ($career->pricing_mode ?? 'uniform') === 'per_month'
+                                ? (float) collect(is_array($career->monthly_prices) ? $career->monthly_prices : [])->sum()
+                                : ((float) ($career->monto_mensualidad ?? 0) * (int) ($career->semesters ?? 0));
+                        @endphp
+                        {{ '$' . number_format($precioTotal, 2) }}
+                    </dd>
+                </div>
+                <div class="career-view-row">
+                    <dt>Cargo moratorio</dt>
                     <dd>{{ $career->cargo_monetario !== null ? '$' . number_format((float) $career->cargo_monetario, 2) : '—' }}</dd>
                 </div>
             </dl>
