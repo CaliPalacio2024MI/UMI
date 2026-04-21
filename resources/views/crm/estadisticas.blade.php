@@ -438,10 +438,10 @@
         const colores = { "Prospecto frío": "#17a2b8", "Prospecto caliente": "#ffc107", "Aspirante": "#28a745", "Alumno": "#6f42c1" };
         const totalSinFiltro = {{ $totalSinFiltroEstatus }};
         const totalesPorEstado = {
-            "Prospecto frío":     {{ $totalFrioReal }},
-            "Prospecto caliente": {{ $totalCalienteReal }},
-            "Aspirante":          {{ $totalAspiranteReal }},
-            "Alumno":             {{ $totalAlumnoReal }}
+            "Prospecto frío":     {{ $totalFrio }},
+            "Prospecto caliente": {{ $totalCaliente }},
+            "Aspirante":          {{ $totalAspirante }},
+            "Alumno":             {{ $totalAlumno }}
         };
                 if (!estado || estado === "Todos") {
             titulo.innerText = "Tasa de conversión";
