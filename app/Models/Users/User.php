@@ -153,7 +153,34 @@ class User extends Authenticatable
     {
         return $this->hasOne(AcademicProfile::class);
     }
-   
+
+    /** Carreras en las que imparte un docente (tabla pivote career_user). */
+    public function teachingCareers(): BelongsToMany
+    {
+        return $this->belongsToMany(Career::class, 'career_user', 'user_id', 'career_id');
+    }
+
+    /**
+     * IDs de carrera separados por comas (p. ej. filtro de docentes en horarios por carrera).
+     */
+    public function teachingCareerIdsCsv(): string
+    {
+        if ($this->relationLoaded('teachingCareers') && $this->teachingCareers->isNotEmpty()) {
+            return $this->teachingCareers->pluck('id')->unique()->sort()->values()->implode(',');
+        }
+        if ($this->exists) {
+            $ids = $this->teachingCareers()->pluck('id');
+            if ($ids->isNotEmpty()) {
+                return $ids->map(fn ($id) => (int) $id)->unique()->sort()->values()->implode(',');
+            }
+        }
+        if ($this->academicProfile?->career_id) {
+            return (string) (int) $this->academicProfile->career_id;
+        }
+
+        return '';
+    }
+
     public function corporateProfile(): HasOne
     {
         return $this->hasOne(CorporateProfile::class);
@@ -257,6 +284,47 @@ class User extends Authenticatable
         return $this->roles()
             ->wherePivot('institution_id', $institutionId)
             ->get();
+    }
+
+    /**
+     * Texto del rol a mostrar en Ajustes → Usuarios cuando hay varios roles en la misma institución.
+     * Prioriza el rol guardado en users.role_id; si no aplica, ordena por importancia (p. ej. CTP antes que Docente).
+     */
+    public function roleDisplayNameForAjustes(?int $institutionId = null): string
+    {
+        $institutionId = $institutionId ?? (int) session('active_institution_id', 0);
+        if ($institutionId <= 0) {
+            return 'Sin Rol';
+        }
+
+        $roles = $this->relationLoaded('roles')
+            ? $this->roles->filter(fn ($r) => (int) ($r->pivot->institution_id ?? 0) === $institutionId)
+            : $this->roles()->wherePivot('institution_id', $institutionId)->get();
+
+        if ($roles->isEmpty()) {
+            return 'Sin Rol';
+        }
+
+        if ($roles->count() === 1) {
+            return (string) $roles->first()->display_name;
+        }
+
+        // Varias asignaciones en la misma institución: no usar el primero al azar ni un role_id desactualizado.
+        $priority = [
+            'master' => 100,
+            'ctp' => 95,
+            'coordinador_ctp' => 93,
+            'gerente_capacitacion' => 90,
+            'control_administrativo' => 85,
+            'control_escolar' => 80,
+            'docente' => 50,
+            'estudiante' => 45,
+            'anfitrion' => 40,
+        ];
+
+        $chosen = $roles->sortByDesc(fn ($r) => $priority[$r->name] ?? 0)->first();
+
+        return $chosen ? (string) $chosen->display_name : 'Sin Rol';
     }
 
     public function department(): BelongsTo

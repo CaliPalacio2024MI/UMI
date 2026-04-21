@@ -73,84 +73,146 @@
                 </div>
             </div>
         @empty
-            <div class="empty-carrers">
-                <div class="emty-text">
-                    <h2>Sin registro de carreras</h2>
-                </div>
-            </div>
+            <p class="carrers-empty" role="status">No hay carrera.</p>
         @endforelse
     </div>
 </div>
 
-{{-- Modal Operación exitosa (después de eliminar/actualizar carrera) --}}
-<div id="careerSuccessModal" class="modal-overlay career-success-modal" style="display: none;">
-    <div class="modal-container career-success-modal__box">
-        <div class="career-success-modal__icon-wrap">
-            <svg class="career-success-modal__check" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="#a8d5a2" stroke-width="2"/>
-                <path d="M8 12l3 3 5-6" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </div>
-        <h3 class="career-success-modal__title">Operación exitosa</h3>
-        <p class="career-success-modal__message" id="careerSuccessModalMessage">Carrera eliminada exitosamente.</p>
-        <button type="button" class="career-success-modal__ok" id="careerSuccessModalOk">OK</button>
-    </div>
-</div>
-<style>
-.career-success-modal { align-items: center; justify-content: center; }
-.career-success-modal__box { max-width: 420px; max-height: 280px; text-align: center; padding: 16px 24px 20px; border: 1px solid #ddd; }
-.career-success-modal__icon-wrap { margin-bottom: 16px; }
-.career-success-modal__check { display: inline-block; width: 72px; height: 72px; }
-.career-success-modal__title { font-size: 1.15rem; font-weight: 700; color: #333; margin: 0 0 6px 0; }
-.career-success-modal__message { font-size: 0.9rem; color: #666; margin: 0 0 14px 0; }
-.career-success-modal__ok {
-    background: #223F70;
-    color: #fff;
-    border: none;
-    width: 80px;
-    padding: 8px 28px;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    display: block;
-    margin: 0 auto;
-}
-.career-success-modal__ok:hover { background: #15213F; }
-</style>
-
-@if(session('success') && request('modal') === 'success')
-<script>window.careerSuccessMessage = @json(session('success'));</script>
-@endif
+{{-- Modal careerSuccessModal: layouts/components/career-success-modal.blade.php (app.blade.php) --}}
 
 {{-- Script JS para abrir/cerrar (el mismo de antes) --}}
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        function careerRenderMonthlyPriceInputs(form) {
+            if (!form) return;
+            var sem = form.querySelector('.js-career-semestres');
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var container = form.querySelector('.js-career-months-fields');
+            if (!sem || !mode || !container) return;
 
-            // --- 0. MODAL "Operación exitosa" (después de eliminar/actualizar carrera) ---
-            const successModal = document.getElementById('careerSuccessModal');
-            const successModalMessage = document.getElementById('careerSuccessModalMessage');
-            const successModalOk = document.getElementById('careerSuccessModalOk');
-
-            // Detectar si venimos por navegación atrás/adelante del navegador
-            let isBackOrForward = false;
-            if (performance && typeof performance.getEntriesByType === 'function') {
-                const navEntries = performance.getEntriesByType('navigation');
-                if (navEntries && navEntries[0] && navEntries[0].type === 'back_forward') {
-                    isBackOrForward = true;
-                }
+            var totalMonths = parseInt(sem.value, 10) || 1;
+            totalMonths = Math.max(1, totalMonths);
+            var oldData = {};
+            try {
+                oldData = JSON.parse(container.getAttribute('data-old-monthly') || '{}') || {};
+            } catch (e) {
+                oldData = {};
             }
+            var previousValues = {};
+            container.querySelectorAll('input.js-career-month-price').forEach(function(input) {
+                var month = input.getAttribute('data-month');
+                if (month) previousValues[month] = input.value;
+            });
+            container.innerHTML = '';
+            for (var month = 1; month <= totalMonths; month++) {
+                var row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.gap = '8px';
+                row.style.marginBottom = '6px';
 
-            // Solo mostrar el modal automáticamente cuando NO sea navegación atrás/adelante
-            if (!isBackOrForward && window.careerSuccessMessage && successModal && successModalMessage) {
-                successModalMessage.textContent = window.careerSuccessMessage;
-                successModal.style.display = 'flex';
+                var label = document.createElement('label');
+                label.textContent = 'Mes ' + month + ':';
+                label.style.minWidth = '60px';
+
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.min = '0';
+                input.placeholder = '0.00';
+                input.name = 'monthly_prices[' + month + ']';
+                input.setAttribute('data-month', String(month));
+                input.className = 'js-career-month-price';
+                input.style.width = '100%';
+                input.value = previousValues[String(month)] || oldData[String(month)] || '';
+
+                row.appendChild(label);
+                row.appendChild(input);
+                container.appendChild(row);
             }
-            if (successModalOk && successModal) {
-                successModalOk.addEventListener('click', function() {
-                    successModal.style.display = 'none';
+            container.setAttribute('data-old-monthly', '{}');
+        }
+
+        function careerTogglePricingSections(form) {
+            if (!form) return;
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var uniformWrap = form.querySelector('.js-career-uniform-wrap');
+            var monthsWrap = form.querySelector('.js-career-months-wrap');
+            if (!mode || !uniformWrap || !monthsWrap) return;
+            var perMonth = mode.value === 'per_month';
+            uniformWrap.style.display = perMonth ? 'none' : '';
+            monthsWrap.style.display = perMonth ? '' : 'none';
+            if (perMonth) careerRenderMonthlyPriceInputs(form);
+        }
+
+        function careerUpdateCargoMonetario(form) {
+            if (!form) return;
+            var monto = form.querySelector('.js-career-monto');
+            var sem = form.querySelector('.js-career-semestres');
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var pct = form.querySelector('.js-career-porcentaje');
+            var out = form.querySelector('.js-career-cargo-out');
+            if (!sem || !out) return;
+            var s = parseInt(sem.value, 10) || 0;
+            var p = pct ? parseFloat(pct.value) : 0;
+            p = isNaN(p) || p < 0 ? 0 : p;
+            if (mode && mode.value === 'per_month') {
+                var total = 0;
+                var hasValue = false;
+                form.querySelectorAll('.js-career-month-price').forEach(function(input) {
+                    var n = parseFloat(input.value);
+                    if (!isNaN(n) && n >= 0) {
+                        total += n;
+                        hasValue = true;
+                    }
                 });
+                out.value = (hasValue && s > 0) ? (total * (p / 100)).toFixed(2) : '';
+                return;
             }
+            if (!monto) return;
+            var m = parseFloat(monto.value);
+            out.value = (isNaN(m) || s < 1) ? '' : ((m * s) * (p / 100)).toFixed(2);
+        }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-monto')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+            if (e.target.classList && e.target.classList.contains('js-career-porcentaje')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+        });
+        document.addEventListener('change', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-semestres')) {
+                careerRenderMonthlyPriceInputs(e.target.closest('form'));
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+            if (e.target.classList && e.target.classList.contains('js-career-pricing-mode')) {
+                var form = e.target.closest('form');
+                careerTogglePricingSections(form);
+                careerUpdateCargoMonetario(form);
+            }
+        });
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-month-price')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+        });
+
+        function careerInitPricingForms() {
+            document.querySelectorAll('form .js-career-monto').forEach(function(el) {
+                var form = el.closest('form');
+                careerTogglePricingSections(form);
+                careerUpdateCargoMonetario(form);
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', careerInitPricingForms);
+        } else {
+            careerInitPricingForms();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
             
             // --- 1. LÓGICA DEL MODAL DE CREACIÓN (Singular) ---
             

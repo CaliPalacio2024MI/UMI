@@ -2,11 +2,14 @@
 @section('content')
 
 
-<div id="umi-app-view" style="padding: 20px;">
+<div class="container">
+<div id="umi-app-view">
 
     {{-- TÍTULO --}}
-    <div class="umi-header" style="margin-bottom: 20px;">
-        <h1 style="color: #333; font-size: 1.8rem;">GESTIÓN DE MATRÍCULAS Y DOCUMENTACIÓN SEP</h1>
+    <div class="content-header">
+        <div class="content-title">
+            <h3>Matrículas</h3>
+        </div>
     </div>
 
     {{-- MENSAJES DE ÉXITO (Desaparece en 3 segundos) --}}
@@ -18,23 +21,12 @@
 
     {{-- TOOLBAR --}}
     <div class="umi-toolbar" style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
-        <div class="umi-search-wrapper" style="flex: 1; margin-right: 15px;">
+        <div class="umi-search-wrapper" style="flex: 1;">
             <form action="{{ request()->url() }}" method="GET" style="display: flex; gap: 10px;">
                 <input type="text" name="search" class="umi-search-input" 
                        placeholder="Buscar por Nombre o Correo..." 
                        value="{{ request('search') }}"
-                       style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-            </form>
-        </div>
-        
-        <div class="filter-group">
-            <form action="{{ request()->url() }}" method="GET">
-                @if(request('search')) <input type="hidden" name="search" value="{{ request('search') }}"> @endif
-                
-                <select name="filter_status" onchange="this.form.submit()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; background-color: white; cursor: pointer;">
-                    <option value="todos" {{ request('filter_status') == 'todos' ? 'selected' : '' }}>Todos los Aspirantes</option>
-                    <option value="pagados" {{ request('filter_status') == 'pagados' ? 'selected' : '' }}>Solo Pagados (Listos para MATRÍCULA)</option>
-                </select>
+                       style="width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 999px;">
             </form>
         </div>
     </div>
@@ -45,11 +37,12 @@
             <table style="width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed;">
                 <thead style="background-color: #223F70; color: white;">
                     <tr>
-                        <th style="padding: 12px; text-align: center; width: 25%;">Aspirante</th>
-                        <th style="padding: 12px; text-align: center; width: 20%;">Carrera</th>
-                        <th style="padding: 12px; text-align: center; width: 10%;">Status Pago</th>
-                        <th style="padding: 12px; text-align: center; width: 20%;">Documentación</th>
-                        <th style="padding: 12px; text-align: center; width: 15%;">Asignación Matrícula</th>
+                        <th style="padding: 12px; text-align: center; width: 21%;">Alumno</th>
+                        <th style="padding: 12px; text-align: center; width: 16%;">Carrera</th>
+                        <th style="padding: 12px; text-align: center; width: 12%;">Clasificación</th>
+                        <th style="padding: 12px; text-align: center; width: 9%;">Status Pago</th>
+                        <th style="padding: 12px; text-align: center; width: 19%;">Documentación</th>
+                        <th style="padding: 12px; text-align: center; width: 13%;">Asignación Matrícula</th>
                         <th style="padding: 12px; text-align: center; width: 10%;">Acción</th>
                     </tr>
                 </thead>
@@ -71,12 +64,19 @@
                             
                             {{-- 2. Carrera --}}
                             <td style="padding: 12px; vertical-align: middle; border-bottom: 1px solid #eee; text-align: center;">
-                                <span style="display: block; line-height: 1.4; font-size: 0.9rem;">
+                                <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; max-height: 2.7em; font-size: 0.9rem;">
                                     {{ $student->academicProfile?->career?->name ?? 'Sin Carrera Asignada' }}
                                 </span>
                             </td>
 
-                            {{-- 3. Validación de Pago --}}
+                            {{-- 3. Clasificación --}}
+                            <td style="padding: 12px; vertical-align: middle; border-bottom: 1px solid #eee; text-align: center;">
+                                <span style="display: block; line-height: 1.4; font-size: 0.9rem;">
+                                    {{ $student->academicProfile?->career?->classification?->name ?? 'Sin clasificación' }}
+                                </span>
+                            </td>
+
+                            {{-- 4. Validación de Pago --}}
                             <td style="padding: 12px; text-align: center; vertical-align: middle; border-bottom: 1px solid #eee;">
                                 @php
                                     $pagoStatus = $student->billing_status ?? 'Pendiente'; 
@@ -88,7 +88,7 @@
                                 </span>
                             </td>
 
-                            {{-- 4. DOCUMENTACIÓN (CON VISOR MODAL Y VALIDACIÓN DE PAGO) --}}
+                            {{-- 5. DOCUMENTACIÓN (CON VISOR MODAL Y VALIDACIÓN DE PAGO) --}}
                             <td style="padding: 12px; text-align: center; vertical-align: middle; border-bottom: 1px solid #eee;">
                                 <div style="background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px dashed #ccc; display: flex; flex-direction: column; align-items: center; gap: 8px;">
                                     
@@ -166,13 +166,15 @@
                                 </div>
                             </td>
 
-                            {{-- 5. INPUT MATRÍCULA --}}
+                            {{-- 6. INPUT MATRÍCULA --}}
                             <td style="padding: 12px; text-align: center; vertical-align: middle; border-bottom: 1px solid #eee;">
                                 <form id="form-matricula-{{ $student->id }}" 
-                                      action="{{ route('escolar.matriculas.update', $student->id) }}" 
+                                      action="{{ $student->academicProfile?->matricula ? route('escolar.matriculas.update', $student->id) : route('escolar.matriculas.store', $student->id) }}" 
                                       method="POST">
                                     @csrf
-                                    @method('PUT')
+                                    @if($student->academicProfile?->matricula)
+                                        @method('PUT')
+                                    @endif
                                     
                                     @if($pagoStatus === 'Pagado')
                                         <input type="text" name="matricula" 
@@ -187,22 +189,46 @@
                                 </form>
                             </td>
 
-                            {{-- 6. ACCIÓN --}}
+                            {{-- 7. ACCIÓN --}}
                             <td style="padding: 12px; text-align: center; vertical-align: middle; border-bottom: 1px solid #eee;">
-                                @if($pagoStatus === 'Pagado')
-                                    <button type="submit" form="form-matricula-{{ $student->id }}" class="umi-btn" style="background: #223F70; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: background 0.3s; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="fa-solid fa-save"></i> Guardar
+                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+                                    <button type="button"
+                                            class="umi-btn"
+                                            onclick="openMatriculaDetail({{ $student->id }})"
+                                            style="background: #5c6bc0; color: white; border: none; padding: 7px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; width: 100%; justify-content: center;">
+                                        <i class="fa-solid fa-eye"></i> Ver
                                     </button>
-                                @else
-                                    <button disabled style="opacity: 0.4; cursor: not-allowed; border: 1px solid #ccc; background: #eee; padding: 8px 15px; border-radius: 4px; color: #777; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="fa-solid fa-ban"></i> Bloqueado
-                                    </button>
-                                @endif
+                                    
+                                    @if($pagoStatus === 'Pagado')
+                                        <button type="submit" form="form-matricula-{{ $student->id }}" class="umi-btn" style="background: #223F70; color: white; border: none; padding: 7px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: background 0.3s; display: inline-flex; align-items: center; gap: 5px; width: 100%; justify-content: center;">
+                                            <i class="fa-solid fa-save"></i> {{ $student->academicProfile?->matricula ? 'Editar' : 'Alta' }}
+                                        </button>
+                                    @else
+                                        <button disabled style="opacity: 0.4; cursor: not-allowed; border: 1px solid #ccc; background: #eee; padding: 7px 10px; border-radius: 4px; color: #777; display: inline-flex; align-items: center; gap: 5px; width: 100%; justify-content: center;">
+                                            <i class="fa-solid fa-ban"></i> Bloqueado
+                                        </button>
+                                    @endif
+
+                                    @if($student->academicProfile?->matricula)
+                                        <form id="form-delete-matricula-{{ $student->id }}"
+                                              action="{{ route('escolar.matriculas.destroy', $student->id) }}"
+                                              method="POST"
+                                              style="width: 100%; margin: 0;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                    onclick="confirmDeleteMatricula({{ $student->id }}, '{{ $student->nombre }} {{ $student->apellido_paterno }}')"
+                                                    style="background: #c0392b; color: white; border: none; padding: 7px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; width: 100%; justify-content: center;">
+                                                <i class="fa-solid fa-trash"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 50px; color: #666; background-color: #fafafa;">
+                            <td colspan="7" style="text-align: center; padding: 50px; color: #666; background-color: #fafafa;">
                                 <i class="fa-solid fa-users-slash" style="font-size: 3rem; margin-bottom: 15px; color: #ddd;"></i>
                                 <p style="font-size: 1.1rem; margin: 0;">No se encontraron aspirantes que coincidan con los filtros.</p>
                             </td>
@@ -217,6 +243,7 @@
         </div>
     </div>
 </div>
+</div>
 
 {{-- MODAL HTML --}}
 <div id="docViewerModal" class="modal-overlay">
@@ -227,6 +254,21 @@
         </div>
         <div class="modal-body" style="flex: 1; background: #525659; position: relative;">
             <iframe id="docViewerFrame" src="" width="100%" height="100%" style="border:none;"></iframe>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL DETALLE MATRÍCULA --}}
+<div id="matriculaDetailModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 640px; min-height: auto;">
+        <div class="modal-header">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Detalle de Matrícula</h3>
+            <button type="button" class="modal-close" onclick="closeMatriculaDetail()">&times;</button>
+        </div>
+        <div class="modal-body" style="background: #fff; padding: 16px; color: #2c3e50;">
+            <div id="matricula-detail-content" style="font-size: 0.9rem; line-height: 1.6;">
+                Cargando...
+            </div>
         </div>
     </div>
 </div>
@@ -254,6 +296,62 @@
         }
     }
 
+    // --- DETALLE DE MATRÍCULA ---
+    async function openMatriculaDetail(studentId) {
+        const modal = document.getElementById('matriculaDetailModal');
+        const content = document.getElementById('matricula-detail-content');
+        if (!modal || !content) return;
+
+        content.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando detalle...';
+        modal.style.display = 'flex';
+
+        try {
+            const response = await fetch(`/control-escolar/matriculas/${studentId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) {
+                throw new Error('No se pudo obtener el detalle de matrícula.');
+            }
+
+            const data = await response.json();
+            const siNo = (v) => v ? 'Sí' : 'No';
+            const docSep = data.documento_sep_path
+                ? `<a href="/storage/${data.documento_sep_path}" target="_blank" rel="noopener">Ver documento SEP</a>`
+                : 'No cargado';
+
+            content.innerHTML = `
+                <p><strong>Alumno:</strong> ${data.nombre || '-'}</p>
+                <p><strong>Correo:</strong> ${data.email || '-'}</p>
+                <p><strong>Carrera:</strong> ${data.career || '-'}</p>
+                <p><strong>Matrícula:</strong> ${data.matricula || '<span style="color:#999;">Sin asignar</span>'}</p>
+                <p><strong>Status de pago:</strong> ${data.billing_status || '-'}</p>
+                <hr style="border:0; border-top:1px solid #eee;">
+                <p><strong>Acta de nacimiento:</strong> ${siNo(data.documentos?.doc_acta_nacimiento)}</p>
+                <p><strong>Certificado prepa:</strong> ${siNo(data.documentos?.doc_certificado_prepa)}</p>
+                <p><strong>CURP:</strong> ${siNo(data.documentos?.doc_curp)}</p>
+                <p><strong>INE:</strong> ${siNo(data.documentos?.doc_ine)}</p>
+                <p><strong>Documento SEP:</strong> ${docSep}</p>
+            `;
+        } catch (error) {
+            content.innerHTML = `<span style="color:#c0392b;">${error.message}</span>`;
+        }
+    }
+
+    function closeMatriculaDetail() {
+        const modal = document.getElementById('matriculaDetailModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function confirmDeleteMatricula(studentId, studentName) {
+        const ok = confirm(`¿Eliminar matrícula de ${studentName}? Esta acción quitará el número de matrícula asignado.`);
+        if (!ok) return;
+
+        const form = document.getElementById(`form-delete-matricula-${studentId}`);
+        if (form) form.submit();
+    }
+
     // --- ALERTAS DE ÉXITO (Auto-hide) ---
     function initSuccessAlerts() {
         const successAlert = document.getElementById('success-alert');
@@ -276,6 +374,7 @@
         // A. CERRAR MODAL (Botón X o Clic afuera)
         if (event.target.closest('.modal-close') || event.target.classList.contains('modal-overlay')) {
             closeDocViewer();
+            closeMatriculaDetail();
             return;
         }
 

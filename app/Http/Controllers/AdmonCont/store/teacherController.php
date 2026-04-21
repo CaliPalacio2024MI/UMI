@@ -13,9 +13,11 @@ use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -37,13 +39,14 @@ class teacherController extends Controller
             'apellido_paterno',
             'apellido_materno',
             'created_at',
+            'is_active',
         ];
         
         // 2. Columnas a seleccionar de la tabla 'datos_academicos' (¡incluye user_id!)
         $academicColumns = [
-            'user_id', // ¡CRUCIAL para la relación!
-            'status', 
-            'carrera_id'
+            'user_id',
+            'status',
+            'career_id',
         ];
 
         $careerColumns=[
@@ -51,7 +54,12 @@ class teacherController extends Controller
             'name',
             'id'
         ];
-        
+        // En belongsToMany la pivote también tiene `id`; el SELECT debe calificar columnas de `careers`.
+        $teachingCareerColumns = array_map(
+            static fn (string $col): string => 'careers.' . $col,
+            $careerColumns
+        );
+
         // --- Ejecución de la Consulta ---
         
         $dataList = User::query()
@@ -66,10 +74,12 @@ class teacherController extends Controller
                 $query->select($academicColumns);
             }])
             ->with(['academicProfile.career' => function (Relation $query) use ($careerColumns) {
-                // Selecciona las columnas de la carrera (incluyendo 'name')
                 $query->select($careerColumns);
             }])
-            ->get(); // Ejecuta la consulta y obtiene la colección de resultados
+            ->with(['teachingCareers' => function (Relation $query) use ($teachingCareerColumns) {
+                $query->select($teachingCareerColumns);
+            }])
+            ->get();
 
         // --- Devolución de la Vista ---
         $carreras = Career::all(['id', 'name']);
@@ -88,8 +98,12 @@ class teacherController extends Controller
     {
         $roleName = 'docente';
         $userColumns = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'telefono', 'RFC', 'fecha_nacimiento', 'edad', 'address_id'];
-        $academicColumns = ['user_id', 'status', 'carrera_id', 'departamento'];
+        $academicColumns = ['user_id', 'status', 'career_id', 'departamento'];
         $careerColumns = ['id', 'name'];
+        $teachingCareerColumnsExport = array_map(
+            static fn (string $col): string => 'careers.' . $col,
+            $careerColumns
+        );
 
         $dataList = User::query()
             ->whereHas('roles', function (Builder $query) use ($roleName) {
@@ -102,6 +116,9 @@ class teacherController extends Controller
             }])
             ->with(['academicProfile.career' => function (Relation $query) use ($careerColumns) {
                 $query->select($careerColumns);
+            }])
+            ->with(['teachingCareers' => function (Relation $query) use ($teachingCareerColumnsExport) {
+                $query->select($teachingCareerColumnsExport);
             }])
             ->get();
 
@@ -135,8 +152,18 @@ class teacherController extends Controller
             fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8 para Excel
             fputcsv($out, $headersCsv, ',');
             foreach ($dataList as $user) {
+                $edadCsv = $user->edad;
+                if (($edadCsv === null || $edadCsv === '') && $user->fecha_nacimiento) {
+                    try {
+                        $edadCsv = Carbon::parse($user->fecha_nacimiento)->age;
+                    } catch (\Throwable $e) {
+                        $edadCsv = '';
+                    }
+                }
                 fputcsv($out, [
-                    $user->academicProfile?->career?->name ?? '',
+                    ($user->teachingCareers->isNotEmpty()
+                        ? $user->teachingCareers->pluck('name')->implode('; ')
+                        : ($user->academicProfile?->career?->name ?? '')),
                     $user->nombre ?? '',
                     $user->apellido_paterno ?? '',
                     $user->apellido_materno ?? '',
@@ -144,7 +171,7 @@ class teacherController extends Controller
                     $user->telefono ?? '',
                     $user->RFC ?? '',
                     $user->fecha_nacimiento ?? '',
-                    $user->edad ?? '',
+                    $edadCsv !== null && $edadCsv !== '' ? (string) $edadCsv : '',
                     $user->address?->calle ?? '',
                     $user->address?->colonia ?? '',
                     $user->address?->ciudad ?? '',
@@ -205,9 +232,7 @@ class teacherController extends Controller
             'required' => 'El campo :attribute es obligatorio.',
             'email' => 'El campo :attribute debe ser un correo electrónico válido.',
             'unique' => 'El correo electrónico ya está registrado.',
-            'confirmed' => 'La confirmación de contraseña no coincide.',
             'min.string' => 'El campo :attribute debe tener al menos :min caracteres.',
-            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
             'max.string' => 'El campo :attribute no debe tener más de :max caracteres.',
             'RFC.required' => 'Falta rellenar el RFC.',
             'RFC.max' => 'El campo RFC no debe tener más de 13 caracteres.',
@@ -217,6 +242,8 @@ class teacherController extends Controller
             'integer' => 'El campo :attribute debe ser un número entero.',
             'integer.min' => 'El campo :attribute debe ser al menos :min.',
             'integer.max' => 'El campo :attribute no debe ser mayor que :max.',
+            'carreras.required' => 'Seleccione al menos una carrera.',
+            'carreras.min' => 'Seleccione al menos una carrera.',
         ];
         $atributos = [
             'nombre' => 'nombre(s)',
@@ -226,13 +253,12 @@ class teacherController extends Controller
             'telefono' => 'teléfono',
             'RFC' => 'RFC',
             'fecha_nacimiento' => 'fecha de nacimiento',
-            'password' => 'contraseña',
             'calle' => 'calle',
             'colonia' => 'colonia',
             'ciudad' => 'ciudad',
             'estado' => 'estado',
             'codigo_postal' => 'código postal',
-            'carrera' => 'carrera',
+            'carreras' => 'carreras',
             'departamento' => 'departamento',
         ];
         $validator = Validator::make($request->all(), [
@@ -243,27 +269,47 @@ class teacherController extends Controller
             'telefono' => ['required', 'string', 'max:20'],
             'RFC' => ['required', 'string', 'max:13'],
             'fecha_nacimiento' => ['required', 'date'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'calle' => ['required', 'string', 'max:255'],
             'colonia' => ['required', 'string', 'max:255'],
             'ciudad' => ['required', 'string', 'max:100'],
             'estado' => ['required', 'string', 'max:100'],
             'codigo_postal' => ['required', 'string', 'digits:5'],
-            'carrera' => ['required', 'integer', Rule::exists('careers', 'id')],
+            'carreras' => ['required', 'array', 'min:1'],
+            'carreras.*' => ['integer', Rule::exists('careers', 'id')],
             'departamento' => ['nullable', 'string', 'max:255'],
         ], $mensajes, $atributos);
 
         if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $validator->errors()->first() ?? 'Revisa los datos del formulario.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
             return redirect()->route('control.teachers.index')
                 ->withInput()
                 ->withErrors($validator);
         }
 
         $institutionId = session('active_institution_id', 4);
+        $carreraIds = collect($request->input('carreras', []))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
 
         DB::beginTransaction();
 
         try {
+            $edadCalculada = null;
+            try {
+                $edadCalculada = Carbon::parse($request->fecha_nacimiento)->age;
+            } catch (\Throwable) {
+                $edadCalculada = null;
+            }
+
             // --- 1. GUARDAR LA DIRECCIÓN (MODELO ADDRESS) 📍 ---
             $address = Address::create([
                 'calle' => $request->calle,
@@ -274,44 +320,71 @@ class teacherController extends Controller
             ]);
 
             // --- 2. GUARDAR EL USUARIO (MODELO USER) 👤 ---
+            // Texto plano: el cast `password => hashed` del modelo aplica el hash una sola vez.
             $user = User::create([
                 'nombre' => $request->nombre,
                 'apellido_paterno' => $request->apellido_paterno,
                 'apellido_materno' => $request->apellido_materno,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => Str::password(24),
                 'RFC' => $request->RFC ?: null,
                 'telefono' => $request->telefono,
                 'fecha_nacimiento' => $request->fecha_nacimiento,
-                'edad' => $request->edad ?? null,
+                'edad' => $edadCalculada,
                 'address_id' => $address->id,
                 'institution_id' => $institutionId,
-                'is_active' => false,
+                'is_active' => true,
             ]);
+
+            $user->institutions()->syncWithoutDetaching([$institutionId]);
 
             // --- 3. ASIGNAR EL ROL 'DOCENTE' (TABLA PIVOTE user_roles_institution) 🔑 ---
             $docenteRole = Role::where('name', 'docente')->firstOrFail();
 
             $user->roles()->attach($docenteRole->id, [
                 'institution_id' => $institutionId,
+                'is_active' => true,
             ]);
             // --- 4. GUARDAR EL PERFIL ACADÉMICO (MODELO ACADEMICPROFILE) 🎓 ---
 
             AcademicProfile::create([
                 'user_id' => $user->id,
-                'career_id' => $request->carrera,
+                'career_id' => $carreraIds[0] ?? null,
                 'departamento' => $request->departamento ?? null,
                 'status' => 'Activo',
             ]);
+            $user->teachingCareers()->sync($carreraIds);
             // --- 5. FINALIZACIÓN Y REDIRECCIÓN 🎉 ---
 
             DB::commit();
-            return redirect()->route('control.teachers.index', [], 303)
-                ->with('success', 'Docente registrado exitosamente.');
+            $message = 'Docente registrado exitosamente.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => true, 'message' => $message]);
+            }
+            return redirect()
+                ->route('control.teachers.index', ['modal' => 'success'], 303)
+                ->with('success', $message);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            report($e);
+            $code = (string) $e->errorInfo[1] ?? '';
+            $errMsg = ($code === '1062' || str_contains(strtolower($e->getMessage()), 'duplicate'))
+                ? 'Ya existe un usuario con ese correo o RFC. Use otros datos o revise la lista.'
+                : 'No se pudo guardar el docente. Intente de nuevo.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => $errMsg], 500);
+            }
+            return redirect()->route('control.teachers.index')->withInput()->with('error', $errMsg);
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
-            return redirect()->route('control.teachers.index')->withInput()->with('error', 'El RFC está mal o siga intentando.');
+            $errMsg = config('app.debug')
+                ? $e->getMessage()
+                : 'No se pudo guardar el docente. Intente de nuevo.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => $errMsg], 500);
+            }
+            return redirect()->route('control.teachers.index')->withInput()->with('error', $errMsg);
         }
 
         
@@ -323,7 +396,7 @@ class teacherController extends Controller
         // Usamos with(['address', 'academicProfile']) para cargar la información de dirección
         // y la información académica en una sola consulta, evitando problemas N+1.
         // findOrFail($id) asegura un error 404 si el ID no existe.
-        $user = User::with(['address', 'academicProfile'])->findOrFail($id);
+        $user = User::with(['address', 'academicProfile', 'teachingCareers'])->findOrFail($id);
 
         // Opcional: Si quieres asegurar que solo se editen usuarios con el rol 'Alumno' (ID 7)
         // Descomenta la siguiente línea si es necesario
@@ -338,7 +411,7 @@ class teacherController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $user = User::with(['address', 'academicProfile'])->findOrFail($id);
+        $user = User::with(['address', 'academicProfile', 'teachingCareers'])->findOrFail($id);
 
         if (!$user->roles()->where('name', 'docente')->exists()) {
             abort(403, 'Acceso no autorizado.');
@@ -357,11 +430,19 @@ class teacherController extends Controller
             'ciudad' => ['required', 'string', 'max:100'],
             'estado' => ['required', 'string', 'max:100'],
             'codigo_postal' => ['required', 'string', 'digits:5'],
-            'carrera' => ['required', 'integer', Rule::exists('careers', 'id')],
+            'carreras' => ['required', 'array', 'min:1'],
+            'carreras.*' => ['integer', Rule::exists('careers', 'id')],
             'departamento' => ['nullable', 'string', 'max:255'],
         ], [
             'RFC.required' => 'Falta rellenar el RFC.',
         ]);
+
+        $carreraIds = collect($request->input('carreras', []))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
 
         DB::beginTransaction();
         try {
@@ -373,7 +454,7 @@ class teacherController extends Controller
                 'telefono' => $request->telefono,
                 'RFC' => $request->RFC,
                 'fecha_nacimiento' => $request->fecha_nacimiento,
-                'edad' => $request->edad ?? $user->edad,
+                'edad' => \Carbon\Carbon::parse($request->fecha_nacimiento)->age,
             ]);
 
             if ($user->address) {
@@ -388,20 +469,30 @@ class teacherController extends Controller
 
             if ($user->academicProfile) {
                 $user->academicProfile->update([
-                    'career_id' => $request->carrera,
+                    'career_id' => $carreraIds[0] ?? $user->academicProfile->career_id,
                     'departamento' => $request->departamento,
                 ]);
             }
+            $user->teachingCareers()->sync($carreraIds);
 
             DB::commit();
-            return redirect()->route('control.teachers.index')->with('success', 'Docente actualizado correctamente.');
+            $message = 'Docente actualizado correctamente.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => true, 'message' => $message]);
+            }
+            return redirect()->route('control.teachers.index')->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
+            report($e);
+            $errMsg = 'Error al actualizar el docente. Intente de nuevo.';
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => $errMsg], 500);
+            }
             return back()->withInput()->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $user = User::findOrFail($id);
 
@@ -410,12 +501,16 @@ class teacherController extends Controller
         }
 
         $user->delete();
-        return redirect()->route('control.teachers.index')->with('success', 'Docente eliminado correctamente.');
+        $message = 'Docente eliminado correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+        return redirect()->route('control.teachers.index')->with('success', $message);
     }
 
     public function show(string $id): View
     {
-        $user = User::with(['address', 'academicProfile.career'])->findOrFail($id);
+        $user = User::with(['address', 'academicProfile.career', 'teachingCareers'])->findOrFail($id);
 
         if (!$user->roles()->where('name', 'docente')->exists()) {
             abort(403, 'Acceso no autorizado.');
@@ -426,7 +521,7 @@ class teacherController extends Controller
 
     public function horarios(Request $request, string $id): View
     {
-        $user = User::with(['academicProfile.career'])->findOrFail($id);
+        $user = User::with(['academicProfile.career', 'teachingCareers'])->findOrFail($id);
 
         if (!$user->roles()->where('name', 'docente')->exists()) {
             abort(403, 'Acceso no autorizado.');

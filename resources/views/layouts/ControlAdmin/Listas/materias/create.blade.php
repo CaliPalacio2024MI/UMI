@@ -40,12 +40,10 @@
                 
                 
                 <div class="form-field lists">
-                        <label for="creditos">No. de Creditos:</label>
-                        <select id="creditos" name="creditos" class="@if($errors->any()) validation-error @endif">
-                            @for ($i = 1; $i <= 10; $i++)
-                            <option value="{{ $i }}" {{ old('creditos') == $i ? 'selected' : '' }}>{{ $i }}</option>
-                            @endfor
-                        </select>
+                        <label for="creditos">No. de créditos:</label>
+                        <input type="number" id="creditos" name="creditos" min="1" step="1"
+                            class="js-materia-creditos @if($errors->any()) validation-error @endif"
+                            value="{{ old('creditos', 1) }}">
                 </div>
                 
                 <div class="options">
@@ -64,16 +62,31 @@
                     
                     <div class="form-field lists">
                         <label for="semestre">Semestre:</label>
-                        <select id="semestre" name="semestre" class="@if($errors->any()) validation-error @endif">
-                            @for ($i = 1; $i <= 8; $i++)
-                            <option value="{{ $i }}" {{ old('semestre') == $i ? 'selected' : '' }}>{{ $i }}</option>
-                            @endfor
-                        </select>
+                        <input type="number" id="semestre" name="semestre" min="1" step="1"
+                            class="js-materia-semestre @if($errors->any()) validation-error @endif"
+                            value="{{ old('semestre', 1) }}">
                     </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="descripcion">Descripción general:</label>
+                    <textarea id="descripcion" name="descripcion" rows="1" class="@if($errors->any()) validation-error @endif" placeholder="Información general de la materia">{{ old('descripcion') }}</textarea>
+                </div>
+                <div class="form-field">
+                    <label for="objetivo">Objetivo:</label>
+                    <textarea id="objetivo" name="objetivo" rows="1" class="@if($errors->any()) validation-error @endif" placeholder="Objetivo de aprendizaje">{{ old('objetivo') }}</textarea>
+                </div>
+                <div class="form-field">
+                    <label for="temario">Temario:</label>
+                    <textarea id="temario" name="temario" rows="1" class="@if($errors->any()) validation-error @endif" placeholder="Temas y subtemas">{{ old('temario') }}</textarea>
+                </div>
+                <div class="form-field">
+                    <label for="infografia">Infografía de la materia:</label>
+                    <textarea id="infografia" name="infografia" rows="1" class="@if($errors->any()) validation-error @endif" placeholder="Resumen visual o texto de apoyo">{{ old('infografia') }}</textarea>
                 </div>
                 
                 <div class="modal-footer-custom mt-3">
-                    <button type="submit" class="submit-button">+ Agregar</button>
+                    <button type="submit" class="submit-button">+ Guardar</button>
                 </div>
             </form>
 

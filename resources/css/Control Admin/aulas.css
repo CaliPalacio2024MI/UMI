@@ -1,0 +1,185 @@
+/* Aulas (infraestructura): debe cargarse siempre vía app.css para que la navegación SPA aplique estilos
+   (los @push('css') solo van al <head> de la respuesta fetch y no se fusionan en el documento actual). */
+
+.aulas-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 45vh;
+    padding: 2rem 1rem;
+}
+.aulas-empty-state p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 1.125rem;
+    font-weight: 500;
+}
+.Table-view--aulas {
+    margin-left: 0;
+    margin-right: 0;
+}
+.tabla-aulas.tabla-base th,
+.tabla-aulas.tabla-base td {
+    padding: 0.45rem 0.65rem;
+    vertical-align: middle;
+}
+.tabla-aulas.tabla-base thead th:first-child,
+.tabla-aulas.tabla-base tbody td:first-child {
+    min-width: 0;
+    width: auto;
+    max-width: none;
+}
+.tabla-aulas.tabla-base tbody td {
+    text-align: center;
+}
+/* Columnas: Nombre del aula | Carrera | Tipo de Materia | (Acciones master) */
+.tabla-aulas.tabla-base thead th:nth-child(1),
+.tabla-aulas.tabla-base tbody td:nth-child(1) {
+    width: 28%;
+}
+.tabla-aulas.tabla-base thead th:nth-child(2),
+.tabla-aulas.tabla-base tbody td:nth-child(2) {
+    width: 32%;
+}
+.tabla-aulas.tabla-base thead th:nth-child(3),
+.tabla-aulas.tabla-base tbody td:nth-child(3) {
+    width: 22%;
+}
+.tabla-aulas.tabla-base thead th.aulas-tabla-acciones,
+.tabla-aulas.tabla-base tbody td.aulas-tabla-acciones {
+    width: 18%;
+}
+.aulas-acciones {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    justify-content: center;
+    align-items: center;
+}
+.aulas-tabla-acciones {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+}
+.aulas-acciones form {
+    margin: 0;
+    line-height: 0;
+    display: inline-flex;
+    align-items: center;
+}
+.aulas-acciones .btn-delete {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    line-height: 0;
+}
+.aulas-acciones a {
+    color: #223F70;
+    font-weight: 600;
+    text-decoration: none;
+}
+.aulas-acciones a:hover {
+    text-decoration: underline;
+}
+.aulas-acciones a.aulas-accion-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+.aulas-acciones a.aulas-accion-icon:hover {
+    text-decoration: none;
+    opacity: 0.85;
+}
+.aulas-acciones a.aulas-accion-icon img {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+#aulasOpenFacilityModalBtn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #223F70;
+    color: white;
+}
+#aulasOpenFacilityModalBtn:hover {
+    background-color: #1a3158;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+#createFacilityForm .form-group > label,
+#editFacilityForm .form-group > label,
+.aulas-facility-detail-readonly .form-group > label {
+    color: #BC8A55;
+}
+#createFacilityForm .form-control,
+#editFacilityForm .form-control,
+.aulas-facility-detail-readonly .form-control {
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid #DB5865;
+    box-shadow: none !important;
+    background-color: #fff;
+}
+#createFacilityForm .form-control:focus,
+#editFacilityForm .form-control:focus,
+.aulas-facility-detail-readonly .form-control:focus {
+    border-bottom-color: #DB5865;
+    box-shadow: none !important;
+    outline: none;
+}
+/* Opción vacía "Ingrese la carrera": texto gris hasta elegir una carrera */
+#createFacilityForm select#career_id:has(> option[value=""]:checked),
+#editFacilityForm select#edit_career_id:has(> option[value=""]:checked),
+#facilityEditFullPageForm select#career_id:has(> option[value=""]:checked) {
+    color: #6b7280;
+}
+#createFacilityForm select#career_id option,
+#editFacilityForm select#edit_career_id option,
+#facilityEditFullPageForm select#career_id option {
+    color: #212529;
+}
+.aulas-acciones button.aulas-accion-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+}
+.aulas-acciones button.aulas-accion-icon:hover {
+    opacity: 0.85;
+}
+.aulas-acciones button.aulas-accion-icon img {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+.aulas-facility-detail-readonly input[readonly],
+.aulas-facility-detail-readonly select:disabled {
+    background-color: #fff !important;
+    opacity: 1 !important;
+    cursor: default;
+    color: #212529;
+}
+.aulas-facility-detail-readonly select:disabled {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+}

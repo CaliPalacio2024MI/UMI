@@ -14,11 +14,26 @@ class HorarioClaseOculta extends Model
 {
     protected $table = 'horario_clase_ocultas';
 
-    protected $fillable = ['user_id', 'horario_clase_id'];
+    protected $fillable = [
+        'user_id',
+        'horario_clase_id',
+        'alumno_id',
+        'carrera_nombre',
+        'semestre',
+        'matricula',
+        'materia_nombre',
+        'horario_resumen',
+        'alumno_nombre',
+    ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function alumno(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'alumno_id');
     }
 
     public function horarioClase(): BelongsTo

@@ -9,6 +9,9 @@ use App\Models\Users\AcademicProfile;
 use App\Models\Users\Role;
 use App\Models\Users\Enrollment;
 use App\Models\Users\Period;
+use App\Models\AdmonCont\HorarioClase;
+use App\Models\AdmonCont\HorarioClaseOculta;
+use App\Support\HorarioResumenParser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -264,16 +267,21 @@ class studentController extends Controller
                         : "documentos/leads/{$lead->id}";
                     $data[$campo] = $request->file($campo)->store($pathBase, 'public');
                     $data[$flagCol] = false;
-                } elseif ($request->boolean('rechazar_' . $campo)) {
+                } elseif (! $request->has('aceptar_' . $campo)) {
+                    // Campo no enviado por el formulario (ej. factura XML fuera del modal): no tocar archivo ni bandera.
+                    $data[$campo] = $lead->$campo;
+                    $data[$flagCol] = (bool) $lead->$flagCol;
+                } elseif ($request->boolean('aceptar_' . $campo)) {
+                    // Checkbox marcado = documento aceptado (conservar archivo si existe).
+                    $data[$campo] = $lead->$campo;
+                    $data[$flagCol] = false;
+                } else {
+                    // Sin marcar = rechazado (eliminar archivo si existe).
                     if ($lead->$campo) {
                         Storage::disk('public')->delete($lead->$campo);
                     }
                     $data[$campo] = null;
                     $data[$flagCol] = true;
-                } else {
-                    // Conservar ruta existente al marcar solo "no rechazado" (evita pérdidas al guardar la pestaña de documentos).
-                    $data[$campo] = $lead->$campo;
-                    $data[$flagCol] = false;
                 }
             }
         }
@@ -407,6 +415,8 @@ class studentController extends Controller
 
         // Fallback visual: si el usuario no tiene career_id aún, intentar mostrar carrera desde su lead CRM por CURP.
         $this->applyCareerFallbackFromLead($dataList);
+        // Rutas de documentos desde inscripción (enrollments) si aún no están en perfil ni en lead.
+        $this->applyEnrollmentDocumentFallback($dataList);
         // Correo del alumno (inscripción → users.email) para filas lead CRM con misma CURP.
         $this->attachLeadStudentEmailFromInscripcion($dataList);
 
@@ -425,7 +435,7 @@ class studentController extends Controller
     {
         $query = User::whereHas('roles', function ($q) {
             $q->where('name', 'estudiante');
-        })->with(['academicProfile.career']);
+        })->with(['academicProfile.career.classification']);
 
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
@@ -436,8 +446,22 @@ class studentController extends Controller
                     ->orWhere('curp', 'like', "%{$search}%")
                     ->orWhereHas('academicProfile', function ($subQ) use ($search) {
                         $subQ->whereHas('career', function ($cq) use ($search) {
-                            $cq->where('name', 'like', "%{$search}%");
+                            $cq->where('name', 'like', "%{$search}%")
+                                ->orWhereHas('classification', function ($clQ) use ($search) {
+                                    $clQ->where('name', 'like', "%{$search}%");
+                                });
                         });
+                    })
+                    ->orWhereExists(function ($sub) use ($search) {
+                        $sub->selectRaw('1')
+                            ->from('leads as l')
+                            ->leftJoin('careers as c', 'c.id', '=', 'l.carrera_id')
+                            ->leftJoin('career_classifications as cc', 'cc.id', '=', 'c.career_classification_id')
+                            ->whereRaw("UPPER(REPLACE(TRIM(IFNULL(l.alumno_curp, '')), ' ', '')) = UPPER(REPLACE(TRIM(IFNULL(users.curp, '')), ' ', ''))")
+                            ->where(function ($sq) use ($search) {
+                                $sq->where('c.name', 'like', "%{$search}%")
+                                    ->orWhere('cc.name', 'like', "%{$search}%");
+                            });
                     });
             });
         }
@@ -450,7 +474,7 @@ class studentController extends Controller
      */
     private function aspiranteLeadsQuery(Request $request)
     {
-        $q = Lead::queryBaseAspirantesControlEscolar()->with(['carrera']);
+        $q = Lead::queryBaseAspirantesControlEscolar()->with(['carrera.classification']);
 
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
@@ -460,7 +484,10 @@ class studentController extends Controller
                     ->orWhere('alumno_materno', 'like', "%{$search}%")
                     ->orWhere('alumno_curp', 'like', "%{$search}%")
                     ->orWhereHas('carrera', function ($cq) use ($search) {
-                        $cq->where('name', 'like', "%{$search}%");
+                        $cq->where('name', 'like', "%{$search}%")
+                            ->orWhereHas('classification', function ($clQ) use ($search) {
+                                $clQ->where('name', 'like', "%{$search}%");
+                            });
                     });
             });
         }
@@ -580,7 +607,7 @@ class studentController extends Controller
             return;
         }
 
-        $leads = Lead::with('carrera')
+        $leads = Lead::with('carrera.classification')
             ->whereIn(
                 DB::raw("UPPER(REPLACE(TRIM(IFNULL(alumno_curp, '')), ' ', ''))"),
                 $curps->all()
@@ -640,6 +667,72 @@ class studentController extends Controller
             $careerId = $user->academicProfile->career_id ?? null;
             if (empty($careerId)) {
                 $user->fallback_career_name = $matchedLead?->carrera?->name;
+            }
+            $user->fallback_classification_name = $matchedLead?->carrera?->classification?->name;
+        }
+    }
+
+    /**
+     * Expone rutas de documentos desde el registro de inscripción (enrollments) cuando el perfil
+     * académico y el lead CRM no tienen ruta (solo afecta la lista / modales, no persiste en BD).
+     */
+    private function applyEnrollmentDocumentFallback(LengthAwarePaginator $dataList): void
+    {
+        $users = collect($dataList->items())
+            ->map(fn ($item) => $item->user ?? null)
+            ->filter(fn ($u) => $u instanceof User);
+
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $userIds = $users->pluck('id')->filter()->unique()->values()->all();
+        if ($userIds === []) {
+            return;
+        }
+
+        $rows = Enrollment::query()
+            ->whereIn('user_id', $userIds)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get([
+                'user_id',
+                'doc_acta_nacimiento',
+                'doc_certificado_prepa',
+                'doc_curp',
+                'doc_ine',
+            ]);
+
+        $bestByUser = [];
+        foreach ($rows as $row) {
+            $uid = (int) $row->user_id;
+            if (! isset($bestByUser[$uid])) {
+                $bestByUser[$uid] = $row;
+            }
+        }
+
+        $isEmptyPath = fn (?string $v): bool => $v === null || trim((string) $v) === '';
+
+        foreach ($users as $user) {
+            $uid = (int) $user->id;
+            $row = $bestByUser[$uid] ?? null;
+            if (! $row) {
+                continue;
+            }
+
+            $prof = $user->academicProfile;
+
+            if ($isEmptyPath($prof?->doc_acta_nacimiento) && $isEmptyPath($user->fallback_lead_doc_acta ?? null) && ! $isEmptyPath($row->doc_acta_nacimiento)) {
+                $user->fallback_enrollment_doc_acta = $row->doc_acta_nacimiento;
+            }
+            if ($isEmptyPath($prof?->doc_certificado_prepa) && $isEmptyPath($user->fallback_lead_doc_cert ?? null) && ! $isEmptyPath($row->doc_certificado_prepa)) {
+                $user->fallback_enrollment_doc_cert = $row->doc_certificado_prepa;
+            }
+            if ($isEmptyPath($prof?->doc_curp) && $isEmptyPath($user->fallback_lead_doc_curp ?? null) && ! $isEmptyPath($row->doc_curp)) {
+                $user->fallback_enrollment_doc_curp = $row->doc_curp;
+            }
+            if ($isEmptyPath($prof?->doc_ine) && $isEmptyPath($user->fallback_lead_doc_ine ?? null) && ! $isEmptyPath($row->doc_ine)) {
+                $user->fallback_enrollment_doc_ine = $row->doc_ine;
             }
         }
     }
@@ -795,11 +888,32 @@ class studentController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $user->delete();
-        return back()->with('success', 'Usuario eliminado correctamente.');
+
+        if (!$user->roles()->where('name', 'estudiante')->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+            abort(403, 'Acceso no autorizado.');
+        }
+
+        try {
+            $user->delete();
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'No se pudo eliminar el alumno.'], 500);
+            }
+            throw $e;
+        }
+
+        $message = 'Alumno eliminado correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -818,25 +932,8 @@ class studentController extends Controller
             return $this->exportMergedStudentsAndLeadsCsv($request);
         }
 
-        // activos / inactivos: solo alumnos
-        $query = User::whereHas('roles', function ($q) {
-            $q->where('name', 'estudiante');
-        })->with(['academicProfile.career', 'address']);
-
-        if ($request->filled('search')) {
-            $search = trim($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->where('nombre', 'like', "%{$search}%")
-                    ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                    ->orWhere('apellido_materno', 'like', "%{$search}%")
-                    ->orWhere('curp', 'like', "%{$search}%")
-                    ->orWhereHas('academicProfile', function ($subQ) use ($search) {
-                        $subQ->whereHas('career', function ($cq) use ($search) {
-                            $cq->where('name', 'like', "%{$search}%");
-                        });
-                    });
-            });
-        }
+        // activos / inactivos: mismo criterio de búsqueda que la lista (studentsBaseQuery)
+        $query = $this->studentsBaseQuery($request)->with('address');
 
         if ($filter === 'activos') {
             $query->whereHas('academicProfile', fn ($q) => $q->whereIn('status', ['Alumno Activo', 'Alumno']));
@@ -853,7 +950,7 @@ class studentController extends Controller
         ];
 
         $headersCsv = [
-            'Tipo', 'CURP', 'Nombre', 'Apellido Paterno', 'Apellido Materno',
+            'CURP', 'Nombre', 'Apellido Paterno', 'Apellido Materno',
             'Email', 'Teléfono', 'RFC', 'Fecha Nacimiento', 'Edad',
             'Calle', 'Colonia', 'Ciudad', 'Estado', 'Código Postal',
             'Carrera', 'Semestre', 'Estatus', 'Matrícula',
@@ -866,7 +963,7 @@ class studentController extends Controller
             foreach ($dataList as $user) {
                 $status = $user->academicProfile->status ?? null;
                 fputcsv($out, [
-                    'Alumno', $user->curp ?? '', $user->nombre ?? '', $user->apellido_paterno ?? '', $user->apellido_materno ?? '',
+                    $user->curp ?? '', $user->nombre ?? '', $user->apellido_paterno ?? '', $user->apellido_materno ?? '',
                     $user->email ?? '', $user->telefono ?? '', $user->RFC ?? '', $user->fecha_nacimiento ?? '', $user->edad ?? '',
                     $user->address?->calle ?? '', $user->address?->colonia ?? '', $user->address?->ciudad ?? '', $user->address?->estado ?? '', $user->address?->codigo_postal ?? '',
                     $user->academicProfile?->career?->name ?? '', $user->academicProfile?->semestre ?? '', $status ?? '', $user->academicProfile?->matricula ?? '',
@@ -881,8 +978,8 @@ class studentController extends Controller
      */
     private function exportMergedStudentsAndLeadsCsv(Request $request): StreamedResponse
     {
-        $students = $this->studentsBaseQuery($request)->orderByDesc('created_at')->get();
-        $leads = $this->aspiranteLeadsQuery($request)->with('carrera')->orderByDesc('updated_at')->orderByDesc('created_at')->get();
+        $students = $this->studentsBaseQuery($request)->with('address')->orderByDesc('created_at')->get();
+        $leads = $this->aspiranteLeadsQuery($request)->with('carrera.classification')->orderByDesc('updated_at')->orderByDesc('created_at')->get();
 
         $filename = 'alumnos_y_aspirantes_' . date('Y-m-d_His') . '.csv';
         $headers = [
@@ -891,7 +988,7 @@ class studentController extends Controller
         ];
 
         $headersCsv = [
-            'Tipo', 'CURP', 'Nombre', 'Apellido Paterno', 'Apellido Materno',
+            'CURP', 'Nombre', 'Apellido Paterno', 'Apellido Materno',
             'Email', 'Teléfono', 'RFC', 'Fecha Nacimiento', 'Edad',
             'Calle', 'Colonia', 'Ciudad', 'Estado', 'Código Postal',
             'Carrera', 'Semestre', 'Estatus', 'Matrícula',
@@ -908,7 +1005,7 @@ class studentController extends Controller
                     $status = 'Alumno Inactivo';
                 }
                 fputcsv($out, [
-                    'Alumno', $user->curp ?? '', $user->nombre ?? '', $user->apellido_paterno ?? '', $user->apellido_materno ?? '',
+                    $user->curp ?? '', $user->nombre ?? '', $user->apellido_paterno ?? '', $user->apellido_materno ?? '',
                     $user->email ?? '', $user->telefono ?? '', $user->RFC ?? '', $user->fecha_nacimiento ?? '', $user->edad ?? '',
                     $user->address?->calle ?? '', $user->address?->colonia ?? '', $user->address?->ciudad ?? '', $user->address?->estado ?? '', $user->address?->codigo_postal ?? '',
                     $user->academicProfile?->career?->name ?? '', $user->academicProfile?->semestre ?? '', $status ?? '', $user->academicProfile?->matricula ?? '',
@@ -917,7 +1014,7 @@ class studentController extends Controller
 
             foreach ($leads as $lead) {
                 fputcsv($out, [
-                    'Aspirante CRM', $lead->alumno_curp ?? '', $lead->alumno_nombre ?? '', $lead->alumno_paterno ?? '', $lead->alumno_materno ?? '',
+                    $lead->alumno_curp ?? '', $lead->alumno_nombre ?? '', $lead->alumno_paterno ?? '', $lead->alumno_materno ?? '',
                     '', $lead->telefono1 ?? '', '', '', '',
                     '', '', '', '', '',
                     $lead->carrera?->name ?? '', $lead->semestre ?? '1', 'Aspirante', '',
@@ -934,7 +1031,7 @@ class studentController extends Controller
     private function exportAspiranteLeadsCsv(Request $request): StreamedResponse
     {
         $leads = $this->aspiranteLeadsQuery($request)
-            ->with('carrera')
+            ->with('carrera.classification')
             ->orderByDesc('updated_at')
             ->orderByDesc('created_at')
             ->get();
@@ -1027,30 +1124,79 @@ class studentController extends Controller
 
         $q = trim((string) $request->input('q', ''));
         $dia = $request->input('dia');
+        $diaInt = ($dia !== null && $dia !== '') ? (int) $dia : null;
 
-        $horariosQuery = $user->horarioClases()
-            ->with(['carrera', 'materia', 'aula', 'franjas']);
+        // Registros guardados en Control → Clases (cajita): mismo alumno
+        $cajitaRows = HorarioClaseOculta::query()
+            ->where('alumno_id', (int) $user->id)
+            ->whereNotNull('horario_clase_id')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('horario_clase_id');
+
+        $materiaLabels = [];
+        $horarioResumenPorClase = [];
+        foreach ($cajitaRows as $row) {
+            $hid = (int) $row->horario_clase_id;
+            if ($hid > 0 && $row->materia_nombre !== null && $row->materia_nombre !== '') {
+                $materiaLabels[$hid] = $row->materia_nombre;
+            }
+            if ($hid > 0 && $row->horario_resumen !== null && trim((string) $row->horario_resumen) !== '') {
+                $horarioResumenPorClase[$hid] = $row->horario_resumen;
+            }
+        }
+
+        // Inscripciones (pivot). Sin filtrar por día en SQL: JSON/franjas pueden fallar y borrar la cajita del alumno.
+        $horarios = $user->horarioClases()
+            ->with(['carrera', 'materia', 'aula', 'franjas'])
+            ->get();
+
+        $idsExtra = $cajitaRows->pluck('horario_clase_id')
+            ->map(fn ($x) => (int) $x)
+            ->filter()
+            ->unique()
+            ->diff($horarios->pluck('id'))
+            ->values()
+            ->all();
+
+        if ($idsExtra !== []) {
+            $extras = HorarioClase::query()
+                ->with(['carrera', 'materia', 'aula', 'franjas'])
+                ->whereIn('id', $idsExtra)
+                ->get();
+            $horarios = $horarios->merge($extras)->unique('id')->values();
+        }
+
+        if ($diaInt !== null && $diaInt >= 1 && $diaInt <= 7) {
+            $horarios = $horarios->filter(function ($hc) use ($diaInt, $horarioResumenPorClase) {
+                return $this->horarioCubreDia($hc, $diaInt, $horarioResumenPorClase[$hc->id] ?? null);
+            })->values();
+        }
 
         if ($q !== '') {
-            $horariosQuery->where(function ($w) use ($q) {
-                $w->whereHas('materia', fn($m) => $m->where('nombre', 'LIKE', '%' . $q . '%'))
-                    ->orWhereHas('carrera', fn($c) => $c->where('name', 'LIKE', '%' . $q . '%'))
-                    ->orWhereHas('aula', fn($a) => $a->where('numero_aula', 'LIKE', '%' . $q . '%'));
-            });
-        }
+            $needle = mb_strtolower($q);
+            $horarios = $horarios->filter(function ($hc) use ($needle, $materiaLabels) {
+                $nombreMat = mb_strtolower((string) ($hc->materia->nombre ?? ''));
+                $label = mb_strtolower((string) ($materiaLabels[$hc->id] ?? ''));
+                $carrera = mb_strtolower((string) ($hc->carrera->name ?? ''));
+                $aulaBlob = \App\Support\AulaHorarioPresenter::searchBlob($hc->aula);
 
-        if ($dia !== null && $dia !== '') {
-            $diaInt = (int) $dia;
-            $horariosQuery->whereHas('franjas', function ($fr) use ($diaInt) {
-                $fr->whereRaw('JSON_CONTAINS(dias_semana, ?)', [json_encode($diaInt)]);
-            });
+                return str_contains($nombreMat, $needle)
+                    || str_contains($label, $needle)
+                    || str_contains($carrera, $needle)
+                    || str_contains($aulaBlob, $needle);
+            })->values();
         }
-
-        $horarios = $horariosQuery->get();
 
         if ($request->ajax()) {
             return view('layouts.ControlAdmin.Listas.members.partials.horarios_grilla_semanal', [
-                'user' => $user, 'horarios' => $horarios, 'q' => $q, 'dia' => $dia, 'esAlumno' => true,
+                'user' => $user,
+                'horarios' => $horarios,
+                'q' => $q,
+                'dia' => $dia,
+                'esAlumno' => true,
+                'materiaLabels' => $materiaLabels,
+                'horarioResumenPorClase' => $horarioResumenPorClase,
             ]);
         }
 
@@ -1060,6 +1206,42 @@ class studentController extends Controller
             'q' => $q,
             'dia' => $dia,
             'tituloHorario' => 'Horario de Alumno',
+            'materiaLabels' => $materiaLabels,
+            'horarioResumenPorClase' => $horarioResumenPorClase,
         ]);
+    }
+
+    /**
+     * ¿La clase imparte al día $diaInt (1–7)? Usa horario_resumen de cajita si existe; si no, franjas en BD.
+     */
+    private function horarioCubreDia(HorarioClase $hc, int $diaInt, ?string $resumen): bool
+    {
+        if ($resumen !== null && trim((string) $resumen) !== '') {
+            foreach (HorarioResumenParser::intervalsFromResumen($resumen) as $iv) {
+                if ((int) ($iv['dia'] ?? 0) === $diaInt) {
+                    return true;
+                }
+            }
+        }
+        foreach ($hc->franjas ?? [] as $f) {
+            $diasRaw = $f->dias_semana;
+            if (is_array($diasRaw)) {
+                $diasList = $diasRaw;
+            } elseif (is_string($diasRaw)) {
+                $dec = json_decode($diasRaw, true);
+                $diasList = is_array($dec) ? $dec : ($diasRaw !== '' ? preg_split('/\s*,\s*/', $diasRaw) : []);
+            } elseif ($diasRaw !== null && $diasRaw !== '') {
+                $diasList = [(int) $diasRaw];
+            } else {
+                $diasList = [];
+            }
+            foreach ($diasList as $d) {
+                if ((int) $d === $diaInt) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

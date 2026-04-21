@@ -26,25 +26,28 @@ class MateriaController extends Controller
             'creditos',
             'type',
             'semestre',
+            'descripcion',
+            'objetivo',
+            'temario',
+            'infografia',
             'career_id', // ¡IMPORTANTE! Clave foránea para la relación
-        ];
-
-        // 2. Columnas a seleccionar del modelo Career
-        $careerColums = [
-            'id', // ¡IMPORTANTE! Clave primaria para la relación
-            'name'
         ];
 
         $carreras = Career::all(['id', 'name']);
         
-        // 3. Ejecución de la consulta
+        // Listado ordenado por nombre de materia; carrera con clasificación
         $dataList = Materia::query()
             ->select($materiaColums)
-            
-            // Cargar la relación 'career' con columnas específicas
-            ->with(['career' => function (Relation $query) use ($careerColums) {
-                $query->select($careerColums);
-            }])
+            ->with([
+                'career' => function (Relation $query) {
+                    $query->select('id', 'name', 'career_classification_id')
+                        ->with(['classification' => function ($q) {
+                            $q->select('id', 'name');
+                        }]);
+                },
+            ])
+            ->orderBy('nombre')
+            ->orderBy('id')
             ->get();
 
         $viewPath = 'layouts.ControlAdmin.Listas.' . $listType . '.index';
@@ -68,9 +71,12 @@ class MateriaController extends Controller
                 Rule::unique('materias', 'nombre')->where('career_id', $request->input('carrera_id')),
             ],
             'creditos' => ['required', 'integer', 'min:1'],
-            'semestre' => ['required', 'integer', 'min:1', 'max:15'],
+            'semestre' => ['required', 'integer', 'min:1'],
             'type' => ['required', 'in:Presencial,En linea'],
-            'descripcion' => ['nullable', 'string', 'max:500'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
+            'objetivo' => ['nullable', 'string', 'max:3000'],
+            'temario' => ['nullable', 'string', 'max:10000'],
+            'infografia' => ['nullable', 'string', 'max:10000'],
         ], [
             'carrera_id.required' => 'Te falta un campo por rellenar.',
             'carrera_id.integer' => 'Te falta un campo por rellenar.',
@@ -82,7 +88,6 @@ class MateriaController extends Controller
             'creditos.min' => 'Te falta un campo por rellenar.',
             'semestre.required' => 'Te falta un campo por rellenar.',
             'semestre.min' => 'Te falta un campo por rellenar.',
-            'semestre.max' => 'Te falta un campo por rellenar.',
             'type.required' => 'Te falta un campo por rellenar.',
             'type.in' => 'Te falta un campo por rellenar.',
         ]);
@@ -95,14 +100,17 @@ class MateriaController extends Controller
             'semestre' => $validatedData['semestre'],
             'type' => $validatedData['type'],
             'descripcion' => $validatedData['descripcion'] ?? '',
+            'objetivo' => $validatedData['objetivo'] ?? null,
+            'temario' => $validatedData['temario'] ?? null,
+            'infografia' => $validatedData['infografia'] ?? null,
         ];
         
         // 3. CREACIÓN DEL REGISTRO
         // Asegúrate de que el modelo Materia tenga 'career_id' en $fillable
         Materia::create($dataToSave); 
 
-        // 4. REDIRECCIÓN
-        return Redirect::route('control.subjects.index') 
+        // 4. REDIRECCIÓN (modal global careerSuccessModal vía ?modal=success)
+        return Redirect::route('control.subjects.index', ['modal' => 'success'])
             ->with('success', '¡Materia creada exitosamente!');
     }
     public function update(Request $request, Materia $registro)
@@ -119,9 +127,12 @@ class MateriaController extends Controller
                     ->ignore($registro->id),
             ],
             'creditos' => ['required', 'integer', 'min:1'],
-            'semestre' => ['required', 'integer', 'min:1', 'max:15'],
+            'semestre' => ['required', 'integer', 'min:1'],
             'type' => ['required', 'in:Presencial,En linea'],
-            'descripcion' => ['nullable', 'string', 'max:500'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
+            'objetivo' => ['nullable', 'string', 'max:3000'],
+            'temario' => ['nullable', 'string', 'max:10000'],
+            'infografia' => ['nullable', 'string', 'max:10000'],
         ], [
             'carrera_id.required' => 'Te falta un campo por rellenar.',
             'carrera_id.integer' => 'Te falta un campo por rellenar.',
@@ -133,12 +144,18 @@ class MateriaController extends Controller
             'creditos.min' => 'Te falta un campo por rellenar.',
             'semestre.required' => 'Te falta un campo por rellenar.',
             'semestre.min' => 'Te falta un campo por rellenar.',
-            'semestre.max' => 'Te falta un campo por rellenar.',
             'type.required' => 'Te falta un campo por rellenar.',
             'type.in' => 'Te falta un campo por rellenar.',
         ]);
 
         if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $validator->errors()->first() ?? 'Error de validación.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput()
@@ -150,19 +167,49 @@ class MateriaController extends Controller
         // 2. PRESERVAR CLAVE Y DESCRIPCIÓN (la columna descripcion no acepta NULL)
         $validatedData['clave'] = $registro->clave ?? null;
         $validatedData['descripcion'] = $validatedData['descripcion'] ?? $registro->descripcion ?? '';
+        $validatedData['objetivo'] = $validatedData['objetivo'] ?? null;
+        $validatedData['temario'] = $validatedData['temario'] ?? null;
+        $validatedData['infografia'] = $validatedData['infografia'] ?? null;
 
         // 3. ACTUALIZACIÓN
-        $registro->update($validatedData); 
+        $registro->update($validatedData);
+        $registro->load([
+            'career' => function ($q) {
+                $q->select('id', 'name', 'career_classification_id')
+                    ->with(['classification' => function ($c) {
+                        $c->select('id', 'name');
+                    }]);
+            },
+        ]);
 
-        // 4. REDIRECCIÓN
-        return Redirect::route('control.subjects.index')
-            ->with('success', '¡Materia actualizada exitosamente!');
+        $message = '¡Materia actualizada exitosamente!';
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $message,
+                'row' => [
+                    'nombre' => $registro->nombre,
+                    'classification_name' => $registro->career?->classification?->name ?? '—',
+                    'career_name' => $registro->career?->name ?? 'Sin datos',
+                    'creditos' => (string) $registro->creditos,
+                    'semestre' => (string) $registro->semestre,
+                    'type' => $registro->type,
+                ],
+            ]);
+        }
+
+        return Redirect::route('control.subjects.index', ['modal' => 'success'])
+            ->with('success', $message);
     }
 
-    public function destroy(Materia $registro)
+    public function destroy(Request $request, Materia $registro)
     {
         $registro->delete();
-        return Redirect::route('control.subjects.index')
-            ->with('success', 'Materia eliminada correctamente.');
+        $message = 'Materia eliminada correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+        return Redirect::route('control.subjects.index', ['modal' => 'success'])
+            ->with('success', $message);
     }
 }

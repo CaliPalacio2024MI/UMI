@@ -135,6 +135,14 @@ label[for="password"] {
     color: #666;
 }
 
+/* Misma forma que eye-solid-full-gold.svg, visible en negro */
+.password-group .toggle-password-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    filter: brightness(0);
+}
+
 /* Error Messages */
 .error {
     color: #dc3545;

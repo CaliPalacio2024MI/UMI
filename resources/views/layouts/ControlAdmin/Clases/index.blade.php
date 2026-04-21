@@ -4,8 +4,9 @@
 
 @vite(['resources/css/courses.css', 'resources/css/control_admin/base.css', 'resources/js/app.js'])
 
-@push('styles')
+@push('css')
 <style>
+#career_classification_id,
 #carrera_id,
 #semestre_id,
 #materia_id,
@@ -21,6 +22,7 @@
     background-position: right 12px center;
     background-size: 12px;
 }
+#form-filtros #career_classification_id,
 #form-filtros #carrera_id {
     text-align: center !important;
     text-align-last: center !important;
@@ -29,6 +31,7 @@
     text-align: center !important;
     text-align-last: center !important;
 }
+#form-filtros select#career_classification_id.clasificacion-placeholder,
 #form-filtros select#semestre_id.semestre-placeholder,
 #form-filtros select#semestre_id.placeholder {
     color: #ACACAC !important;
@@ -57,100 +60,96 @@
 }
 .clases-layout { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
 .schedule-table { flex: 1; min-width: 0; }
-.panel-derecho { flex: 1; min-width: 280px; border: 1px solid #ddd; border-radius: 12px; padding: 1rem; background: #fafafa; min-height: 200px; }
-.panel-derecho h6 { margin: 0 0 0.75rem; color: #b8860b; font-weight: 600; }
-.tabla-base { border-collapse: collapse; width: 100%; min-width: 320px; }
-.tabla-base th, .tabla-base td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
-.encabezado-tabla { background: #f5f5f5; color: #333; font-weight: 600; }
-.cuerpo-tabla tr:hover { background: #f9f9f9; }
 .btn-agregar-clase { border-radius: 25px; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px; }
 .checkbox-cell { width: 44px; text-align: center; }
-.tabla-clases-wrapper .col-materia { white-space: normal; word-wrap: break-word; min-height: 2.8em; line-height: 1.5; width: 55px; max-width: 55px; vertical-align: top; padding: 0.4em 0.5em; color: #333; text-align: center !important; }
-.tabla-clases-wrapper th.col-materia { width: 55px; max-width: 55px; text-align: center !important; vertical-align: middle !important; }
-.tabla-clases-wrapper .col-acciones { width: 100px; max-width: 100px; padding: 0.4em 0.5em; }
-.tabla-clases-wrapper th.col-acciones { width: 100px; max-width: 100px; }
-.tabla-clases-wrapper .col-matricula { width: 110px; max-width: 110px; }
-.tabla-clases-wrapper th.col-matricula { width: 110px; max-width: 110px; }
-.tabla-clases-wrapper .col-carrera { width: 100px; max-width: 100px; }
-.tabla-clases-wrapper th.col-carrera { width: 100px; max-width: 100px; }
-/* Columna Carrera en tabla de filtros: contenido en 2 líneas (excepto encabezado) */
-#form-filtros td.col-carrera {
-    white-space: normal;
-    word-wrap: break-word;
-    line-height: 1.4;
-    min-height: 2.8em;
-    vertical-align: top;
-    padding: 0.4em 0.5em;
-}
+/* Tabla #clases-tabla-filtros: solo en resources/css/Control Admin/base.css */
 .col-nombre-dos-lineas { line-height: 1.5; min-height: 2.6em; vertical-align: top; color: #333; }
 .btn-accion-circular { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: none; border-radius: 50%; background-color: #fff; color: #001f3f; box-shadow: 0 1px 3px rgba(0,0,0,0.2); text-decoration: none; transition: box-shadow 0.2s, background-color 0.2s; }
 .btn-accion-circular:hover { background-color: #f0f0f0; color: #001f3f; box-shadow: 0 2px 5px rgba(0,0,0,0.25); }
 .btn-accion-circular svg,
 .btn-accion-circular .btn-accion-icon { width: 18px; height: 18px; display: block; object-fit: contain; }
-.col-acciones { text-align: center; vertical-align: middle !important; }
-#form-filtros .add-time-slot-btn--selected { background-color: #198754 !important; box-shadow: 0 2px 6px rgba(25,135,84,0.45); }
-/* Botón seleccionar clase: gris claro, sin azul marino (solo en form-filtros Clases) */
-#form-filtros .add-time-slot-btn {
-    background-color: #c0c0c0 !important;
-    color: #333 !important;
-}
-#form-filtros .add-time-slot-btn:hover {
-    background-color: #a8a8a8 !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-#form-filtros .add-time-slot-btn .add-time-slot-btn__icon,
-#form-filtros .add-time-slot-btn svg { stroke: #fff; }
-.btn-seleccionar-todo-clases { color: #ACACAC !important; }
-.btn-seleccionar-todo-clases:hover { color: #888 !important; }
-.col-acciones-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    min-height: 0;
-    margin: 0 auto;
-}
-.col-acciones .col-acciones-wrap { padding: 0; }
-.caja-gris-filtros .tabla-base td.col-acciones { text-align: center; }
-.caja-gris-filtros .tabla-base td.col-acciones .col-acciones-wrap { align-items: center; }
+/* Botones .add-time-slot-btn en #form-filtros: Control Admin/base.css */
 #horarios-materia-box .btn-horario-seleccionar:hover { background: #9a7210 !important; color: #fff; box-shadow: 0 3px 8px rgba(184,134,11,0.45); }
 #horarios-materia-box .horario-item--selected { background: #e8eef3; border: 2px solid #001f3f; padding: 0.6rem !important; }
 #horarios-materia-box .btn-horario-seleccionar--selected:hover { background: #001a33 !important; color: #fff; box-shadow: 0 3px 8px rgba(0,31,63,0.45); }
-/* Contenedores con scroll horizontal en tablas */
-.filtros-tabla-scroll { overflow: visible; -webkit-overflow-scrolling: touch; }
 .clases-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-/* Tabla de filtros (Carrera, Alumno, Matrícula, Acciones): sin scroll, se muestra completa */
-#clases-tabla-filtros { height: 390px; }
-#clases-tabla-filtros table.tabla-base { height: 390px; }
-#clases-tabla-filtros .filtros-tabla-scroll {
-    overflow: visible;
-    height: auto;
+/* Filtros: columna izq. (Clasificación, Carrera, Materia) | columna der. (Semestre, Horario) */
+.clases-filtros-columnas { display: flex; flex-direction: column; gap: 1rem; width: 100%; }
+.clases-filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 559px));
+    gap: 1rem 1.5rem;
+    align-items: start;
+    width: 100%;
+}
+.clases-filtros-grid__col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+.clases-filtro-grupo { min-width: 0; }
+.clases-filtro-grupo > label:first-child {
+    font-weight: 600;
+    color: #b8860b;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+.clases-filtros-cuerpo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 559px));
+    gap: 1rem 1.5rem;
+    align-items: stretch;
+    width: 100%;
+}
+.clases-filtros-cuerpo__col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+.clases-filtros-cuerpo__col .caja-gris-filtros {
+    flex: 1 1 auto;
+    min-height: 391px;
+    display: flex;
+    flex-direction: column;
+}
+.clases-filtros-cuerpo__col #clases-tabla-filtros .filtros-tabla-scroll {
+    flex: 1 1 auto;
     min-height: 0;
 }
-/* Columna izquierda: más ancho para el select; un poco más a la izquierda */
-#form-filtros .filtros-col-izq { max-width: 560px !important; }
-#form-filtros .filtros-col-izq .caja-gris-filtros { max-width: 560px; }
-#form-filtros .filtros-col-izq .filtros-tabla-scroll { max-width: 560px; }
-/* Cajas grises de filtros */
-.caja-gris-filtros { background-color: #e8e8e8; border-radius: 8px; padding: 0 0.5rem 0.5rem 0.5rem; min-height: 60px; margin-top: 0.75rem; width: 100%; max-width: 480px; box-sizing: border-box; }
+.clases-filtros-cuerpo__acciones { text-align: center; flex-shrink: 0; }
+.clases-filtro-select {
+    width: 100%;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    text-align: center;
+    text-align-last: center;
+}
+.caja-materia-abajo { width: 100% !important; max-width: 559px; height: auto !important; display: flex; flex-direction: column; min-height: 0; }
+.caja-materia-abajo #horarios-materia-box { flex: 1 1 auto; min-height: 0; max-height: none !important; }
+@media (max-width: 1100px) {
+    .clases-filtros-grid,
+    .clases-filtros-cuerpo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 991px) {
-    .col-filtro-materia { margin-left: 0 !important; margin-top: 1.5rem !important; }
-    .caja-gris-filtros { max-width: 100%; }
+    .clases-filtros-grid,
+    .clases-filtros-cuerpo { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
-    .col-filtro-materia { margin-top: 1rem !important; }
     .clases-layout { flex-direction: column; gap: 1.5rem; }
     .schedule-table { min-width: 0; width: 100%; }
-    .panel-derecho { min-width: 0; width: 100%; }
-    .tabla-base { min-width: 280px; font-size: 0.9rem; }
-    .tabla-base th, .tabla-base td { padding: 8px 6px; }
+    .clases-table-scroll .tabla-base { min-width: 280px; font-size: 0.9rem; }
+    .clases-table-scroll .tabla-base th,
+    .clases-table-scroll .tabla-base td { padding: 8px 6px; }
 }
 @media (max-width: 576px) {
-    #form-filtros .filtros-columnas { flex-direction: column !important; }
-    #form-filtros .filtros-col-izq,
-    #form-filtros .col-filtro-materia { max-width: 100% !important; }
-    .tabla-base th, .tabla-base td { padding: 6px 4px; font-size: 0.85rem; }
+    .clases-filtros-grid,
+    .clases-filtros-cuerpo { grid-template-columns: 1fr !important; }
+    .clases-table-scroll .tabla-base th,
+    .clases-table-scroll .tabla-base td { padding: 6px 4px; font-size: 0.85rem; }
 }
 </style>
 @endpush
@@ -213,46 +212,111 @@
 
     <form action="{{ route('control.classes.index') }}" method="GET" class="mb-4" id="form-filtros">
         <div class="filtros-fila" style="display: flex; flex-direction: column; gap: 1rem;">
-            <div class="filtros-columnas" style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
-                <div class="filtros-col-izq" style="display: flex; flex-direction: column; gap: 1rem; flex: 1 1 280px; max-width: 560px;">
-                    <div>
-                        <label for="carrera_id" style="font-weight: 600; color: #b8860b; display: block; margin-bottom: 0.5rem;">Carrera:</label>
-                        <select name="carrera_id" id="carrera_id" class="form-control {{ !$carreraId ? 'carrera-placeholder' : '' }}" style="width: 100%; border-radius: 20px; border: 1px solid #ddd; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); text-align: center; text-align-last: center;">
-                            <option value="">Seleccione el nombre de la carrera</option>
-                            @foreach($carreras as $carrera)
-                                <option value="{{ $carrera->id }}" {{ $carreraId == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
-                            @endforeach
-                        </select>
+            <div class="filtros-columnas clases-filtros-columnas">
+                <div class="clases-filtros-grid">
+                    <div class="clases-filtros-grid__col clases-filtros-grid__col--izq">
+                        <div class="clases-filtro-grupo">
+                            <label for="career_classification_id">Clasificación:</label>
+                            <select name="career_classification_id" id="career_classification_id" class="form-control clases-filtro-select {{ !$classificationId ? 'clasificacion-placeholder' : '' }}">
+                                <option value="">Todas las clasificaciones</option>
+                                @foreach($clasificaciones ?? [] as $clas)
+                                    <option value="{{ $clas->id }}" {{ (int)($classificationId ?? 0) === (int)$clas->id ? 'selected' : '' }}>{{ $clas->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="clases-filtro-grupo">
+                            <label for="carrera_id">Carrera:</label>
+                            <select name="carrera_id" id="carrera_id" class="form-control clases-filtro-select {{ !$carreraId ? 'carrera-placeholder' : '' }}">
+                                <option value="">Seleccione el nombre de la carrera</option>
+                                @foreach($carreras as $carrera)
+                                    <option value="{{ $carrera->id }}" {{ $carreraId == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="clases-filtro-grupo">
+                            <label for="materia_id">Materia:</label>
+                            <select name="materia_id" id="materia_id" class="form-control clases-filtro-select {{ !$materiaId ? 'materia-placeholder' : '' }}" {{ !$carreraId ? 'disabled' : '' }}>
+                                <option value="">Seleccione el nombre de la materia</option>
+                                @foreach($materias as $materia)
+                                    <option value="{{ $materia->id }}" data-semestre="{{ $materia->semestre }}" {{ $materiaId == $materia->id ? 'selected' : '' }}>{{ $materia->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label for="semestre_id" style="font-weight: 600; color: #b8860b; display: block; margin-bottom: 0.5rem;">Semestre:</label>
-                        <select name="semestre" id="semestre_id" class="form-control {{ !$semestre ? 'semestre-placeholder' : '' }}" style="width: 100%; border-radius: 20px; border: 1px solid #ddd; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); text-align: center; text-align-last: center;">
-                            <option value="">Seleccione el número del semestre</option>
-                            @foreach($semestresCarrera ?? [1,2,3,4,5,6,7,8] as $s)
-                                <option value="{{ $s }}" {{ (string)$semestre === (string)$s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
+                    <div class="clases-filtros-grid__col clases-filtros-grid__col--der">
+                        <div class="clases-filtro-grupo">
+                            <label for="semestre_id">Semestre:</label>
+                            <select name="semestre" id="semestre_id" class="form-control clases-filtro-select {{ !$semestre ? 'semestre-placeholder' : '' }}" {{ !$materiaId ? 'disabled' : '' }}>
+                                <option value="">Seleccione el número del semestre</option>
+                                @foreach($semestresCarrera ?? [1,2,3,4,5,6,7,8] as $s)
+                                    <option value="{{ $s }}" {{ (string)$semestre === (string)$s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="clases-filtro-grupo">
+                            <label for="clase_id">Horarios:</label>
+                            <select name="clase_id" id="clase_id" class="form-control clases-filtro-select select-horarios {{ empty($claseIds) ? 'clase-placeholder' : '' }}" {{ !$materiaId || $semestre === null || $semestre === '' ? 'disabled' : '' }}>
+                                <option value="">Seleccione el horario</option>
+                                @if($materiaId && ($clasesParaSelect ?? collect())->isNotEmpty())
+                                    @php
+                                        $diasLargo = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+                                        $opcionesPorDia = [];
+                                        foreach ($clasesParaSelect as $hc) {
+                                            if ($hc->franjas->isEmpty()) continue;
+                                            foreach ($hc->franjas as $f) {
+                                                $dias = $f->dias_semana;
+                                                if (is_string($dias)) { $dias = json_decode($dias, true); }
+                                                if (!is_array($dias)) { $dias = $dias !== null && $dias !== '' ? [(int)$dias] : []; }
+                                                $inicio = \Carbon\Carbon::parse($f->hora_inicio)->format('H:i');
+                                                $fin = \Carbon\Carbon::parse($f->hora_fin)->format('H:i');
+                                                foreach ($dias as $d) {
+                                                    $num = (int) $d;
+                                                    if ($num >= 1 && $num <= 7) {
+                                                        $texto = ($diasLargo[$num] ?? '') . ' ' . $inicio . ' – ' . $fin;
+                                                        $opcionesPorDia[] = ['dia' => $num, 'texto' => $texto, 'clase_id' => $hc->id];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        usort($opcionesPorDia, fn($a, $b) => $a['dia'] <=> $b['dia']);
+                                    @endphp
+                                    @foreach($opcionesPorDia as $op)
+                                        <option value="{{ $op['clase_id'] }}" data-texto="{{ e($op['texto']) }}" {{ in_array($op['clase_id'], $claseIds ?? []) ? 'selected' : '' }}>{{ $op['texto'] }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <div id="clase_id_resumen" class="mt-1 small" style="display: none; white-space: pre-line; color: #555; min-height: 1.5em;" aria-live="polite"></div>
+                        </div>
                     </div>
+                </div>
+
+                <div class="clases-filtros-cuerpo">
+                    <div class="clases-filtros-cuerpo__col clases-filtros-cuerpo__col--izq">
                     <div class="caja-gris-filtros" id="clases-tabla-filtros">
                         <div class="filtros-tabla-scroll" style="width: 100%; max-width: 559px;">
-                        <table class="tabla-base tabla-rayas tabla-bordes" style="width: 100%; max-width: 559px; height: 390px;">
+                        <table class="tabla-base tabla-rayas tabla-bordes" style="width: 100%; max-width: 559px;">
                             <thead class="encabezado-tabla">
                                 <tr>
-                                    <th class="col-carrera" style="width: 100px; max-width: 100px;">Carrera</th>
-                                    <th class="col-materia" style="text-align: center; vertical-align: middle; width: 55px; max-width: 55px;">Alumno</th>
-                                    <th class="col-matricula" style="width: 110px; max-width: 110px;">Matrícula</th>
-                                    <th class="col-acciones" style="width: 100px; max-width: 100px;">Acciones</th>
+                                    <th class="col-carrera">Carrera</th>
+                                    <th class="col-materia">Alumno</th>
+                                    <th class="col-matricula">Matrícula</th>
+                                    <th class="col-acciones">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @php
                                     $diasLargoTabla = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
-                                    $clasesPorCarrera = ($clasesParaTabla ?? $clases)->groupBy('career_id');
                                 @endphp
-                                @forelse($clasesPorCarrera as $careerId => $clasesDeCarrera)
+                                @forelse(($alumnosParaTabla ?? collect()) as $al)
                                     @php
-                                        $c = $clasesDeCarrera->first();
-                                        $al = ($alumnoPorCarrera ?? collect())->get((int) $careerId);
+                                        $careerId = (int) ($al->academicProfile->career_id ?? 0);
+                                        $c = ($clasesParaTabla ?? collect())->firstWhere('career_id', $careerId)
+                                            ?? ($clases ?? collect())->firstWhere('career_id', $careerId);
+                                        $__filaKey = $c ? ((int) $c->id . '_' . (int) $al->id) : '';
+                                    @endphp
+                                    @continue(!$c)
+                                    @continue(!empty($filasOcultasKeys[$__filaKey] ?? false))
+                                    @php
                                         $nomCarrera = $al?->academicProfile?->career?->name ?? ($c->carrera->name ?? '—');
                                         $nomAlumno1 = $al ? trim(($al->nombre ?? '') . ' ' . ($al->apellido_paterno ?? '')) : '';
                                         $nomAlumno2 = $al ? trim(($al->apellido_materno ?? '')) : '';
@@ -275,6 +339,9 @@
                                             }
                                             $textoHorarioClase = implode(', ', array_unique($partesH));
                                         }
+                                        $semestreFila = (string) ($al->academicProfile->semestre ?? $semestre ?? '');
+                                        $materiaNombreFila = (string) ($c->materia->nombre ?? '—');
+                                        $alumnoNombreFila = trim($nomAlumno1 . ' ' . $nomAlumno2);
                                     @endphp
                                     <tr>
                                         <td class="col-carrera">@php
@@ -297,11 +364,17 @@
                                         </td>
                                         <td class="col-matricula">{{ !empty($matricula) ? $matricula : 'Pendiente' }}</td>
                                         <td class="col-acciones">
+                                            @if($loop->first)
+                                            <button type="button" class="btn-seleccionar-todo-clases" id="btn-seleccionar-todo-clases">Seleccionar<br>todo</button>
+                                            @endif
                                             <div class="col-acciones-wrap">
-                                                @if($loop->first)
-                                                <button type="button" class="btn-seleccionar-todo-clases" id="btn-seleccionar-todo-clases" style="color: #ACACAC; background: none; border: none; cursor: pointer; font-size: 0.6rem; padding: 0; line-height: 1.15; display: block; text-align: center; margin: -10px auto 0 auto;">Seleccionar<br>todo</button>
-                                                @endif
-                                                <button type="button" class="add-time-slot-btn {{ in_array($c->id, $claseIds ?? []) ? 'add-time-slot-btn--selected' : '' }}" aria-label="Seleccionar clase" title="Seleccionar clase" aria-pressed="{{ in_array($c->id, $claseIds ?? []) ? 'true' : 'false' }}" data-clase-id="{{ $c->id }}" data-carrera="{{ e($nomCarrera) }}" data-nombre="{{ e(trim(($nomAlumno1 ?? '') . ' ' . ($nomAlumno2 ?? ''))) }}" data-matricula="{{ e(!empty($matricula) ? $matricula : 'Pendiente') }}" data-href="{{ route('control.classes.index', array_filter(['carrera_id' => $carreraId, 'semestre' => $semestre, 'materia_id' => $materiaId, 'clase_id' => $c->id])) }}">
+                                                @php
+                                                    $claseIdsInt = array_map('intval', $claseIds ?? []);
+                                                    $alumnoCtxInt = array_map('intval', $alumnoContextIds ?? []);
+                                                    $filaBtnSeleccionada = in_array((int) $c->id, $claseIdsInt, true)
+                                                        && (count($alumnoCtxInt) === 0 || in_array((int) $al->id, $alumnoCtxInt, true));
+                                                @endphp
+                                                <button type="button" class="add-time-slot-btn {{ $filaBtnSeleccionada ? 'add-time-slot-btn--selected' : '' }}" aria-label="Seleccionar clase" title="Seleccionar clase" aria-pressed="{{ $filaBtnSeleccionada ? 'true' : 'false' }}" data-clase-id="{{ $c->id }}" data-alumno-id="{{ $al->id }}" data-carrera="{{ e($nomCarrera) }}" data-nombre="{{ e($alumnoNombreFila) }}" data-alumno-nombre="{{ e($alumnoNombreFila) }}" data-matricula="{{ e(!empty($matricula) ? $matricula : 'Pendiente') }}" data-semestre="{{ e($semestreFila) }}" data-materia="{{ e($materiaNombreFila) }}" data-horario="{{ e($textoHorarioClase) }}" data-href="{{ route('control.classes.index', array_filter(['career_classification_id' => $classificationId, 'carrera_id' => $carreraId, 'semestre' => $semestre, 'materia_id' => $materiaId, 'clase_id' => $c->id], fn($v) => $v !== null && $v !== '')) }}">
                                                     <svg class="add-time-slot-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                                         <polyline points="20 6 9 17 4 12"></polyline>
                                                     </svg>
@@ -318,61 +391,18 @@
                         </table>
                         </div>
                     </div>
-                    <div style="margin-top: 0.75rem; text-align: center;">
+                    <div class="clases-filtros-cuerpo__acciones">
                         <button type="button" class="submit-button" id="btn-guardar-carrera">+ Agregar clase</button>
                     </div>
-                </div>
-                <div class="col-filtro-materia" style="display: flex; flex-direction: column; gap: 0.75rem; flex: 1 1 280px; max-width: 559px; margin-left: 32px;">
-                    <div>
-                        <label for="materia_id" style="font-weight: 600; color: #b8860b; display: block; margin-bottom: 0.5rem;">Materia:</label>
-                    <select name="materia_id" id="materia_id" class="form-control {{ !$materiaId ? 'materia-placeholder' : '' }}" style="width: 100%; border-radius: 20px; border: 1px solid #ddd; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); text-align: center; text-align-last: center;" {{ !$carreraId || $semestre === null || $semestre === '' ? 'disabled' : '' }}>
-                        <option value="">Seleccione el nombre de la materia</option>
-                        @foreach($materias as $materia)
-                            <option value="{{ $materia->id }}" {{ $materiaId == $materia->id ? 'selected' : '' }}>{{ $materia->nombre }}</option>
-                        @endforeach
-                        </select>
                     </div>
-                    <div style="margin-top: 0.35rem;">
-                        <label for="clase_id" style="font-weight: 600; color: #b8860b; display: block; margin-bottom: 0.5rem;">Horarios:</label>
-                        <select name="clase_id" id="clase_id" class="form-control select-horarios {{ empty($claseIds) ? 'clase-placeholder' : '' }}" style="width: 100%; max-width: 100%; border-radius: 20px; border: 1px solid #ddd; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); text-align: center; text-align-last: center;" {{ !$materiaId ? 'disabled' : '' }}>
-                            <option value="">Seleccione el horario</option>
-                            @if($materiaId && ($clasesParaSelect ?? collect())->isNotEmpty())
-                                @php
-                                    $diasLargo = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
-                                    $opcionesPorDia = [];
-                                    foreach ($clasesParaSelect as $hc) {
-                                        if ($hc->franjas->isEmpty()) continue;
-                                        foreach ($hc->franjas as $f) {
-                                            $dias = $f->dias_semana;
-                                            if (is_string($dias)) { $dias = json_decode($dias, true); }
-                                            if (!is_array($dias)) { $dias = $dias !== null && $dias !== '' ? [(int)$dias] : []; }
-                                            $inicio = \Carbon\Carbon::parse($f->hora_inicio)->format('H:i');
-                                            $fin = \Carbon\Carbon::parse($f->hora_fin)->format('H:i');
-                                            foreach ($dias as $d) {
-                                                $num = (int) $d;
-                                                if ($num >= 1 && $num <= 7) {
-                                                    $texto = ($diasLargo[$num] ?? '') . ' ' . $inicio . ' – ' . $fin;
-                                                    $opcionesPorDia[] = ['dia' => $num, 'texto' => $texto, 'clase_id' => $hc->id];
-                                                }
-                                            }
-                                        }
-                                    }
-                                    usort($opcionesPorDia, fn($a, $b) => $a['dia'] <=> $b['dia']);
-                                @endphp
-                                @foreach($opcionesPorDia as $op)
-                                    <option value="{{ $op['clase_id'] }}" data-texto="{{ e($op['texto']) }}" {{ in_array($op['clase_id'], $claseIds ?? []) ? 'selected' : '' }}>{{ $op['texto'] }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <div id="clase_id_resumen" class="mt-1 small" style="display: none; white-space: pre-line; color: #555; min-height: 1.5em;" aria-live="polite"></div>
+                    <div class="clases-filtros-cuerpo__col clases-filtros-cuerpo__col--der">
+                        <div class="caja-gris-filtros caja-materia-abajo" style="background-color: #ECF0F1; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 0.75rem; border: none;">
+                            <div id="horarios-materia-box" style="width: 100%; height: 100%; background-color: #fff; border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08); overflow: auto; padding: 1rem;"></div>
+                        </div>
+                        <div class="clases-filtros-cuerpo__acciones">
+                            <button type="button" class="submit-button" id="btn-guardar">Guardar</button>
+                        </div>
                     </div>
-                    <div class="caja-gris-filtros caja-materia-abajo" style="margin-top: 0.5rem; width: 559px; height: 391px; background-color: #ECF0F1; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 0.75rem; border: none;">
-                    <div id="horarios-materia-box" style="width: 100%; height: 100%; max-width: 535px; max-height: 367px; background-color: #fff; border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08); overflow: auto; padding: 1rem;"></div>
-                </div>
-                    <div style="margin-top: 0.75rem; text-align: center;">
-                        <button type="button" class="submit-button" id="btn-guardar">Guardar</button>
-                    </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -384,8 +414,10 @@
     function refrescarSoloTablaClases() {
         var form = document.getElementById('form-filtros');
         if (!form) return;
+        var clasif = form.querySelector('#career_classification_id');
         var carrera = form.querySelector('#carrera_id');
         var semestre = form.querySelector('#semestre_id');
+        if (clasif) clasif.classList.toggle('clasificacion-placeholder', clasif.value === '');
         if (carrera) carrera.classList.toggle('carrera-placeholder', carrera.value === '');
         if (semestre) semestre.classList.toggle('semestre-placeholder', semestre.value === '');
         var url = new URL(form.action || window.location.href, window.location.origin);
@@ -397,6 +429,20 @@
             .then(function(html) {
                 var parser = new DOMParser();
                 var doc = parser.parseFromString(html, 'text/html');
+                var docClasif = doc.getElementById('career_classification_id');
+                var currentClasif = document.getElementById('career_classification_id');
+                if (docClasif && currentClasif) {
+                    currentClasif.innerHTML = docClasif.innerHTML;
+                    currentClasif.className = docClasif.className;
+                    currentClasif.classList.toggle('clasificacion-placeholder', currentClasif.value === '');
+                }
+                var docCarreraSel = doc.getElementById('carrera_id');
+                var currentCarreraSel = document.getElementById('carrera_id');
+                if (docCarreraSel && currentCarreraSel) {
+                    currentCarreraSel.innerHTML = docCarreraSel.innerHTML;
+                    currentCarreraSel.className = docCarreraSel.className;
+                    currentCarreraSel.classList.toggle('carrera-placeholder', currentCarreraSel.value === '');
+                }
                 var newTabla = doc.getElementById('clases-tabla-filtros');
                 var currentTabla = document.getElementById('clases-tabla-filtros');
                 if (newTabla && currentTabla) {
@@ -409,7 +455,16 @@
                     currentMateria.innerHTML = docMateria.innerHTML;
                     currentMateria.className = docMateria.className;
                     currentMateria.classList.toggle('placeholder', currentMateria.value === '');
-                    currentMateria.disabled = !form || !form.querySelector('#carrera_id').value || !form.querySelector('#semestre_id').value;
+                    currentMateria.disabled = !form || !form.querySelector('#carrera_id').value;
+                }
+                var docSemestre = doc.getElementById('semestre_id');
+                var currentSemestre = document.getElementById('semestre_id');
+                if (currentSemestre && form) {
+                    if (docSemestre) {
+                        currentSemestre.className = docSemestre.className;
+                    }
+                    currentSemestre.disabled = !currentMateria || !currentMateria.value;
+                    currentSemestre.classList.toggle('semestre-placeholder', currentSemestre.value === '');
                 }
                 var docClase = doc.getElementById('clase_id');
                 var currentClase = document.getElementById('clase_id');
@@ -417,7 +472,8 @@
                     currentClase.innerHTML = docClase.innerHTML;
                     currentClase.className = docClase.className;
                     currentClase.classList.toggle('placeholder', currentClase.value === '');
-                    currentClase.disabled = !currentMateria || !currentMateria.value;
+                    var semVal = currentSemestre && currentSemestre.value;
+                    currentClase.disabled = !currentMateria || !currentMateria.value || !semVal;
                     if (typeof window.actualizarResumenHorario === 'function') window.actualizarResumenHorario();
                 }
                 var newContent = doc.getElementById('clases-dynamic-content');
@@ -433,16 +489,48 @@
             })
             .catch(function() { window.location.href = url.toString(); });
     }
+    document.getElementById('career_classification_id')?.addEventListener('change', function(e){
+        e.preventDefault();
+        var carrera = document.getElementById('carrera_id');
+        if (carrera) carrera.value = '';
+        var materia = document.getElementById('materia_id');
+        if (materia) { materia.value = ''; materia.disabled = true; }
+        var semestre = document.getElementById('semestre_id');
+        if (semestre) { semestre.value = ''; semestre.disabled = true; }
+        var clase = document.getElementById('clase_id');
+        if (clase) { clase.value = ''; clase.disabled = true; }
+        refrescarSoloTablaClases();
+    });
     document.getElementById('carrera_id')?.addEventListener('change', function(e){
         e.preventDefault();
+        var materia = document.getElementById('materia_id');
+        if (materia) materia.value = '';
+        var semestre = document.getElementById('semestre_id');
+        if (semestre) semestre.value = '';
+        var clase = document.getElementById('clase_id');
+        if (clase) clase.value = '';
         refrescarSoloTablaClases();
     });
     document.getElementById('semestre_id')?.addEventListener('change', function(e){
         e.preventDefault();
+        var clase = document.getElementById('clase_id');
+        if (clase) clase.value = '';
         refrescarSoloTablaClases();
     });
     document.getElementById('materia_id')?.addEventListener('change', function(e){
         e.preventDefault();
+        var sel = this;
+        var opt = sel.options[sel.selectedIndex];
+        var semSel = document.getElementById('semestre_id');
+        if (semSel) {
+            if (!sel.value) {
+                semSel.value = '';
+            } else if (opt && opt.dataset && opt.dataset.semestre !== undefined && opt.dataset.semestre !== '') {
+                semSel.value = String(opt.dataset.semestre);
+            }
+        }
+        var clase = document.getElementById('clase_id');
+        if (clase) clase.value = '';
         refrescarSoloTablaClases();
     });
     function actualizarResumenHorario() {
@@ -483,6 +571,15 @@
             .catch(function() { window.location.href = url.toString(); });
     });
     actualizarResumenHorario();
+    (function inicialSemestreDesdeMateria() {
+        var m = document.getElementById('materia_id');
+        var s = document.getElementById('semestre_id');
+        if (!m || !s || !m.value || s.value !== '') return;
+        var opt = m.options[m.selectedIndex];
+        if (!opt || !opt.dataset || opt.dataset.semestre === undefined || opt.dataset.semestre === '') return;
+        s.value = String(opt.dataset.semestre);
+        refrescarSoloTablaClases();
+    })();
     document.getElementById('form-filtros')?.addEventListener('click', function(e) {
         var btnTodo = e.target.closest('#btn-seleccionar-todo-clases');
         if (btnTodo) {
@@ -507,10 +604,22 @@
         e.preventDefault();
         btn.classList.toggle('add-time-slot-btn--selected');
         btn.setAttribute('aria-pressed', btn.classList.contains('add-time-slot-btn--selected') ? 'true' : 'false');
+        /* No sincronizar por data-clase-id: varios alumnos pueden compartir la misma clase y deben marcarse por fila. */
         var baseUrl = new URL(btn.dataset.href, window.location.origin);
         baseUrl.searchParams.delete('clase_id');
+        baseUrl.searchParams.delete('alumno_context_id');
+        baseUrl.searchParams.delete('alumno_context_id[]');
+        var seenIds = {};
         document.querySelectorAll('#form-filtros button.add-time-slot-btn.add-time-slot-btn--selected[data-href]').forEach(function(b) {
-            baseUrl.searchParams.append('clase_id[]', b.getAttribute('data-clase-id'));
+            var id = b.getAttribute('data-clase-id');
+            if (id && !seenIds[id]) {
+                seenIds[id] = true;
+                baseUrl.searchParams.append('clase_id[]', id);
+            }
+            var aid = b.getAttribute('data-alumno-id');
+            if (aid) {
+                baseUrl.searchParams.append('alumno_context_id[]', aid);
+            }
         });
         var href = baseUrl.toString();
         history.pushState({}, '', href);
@@ -542,15 +651,21 @@
         var formFiltros = document.getElementById('form-filtros');
         if (!formFiltros) return;
         var baseUrl = new URL(formFiltros.action || window.location.href, window.location.origin);
+        var clasif = formFiltros.querySelector('#career_classification_id');
         var carrera = formFiltros.querySelector('#carrera_id');
         var semestre = formFiltros.querySelector('#semestre_id');
         var materia = formFiltros.querySelector('#materia_id');
+        if (clasif && clasif.value) baseUrl.searchParams.set('career_classification_id', clasif.value);
         if (carrera && carrera.value) baseUrl.searchParams.set('carrera_id', carrera.value);
         if (semestre && semestre.value) baseUrl.searchParams.set('semestre', semestre.value);
         if (materia && materia.value) baseUrl.searchParams.set('materia_id', materia.value);
         baseUrl.searchParams.delete('clase_id');
+        var seenClase = {};
         clasesAgregadas.forEach(function(x) {
-            baseUrl.searchParams.append('clase_id[]', String(x.id));
+            var cid = String(x.id);
+            if (seenClase[cid]) return;
+            seenClase[cid] = true;
+            baseUrl.searchParams.append('clase_id[]', cid);
         });
         var href = baseUrl.toString();
         history.pushState({}, '', href);
@@ -581,7 +696,7 @@
             box.innerHTML =
                 '<ul class="mb-0" style="padding-left: 1.25rem; list-style-type: disc;">' +
                 clasesAgregadas.map(function(f) {
-                    return '<li class="mb-2" data-clase-id="' + String(f.id) + '" style="cursor: pointer;">' +
+                    return '<li class="mb-2" data-clase-id="' + String(f.id) + '" data-alumno-id="' + String(f.alumnoId || '') + '" style="cursor: pointer;">' +
                         escapeHtml(f.carrera) + ' — ' + escapeHtml(f.nombre) + ' — ' + escapeHtml(f.matricula) +
                         '</li>';
                 }).join('') +
@@ -592,27 +707,78 @@
         var form = document.getElementById('form-agregar-clase');
         if (form) form.requestSubmit();
     }
+    function readCajitaItemFromButton(b) {
+        var hid = parseInt(b.getAttribute('data-clase-id') || '0', 10);
+        var aid = parseInt(b.getAttribute('data-alumno-id') || '0', 10);
+        if (!hid || !aid) return null;
+        return {
+            horario_clase_id: hid,
+            alumno_id: aid,
+            carrera_nombre: b.getAttribute('data-carrera') || '',
+            semestre: b.getAttribute('data-semestre') || '',
+            matricula: b.getAttribute('data-matricula') || '',
+            materia_nombre: b.getAttribute('data-materia') || '',
+            horario_resumen: b.getAttribute('data-horario') || '',
+            alumno_nombre: b.getAttribute('data-alumno-nombre') || b.getAttribute('data-nombre') || ''
+        };
+    }
+    function readCajitaItemFromCaja(x) {
+        if (!x || !x.id || !x.alumnoId) return null;
+        return {
+            horario_clase_id: x.id,
+            alumno_id: x.alumnoId,
+            carrera_nombre: x.carrera || '',
+            semestre: x.semestre || '',
+            matricula: x.matricula || '',
+            materia_nombre: x.materia || '',
+            horario_resumen: x.horario || '',
+            alumno_nombre: x.nombre || ''
+        };
+    }
     document.getElementById('btn-guardar')?.addEventListener('click', function(e) {
         e.preventDefault();
         var form = document.getElementById('form-guardar-cajita');
         if (!form) return;
-        // limpiar inputs previos
+        Array.from(form.querySelectorAll('input[name^="cajita_items"]')).forEach(function(i) { i.remove(); });
         Array.from(form.querySelectorAll('input[name="clase_ids[]"]')).forEach(function(i) { i.remove(); });
-        Array.from(form.querySelectorAll('input[name="carrera_id"], input[name="semestre"], input[name="materia_id"]')).forEach(function(i) { i.remove(); });
-        // enviar ids de la cajita (aunque esté vacía para limpiar sesión)
-        clasesAgregadas.forEach(function(x) {
-            var inp = document.createElement('input');
-            inp.type = 'hidden';
-            inp.name = 'clase_ids[]';
-            inp.value = String(x.id);
-            form.appendChild(inp);
+        Array.from(form.querySelectorAll('input[name="career_classification_id"], input[name="carrera_id"], input[name="semestre"], input[name="materia_id"]')).forEach(function(i) { i.remove(); });
+        var merged = {};
+        function addCajitaItem(it) {
+            if (!it || !it.horario_clase_id || !it.alumno_id) return;
+            var k = it.horario_clase_id + '-' + it.alumno_id;
+            if (!merged[k]) merged[k] = it;
+        }
+        clasesAgregadas.forEach(function(x) { addCajitaItem(readCajitaItemFromCaja(x)); });
+        document.querySelectorAll('#form-filtros button.add-time-slot-btn.add-time-slot-btn--selected[data-clase-id]').forEach(function(b) {
+            addCajitaItem(readCajitaItemFromButton(b));
+        });
+        var list = Object.values(merged);
+        if (list.length === 0) {
+            alert('No hay selección para guardar. Marque al menos una fila (o agréguela con «+ Agregar clase») y vuelva a intentar.');
+            return;
+        }
+        var idx = 0;
+        var fields = ['horario_clase_id', 'alumno_id', 'carrera_nombre', 'semestre', 'matricula', 'materia_nombre', 'horario_resumen', 'alumno_nombre'];
+        list.forEach(function(it) {
+            fields.forEach(function(f) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'cajita_items[' + idx + '][' + f + ']';
+                inp.value = it[f] != null ? String(it[f]) : '';
+                form.appendChild(inp);
+            });
+            idx++;
         });
         // enviar filtros para volver al mismo estado (sin mostrar clase seleccionada)
         var formFiltros = document.getElementById('form-filtros');
         if (formFiltros) {
+            var clasif = formFiltros.querySelector('#career_classification_id');
             var carrera = formFiltros.querySelector('#carrera_id');
             var semestre = formFiltros.querySelector('#semestre_id');
             var materia = formFiltros.querySelector('#materia_id');
+            if (clasif && clasif.value) {
+                var i0 = document.createElement('input'); i0.type = 'hidden'; i0.name = 'career_classification_id'; i0.value = clasif.value; form.appendChild(i0);
+            }
             if (carrera && carrera.value) {
                 var i1 = document.createElement('input'); i1.type = 'hidden'; i1.name = 'carrera_id'; i1.value = carrera.value; form.appendChild(i1);
             }
@@ -636,14 +802,19 @@
         // 1) Agregar a la caja y ocultar de la tabla
         selectedBtns.forEach(function(b) {
             var id = parseInt(b.getAttribute('data-clase-id') || '0', 10);
+            var alumnoId = parseInt(b.getAttribute('data-alumno-id') || '0', 10);
             if (!id) return;
-            var yaExiste = clasesAgregadas.some(function(x) { return x.id === id; });
+            var yaExiste = clasesAgregadas.some(function(x) { return x.id === id && x.alumnoId === alumnoId; });
             if (!yaExiste) {
                 clasesAgregadas.push({
                     id: id,
+                    alumnoId: alumnoId,
                     carrera: (b.getAttribute('data-carrera') || '').trim(),
                     nombre: (b.getAttribute('data-nombre') || '—').trim() || '—',
-                    matricula: (b.getAttribute('data-matricula') || 'Pendiente').trim() || 'Pendiente'
+                    matricula: (b.getAttribute('data-matricula') || 'Pendiente').trim() || 'Pendiente',
+                    semestre: (b.getAttribute('data-semestre') || '').trim(),
+                    materia: (b.getAttribute('data-materia') || '').trim(),
+                    horario: (b.getAttribute('data-horario') || '').trim()
                 });
             }
             var tr = b.closest('tr');
@@ -651,27 +822,41 @@
         });
         actualizarHorariosMateriaBox();
 
-        // 2) Cargar panel derecho con la primera clase agregada
+        // 2) Cargar panel dinámico con la primera clase agregada
         refrescarPanelDerechoDesdeAgregadas();
+
+        // 3) Modal global careerSuccessModal (mismo que Carreras/Materías)
+        var successModal = document.getElementById('careerSuccessModal');
+        var successModalMessage = document.getElementById('careerSuccessModalMessage');
+        if (successModal && successModalMessage) {
+            var cnt = selectedBtns.length;
+            successModalMessage.textContent = cnt === 1
+                ? 'Se agregó la clase seleccionada a la caja de horarios.'
+                : 'Se agregaron las clases seleccionadas a la caja de horarios.';
+            successModal.style.display = 'flex';
+        }
     });
 
     document.getElementById('horarios-materia-box')?.addEventListener('click', function(e) {
         var li = e.target.closest('li[data-clase-id]');
         if (!li) return;
         var id = parseInt(li.getAttribute('data-clase-id') || '0', 10);
+        var alumnoId = parseInt(li.getAttribute('data-alumno-id') || '0', 10);
         if (!id) return;
 
-        // Quitar de la caja
-        clasesAgregadas = clasesAgregadas.filter(function(x) { return x.id !== id; });
+        // Quitar de la caja solo la fila de ese alumno (misma clase puede tener varios alumnos)
+        clasesAgregadas = clasesAgregadas.filter(function(x) {
+            return !(x.id === id && x.alumnoId === alumnoId);
+        });
 
-        // Re-mostrar en tabla y desmarcar
-        var btn = document.querySelector('#form-filtros button.add-time-slot-btn[data-clase-id=\"' + String(id) + '\"]');
-        if (btn) {
+        document.querySelectorAll('#form-filtros button.add-time-slot-btn[data-clase-id="' + String(id) + '"]').forEach(function(btn) {
+            var aid = parseInt(btn.getAttribute('data-alumno-id') || '0', 10);
+            if (aid !== alumnoId) return;
             btn.classList.remove('add-time-slot-btn--selected');
             btn.setAttribute('aria-pressed', 'false');
             var tr = btn.closest('tr');
             if (tr) tr.style.display = '';
-        }
+        });
 
         actualizarHorariosMateriaBox();
         refrescarPanelDerechoDesdeAgregadas();
@@ -680,22 +865,47 @@
     (function() {
         var idsServidor = @json(session('clases_agregadas_cajita', []));
         if (!Array.isArray(idsServidor) || !idsServidor.length) return;
-        idsServidor.forEach(function(idRaw) {
-            var id = parseInt(idRaw, 10);
+        idsServidor.forEach(function(entry) {
+            var id = typeof entry === 'object' && entry !== null && entry.id != null
+                ? parseInt(entry.id, 10)
+                : parseInt(entry, 10);
+            var alumnoId = typeof entry === 'object' && entry !== null && entry.alumno_id != null
+                ? parseInt(entry.alumno_id, 10)
+                : 0;
             if (!id) return;
-            var btn = document.querySelector('#form-filtros button.add-time-slot-btn[data-clase-id="' + String(id) + '"]');
+            var btnSelector = '#form-filtros button.add-time-slot-btn[data-clase-id="' + String(id) + '"]';
+            if (alumnoId) {
+                btnSelector += '[data-alumno-id="' + String(alumnoId) + '"]';
+            }
+            var btn = document.querySelector(btnSelector);
+            if (!btn) btn = document.querySelector('#form-filtros button.add-time-slot-btn[data-clase-id="' + String(id) + '"]');
             if (!btn) return;
-            var yaExiste = clasesAgregadas.some(function(x) { return x.id === id; });
+            var aidFinal = alumnoId || parseInt(btn.getAttribute('data-alumno-id') || '0', 10);
+            var yaExiste = clasesAgregadas.some(function(x) { return x.id === id && x.alumnoId === aidFinal; });
             if (!yaExiste) {
                 clasesAgregadas.push({
                     id: id,
+                    alumnoId: aidFinal,
                     carrera: (btn.getAttribute('data-carrera') || '').trim(),
                     nombre: (btn.getAttribute('data-nombre') || '—').trim() || '—',
-                    matricula: (btn.getAttribute('data-matricula') || 'Pendiente').trim() || 'Pendiente'
+                    matricula: (btn.getAttribute('data-matricula') || 'Pendiente').trim() || 'Pendiente',
+                    semestre: (btn.getAttribute('data-semestre') || '').trim(),
+                    materia: (btn.getAttribute('data-materia') || '').trim(),
+                    horario: (btn.getAttribute('data-horario') || '').trim()
                 });
             }
-            var tr = btn.closest('tr');
-            if (tr) tr.style.display = 'none';
+            if (alumnoId) {
+                var bOne = document.querySelector('#form-filtros button.add-time-slot-btn[data-clase-id="' + String(id) + '"][data-alumno-id="' + String(alumnoId) + '"]');
+                if (bOne) {
+                    var tr = bOne.closest('tr');
+                    if (tr) tr.style.display = 'none';
+                }
+            } else {
+                document.querySelectorAll('#form-filtros button.add-time-slot-btn[data-clase-id="' + String(id) + '"]').forEach(function(b) {
+                    var tr = b.closest('tr');
+                    if (tr) tr.style.display = 'none';
+                });
+            }
         });
     })();
     actualizarHorariosMateriaBox();
@@ -745,23 +955,6 @@
                 </form>
             @endif
 
-    <div class="panel-derecho">
-            @if($clase)
-                @if($clase->alumnos->isEmpty())
-
-                @else
-                    <ul class="list-unstyled mb-0" style="max-height: 280px; overflow-y: auto;">
-                        @foreach($clase->alumnos as $a)
-                            <li class="py-1">{{ $a->nombre }} {{ $a->apellido_paterno }} — {{ $a->academicProfile->matricula ?? '—' }}</li>
-                        @endforeach
-                    </ul>
-                    <div class="mt-3">
-                        <a href="{{ route('control.classes.show', $clase->id) }}" class="btn btn-sm btn-outline-primary" style="border-radius: 25px;">Ver clase</a>
-                        <a href="{{ route('control.classes.edit', $clase->id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 25px;">Editar alumnos</a>
-                    </div>
-                @endif
-            @endif
-    </div>
     </div>
 </div>
 

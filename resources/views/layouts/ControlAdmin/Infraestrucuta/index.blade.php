@@ -2,135 +2,259 @@
 
 @section('title', 'Control Administrativo - ' . session('active_institution_name'))
 
-@vite(['resources/css/courses.css', 'resources/js/app.js'])
-
 @section('content')
 <div class ="container">
     <!-- Header -->
     <div class ="content-header">
         <div class="content-title">
-            <h1>Aulas</h1>
+            <h3>Aulas</h3>
         </div>
         <div class="header-option">
             @if(Auth::user()->hasAnyRole(['master']))
-                <button type="button" id="openModalBtn" class="mi-boton">Agregar Aula</button>
+                <button type="button" id="aulasOpenFacilityModalBtn" class="mi-boton">+Agregar Aula</button>
             @endif
         </div>
+    </div>
 
-        <div id="createFacilityModal" class="modal-overlay">
-            <div class="modal-content-container">
-                <div class="modal-header-custom">
-                    <h5 id="createFacilityModalLabel">Agregar Nueva Aula</h5>
-                    <button type="button" id="closeModalBtn" class="close-custom">&times;</button>
-                </div>
-                <div class="modal-body-custom" id="modalBodyContent">
-                    <div class="text-center">Cargando...</div>
-                </div>
+    {{-- Modal fuera del .content-header (flex) para que fixed/overlay no interfiera con clics al cerrar --}}
+    @if(Auth::user()->hasAnyRole(['master']))
+    <div id="createFacilityModal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content-container" role="dialog" aria-labelledby="createFacilityModalLabel">
+            <div class="modal-header-custom">
+                <h5 id="createFacilityModalLabel">Agregar Nueva Aula</h5>
+                <button type="button" id="aulasCloseFacilityModalBtn" class="close-custom" aria-label="Cerrar">&times;</button>
             </div>
+            <div class="modal-body-custom" id="modalBodyContent"></div>
         </div>
     </div>
+    <template id="aulasCreateFormTemplate">
+        @include('layouts.ControlAdmin.Infraestrucuta.components.create', ['carreras' => $carreras ?? collect()])
+    </template>
+    @endif
+    @if(session('success'))
+        <div class="alert alert-success" style="margin-bottom: 1rem; padding: 10px 16px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724;">{{ session('success') }}</div>
+    @endif
     <!-- Aulas -->
-    @forelse ($data as $item)
-        <div class="aula-container">
-            <div class="aula-info">
-                <div class="aula-name">
-                    <h3>{{$item->numero_aula}}</h3>
-                </div>
-                <div class="aula-data">
-                    <p>Capacidad: {{$item->capacidad}}</p>
-                </div>
-                <div class="aula-buttons">
-                    <form action="{{ route('Facilities.destroy', $item->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta aula?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn-delete">
-                            <img src="{{asset('images/icons/Vector.svg')}}" alt="" style="width:38;height:25px" loading="lazy">
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <div class="aula-picture">
-
-            </div>
+    @if($data->isEmpty())
+        <div class="aulas-empty-state" role="status">
+            <p>No hay aulas</p>
         </div>
-    @empty
-        
-    @endforelse
+    @else
+        <div class="Table-view Table-view--aulas" style="margin-top: 1rem;">
+            <table class="tabla-base tabla-rayas tabla-bordes tabla-aulas" style="width: 100%;">
+                <thead class="encabezado-tabla">
+                    <tr>
+                        <th>Nombre del aula</th>
+                        <th>Carrera</th>
+                        <th>Materia</th>
+                        @if(Auth::user()->hasAnyRole(['master']))
+                            <th class="aulas-tabla-acciones">Acciones</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody class="cuerpo-tabla">
+                    @foreach ($data as $item)
+                        <tr>
+                            <td>{{ $item->nombre_aula ?? '—' }}</td>
+                            <td>{{ $item->career->name ?? '—' }}</td>
+                            <td>{{ $item->tipo_materia ? $item->tipo_materia : '—' }}</td>
+                            @if(Auth::user()->hasAnyRole(['master']))
+                                <td class="aulas-tabla-acciones">
+                                    <div class="aulas-acciones">
+                                        <button type="button" class="aulas-accion-icon aulas-open-edit-modal" title="Editar" aria-label="Editar aula" data-aulas-edit-template="aulas-edit-form-template-{{ $item->id }}">
+                                            <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="" width="22" height="22" loading="lazy">
+                                        </button>
+                                        <form action="{{ route('control.facilities.destroy', $item) }}" method="POST" class="js-aula-delete-form" style="display: inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn-delete" title="Eliminar" aria-label="Eliminar aula" style="vertical-align: middle;">
+                                                <img src="{{ asset('images/icons/Vector.svg') }}" alt="" width="20" height="16" loading="lazy">
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @if(Auth::user()->hasAnyRole(['master']))
+            @foreach ($data as $item)
+                <template id="aulas-edit-form-template-{{ $item->id }}">
+                    @include('layouts.ControlAdmin.Infraestrucuta.components.edit_form', ['facility' => $item, 'carreras' => $carreras ?? collect()])
+                </template>
+            @endforeach
+        @endif
+    @endif
 </div>
 @push('scripts')
+@include('layouts.ControlAdmin.Infraestrucuta.components._aulas_materias_select_script')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+(function () {
+    /* Navegación SPA: el HTML de Aulas se inyecta en #main-content y este script se ejecuta entonces;
+       DOMContentLoaded ya ocurrió, por eso inicializamos de inmediato si el modal existe. */
+    function initAulasFacilitiesPage() {
         const modal = document.getElementById('createFacilityModal');
-        const openBtn = document.getElementById('openModalBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
+        const openBtn = document.getElementById('aulasOpenFacilityModalBtn');
+        const closeModalBtn = document.getElementById('aulasCloseFacilityModalBtn');
         const modalBodyContent = document.getElementById('modalBodyContent');
+        const modalPanel = modal ? modal.querySelector('.modal-content-container') : null;
+        const modalTitleEl = document.getElementById('createFacilityModalLabel');
+        if (!modal || !modalBodyContent) {
+            return;
+        }
 
-        // Función para cargar y mostrar el modal
-        const showModal = () => {
-            // 1. Mostrar el modal (haciendo visible el overlay CSS)
-            if (modal) {
-                modal.classList.add('is-visible');
-            }
+        const MODAL_TITLE_CREATE = 'Agregar Nueva Aula';
+        const MODAL_TITLE_EDIT = 'Editar aula';
 
-            // Opcional: Mostrar mensaje de carga
-            if (modalBodyContent) {
-                modalBodyContent.innerHTML = '<div class="text-center">Cargando...</div>';
-            }
-
-            // 2. Petición AJAX usando Axios (que ya tienes instalado)
-            axios.get("{{ route('Facilities.create.form') }}")
-                .then(response => {
-                    // 3. Inyecta el HTML del formulario
-                    if (modalBodyContent) {
-                        modalBodyContent.innerHTML = response.data;
-                    }
-                })
-                .catch(error => {
-                    console.error("Error al cargar el formulario:", error);
-                    if (modalBodyContent) {
-                        modalBodyContent.innerHTML = '<p style="color:red;">Error al cargar el formulario. Inténtalo de nuevo.</p>';
-                    }
-                });
-        };
-
-        // Función para ocultar el modal
         const hideModal = () => {
             if (modal) {
                 modal.classList.remove('is-visible');
+                modal.setAttribute('aria-hidden', 'true');
             }
-            // Limpiar contenido al cerrar (opcional)
             if (modalBodyContent) {
                 modalBodyContent.innerHTML = '';
             }
+            if (modalTitleEl) {
+                modalTitleEl.textContent = MODAL_TITLE_CREATE;
+            }
         };
 
-        // --- Manejo de Eventos ---
+        window.aulasHideFacilityModal = hideModal;
+        window.hideModal = hideModal;
 
-        // Abrir Modal
+        const injectCreateFormFromTemplate = () => {
+            if (!modalBodyContent) {
+                return false;
+            }
+            const tpl = document.getElementById('aulasCreateFormTemplate');
+            if (!tpl || !tpl.content) {
+                return false;
+            }
+            modalBodyContent.innerHTML = '';
+            modalBodyContent.appendChild(tpl.content.cloneNode(true));
+            return true;
+        };
+
+        const injectBodyFromTemplateId = (templateId) => {
+            if (!modalBodyContent || !templateId) {
+                return false;
+            }
+            const tpl = document.getElementById(templateId);
+            if (!tpl || !tpl.content) {
+                return false;
+            }
+            modalBodyContent.innerHTML = '';
+            modalBodyContent.appendChild(tpl.content.cloneNode(true));
+            return true;
+        };
+
+        const showModal = () => {
+            if (!modal || !modalBodyContent) {
+                return;
+            }
+            if (modalTitleEl) {
+                modalTitleEl.textContent = MODAL_TITLE_CREATE;
+            }
+            if (!injectCreateFormFromTemplate()) {
+                modalBodyContent.innerHTML = '<p style="color:red;">No se pudo cargar el formulario.</p>';
+            } else if (typeof window.umiAulasFillMateriaSelect === 'function') {
+                const carSel = modalBodyContent.querySelector('#createFacilityForm #career_id');
+                const matSel = modalBodyContent.querySelector('#createFacilityForm #tipo_materia');
+                if (carSel && matSel) {
+                    window.umiAulasFillMateriaSelect(carSel.value || '', matSel, null);
+                }
+            }
+            modal.classList.add('is-visible');
+            modal.setAttribute('aria-hidden', 'false');
+        };
+
+        const showEditModal = (templateId) => {
+            if (!modal || !modalBodyContent || !templateId) {
+                return;
+            }
+            if (modalTitleEl) {
+                modalTitleEl.textContent = MODAL_TITLE_EDIT;
+            }
+            if (!injectBodyFromTemplateId(templateId)) {
+                modalBodyContent.innerHTML = '<p style="color:red;">No se pudo abrir el formulario de edición.</p>';
+            } else if (typeof window.umiAulasFillMateriaSelect === 'function') {
+                const ef = modalBodyContent.querySelector('#editFacilityForm');
+                if (ef) {
+                    const cs = ef.querySelector('#edit_career_id');
+                    const ms = ef.querySelector('#edit_tipo_materia');
+                    if (cs && ms) {
+                        window.umiAulasFillMateriaSelect(cs.value || '', ms, ms.getAttribute('data-preselected') || '');
+                    }
+                }
+            }
+            modal.classList.add('is-visible');
+            modal.setAttribute('aria-hidden', 'false');
+        };
+
+        document.querySelectorAll('.aulas-open-edit-modal').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const tid = btn.getAttribute('data-aulas-edit-template');
+                showEditModal(tid);
+            });
+        });
+
         if (openBtn) {
-            openBtn.addEventListener('click', function(event) {
-                event.preventDefault(); 
+            openBtn.addEventListener('click', function (event) {
+                event.preventDefault();
                 showModal();
             });
         }
-        
-        // Cerrar Modal con el botón (X)
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', hideModal);
-        }
 
-        // Cerrar Modal haciendo clic fuera del contenido (en el overlay)
-        if (modal) {
-            modal.addEventListener('click', function(event) {
-                // Si el clic fue directamente en el overlay (el modal en sí)
-                if (event.target === modal) { 
-                    hideModal();
-                }
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                hideModal();
             });
         }
-    });
-    // Se ejecuta DESPUÉS de que el formulario se inyecta en el modal
-    document.addEventListener('submit', function(event) {
+
+        if (modalPanel) {
+            modalPanel.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAulasFacilitiesPage);
+    } else {
+        initAulasFacilitiesPage();
+    }
+})();
+
+(function () {
+    if (window.__umiAulasFacilitiesSubmitBound) {
+        return;
+    }
+    window.__umiAulasFacilitiesSubmitBound = true;
+
+    function aulasShowCareerSuccessModalThenReload(message) {
+        var successModal = document.getElementById('careerSuccessModal');
+        var successModalMessage = document.getElementById('careerSuccessModalMessage');
+        if (successModal && successModalMessage) {
+            successModalMessage.textContent = message || 'Operación completada.';
+            window.afterCareerSuccessModalOk = function () {
+                window.location.reload();
+            };
+            successModal.style.display = 'flex';
+        } else {
+            window.location.reload();
+        }
+    }
+
+    document.addEventListener('submit', function (event) {
         
         // 1. Verificamos si el formulario que se está enviando es el nuestro
         if (event.target && event.target.id === 'createFacilityForm') {
@@ -138,36 +262,77 @@
             event.preventDefault(); // ¡Detenemos el envío normal que recarga la página!
             
             const form = event.target;
-            const formData = new FormData(form); // Recolecta todos los datos del formulario
+            const formData = new FormData(form);
             const messagesDiv = document.getElementById('formMessages');
-            
-            // Muestra un mensaje de carga
-            messagesDiv.innerHTML = '<p style="color: blue;">Guardando...</p>';
 
-            // 2. Envío de datos a Laravel usando Axios
-            axios.post('/aulas', formData) // Asegúrate de que esta URL sea la correcta para tu Store/Guardar
-                .then(response => {
-                    // Éxito: El servidor devolvió 200/201
-                    messagesDiv.innerHTML = '<p style="color: green;">¡Aula guardada con éxito!</p>';
-                    
-                    // Limpia y cierra el modal después de un breve retraso
-                    setTimeout(() => {
-                        hideModal(); 
-                        // Opcional: Recarga tu tabla de aulas o solo la sección de la lista
-                        // window.location.reload(); 
-                    }, 1500);
+            if (messagesDiv) {
+                messagesDiv.innerHTML = '';
+            }
+
+            axios.post("{{ route('control.facilities.store') }}", formData, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(function (response) {
+                    if (typeof window.aulasHideFacilityModal === 'function') {
+                        window.aulasHideFacilityModal();
+                    }
+                    var msg = (response.data && response.data.message) ? response.data.message : 'Aula creada exitosamente.';
+                    aulasShowCareerSuccessModalThenReload(msg);
                 })
-                .catch(error => {
-                    // Fracaso: El servidor devolvió 422 (errores de validación) o 500
-                    messagesDiv.innerHTML = '<p style="color: red;">Error al guardar. Verifica los campos.</p>';
+                .catch(function (error) {
+                    if (messagesDiv) {
+                        messagesDiv.innerHTML = '<p style="color: red;">Error al guardar. Verifica los campos.</p>';
+                    }
                     console.error(error.response);
-                    
-                    if (error.response && error.response.status === 422) {
-                        // Muestra errores de validación
+
+                    if (messagesDiv && error.response && error.response.status === 422 && error.response.data && error.response.data.errors) {
                         let errorsHtml = '<ul>';
-                        Object.values(error.response.data.errors).forEach(messages => {
-                            messages.forEach(message => {
-                                errorsHtml += `<li style="color: red;">${message}</li>`;
+                        Object.values(error.response.data.errors).forEach(function (messages) {
+                            messages.forEach(function (message) {
+                                errorsHtml += '<li style="color: red;">' + message + '</li>';
+                            });
+                        });
+                        errorsHtml += '</ul>';
+                        messagesDiv.innerHTML = errorsHtml;
+                    }
+                });
+        }
+
+        else if (event.target && event.target.id === 'editFacilityForm') {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const messagesDiv = document.getElementById('formMessages');
+
+            if (messagesDiv) {
+                messagesDiv.innerHTML = '';
+            }
+
+            axios.post(form.action, formData, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+                .then(function (response) {
+                    if (typeof window.aulasHideFacilityModal === 'function') {
+                        window.aulasHideFacilityModal();
+                    }
+                    var msg = (response.data && response.data.message) ? response.data.message : 'Aula actualizada correctamente.';
+                    aulasShowCareerSuccessModalThenReload(msg);
+                })
+                .catch(function (error) {
+                    if (messagesDiv) {
+                        messagesDiv.innerHTML = '<p style="color: red;">Error al guardar. Verifica los campos.</p>';
+                    }
+                    console.error(error.response);
+
+                    if (messagesDiv && error.response && error.response.status === 422 && error.response.data && error.response.data.errors) {
+                        let errorsHtml = '<ul>';
+                        Object.values(error.response.data.errors).forEach(function (messages) {
+                            messages.forEach(function (message) {
+                                errorsHtml += '<li style="color: red;">' + message + '</li>';
                             });
                         });
                         errorsHtml += '</ul>';
@@ -176,6 +341,7 @@
                 });
         }
     });
+})();
 </script>
 @endpush
 @endsection

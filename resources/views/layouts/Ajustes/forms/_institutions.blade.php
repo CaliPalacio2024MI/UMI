@@ -1,31 +1,51 @@
-<div class="form-group">
-    <label for="name">Nombre de Unidad</label>
+@php
+    $currentValue = old('name', isset($item) ? $item->name : '');
+    $defaultUnidadTipo = '';
 
-    @php
-        $currentValue = old('name', isset($item) ? $item->name : '');
-        $defaultUnidadTipo = '';
+    if ($currentValue === 'Pierre Mundo Imperial') {
+        $defaultUnidadTipo = 'pierre';
+    } elseif ($currentValue === 'Palacio Mundo Imperial') {
+        $defaultUnidadTipo = 'palacio';
+    } elseif ($currentValue === 'Princess Mundo Imperial') {
+        $defaultUnidadTipo = 'princes';
+    } elseif ($currentValue === 'Universidad Mundo Imperial') {
+        $defaultUnidadTipo = 'universidad';
+    }
+@endphp
 
-        if ($currentValue === 'Pierre Mundo Imperial') {
-            $defaultUnidadTipo = 'pierre';
-        } elseif ($currentValue === 'Palacio Mundo Imperial') {
-            $defaultUnidadTipo = 'palacio';
-        } elseif ($currentValue === 'Princess Mundo Imperial') {
-            $defaultUnidadTipo = 'princes';
-        } elseif ($currentValue === 'Universidad Mundo Imperial') {
-            $defaultUnidadTipo = 'universidad';
-        }
-    @endphp
-
-    <div class="form-group" style="margin-top: 6px; margin-bottom: 10px;">
-        <select id="unidadTipo" name="unidad_tipo" style="width: 100%;">
-            <option value="" {{ $defaultUnidadTipo === '' ? 'selected' : '' }}>Selecione un Dato</option>
-            <option value="pierre" {{ $defaultUnidadTipo === 'pierre' ? 'selected' : '' }}>Pierre</option>
-            <option value="palacio" {{ $defaultUnidadTipo === 'palacio' ? 'selected' : '' }}>Palacio</option>
-            <option value="princes" {{ $defaultUnidadTipo === 'princes' ? 'selected' : '' }}>Princess</option>
-            <option value="universidad" {{ $defaultUnidadTipo === 'universidad' ? 'selected' : '' }}>Universidad</option>
-        </select>
+<div class="form-group tipo-unidad-flags-group">
+    <p class="tipo-unidad-question" id="tipoUnidadQuestion">Tipo de Unidad</p>
+    <input type="hidden" name="is_administrativo" value="0">
+    <input type="hidden" name="is_universidad" value="0">
+    <div class="tipo-unidad-checkboxes-row" role="group" aria-labelledby="tipoUnidadQuestion">
+        <div class="checkbox-inline">
+            <input type="checkbox" id="flag_administrativo" name="is_administrativo" value="1" @checked(old('is_administrativo', isset($item) && $item->is_administrativo ? '1' : '0') === '1')>
+            <label for="flag_administrativo">Administrativo</label>
+        </div>
+        <span class="tipo-unidad-separator" aria-hidden="true">/</span>
+        <div class="checkbox-inline">
+            <input type="checkbox" id="flag_universidad" name="is_universidad" value="1" @checked(old('is_universidad', isset($item) && $item->is_universidad ? '1' : '0') === '1')>
+            <label for="flag_universidad">Universidad</label>
+        </div>
     </div>
+</div>
 
+@php
+    $isAdminChecked = old('is_administrativo', isset($item) && $item->is_administrativo ? '1' : '0') === '1';
+    $isUniChecked = old('is_universidad', isset($item) && $item->is_universidad ? '1' : '0') === '1';
+    $showUnidadTipoSelect = $isAdminChecked && ! $isUniChecked;
+@endphp
+
+<div class="form-group" id="unidadTipoGroup" style="{{ $showUnidadTipoSelect ? '' : 'display: none;' }}">
+    <select id="unidadTipo" name="unidad_tipo" style="width: 100%;" aria-label="Tipo de Unidad" {{ $showUnidadTipoSelect ? '' : 'disabled' }}>
+        <option value="" {{ $defaultUnidadTipo === '' ? 'selected' : '' }}>Selecione un Dato</option>
+        <option value="pierre" {{ $defaultUnidadTipo === 'pierre' ? 'selected' : '' }}>Pierre</option>
+        <option value="palacio" {{ $defaultUnidadTipo === 'palacio' ? 'selected' : '' }}>Palacio</option>
+        <option value="princes" {{ $defaultUnidadTipo === 'princes' ? 'selected' : '' }}>Princess</option>
+    </select>
+</div>
+
+<div class="form-group">
     {{-- Campo para Pierre/Palacio/Princess (se llena desde la API) --}}
     <select id="nameSelect" name="name" disabled>
         <option value="">-- Seleccione Unidad de Negocio --</option>
@@ -39,7 +59,6 @@
         Escriba su unidad de negocio
     </div>
     <div id="nameInputContainer" style="display:none;"></div>
-         
 </div>
 <div class="form-group">
     <label for="logo_path">Logo</label>
@@ -58,14 +77,39 @@
     (function () {
         const select = document.getElementById('nameSelect');
         const unidadTipoSelect = document.getElementById('unidadTipo');
+        const unidadTipoGroup = document.getElementById('unidadTipoGroup');
+        const flagAdministrativo = document.getElementById('flag_administrativo');
+        const flagUniversidad = document.getElementById('flag_universidad');
         const inputContainer = document.getElementById('nameInputContainer');
         const nameInputLabel = document.getElementById('nameInputLabel');
-        if (!select || !unidadTipoSelect || !inputContainer || !nameInputLabel) return;
+        if (!select || !unidadTipoSelect || !unidadTipoGroup || !flagAdministrativo || !flagUniversidad || !inputContainer || !nameInputLabel) return;
+
+        if (flagAdministrativo.checked && flagUniversidad.checked) {
+            flagUniversidad.checked = false;
+        }
 
         // Valor inicial que viene del backend (old('name') o $item->name)
         const currentValue = (@json($currentValue) || '').trim();
         let cachedPropiedades = null; // Cacheamos para no consumir la API más de una vez
         let input = null;
+
+        function isUniversidadFlagOn() {
+            return flagUniversidad.checked;
+        }
+
+        function isAdministrativoFlagOn() {
+            return flagAdministrativo.checked;
+        }
+
+        /** Muestra el select Pierre/Palacio/Princess solo con Administrativo y sin modo Universidad. */
+        function syncUnidadTipoGroup() {
+            const show = isAdministrativoFlagOn() && !isUniversidadFlagOn();
+            unidadTipoGroup.style.display = show ? '' : 'none';
+            unidadTipoSelect.disabled = !show;
+            if (!show) {
+                unidadTipoSelect.value = '';
+            }
+        }
 
         function ensureInputElement() {
             if (input) return input;
@@ -204,13 +248,34 @@
             populateSelectFromPropiedades(cachedPropiedades, unidadTipo);
         }
         function getSelectedUnidadTipo() {
-            return unidadTipoSelect.value; // si es "" (placeholder), regresamos "" y no mostramos label de Uni
+            return unidadTipoSelect.disabled ? '' : unidadTipoSelect.value;
+        }
+
+        /** Modo efectivo: checkbox Universidad usa flujo escribible sin el desplegable administrativo. */
+        function getEffectiveUnidadTipo() {
+            if (isUniversidadFlagOn()) {
+                return 'universidad';
+            }
+            return getSelectedUnidadTipo();
+        }
+
+        async function applyTipoFromFlags() {
+            syncUnidadTipoGroup();
+            const effective = getEffectiveUnidadTipo();
+            setMode(effective);
+            if (effective && effective !== 'universidad') {
+                try {
+                    await loadPropiedadesIfNeeded(effective);
+                } catch (e) {
+                    console.error('No se pudo cargar propiedades para el select:', e);
+                }
+            }
         }
 
         unidadTipoSelect.addEventListener('change', async () => {
+            if (unidadTipoSelect.disabled) return;
             const unidadTipo = getSelectedUnidadTipo();
             setMode(unidadTipo);
-
             try {
                 await loadPropiedadesIfNeeded(unidadTipo);
             } catch (e) {
@@ -218,11 +283,26 @@
             }
         });
 
-        // Inicializar estado según la selección actual del formulario.
-        const initialUnidadTipo = getSelectedUnidadTipo();
-        setMode(initialUnidadTipo);
-        if (initialUnidadTipo !== 'universidad') {
-            loadPropiedadesIfNeeded(initialUnidadTipo).catch(e => {
+        flagAdministrativo.addEventListener('change', () => {
+            if (flagAdministrativo.checked) {
+                flagUniversidad.checked = false;
+            }
+            applyTipoFromFlags();
+        });
+
+        flagUniversidad.addEventListener('change', () => {
+            if (flagUniversidad.checked) {
+                flagAdministrativo.checked = false;
+            }
+            applyTipoFromFlags();
+        });
+
+        // Inicializar: desplegable solo visible con Administrativo; Universidad activa flujo escribible.
+        syncUnidadTipoGroup();
+        const initialEffective = getEffectiveUnidadTipo();
+        setMode(initialEffective);
+        if (initialEffective && initialEffective !== 'universidad') {
+            loadPropiedadesIfNeeded(initialEffective).catch(e => {
                 console.error('No se pudo cargar propiedades al inicializar:', e);
             });
         }

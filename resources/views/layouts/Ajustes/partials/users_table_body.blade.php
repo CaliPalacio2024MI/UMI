@@ -5,7 +5,7 @@
     <td>{{ $item->nombre }}</td>
     <td>{{ $item->apellido_paterno }}</td>
     <td>{{ $item->apellido_materno }}</td>
-    <td>{{ $item->roles->first()->display_name ?? 'Sin Rol' }}</td>
+    <td>{{ $item->roleDisplayNameForAjustes() }}</td>
     <td>
         <div class="actions">
             <a href="#" title="Editar" class="btn-icon btn-edit" data-id="{{ $item->id }}">

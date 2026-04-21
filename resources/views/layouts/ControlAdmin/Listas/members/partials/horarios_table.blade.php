@@ -26,7 +26,7 @@
                 <tr>
                     <td>{{ $horario->carrera->name ?? '—' }}</td>
                     <td>{{ $horario->materia->nombre ?? '—' }}</td>
-                    <td>{{ $horario->aula->numero_aula ?? '—' }}</td>
+                    <td>{{ \App\Support\AulaHorarioPresenter::tablaResumen($horario->aula) }}</td>
                     <td>
                         @if($horario->franjas->isEmpty())
                             <span style="color:#666;">Sin franjas</span>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdmonCont;
 
 use App\Http\Controllers\Controller;
 use App\Models\Users\Career;
+use App\Models\Users\CareerClassification;
 use App\Models\Users\User;
 use App\Models\AdmonCont\Materia;
 use App\Models\AdmonCont\HorarioClase;
@@ -17,31 +18,61 @@ use Illuminate\Http\Request;
 class ClaseController extends Controller
 {
     /**
-     * Index: filtros Carrera, Semestre, Materia.
+     * Index: filtros Clasificación, Carrera, Materia, Semestre (académico del alumno), Horario.
+     * El semestre del filtro restringe la tabla de alumnos (perfil académico), no la materia en retícula.
      * Si hay clase seleccionada: lista de alumnos disponibles (Alumno Activo) y panel de inscritos.
-     * Tabla de clases existentes con Ver / Editar / Eliminar.
      */
     public function index(Request $request)
     {
-        $carreras = Career::orderBy('name')->get();
+        $classificationId = $request->filled('career_classification_id') ? (int) $request->career_classification_id : null;
+        $clasificaciones = CareerClassification::orderBy('name')->get();
+
+        $carreras = Career::query()
+            ->when($classificationId, fn ($q) => $q->where('career_classification_id', $classificationId))
+            ->orderBy('name')
+            ->get();
+
         $carreraId = $request->filled('carrera_id') ? (int) $request->carrera_id : null;
+        if ($carreraId && !$carreras->firstWhere('id', $carreraId)) {
+            $carreraId = null;
+        }
+
         $semestre = $request->filled('semestre') ? $request->semestre : null;
         $materiaId = $request->filled('materia_id') ? (int) $request->materia_id : null;
+        if (!$carreraId) {
+            $materiaId = null;
+        }
 
         $semestresCarrera = range(1, 8);
 
         $materias = Materia::query()
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
-            ->when($semestre !== null && $semestre !== '', fn($q) => $q->where('semestre', $semestre))
             ->orderBy('nombre')
             ->get();
+
+        if ($materiaId && $carreraId) {
+            $materiaOk = Materia::query()
+                ->where('id', $materiaId)
+                ->where('career_id', $carreraId)
+                ->exists();
+            if (!$materiaOk) {
+                $materiaId = null;
+            }
+        }
 
         $clase = null;
         $alumnosDisponibles = collect();
         $alumnosInscritos = [];
         $claseIds = $request->has('clase_id')
-            ? array_map('intval', (array) $request->clase_id)
+            ? array_values(array_unique(array_map('intval', (array) $request->clase_id)))
             : [];
+        $rawAlumnoCtx = $request->input('alumno_context_id');
+        $alumnoContextIds = [];
+        if (is_array($rawAlumnoCtx)) {
+            $alumnoContextIds = array_values(array_unique(array_map('intval', $rawAlumnoCtx)));
+        } elseif ($rawAlumnoCtx !== null && $rawAlumnoCtx !== '') {
+            $alumnoContextIds = [(int) $rawAlumnoCtx];
+        }
 
         if ($carreraId && $materiaId) {
             $query = HorarioClase::where('career_id', $carreraId)
@@ -74,7 +105,7 @@ class ClaseController extends Controller
             ->with(['carrera', 'materia', 'user', 'aula', 'franjas', 'alumnos'])
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
             ->when($materiaId, fn($q) => $q->where('materia_id', $materiaId))
-            ->when($semestre !== null && $semestre !== '', function ($q) use ($semestre) {
+            ->when(!$materiaId && $semestre !== null && $semestre !== '', function ($q) use ($semestre) {
                 $q->whereHas('materia', fn($mq) => $mq->where('semestre', $semestre));
             })
             ->orderBy('career_id')
@@ -128,31 +159,58 @@ class ClaseController extends Controller
             })->values();
         }
 
-        // Ocultar clases ya "guardadas" (finalizadas) para que no vuelvan a aparecer en la tabla.
-        // Origen: BD (horario_clase_ocultas por usuario). Si hay datos en sesión, se migran a BD una vez.
+        // Ocultar filas guardadas: registro con alumno_id = solo esa fila (alumno + horario);
+        // registro con alumno_id null = ocultar todo el horario_clase (compatibilidad / sesión antigua).
         $user = $request->user();
         $clasesOcultas = [];
+        $filasOcultasKeys = []; // "horarioId_alumnoId" => true
         if ($user) {
-            $clasesOcultas = $user->horarioClaseOcultas()->pluck('horario_clase_id')->map(fn ($id) => (int) $id)->toArray();
+            $user->load('horarioClaseOcultas');
+            foreach ($user->horarioClaseOcultas as $o) {
+                $hid = (int) $o->horario_clase_id;
+                if ($o->alumno_id) {
+                    $filasOcultasKeys[$hid . '_' . (int) $o->alumno_id] = true;
+                } elseif ($hid > 0) {
+                    $clasesOcultas[] = $hid;
+                }
+            }
             $prevSession = array_map('intval', (array) $request->session()->get('clases_ocultas', []));
             if (!empty($prevSession)) {
                 foreach ($prevSession as $hid) {
                     if ($hid > 0) {
-                        HorarioClaseOculta::firstOrCreate(
-                            ['user_id' => $user->id, 'horario_clase_id' => $hid]
+                        HorarioClaseOculta::updateOrCreate(
+                            [
+                                'user_id' => $user->id,
+                                'horario_clase_id' => $hid,
+                                'alumno_id' => null,
+                            ],
+                            []
                         );
                     }
                 }
                 $request->session()->forget('clases_ocultas');
-                $clasesOcultas = $user->horarioClaseOcultas()->pluck('horario_clase_id')->map(fn ($id) => (int) $id)->toArray();
+                $clasesOcultas = [];
+                $filasOcultasKeys = [];
+                $user->unsetRelation('horarioClaseOcultas');
+                $user->load('horarioClaseOcultas');
+                foreach ($user->horarioClaseOcultas as $o) {
+                    $hid = (int) $o->horario_clase_id;
+                    if ($o->alumno_id) {
+                        $filasOcultasKeys[$hid . '_' . (int) $o->alumno_id] = true;
+                    } elseif ($hid > 0) {
+                        $clasesOcultas[] = $hid;
+                    }
+                }
             }
         }
         $clasesOcultas = array_values(array_unique(array_filter($clasesOcultas, fn($v) => $v > 0)));
         $clasesParaTabla = $clases->filter(fn($hc) => !in_array((int) $hc->id, $clasesOcultas, true))->values();
 
-        // Para la tabla superior: alumno representativo por carrera (prioridad semestre seleccionado; si no hay, cualquiera de la carrera)
-        $careerIds = $clasesParaTabla->pluck('career_id')->filter()->unique()->values();
-        $alumnoPorCarrera = collect();
+        // Tabla superior: una fila por alumno (no una por carrera), para que varios alumnos de la misma carrera aparezcan todos.
+        // Carreras según todos los horarios que cumplen filtros (incl. ocultos): si solo usáramos clasesParaTabla,
+        // al guardar/ocultar el único horario de una carrera desaparecerían el resto de alumnos con esa misma carrera.
+        $careerIds = $clases->pluck('career_id')->filter()->unique()->values();
+        $alumnosParaTabla = collect();
         if ($careerIds->isNotEmpty()) {
             $alumnosQuery = User::query()
                 ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
@@ -167,12 +225,11 @@ class ClaseController extends Controller
                 ->orderBy('apellido_paterno')
                 ->orderBy('apellido_materno');
 
-            $alumnos = $alumnosQuery->get();
-            $alumnoPorCarrera = $alumnos->groupBy(fn($u) => (int) ($u->academicProfile->career_id ?? 0))
-                ->map(fn($items) => $items->first());
+            $alumnosParaTabla = $alumnosQuery->get();
 
-            // Si al filtrar por semestre no hay alumno para alguna carrera, usar cualquier alumno de esa carrera para mostrar nombre/matrícula
-            $careerIdsSinAlumno = $careerIds->filter(fn($id) => !$alumnoPorCarrera->has($id))->values();
+            $careersWithStudent = $alumnosParaTabla->map(fn ($u) => (int) ($u->academicProfile->career_id ?? 0))->unique();
+            $careerIdsSinAlumno = $careerIds->filter(fn ($id) => !$careersWithStudent->contains((int) $id))->values();
+
             if ($careerIdsSinAlumno->isNotEmpty()) {
                 $alumnosFallback = User::query()
                     ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
@@ -183,14 +240,25 @@ class ClaseController extends Controller
                     ->orderBy('apellido_materno')
                     ->get();
                 foreach ($alumnosFallback->groupBy(fn($u) => (int) ($u->academicProfile->career_id ?? 0)) as $cid => $items) {
-                    if (!$alumnoPorCarrera->has($cid)) {
-                        $alumnoPorCarrera->put($cid, $items->first());
+                    if ($items->isNotEmpty() && !$careersWithStudent->contains($cid)) {
+                        $alumnosParaTabla->push($items->first());
+                        $careersWithStudent->push($cid);
                     }
                 }
             }
+
+            $alumnosParaTabla = $alumnosParaTabla->sortBy(function ($u) {
+                return [
+                    strtolower((string) ($u->nombre ?? '')),
+                    strtolower((string) ($u->apellido_paterno ?? '')),
+                    strtolower((string) ($u->apellido_materno ?? '')),
+                ];
+            })->values();
         }
 
         return view('layouts.ControlAdmin.Clases.index', compact(
+            'clasificaciones',
+            'classificationId',
             'carreras',
             'materias',
             'clase',
@@ -198,14 +266,16 @@ class ClaseController extends Controller
             'alumnosInscritos',
             'clases',
             'clasesParaTabla',
-            'alumnoPorCarrera',
+            'alumnosParaTabla',
             'carreraId',
             'semestre',
             'materiaId',
             'claseIds',
+            'alumnoContextIds',
             'semestresCarrera',
             'diaSemana',
-            'clasesParaSelect'
+            'clasesParaSelect',
+            'filasOcultasKeys'
         ));
     }
 
@@ -214,7 +284,12 @@ class ClaseController extends Controller
      */
     public function create(Request $request)
     {
-        return redirect()->route('control.classes.index', $request->only(['carrera_id', 'semestre', 'materia_id']));
+        return redirect()->route('control.classes.index', $request->only([
+            'career_classification_id',
+            'carrera_id',
+            'semestre',
+            'materia_id',
+        ]));
     }
 
     /**
@@ -232,12 +307,15 @@ class ClaseController extends Controller
         $ids = $request->input('alumnos', []);
         $clase->alumnos()->syncWithoutDetaching($ids);
 
+        $clase->loadMissing('carrera');
+
         return redirect()
-            ->route('control.classes.index', [
+            ->route('control.classes.index', array_filter([
+                'career_classification_id' => $clase->carrera->career_classification_id,
                 'carrera_id' => $clase->career_id,
                 'semestre' => $clase->materia->semestre,
                 'materia_id' => $clase->materia_id,
-            ])
+            ], fn ($v) => $v !== null && $v !== ''))
             ->with('success', 'Alumnos agregados a la clase correctamente.');
     }
 
@@ -250,23 +328,74 @@ class ClaseController extends Controller
         $request->validate([
             'clase_ids' => 'nullable|array',
             'clase_ids.*' => 'integer|exists:horario_clases,id',
+            'cajita_items' => 'nullable|array',
+            'cajita_items.*.horario_clase_id' => 'required|integer|exists:horario_clases,id',
+            'cajita_items.*.alumno_id' => 'required|integer|exists:users,id',
+            'cajita_items.*.carrera_nombre' => 'nullable|string|max:255',
+            'cajita_items.*.semestre' => 'nullable|string|max:32',
+            'cajita_items.*.matricula' => 'nullable|string|max:64',
+            'cajita_items.*.materia_nombre' => 'nullable|string|max:255',
+            'cajita_items.*.horario_resumen' => 'nullable|string|max:2000',
+            'cajita_items.*.alumno_nombre' => 'nullable|string|max:255',
+            'career_classification_id' => 'nullable|integer|exists:career_classifications,id',
             'carrera_id' => 'nullable|integer',
             'semestre' => 'nullable',
             'materia_id' => 'nullable|integer',
         ]);
 
-        $ids = array_values(array_unique(array_map('intval', $request->input('clase_ids', []))));
         $user = $request->user();
 
         if ($user) {
             $prevSession = array_map('intval', (array) $request->session()->get('clases_ocultas', []));
-            $todosIds = array_values(array_unique(array_merge($prevSession, $ids)));
-            foreach ($todosIds as $horarioClaseId) {
+            foreach ($prevSession as $horarioClaseId) {
                 if ($horarioClaseId > 0) {
-                    HorarioClaseOculta::firstOrCreate(
-                        ['user_id' => $user->id, 'horario_clase_id' => $horarioClaseId]
+                    HorarioClaseOculta::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'horario_clase_id' => $horarioClaseId,
+                            'alumno_id' => null,
+                        ],
+                        []
                     );
                 }
+            }
+
+            foreach ($request->input('cajita_items', []) as $item) {
+                $hcId = (int) ($item['horario_clase_id'] ?? 0);
+                $alId = (int) ($item['alumno_id'] ?? 0);
+                if ($hcId <= 0 || $alId <= 0) {
+                    continue;
+                }
+                HorarioClaseOculta::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'horario_clase_id' => $hcId,
+                        'alumno_id' => $alId,
+                    ],
+                    [
+                        'carrera_nombre' => $item['carrera_nombre'] ?? null,
+                        'semestre' => $item['semestre'] ?? null,
+                        'matricula' => $item['matricula'] ?? null,
+                        'materia_nombre' => $item['materia_nombre'] ?? null,
+                        'horario_resumen' => $item['horario_resumen'] ?? null,
+                        'alumno_nombre' => $item['alumno_nombre'] ?? null,
+                    ]
+                );
+            }
+
+            // Compat: solo ids de horario sin alumno (oculta el bloque completo)
+            foreach (array_unique(array_map('intval', $request->input('clase_ids', []))) as $horarioClaseId) {
+                if ($horarioClaseId <= 0) {
+                    continue;
+                }
+                HorarioClaseOculta::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'horario_clase_id' => $horarioClaseId,
+                        'alumno_id' => null,
+                    ],
+                    []
+                );
             }
         }
 
@@ -274,12 +403,8 @@ class ClaseController extends Controller
         $request->session()->forget('clases_ocultas');
 
         return redirect()
-            ->route('control.classes.index', array_filter([
-                'carrera_id' => $request->input('carrera_id'),
-                'semestre' => $request->input('semestre'),
-                'materia_id' => $request->input('materia_id'),
-            ], fn($v) => $v !== null && $v !== ''))
-            ->with('success', 'Departamento actualizado exitosamente.');
+            ->route('control.classes.index')
+            ->with('success', 'Selección guardada correctamente.');
     }
 
     /**

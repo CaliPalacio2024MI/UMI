@@ -109,7 +109,7 @@
                             <td>{{ $item->nombre }}</td>
                             <td>{{ $item->apellido_paterno }}</td>
                             <td>{{ $item->apellido_materno }}</td>
-                            <td>{{ $item->roles->first()->display_name ?? 'Sin Rol' }}</td>
+                            <td>{{ $item->roleDisplayNameForAjustes() }}</td>
                             
                         @endif
                         
@@ -124,7 +124,7 @@
                                 title="Ver" 
                                 class="btn-icon btn-view"
                                 data-id="{{ $item->id }}">
-                                <img src="{{ asset('images/icons/eye-solid-full.svg') }}" alt="Ver"> 
+                                <img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="Ver"> 
                             </a>
                             @endif
 

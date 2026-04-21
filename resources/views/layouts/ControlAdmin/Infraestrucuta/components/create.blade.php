@@ -1,33 +1,33 @@
+@php
+    $carreras = $carreras ?? collect();
+@endphp
 <form id="createFacilityForm">
     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-    
+
     <div class="form-group">
-        <label for="numero_aula">Número de Aula</label>
-        <input type="text" id="numero_aula" name="numero_aula" class="form-control" maxlength="10" required>
+        <label for="nombre_aula">Nombre del aula</label>
+        <input type="text" id="nombre_aula" name="nombre_aula" class="form-control" maxlength="255" required placeholder="Ingrese el nombre del salón">
     </div>
 
     <div class="form-group">
-        <label for="tipo">Tipo</label>
-        <select id="tipo" name="tipo" class="form-control" required>
-            <option value="Aula" selected>Aula</option>
-            <option value="Laboratorio">Laboratorio</option>
-            <option value="Otro">Otro</option>
-            </select>
+        <label for="career_id">Carrera</label>
+        <select id="career_id" name="career_id" class="form-control">
+            <option value="">Ingrese la carrera</option>
+            @foreach ($carreras as $c)
+                <option value="{{ $c->id }}">{{ $c->name }}</option>
+            @endforeach
+        </select>
     </div>
 
     <div class="form-group">
-        <label for="capacidad">Capacidad</label>
-        <input type="number" id="capacidad" name="capacidad" class="form-control" min="0">
+        <label for="tipo_materia">Materia</label>
+        <select id="tipo_materia" name="tipo_materia" class="form-control" disabled>
+            <option value="">Seleccione la carrera</option>
+        </select>
     </div>
 
-    <div class="form-group">
-        <label for="ubicacion">Ubicación</label>
-        <input type="text" id="ubicacion" name="ubicacion" class="form-control" maxlength="100">
-    </div>
-    
     <div class="modal-footer-custom" style="margin-top: 20px;">
-        <button type="submit" class="btn btn-primary">Guardar Aula</button>
-        <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">+ Guardar</button>
     </div>
 </form>
 

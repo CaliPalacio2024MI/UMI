@@ -174,7 +174,9 @@ async loadPage(url, updateHistory = true) {
         const currentPath = new URL(url, window.location.origin).pathname;
         
         // Si la URL contiene algo de la lista negra, NO usamos caché
-        const shouldUseCache = !noCachePaths.some(path => currentPath === path || currentPath.startsWith('/crm'));
+        // control-administrativo: muchos formularios POST; caché de HTML deja _token viejo → 419 Page Expired
+        const shouldUseCache = !noCachePaths.some(path => currentPath === path || currentPath.startsWith('/crm'))
+            && !currentPath.startsWith('/control-administrativo');
 
         if (shouldUseCache && this.cache.has(cacheKey)) {
             const cached = this.cache.get(cacheKey);
@@ -205,9 +207,10 @@ async loadPage(url, updateHistory = true) {
             const content = this.parsePageContent(html);
             if (!content) throw new Error('Invalid structure');
 
-            // Guardamos en caché (pero la próxima vez el 'shouldUseCache' lo ignorará si es necesario)
-            this.cache.set(cacheKey, { content: content, timestamp: Date.now() });
-            if (this.cache.size > 15) this.cleanupCache();
+            if (shouldUseCache) {
+                this.cache.set(cacheKey, { content: content, timestamp: Date.now() });
+                if (this.cache.size > 15) this.cleanupCache();
+            }
 
             if (updateHistory) history.pushState({ page: url }, content.title, url);
             return content;
@@ -238,12 +241,73 @@ async loadPage(url, updateHistory = true) {
         const mainContent = doc.querySelector('#main-content, .main-content');
         const title = doc.querySelector('title')?.textContent || '';
         if (!mainContent) return null;
+
+        const headInjections = SimpleSPANavigation.collectHeadInjections(doc);
     
         return {
             main: mainContent.innerHTML,
             title: title,
-            scripts: scripts  // ✅ scripts extraídos del HTML crudo
+            scripts: scripts,  // ✅ scripts extraídos del HTML crudo
+            headInjections,
         };
+    }
+
+    /**
+     * Estilos del <head> de la página destino (@push('css'), @vite por vista).
+     * Sin esto, la navegación SPA solo cambia #main-content y la vista queda sin CSS hasta F5.
+     */
+    static collectHeadInjections(doc) {
+        const styles = [];
+        doc.head.querySelectorAll('style').forEach((el) => {
+            styles.push(el.outerHTML);
+        });
+        const links = [];
+        doc.head.querySelectorAll('link[rel="stylesheet"]').forEach((el) => {
+            const href = el.getAttribute('href');
+            if (!href) return;
+            let absolute;
+            try {
+                absolute = new URL(href, window.location.origin).href;
+            } catch {
+                absolute = href;
+            }
+            links.push({ href: absolute, outerHTML: el.outerHTML });
+        });
+        return { styles, links };
+    }
+
+    static applyHeadInjections(injections) {
+        // Caché antigua sin headInjections: no tocar el head (compatibilidad).
+        if (injections === undefined) return;
+        document.head.querySelectorAll('[data-spa-head-inject]').forEach((n) => n.remove());
+        if (!injections) return;
+        const template = document.createElement('template');
+        injections.styles.forEach((html) => {
+            template.innerHTML = html.trim();
+            const el = template.content.firstElementChild;
+            if (el && el.tagName === 'STYLE') {
+                el.setAttribute('data-spa-head-inject', '1');
+                document.head.appendChild(el);
+            }
+        });
+        injections.links.forEach(({ href, outerHTML }) => {
+            const already = [...document.querySelectorAll('link[rel="stylesheet"]')].some((l) => {
+                const h = l.getAttribute('href');
+                if (!h) return false;
+                try {
+                    return new URL(h, window.location.origin).href === href;
+                } catch {
+                    return false;
+                }
+            });
+            if (already) return;
+            template.innerHTML = outerHTML.trim();
+            const el = template.content.querySelector('link[rel="stylesheet"]');
+            if (el) {
+                el.setAttribute('data-spa-head-inject', '1');
+                document.head.appendChild(el);
+            }
+        });
     }
 
     updatePage(content, url) {
@@ -252,8 +316,15 @@ async loadPage(url, updateHistory = true) {
             mainElement.style.transition = 'opacity 0.2s ease';
             mainElement.style.opacity = '0.7';
             setTimeout(() => {
+                SimpleSPANavigation.applyHeadInjections(content.headInjections);
                 mainElement.innerHTML = content.main;
                 mainElement.style.opacity = '1';
+
+                const tokenInput = mainElement.querySelector('input[name="_token"]');
+                const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+                if (tokenInput?.value && metaCsrf) {
+                    metaCsrf.setAttribute('content', tokenInput.value);
+                }
     
                 // Ejecutar scripts creando elementos reales en el DOM
                 content.scripts.forEach(script => {
@@ -383,10 +454,61 @@ async loadPage(url, updateHistory = true) {
     }
 }
 
+// Modal global #careerSuccessModal (Carreras, Materias, clasificación AJAX) — layout app.blade.php
+function showCareerSuccessModalIfMessagePresent() {
+    const successModal = document.getElementById('careerSuccessModal');
+    const successModalMessage = document.getElementById('careerSuccessModalMessage');
+    if (!successModal || !successModalMessage) return;
+    if (typeof window.careerSuccessMessage === 'string' && window.careerSuccessMessage) {
+        successModalMessage.textContent = window.careerSuccessMessage;
+        successModal.style.display = 'flex';
+    }
+}
+
+function bindCareerSuccessModalOkOnce() {
+    const successModal = document.getElementById('careerSuccessModal');
+    const successModalOk = document.getElementById('careerSuccessModalOk');
+    if (!successModal || !successModalOk || successModalOk.dataset.boundCareerOk === '1') return;
+    successModalOk.dataset.boundCareerOk = '1';
+    successModalOk.addEventListener('click', () => {
+        successModal.style.display = 'none';
+        try {
+            delete window.careerSuccessMessage;
+        } catch (e) {
+            window.careerSuccessMessage = undefined;
+        }
+        const afterOk = window.afterCareerSuccessModalOk;
+        try {
+            delete window.afterCareerSuccessModalOk;
+        } catch (e) {
+            window.afterCareerSuccessModalOk = undefined;
+        }
+        if (typeof afterOk === 'function') {
+            try {
+                afterOk();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    });
+}
+
+function initCareerSuccessModal() {
+    bindCareerSuccessModalOkOnce();
+    showCareerSuccessModalIfMessagePresent();
+}
+
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+    initCareerSuccessModal();
     window.spaNav = new SimpleSPANavigation();
     window.navigateTo = (url) => window.spaNav.navigateTo(url);
+});
+
+// Tras restauración desde bfcache u orden de ejecución, el aviso debe mostrarse aunque no coincida con DOMContentLoaded solo.
+window.addEventListener('pageshow', () => {
+    bindCareerSuccessModalOkOnce();
+    showCareerSuccessModalIfMessagePresent();
 });
 
 // Limpiar al cerrar
@@ -546,6 +668,280 @@ function appendClassificationModalListRow(classification) {
     ul.appendChild(li);
 }
 
+// Eliminar materia (lista): AJAX + careerSuccessModal (misma UX que redirect ?modal=success, sin recarga; compatible con SPA)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-materia-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Estás seguro de eliminar este registro?')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const tr = form.closest('tr');
+                if (tr) tr.remove();
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Materia eliminada correctamente.';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar la materia.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Eliminar aula (infraestructura): AJAX + careerSuccessModal + recarga al OK (plantillas por fila en sync)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-aula-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Eliminar esta aula?')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Aula eliminada correctamente.';
+                    window.afterCareerSuccessModalOk = function () {
+                        window.location.reload();
+                    };
+                    successModal.style.display = 'flex';
+                } else {
+                    window.location.reload();
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar la aula.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Eliminar docente (lista): AJAX + careerSuccessModal (misma UX que materias)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-docente-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Estás seguro de eliminar este docente?')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const tr = form.closest('tr');
+                if (tr) tr.remove();
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Docente eliminado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar el docente.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Eliminar alumno (lista): AJAX + careerSuccessModal (misma UX que docentes)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-alumno-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Eliminar este alumno? Esta acción no se puede deshacer.')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const tr = form.closest('tr');
+                if (tr) tr.remove();
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Alumno eliminado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar el alumno.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Eliminar horario (lista Horarios): AJAX + careerSuccessModal (misma UX que materias/docentes)
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-horario-delete-form');
+    if (!form) return;
+    e.preventDefault();
+    if (!confirm('¿Está seguro de eliminar este horario? Esta acción es irreversible.')) return;
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && (data.ok === true || data.success === true)) {
+                const tr = form.closest('tr');
+                if (tr) tr.remove();
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || 'Horario eliminado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            const msg = (data && data.message) || 'No se pudo eliminar el horario.';
+            window.alert(msg);
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
+// Actualizar materia (modal editar): AJAX + careerSuccessModal + refrescar celdas de la fila
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form.js-materia-update-form');
+    if (!form) return;
+    e.preventDefault();
+    const url = form.getAttribute('action');
+    if (!url) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(form);
+    fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const modal = form.closest('.modal-overlay');
+                if (modal) modal.style.display = 'none';
+                const tr = form.closest('tr');
+                if (tr && data.row) {
+                    const tds = tr.querySelectorAll('td');
+                    const r = data.row;
+                    if (tds[0]) tds[0].textContent = r.nombre ?? '';
+                    if (tds[1]) tds[1].textContent = r.classification_name ?? '';
+                    if (tds[2]) tds[2].textContent = r.career_name ?? '';
+                    if (tds[3]) tds[3].textContent = r.creditos ?? '';
+                    if (tds[4]) tds[4].textContent = r.semestre ?? '';
+                    if (tds[5]) tds[5].textContent = r.type ?? '';
+                }
+                const successModal = document.getElementById('careerSuccessModal');
+                const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = data.message || '¡Materia actualizada exitosamente!';
+                    successModal.style.display = 'flex';
+                }
+                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                    window.spaNav.clearCache();
+                }
+                return;
+            }
+            if (res.status === 422) {
+                window.alert(data.message || 'Revisa los datos del formulario.');
+                return;
+            }
+            window.alert(data.message || 'No se pudo actualizar la materia.');
+        })
+        .catch(() => {
+            window.alert('Error de red. Intenta de nuevo.');
+        });
+});
+
 // Guardar clasificación por AJAX: no recargar la página (mantener modal "Agregar carrera" abierto)
 document.addEventListener('submit', (e) => {
     const form = e.target.closest('#classificationStoreForm');
@@ -617,6 +1013,8 @@ document.addEventListener('click', (e) => {
     if (!btn) return;
     const modal = document.getElementById('createCareerModal');
     if (modal) modal.style.display = 'flex';
+    const classSel = document.getElementById('career_classification_id');
+    if (classSel) classSel.classList.toggle('placeholder', classSel.value === '');
 });
 
 // --- Delegación: botón "Agregar Materia" (funciona con SPA al reemplazar contenido) ---
@@ -630,6 +1028,28 @@ document.addEventListener('click', (e) => {
         if (sel) sel.classList.toggle('placeholder', sel.value === '');
     }
 });
+
+function calcularEdadDesdeFechaNacimiento(isoDateStr) {
+    if (!isoDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoDateStr)) return null;
+    const parts = isoDateStr.split('-').map(Number);
+    const birth = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age -= 1;
+    if (age < 0 || age > 150) return null;
+    return age;
+}
+
+function syncDocenteEdadFromFecha(scopeRoot) {
+    if (!scopeRoot) return;
+    const fecha = scopeRoot.querySelector('#modal_fecha_nacimiento') || scopeRoot.querySelector('#fecha_nacimiento');
+    const edadEl = scopeRoot.querySelector('#modal_edad_docente') || scopeRoot.querySelector('#registro_docente_edad') || scopeRoot.querySelector('#docente_edit_edad');
+    if (!fecha || !edadEl) return;
+    const age = calcularEdadDesdeFechaNacimiento(fecha.value);
+    edadEl.value = age != null ? String(age) : '';
+}
 
 // --- Delegación: botón "Agregar Docente" (modal en layout; cargar formulario por AJAX para que funcione con SPA) ---
 document.addEventListener('click', (e) => {
@@ -649,6 +1069,7 @@ document.addEventListener('click', (e) => {
             const doc = parser.parseFromString(html, 'text/html');
             const formWrap = doc.querySelector('.form-body') || doc.querySelector('.form-container') || doc.querySelector('#main-content .container');
             content.innerHTML = formWrap ? formWrap.innerHTML : (doc.querySelector('#main-content')?.innerHTML || '');
+            syncDocenteEdadFromFecha(modal);
             modal.style.display = 'flex';
             modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');
@@ -661,7 +1082,24 @@ document.addEventListener('click', (e) => {
             modal.setAttribute('aria-hidden', 'false');
         });
 }, true);
-// Envío del formulario de registro de docente (dentro del modal)
+
+document.addEventListener('input', (e) => {
+    if (e.target.id !== 'modal_fecha_nacimiento' && e.target.id !== 'fecha_nacimiento') return;
+    const root = e.target.closest('#modalRegistroDocente') || e.target.closest('#form-registro-docente') || e.target.closest('#teacherEditModal') || e.target.closest('#form-edicion-docente');
+    if (root) syncDocenteEdadFromFecha(root);
+});
+document.addEventListener('change', (e) => {
+    if (e.target.id !== 'modal_fecha_nacimiento' && e.target.id !== 'fecha_nacimiento') return;
+    const root = e.target.closest('#modalRegistroDocente') || e.target.closest('#form-registro-docente') || e.target.closest('#teacherEditModal') || e.target.closest('#form-edicion-docente');
+    if (root) syncDocenteEdadFromFecha(root);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#form-registro-docente').forEach((form) => syncDocenteEdadFromFecha(form));
+    document.querySelectorAll('#form-edicion-docente').forEach((form) => syncDocenteEdadFromFecha(form));
+});
+
+// Envío del formulario de registro de docente (modal): JSON + careerSuccessModal + refrescar lista
 document.addEventListener('submit', (e) => {
     const form = e.target && e.target.closest && e.target.closest('#modalRegistroDocente') && e.target.tagName === 'FORM' ? e.target : null;
     if (!form || form.id !== 'form-registro-docente') return;
@@ -671,29 +1109,81 @@ document.addEventListener('submit', (e) => {
     const content = document.getElementById('modalRegistroDocenteContent');
     const formData = new FormData(form);
     const action = form.getAttribute('action');
+    const indexUrl = form.getAttribute('data-index-url');
     if (!action) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     fetch(action, {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
-        redirect: 'follow'
-    }).then((res) => res.text()).then((html) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newMain = doc.querySelector('#main-content, .main-content');
-        modal.style.display = 'none';
-        modal.classList.remove('is-visible');
-        modal.setAttribute('aria-hidden', 'true');
-        const main = document.querySelector('#main-content, .main-content');
-        if (main && newMain) {
-            main.innerHTML = newMain.innerHTML;
-        }
-        document.title = doc.querySelector('title')?.textContent || document.title;
-        if (window.spaNav) window.spaNav.updateActiveMenuItem();
-    }).catch((err) => {
-        console.error(err);
-        if (content) content.innerHTML = '<div style="padding: 1rem; color:#b00020;">Error al guardar. Intente de nuevo.</div>';
-    });
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': token,
+        },
+    })
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('is-visible');
+                    modal.setAttribute('aria-hidden', 'true');
+                }
+                if (content) content.innerHTML = '';
+                const showSuccess = () => {
+                    const successModal = document.getElementById('careerSuccessModal');
+                    const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                    if (successModal && successModalMessage) {
+                        successModalMessage.textContent = data.message || 'Docente registrado exitosamente.';
+                        successModal.style.display = 'flex';
+                    }
+                };
+                const refreshList = () => {
+                    if (!indexUrl) {
+                        showSuccess();
+                        return;
+                    }
+                    fetch(indexUrl, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' },
+                    })
+                        .then((r) => r.text())
+                        .then((html) => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            const newMain = doc.querySelector('#main-content, .main-content');
+                            const main = document.querySelector('#main-content, .main-content');
+                            if (main && newMain) {
+                                main.innerHTML = newMain.innerHTML;
+                                const t = newMain.querySelector('input[name="_token"]');
+                                const meta = document.querySelector('meta[name="csrf-token"]');
+                                if (t && t.value && meta) meta.setAttribute('content', t.value);
+                            }
+                            document.title = doc.querySelector('title')?.textContent || document.title;
+                            if (window.spaNav && typeof window.spaNav.updateActiveMenuItem === 'function') {
+                                window.spaNav.updateActiveMenuItem();
+                            }
+                            if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                                window.spaNav.clearCache();
+                            }
+                            showSuccess();
+                        })
+                        .catch(() => showSuccess());
+                };
+                refreshList();
+                return;
+            }
+            if (res.status === 422) {
+                window.alert(data.message || 'Revisa los datos del formulario.');
+                return;
+            }
+            window.alert(data.message || 'No se pudo registrar el docente.');
+        })
+        .catch((err) => {
+            console.error(err);
+            if (content) {
+                content.innerHTML = '<div style="padding: 1rem; color:#b00020;">Error al guardar. Intente de nuevo.</div>';
+            }
+        });
 }, true);
 
 // --- Select carrera_id / semestre_id / materia_id / clase_id: color placeholder #ACACAC ---
@@ -710,6 +1200,9 @@ document.addEventListener('change', (e) => {
     if (e.target.id === 'clase_id') {
         e.target.classList.toggle('placeholder', e.target.value === '');
     }
+    if (e.target.id === 'career_classification_id' || (e.target.id && e.target.id.startsWith('career_classification_id_'))) {
+        e.target.classList.toggle('placeholder', e.target.value === '');
+    }
 });
 document.addEventListener('DOMContentLoaded', () => {
     const sel = document.getElementById('carrera_id');
@@ -720,6 +1213,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selMateria) selMateria.classList.toggle('placeholder', selMateria.value === '');
     const selClase = document.getElementById('clase_id');
     if (selClase) selClase.classList.toggle('placeholder', selClase.value === '');
+    document.querySelectorAll('#career_classification_id, select[id^="career_classification_id_"]').forEach((el) => {
+        if (el instanceof HTMLSelectElement) el.classList.toggle('placeholder', el.value === '');
+    });
 });
 
 // --- Delegación: botón "Ver" materia (solo lectura) ---
@@ -984,6 +1480,8 @@ function initTeacherEditModal() {
                 const doc = parser.parseFromString(html, 'text/html');
                 const formWrap = doc.querySelector('.form-body') || doc.querySelector('.form-container') || doc.querySelector('#main-content .container');
                 content.innerHTML = formWrap ? formWrap.innerHTML : (doc.querySelector('#main-content')?.innerHTML || '');
+                const { modal: editModal } = getEditModalEls();
+                if (editModal) syncDocenteEdadFromFecha(editModal);
                 openEditModal();
             })
             .catch((err) => {
@@ -994,41 +1492,91 @@ function initTeacherEditModal() {
     }, true);
     document.addEventListener('submit', (e) => {
         const form = e.target && e.target.closest && e.target.closest('#teacherEditModal') && e.target.tagName === 'FORM' ? e.target : null;
-        if (!form) return;
+        if (!form || form.id !== 'form-edicion-docente') return;
         e.preventDefault();
         e.stopPropagation();
         const formData = new FormData(form);
         const action = form.getAttribute('action');
+        const indexUrl = form.getAttribute('data-index-url');
         if (!action) return;
         const { modal, content } = getEditModalEls();
         fetch(action, {
             method: 'POST',
             body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
-            redirect: 'follow'
-        }).then((res) => res.text()).then((html) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const formWrap = doc.querySelector('.form-body') || doc.querySelector('.form-container');
-            if (formWrap) {
-                content.innerHTML = formWrap.innerHTML;
-                return;
-            }
-            closeEditModal();
-            const main = document.querySelector('#main-content, .main-content');
-            const newMain = doc.querySelector('#main-content, .main-content');
-            if (main && newMain) {
-                const msgSuccess = newMain.querySelector('.message-success');
-                if (msgSuccess) msgSuccess.remove();
-                main.innerHTML = newMain.innerHTML;
-            }
-            document.title = doc.querySelector('title')?.textContent || document.title;
-            if (typeof window.bindRegistroDocenteModal === 'function') window.bindRegistroDocenteModal();
-            if (typeof window.openRegistroDocenteModalIfNeeded === 'function') window.openRegistroDocenteModalIfNeeded();
-        }).catch((err) => {
-            console.error(err);
-            content.innerHTML = '<div style="padding: 1rem; color:#b00020;">Error al guardar. Intente de nuevo.</div>';
-        });
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+        })
+            .then(async (res) => {
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.ok) {
+                    closeEditModal();
+                    if (content) content.innerHTML = '';
+                    const showSuccess = () => {
+                        const successModal = document.getElementById('careerSuccessModal');
+                        const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                        if (successModal && successModalMessage) {
+                            successModalMessage.textContent = data.message || 'Docente actualizado correctamente.';
+                            successModal.style.display = 'flex';
+                        }
+                    };
+                    const refreshList = () => {
+                        if (!indexUrl) {
+                            showSuccess();
+                            return;
+                        }
+                        fetch(indexUrl, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' },
+                        })
+                            .then((r) => r.text())
+                            .then((html) => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                const newMain = doc.querySelector('#main-content, .main-content');
+                                const main = document.querySelector('#main-content, .main-content');
+                                if (main && newMain) {
+                                    main.innerHTML = newMain.innerHTML;
+                                    const t = newMain.querySelector('input[name="_token"]');
+                                    const meta = document.querySelector('meta[name="csrf-token"]');
+                                    if (t && t.value && meta) meta.setAttribute('content', t.value);
+                                }
+                                document.title = doc.querySelector('title')?.textContent || document.title;
+                                if (window.spaNav && typeof window.spaNav.updateActiveMenuItem === 'function') {
+                                    window.spaNav.updateActiveMenuItem();
+                                }
+                                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                                    window.spaNav.clearCache();
+                                }
+                                if (typeof window.bindRegistroDocenteModal === 'function') window.bindRegistroDocenteModal();
+                                if (typeof window.openRegistroDocenteModalIfNeeded === 'function') window.openRegistroDocenteModalIfNeeded();
+                                showSuccess();
+                            })
+                            .catch(() => showSuccess());
+                    };
+                    refreshList();
+                    return;
+                }
+                if (res.status === 422) {
+                    let msg = data.message || 'Revisa los datos del formulario.';
+                    if (data.errors && typeof data.errors === 'object') {
+                        const firstKey = Object.keys(data.errors)[0];
+                        if (firstKey && data.errors[firstKey] && data.errors[firstKey][0]) {
+                            msg = data.errors[firstKey][0];
+                        }
+                    }
+                    window.alert(msg);
+                    return;
+                }
+                window.alert(data.message || 'No se pudo actualizar el docente.');
+            })
+            .catch((err) => {
+                console.error(err);
+                if (content) {
+                    content.innerHTML = '<div style="padding: 1rem; color:#b00020;">Error al guardar. Intente de nuevo.</div>';
+                }
+            });
     }, true);
     document.addEventListener('click', (e) => {
         if (!(e.target instanceof Element)) return;
@@ -1088,7 +1636,7 @@ function materiasApplySearch() {
             return;
         }
         let found = false;
-        for (let c = 1; c <= 5; c++) {
+        for (let c = 1; c <= 6; c++) {
             const cell = tr.querySelector(`td:nth-child(${c})`);
             const text = cell ? cell.textContent.trim().toLowerCase() : '';
             if (text.includes(search)) { found = true; break; }
@@ -1236,6 +1784,7 @@ document.addEventListener('click', (e) => {
             }
             let html = '<dl class="career-view-dl career-view-dl--styled">';
             html += '<div class="career-view-row"><dt>Carrera:</dt><dd>' + escapeHtml(data.carrera) + '</dd></div>';
+            html += '<div class="career-view-row"><dt>Clasificación:</dt><dd>' + escapeHtml(data.clasificacion) + '</dd></div>';
             html += '<div class="career-view-row"><dt>Materia:</dt><dd>' + escapeHtml(data.materia) + '</dd></div>';
             html += '<div class="career-view-row"><dt>Docente:</dt><dd>' + escapeHtml(data.docente) + '</dd></div>';
             html += '<div class="career-view-row"><dt>Aula:</dt><dd>' + escapeHtml(data.aula) + '</dd></div>';
@@ -1363,6 +1912,15 @@ window.initHorarioEditForm = function(container) {
         });
     }
 };
+/** data-career-id puede ser un id o varios separados por coma (docentes con varias carreras). */
+function horarioDocenteMatchesCareer(careerIdsCsv, selectedCareerId) {
+    const sel = String(selectedCareerId || '').trim();
+    if (!sel) return true;
+    const csv = String(careerIdsCsv || '').trim();
+    if (!csv) return false;
+    return csv.split(',').map((s) => s.trim()).filter(Boolean).includes(sel);
+}
+
 function initHorariosCareerFilterForContainer(container) {
     const carreraSelect = container.querySelector('#carrera_select');
     const materiaSelect = container.querySelector('#materia_select');
@@ -1386,17 +1944,29 @@ function initHorariosCareerFilterForContainer(container) {
         const savedMateriaId = materiaSelect.value;
         const savedDocenteId = docenteSelect.value;
         const materiasFiltered = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
-        const docentesFiltered = careerId ? docentesData.filter((d) => d.careerId === careerId) : docentesData;
+        const docentesFiltered = careerId ? docentesData.filter((d) => horarioDocenteMatchesCareer(d.careerId, careerId)) : docentesData;
         materiaSelect.innerHTML = '';
         docenteSelect.innerHTML = '';
         materiaSelect.appendChild(new Option('Seleccione una Materia', '', true));
-        materiasFiltered.forEach((m) => materiaSelect.appendChild(new Option(m.text, m.value, false)));
+        materiasFiltered.forEach((m) => {
+            const o = new Option(m.text, m.value, false);
+            o.setAttribute('data-career-id', m.careerId || '');
+            materiaSelect.appendChild(o);
+        });
         docenteSelect.appendChild(new Option('Seleccione un Docente', '', true));
         docentesFiltered.forEach((d) => docenteSelect.appendChild(new Option(d.text, d.value, false)));
         if (!resetValues && savedMateriaId && materiasFiltered.some((m) => m.value === savedMateriaId)) materiaSelect.value = savedMateriaId;
         if (!resetValues && savedDocenteId && docentesFiltered.some((d) => d.value === savedDocenteId)) docenteSelect.value = savedDocenteId;
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
     }
     carreraSelect.addEventListener('change', () => filterByCareer(true));
+    materiaSelect.addEventListener('change', () => {
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
+    });
     filterByCareer(false);
 }
 document.addEventListener('click', (e) => {
@@ -1633,6 +2203,9 @@ function scheduleClearTimeForm(form) {
     if (hi) { hi.value = '00:00'; hi.dispatchEvent(new Event('input', { bubbles: true })); }
     if (hf) { hf.value = '00:00'; hf.dispatchEvent(new Event('input', { bubbles: true })); }
     form.querySelectorAll('.day-selection-buttons button.selected').forEach((btn) => btn.classList.remove('selected'));
+    form.querySelectorAll('.time-input-wrap[data-time-input]').forEach((wrap) => {
+        if (typeof wrap._scheduleSyncFromInput === 'function') wrap._scheduleSyncFromInput();
+    });
 }
 
 document.addEventListener('click', (e) => {
@@ -1653,6 +2226,30 @@ document.addEventListener('click', (e) => {
         const horaFin = (inputFin && inputFin.value ? inputFin.value.trim() : '') || '';
         if (diasSeleccionados.length === 0 || !horaInicio || !horaFin) {
             alert('Por favor, selecciona al menos un día y las horas de inicio y fin.');
+            return;
+        }
+        if (horaInicio === horaFin) {
+            alert('La hora de inicio y la hora de fin deben ser distintas.');
+            return;
+        }
+        const diasYaUsados = new Set();
+        franjas.forEach((f) => {
+            (f.dias_semana || []).forEach((d) => {
+                const n = parseInt(d, 10);
+                if (!isNaN(n)) diasYaUsados.add(n);
+            });
+        });
+        const diasRepetidos = diasSeleccionados.filter((d) => diasYaUsados.has(d));
+        if (diasRepetidos.length > 0) {
+            const nombres = [...new Set(diasRepetidos)]
+                .sort((a, b) => a - b)
+                .map(scheduleGetNombreDia)
+                .join(', ');
+            alert(
+                'No puede repetir un día que ya está en otra franja de este horario. Días en conflicto: ' +
+                    nombres +
+                    '. Quite esos días de la selección o elimine la franja que ya los usa en la vista previa.'
+            );
             return;
         }
         form._scheduleFranjas = franjas;
@@ -1693,7 +2290,95 @@ document.addEventListener('click', (e) => {
             form.appendChild(hidden);
         }
         hidden.value = JSON.stringify(form._scheduleFranjas || franjas);
-        form.submit();
+        const action = form.getAttribute('action');
+        if (!action) return;
+        const indexUrl = form.getAttribute('data-index-url');
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const fd = new FormData(form);
+        fetch(action, {
+            method: 'POST',
+            body: fd,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
+        })
+            .then(async (res) => {
+                const data = await res.json().catch(() => ({}));
+                const ok = res.ok && (data.ok === true || data.success === true);
+                if (ok) {
+                    try {
+                        delete window.afterCareerSuccessModalOk;
+                    } catch (e) {
+                        window.afterCareerSuccessModalOk = undefined;
+                    }
+                    const isScheduleMainForm = form.id === 'schedule_form' && !form.closest('#horarioEditModal');
+                    if (isScheduleMainForm) {
+                        window.afterCareerSuccessModalOk = function () {
+                            window.location.reload();
+                        };
+                    }
+                    const msg = data.message || 'Horario guardado correctamente.';
+                    const showSuccessModal = () => {
+                        const successModal = document.getElementById('careerSuccessModal');
+                        const successModalMessage = document.getElementById('careerSuccessModalMessage');
+                        if (successModal && successModalMessage) {
+                            successModalMessage.textContent = msg;
+                            successModal.style.display = 'flex';
+                        }
+                    };
+                    if (indexUrl) {
+                        fetch(indexUrl, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' },
+                        })
+                            .then((r) => r.text())
+                            .then((html) => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                const newMain = doc.querySelector('#main-content, .main-content');
+                                const main = document.querySelector('#main-content, .main-content');
+                                if (main && newMain) {
+                                    main.innerHTML = newMain.innerHTML;
+                                    const t = newMain.querySelector('input[name="_token"]');
+                                    const meta = document.querySelector('meta[name="csrf-token"]');
+                                    if (t && t.value && meta) meta.setAttribute('content', t.value);
+                                    if (typeof window.initScheduleClockPickersForContainer === 'function') {
+                                        window.initScheduleClockPickersForContainer(main);
+                                    }
+                                }
+                                document.title = doc.querySelector('title')?.textContent || document.title;
+                                if (window.spaNav && typeof window.spaNav.updateActiveMenuItem === 'function') {
+                                    window.spaNav.updateActiveMenuItem();
+                                }
+                                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                                    window.spaNav.clearCache();
+                                }
+                                showSuccessModal();
+                            })
+                            .catch(() => showSuccessModal());
+                    } else {
+                        if (form.closest('#horarioEditModal')) {
+                            window.afterCareerSuccessModalOk = function () {
+                                if (typeof onHorarioUpdated === 'function') onHorarioUpdated();
+                            };
+                        }
+                        showSuccessModal();
+                    }
+                    return;
+                }
+                if (res.status === 422) {
+                    let errMsg = data.message || '';
+                    if (!errMsg && data.errors) {
+                        const first = Object.values(data.errors).flat()[0];
+                        errMsg = first || '';
+                    }
+                    window.alert(errMsg || 'Revisa el formulario de horario.');
+                    return;
+                }
+                window.alert(data.message || 'No se pudo guardar el horario.');
+            })
+            .catch(() => window.alert('Error de red. Intente de nuevo.'));
     }
 });
 
@@ -1709,6 +2394,119 @@ function scheduleSyncPreviewSelection() {
     const form = document.getElementById('schedule_form');
     if (form && typeof scheduleUpdatePreviewSelection === 'function') scheduleUpdatePreviewSelection(form);
 }
+function scheduleUpdateAulaPlaceholderStyle(aulaSel) {
+    if (!aulaSel) return;
+    if (aulaSel.value === '') aulaSel.classList.add('select-placeholder');
+    else aulaSel.classList.remove('select-placeholder');
+}
+
+window.refreshScheduleAulaOptionsFromForm = function (form) {
+    if (!form) form = document.getElementById('schedule_form');
+    if (!form) return;
+    const url = form.getAttribute('data-aulas-url');
+    const aulaSel = form.querySelector('#aula_select');
+    const carreraSel = form.querySelector('#carrera_select');
+    const materiaSel = form.querySelector('#materia_select');
+    if (!aulaSel) return;
+    if (!url) {
+        scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        return;
+    }
+    let careerId = carreraSel && carreraSel.value;
+    const materiaId = materiaSel && materiaSel.value;
+    if (materiaSel && materiaSel.selectedIndex > 0 && (!careerId || String(careerId).trim() === '')) {
+        const opt = materiaSel.options[materiaSel.selectedIndex];
+        const fromMat = opt && opt.getAttribute('data-career-id');
+        if (fromMat) careerId = fromMat;
+    }
+    let prevAula = String(aulaSel.value || '').trim();
+    if (!prevAula) {
+        const persisted = form.getAttribute('data-initial-aula-id');
+        if (persisted && String(persisted).trim() !== '') {
+            prevAula = String(persisted).trim();
+        }
+    }
+    if (!materiaId) {
+        aulaSel.innerHTML = '';
+        aulaSel.appendChild(new Option('Seleccione el Aula', '', true, true));
+        aulaSel.disabled = false;
+        scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        return;
+    }
+    aulaSel.disabled = true;
+    aulaSel.innerHTML = '';
+    aulaSel.appendChild(new Option('Cargando…', '', true, true));
+    let u;
+    try {
+        u = new URL(url, window.location.origin);
+    } catch (e) {
+        aulaSel.innerHTML = '';
+        aulaSel.appendChild(new Option('Error de configuración', '', true, true));
+        aulaSel.disabled = false;
+        return;
+    }
+    u.searchParams.set('materia_id', materiaId);
+    if (careerId) u.searchParams.set('career_id', String(careerId));
+    fetch(u.toString(), {
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+    })
+        .then((r) => {
+            if (!r.ok) throw new Error('bad');
+            return r.json();
+        })
+        .then((data) => {
+            const list = data && data.aulas ? data.aulas : [];
+            aulaSel.innerHTML = '';
+            if (!list.length) {
+                aulaSel.appendChild(new Option('Seleccione el Aula', '', true, true));
+                if (prevAula) {
+                    const fb = form.getAttribute('data-initial-aula-label');
+                    if (fb) {
+                        aulaSel.appendChild(new Option(fb, String(prevAula), false, false));
+                        aulaSel.value = String(prevAula);
+                    }
+                }
+                if (form.getAttribute('data-initial-aula-id')) {
+                    form.removeAttribute('data-initial-aula-id');
+                    form.removeAttribute('data-initial-aula-label');
+                }
+                aulaSel.disabled = false;
+                scheduleUpdateAulaPlaceholderStyle(aulaSel);
+                return;
+            }
+            aulaSel.appendChild(new Option('Seleccione el Aula', '', true, true));
+            list.forEach((a) => {
+                aulaSel.appendChild(new Option(a.label, String(a.id), false));
+            });
+            const inList = prevAula && list.some((x) => String(x.id) === String(prevAula));
+            if (prevAula && !inList) {
+                const fb = form.getAttribute('data-initial-aula-label');
+                if (fb) {
+                    aulaSel.appendChild(new Option(fb, String(prevAula), false, false));
+                }
+            }
+            const canSelect = prevAula && Array.from(aulaSel.options).some((o) => String(o.value) === String(prevAula));
+            if (canSelect) {
+                aulaSel.value = String(prevAula);
+            } else {
+                aulaSel.value = '';
+            }
+            if (form.getAttribute('data-initial-aula-id')) {
+                form.removeAttribute('data-initial-aula-id');
+                form.removeAttribute('data-initial-aula-label');
+            }
+            aulaSel.disabled = false;
+            scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        })
+        .catch(() => {
+            aulaSel.innerHTML = '';
+            aulaSel.appendChild(new Option('Error al cargar aulas', '', true, true));
+            aulaSel.disabled = false;
+            scheduleUpdateAulaPlaceholderStyle(aulaSel);
+        });
+};
+
 function initHorariosCareerFilter() {
     const carreraSelect = document.getElementById('carrera_select');
     const materiaSelect = document.getElementById('materia_select');
@@ -1735,17 +2533,29 @@ function initHorariosCareerFilter() {
         const savedMateriaId = materiaSelect.value;
         const savedDocenteId = docenteSelect.value;
         const materiasFiltered = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
-        const docentesFiltered = careerId ? docentesData.filter((d) => d.careerId === careerId) : docentesData;
+        const docentesFiltered = careerId ? docentesData.filter((d) => horarioDocenteMatchesCareer(d.careerId, careerId)) : docentesData;
         materiaSelect.innerHTML = '';
         docenteSelect.innerHTML = '';
         materiaSelect.appendChild(new Option('Seleccione el nombre de la Materia', '', true));
-        materiasFiltered.forEach((m) => materiaSelect.appendChild(new Option(m.text, m.value, false)));
+        materiasFiltered.forEach((m) => {
+            const o = new Option(m.text, m.value, false);
+            o.setAttribute('data-career-id', m.careerId || '');
+            materiaSelect.appendChild(o);
+        });
         docenteSelect.appendChild(new Option('Seleccione el nombre del docente', '', true));
         docentesFiltered.forEach((d) => docenteSelect.appendChild(new Option(d.text, d.value, false)));
         if (!resetValues && savedMateriaId && materiasFiltered.some((m) => m.value === savedMateriaId)) materiaSelect.value = savedMateriaId;
         if (!resetValues && savedDocenteId && docentesFiltered.some((d) => d.value === savedDocenteId)) docenteSelect.value = savedDocenteId;
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
     }
     carreraSelect.addEventListener('change', () => filterByCareer(true));
+    materiaSelect.addEventListener('change', () => {
+        if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
+            window.refreshScheduleAulaOptionsFromForm(form);
+        }
+    });
     filterByCareer(false);
 }
 
@@ -1841,6 +2651,8 @@ function initScheduleClockPickerForOne(container, inputId, displayId, dropdownId
         }
     });
     dropdown.addEventListener('click', (e) => e.stopPropagation());
+    wrap._scheduleSyncFromInput = syncFromInput;
+    syncFromInput();
 }
 window.initScheduleClockPickersForContainer = function(container) {
     const root = container || document;

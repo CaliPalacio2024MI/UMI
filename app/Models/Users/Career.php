@@ -52,7 +52,19 @@ class Career extends Model
         'semesters', // <--- ✅ CORRECTO: Plural, como en tu BD
         'institution_id', // Agregado por seguridad ya que está en tu BD
         'career_classification_id',
-        'credits'         // Agregado por seguridad
+        'credits',         // Agregado por seguridad
+        'pricing_mode',
+        'monthly_prices',
+        'porcentaje_cargo_moratorio',
+        'monto_mensualidad',
+        'cargo_monetario',
+    ];
+
+    protected $casts = [
+        'monthly_prices' => 'array',
+        'porcentaje_cargo_moratorio' => 'decimal:2',
+        'monto_mensualidad' => 'decimal:2',
+        'cargo_monetario' => 'decimal:2',
     ];
 
     // --- RELACIONES ---

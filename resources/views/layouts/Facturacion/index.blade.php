@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Facturación')
+@section('title', 'Estado de cuenta')
 
 @section('content')
 
-    <div class="main-header"> <h1>Facturación</h1> </div>
+    <div class="main-header"> <h1>Estado de cuenta</h1> </div>
 
     {{-- === Formulario de Filtros === --}}
     <form action="{{ route('Facturacion.index') }}" method="GET">
@@ -90,19 +90,6 @@
                                             </div>
                                         </summary>
                                         <div class="user-details">
-                                            @if($period->is_active == 1)
-                                            <button class="js-trigger-factura btn-primary" 
-                                            data-user-id="{{ $u->id }}" 
-                                            data-user-name="{{ $u->nombre }} {{ $u->apellido_paterno }}" 
-                                            data-period-id="{{ $period->id }}"
-                                            data-uid-prefix="EXT-" 
-                                            
-                                            style="margin-bottom: 20px;">
-                                            + Agregar Factura Extra
-                                        </button>
-                                        @endif
-                                        
-                                            
                                             {{-- ITERACIÓN DE MESES Y FACTURAS --}}
                                             <div class="months-container" style="display: flex; flex-direction: column; gap: 15px;">
                                                 @foreach ($period->meses_calculados as $mes)
@@ -110,28 +97,42 @@
                                                         $facturasDelMes = $userBillings->filter(function($b) use ($mes) {
                                                             return \Carbon\Carbon::parse($b->fecha_vencimiento)->format('Y-m') === $mes['key'];
                                                         });
+                                                        /** Solo ocultar «mensualidad» si ya hay una factura MEN- ese mes (otras: INS-, EXT-, etc. no bloquean). */
+                                                        $yaHayMensualidadEsteMes = $facturasDelMes->contains(function ($b) {
+                                                            $uid = (string) ($b->factura_uid ?? '');
+                                                            return str_starts_with($uid, 'MEN-');
+                                                        });
                                                     @endphp
 
                                                     <div class="monthly-block" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                                                        <div class="month-header" style="background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;">
+                                                        <details class="monthly-block-details" open>
+                                                        <summary class="month-header" style="background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
                                                             <strong style="color: #223F70;">{{ $mes['label'] }}</strong>
                                                             @if($period->is_active == 1)
-                                                            @if($facturasDelMes->isEmpty())
-                                                                <button class="btn-sm-add btn-open-specific js-trigger-factura"
-                                                                data-user-id="{{ $u->id }}"
-                                                                data-user-name="{{ $u->nombre }} {{ $u->apellido_paterno }}"
-                                                                data-period-id="{{ $period->id }}"
-                                                                data-uid-prefix="MEN-" 
-                                                                
-                                                                data-date="{{ $mes['date'] }}"
-                                                                data-label="{{ $mes['label'] }}">
-                                                                + Agregar
-                                                            </button>
-                                                            @endif
+                                                                <div class="month-header__actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto;">
+                                                                    <button type="button" class="btn-sm-add btn-open-extra js-trigger-factura" style="margin: 0; white-space: nowrap;"
+                                                                        data-user-id="{{ $u->id }}"
+                                                                        data-user-name="{{ $u->nombre }} {{ $u->apellido_paterno }}"
+                                                                        data-period-id="{{ $period->id }}"
+                                                                        data-uid-prefix="EXT-">
+                                                                        + Agregar Factura Extra
+                                                                    </button>
+                                                                    @if(! $yaHayMensualidadEsteMes)
+                                                                        <button type="button" class="btn-sm-add btn-open-specific js-trigger-factura"
+                                                                            data-user-id="{{ $u->id }}"
+                                                                            data-user-name="{{ $u->nombre }} {{ $u->apellido_paterno }}"
+                                                                            data-period-id="{{ $period->id }}"
+                                                                            data-uid-prefix="MEN-"
+                                                                            data-date="{{ $mes['date'] }}"
+                                                                            data-label="{{ $mes['label'] }}">
+                                                                            + Agregar mensualidad
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
                                                             @else
                                                                 <span style="font-size: 0.8rem; color: #28a745; font-weight: 600;">✓ Registrada</span>
                                                             @endif
-                                                        </div>
+                                                        </summary>
 
                                                         @if($facturasDelMes->isNotEmpty())
                                                             <div class="table-container" style="box-shadow: none; border: none; border-radius: 0;">
@@ -218,6 +219,7 @@
                                                                 </table>
                                                             </div>
                                                         @endif
+                                                        </details>
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -366,27 +368,76 @@
                     @endforeach
                 </select>
 
-                {{-- 2. Concepto --}}
-                <label for="modal_concepto" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</label>
-                <select id="modal_concepto" name="concepto" required class="filter-select" style="width: 100%; padding: 8px;">
-                    <option value="" data-amount="">   Seleccione un concepto   </option>
-                    @if(isset($conceptosDisponibles))
-                        @foreach($conceptosDisponibles as $c)
-                            <option value="{{ $c->concept }}" data-amount="{{ $c->amount }}">
-                                {{ $c->concept }}
-                            </option>
-                        @endforeach
-                    @endif
-                </select>
+                {{-- 2. Concepto: catálogo (MEN-) vs texto libre (EXT-) — controlado por JS --}}
+                <span id="modal_concepto_label" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</span>
+                <div id="modal_concepto_men_wrap">
+                    <select id="modal_concepto" name="concepto" required class="filter-select" style="width: 100%; padding: 8px;">
+                        <option value="" data-amount="">   Seleccione un concepto   </option>
+                        @if(isset($conceptosDisponibles))
+                            @foreach($conceptosDisponibles as $c)
+                                <option value="{{ $c->concept }}"
+                                        data-amount="{{ $c->amount }}"
+                                        data-porcentaje-cargo-moratorio="{{ $c->porcentaje_cargo_moratorio }}"
+                                        data-cargo-monetario="{{ $c->cargo_monetario }}">
+                                    {{ $c->concept }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                <div id="modal_concepto_ext_wrap" style="display: none;">
+                    <input type="text"
+                           id="modal_concepto_ext"
+                           maxlength="255"
+                           placeholder="Escriba el concepto"
+                           autocomplete="off"
+                           readonly
+                           style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
 
-                {{-- 3. Monto --}}
-                <label for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto:</label>
-                <input type="text" 
-                       id="modal_monto_visible" 
-                       readonly 
-                       placeholder="$ 0.00"
-                       style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #333; transition: background-color 0.3s;">
-                <input type="hidden" id="modal_monto" name="monto" required>
+                {{-- 3. Monto: solo lectura desde catálogo (MEN-) vs captura manual (EXT-) --}}
+                <label id="modal_monto_label" for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto de tiempo normal:</label>
+                <div id="modal_monto_men_wrap">
+                    <input type="text"
+                           id="modal_monto_visible"
+                           readonly
+                           placeholder="$ 0.00"
+                           style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #333; transition: background-color 0.3s;">
+                    <input type="hidden" id="modal_monto" name="monto" required>
+                </div>
+                <div id="modal_monto_ext_wrap" style="display: none;">
+                    <input type="number"
+                           id="modal_monto_ext"
+                           step="0.01"
+                           min="0"
+                           placeholder="0.00"
+                           readonly
+                           style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #333; box-sizing: border-box;">
+                </div>
+
+                {{-- Solo factura extra (EXT-). Mensualidad (MEN-): oculto y no se envía --}}
+                <div id="modal_factura_extra_only">
+                <label for="modal_porcentaje_cargo_moratorio" style="font-weight:bold; display:block; margin-top:10px;">Porcentaje de cargo moratorio:</label>
+                <input type="text"
+                       id="modal_porcentaje_cargo_moratorio"
+                       name="porcentaje_cargo_moratorio"
+                       inputmode="decimal"
+                       autocomplete="off"
+                       placeholder="0"
+                       readonly
+                       style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; color: #333; box-sizing: border-box;">
+
+                <label for="modal_cargo_monetario" style="font-weight:bold; display:block; margin-top:10px;">Cargo monetario:</label>
+                <input type="text"
+                       id="modal_cargo_monetario"
+                       name="cargo_monetario"
+                       inputmode="decimal"
+                       autocomplete="off"
+                       readonly
+                       placeholder="0.00"
+                       title="Calculado: monto × (porcentaje ÷ 100)"
+                       style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; color: #333; box-sizing: border-box;">
+                </div>
 
                 {{-- 4. Fecha Vencimiento --}}
                 <strong style="display:block; margin-top: 10px;">Fecha Vencimiento (Asignada por sistema):</strong>

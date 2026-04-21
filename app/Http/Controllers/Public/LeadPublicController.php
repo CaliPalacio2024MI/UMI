@@ -38,8 +38,10 @@ public function store(Request $request)
         'carrera_id' => 'required|exists:careers,id',
     ]);
 
-    // Crear el LEAD
-    $lead = Lead::create([
+    $normalizeCurp = fn (?string $value): string => strtoupper(preg_replace('/\s+/', '', (string) $value));
+    $alumnoCurpN = $normalizeCurp($request->alumno_curp);
+
+    $payload = [
         'tutor_curp' => strtoupper($request->tutor_curp),
         'tutor_nombre' => $request->tutor_nombre,
         'tutor_paterno' => $request->tutor_paterno,
@@ -47,18 +49,30 @@ public function store(Request $request)
         'telefono1' => $request->telefono1,
         'telefono2' => $request->telefono2,
         'tutor_email' => $request->tutor_email,
-
-        'alumno_curp' => strtoupper($request->alumno_curp),
+        'alumno_curp' => $alumnoCurpN,
         'alumno_nombre' => $request->alumno_nombre,
         'alumno_paterno' => $request->alumno_paterno,
         'alumno_materno' => $request->alumno_materno,
         'carrera_id' => $request->carrera_id,
+    ];
 
+    // Mismo aspirante (misma CURP): actualizar el lead existente, no duplicar fila.
+    $existente = Lead::query()
+        ->whereRaw('UPPER(REPLACE(TRIM(IFNULL(alumno_curp, \'\')), \' \', \'\')) = ?', [$alumnoCurpN])
+        ->orderByDesc('id')
+        ->first();
+
+    if ($existente) {
+        $existente->update($payload);
+
+        return redirect()->back()->with('success', 'Registro actualizado correctamente.');
+    }
+
+    $lead = Lead::create(array_merge($payload, [
         'origen' => 'formulario_publico',
-        'clasificacion' => 'Prospecto'
-    ]);
+        'clasificacion' => 'Prospecto',
+    ]));
 
-    // Crear el PRIMER SEGUIMIENTO
     $lead->seguimientos()->create([
         'estado' => 'Prospecto',
         'fecha' => now()->toDateString(),
