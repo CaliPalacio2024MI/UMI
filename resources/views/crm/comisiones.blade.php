@@ -95,11 +95,12 @@
                <select id="mc-producto" class="mc-select">
                   <option value="">Seleccione el producto</option>
                   @foreach($carreras as $carrera)
-                  <option value="{{ $carrera->id }}"
-                          data-nombre="{{ $carrera->name }}"
-                          data-clasificacion="{{ $carrera->career_classification_id }}">
-                      {{ $carrera->name }}
-                  </option>
+                    <option value="{{ $carrera->id }}"
+                            data-nombre="{{ $carrera->name }}"
+                            data-clasificacion="{{ $carrera->career_classification_id }}"
+                            data-precio="{{ $carrera->precio_sem1 }}">
+                        {{ $carrera->name }}
+                    </option>
                   @endforeach
                </select>
             </div>
@@ -107,8 +108,8 @@
          <div class="mc-fila-2">
             <div class="mc-campo-inline">
                <label class="mc-label">Precio:</label>
-               <div class="mc-number-wrapper">
-                  <input type="number" id="mc-precio" class="mc-input-number" value="0" min="0">
+               <div class="mc-number-wrapper"> 
+                    <input type="text" id="mc-precio" class="mc-input-number" value="0" readonly style="cursor: default; pointer-events: none;">
                </div>
             </div>
             <div class="mc-campo-inline">
@@ -264,6 +265,13 @@ fechaFin?.addEventListener('change',    aplicarFiltros);
                 option.style.display = 'none';
             }
         });
+    });
+
+    // ===== AUTOCOMPLETAR PRECIO DESDE CARRERA =====
+    selectProducto.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const precio = parseFloat(opt?.dataset.precio ?? 0) || 0;
+        document.getElementById('mc-precio').value = precio.toFixed(2);
     });
 
     // ===== AGREGAR O GUARDAR EDICIÓN =====

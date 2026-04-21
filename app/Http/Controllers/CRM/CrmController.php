@@ -359,11 +359,21 @@ class CrmController extends Controller
                 // Si no existe (es el último = estado actual), usamos hoy
                 $siguiente = $segs->get($index + 1);
 
-                $fechaSalida = $siguiente
-                    ? Carbon::parse($siguiente->fecha . ' ' . $siguiente->hora)
-                    : $hoy;
+                // Si es Alumno (estado final) y no tiene siguiente,
+                // buscamos el seguimiento anterior (Aspirante) para calcular el tiempo de transición
+                if ($estado === 'Alumno' && !$siguiente) {
+                    $anterior = $segs->get($index - 1);
+                    $fechaSalida = $fechaEntrada; // misma entrada
+                    $fechaEntrada = $anterior
+                        ? Carbon::parse($anterior->fecha . ' ' . $anterior->hora)
+                        : $fechaEntrada;
+                } else {
+                    $fechaSalida = $siguiente
+                        ? Carbon::parse($siguiente->fecha . ' ' . $siguiente->hora)
+                        : $hoy;
+                }
 
-                $segundos = $fechaEntrada->diffInSeconds($fechaSalida);
+                $segundos = $fechaEntrada->diffInSeconds($fechaSalida, true);
 
                 $tiempos[$estado][] = $segundos;
             }
@@ -455,15 +465,20 @@ class CrmController extends Controller
         $aspirantePorMes = $porMes['Aspirante'];
         $alumnoPorMes    = $porMes['Alumno'];
 
-        // Total SIN filtro de estatus (para la dona)
-        $queryTotal = Lead::query();
-        if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
-            $queryTotal->where('ctp_id', $request->ctp_id);
-        if ($request->filled('carrera_id'))
-            $queryTotal->where('carrera_id', $request->carrera_id);
 
-        $totalSinFiltroEstatus = $queryTotal->count();
+    // Total SIN filtro de estatus NI de fecha (universo real para la dona)
+    $queryTotal = Lead::query();
+    if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
+    if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
+        $queryTotal->where('ctp_id', $request->ctp_id);
+    if ($request->filled('carrera_id'))
+        $queryTotal->where('carrera_id', $request->carrera_id);
+    if ($request->filled('nivel_educativo'))
+        $queryTotal->whereHas('carrera', function ($q) use ($request) {
+            $q->where('career_classification_id', $request->nivel_educativo);
+        });
+
+    $totalSinFiltroEstatus = $queryTotal->count();
 
         $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
 
@@ -639,7 +654,12 @@ class CrmController extends Controller
         
         return view('crm.comisiones', [
             'ctps'       => $ctps,
-            'carreras'   => \App\Models\Users\Career::orderBy('name')->get(),
+            'carreras'   => \App\Models\Users\Career::orderBy('name')->get()->map(function ($c) {
+                $c->precio_sem1 = $c->pricing_mode === 'per_month'
+                    ? (float) (($c->monthly_prices[1] ?? $c->monthly_prices['1']) ?? 0)
+                    : (float) ($c->monto_mensualidad ?? 0);
+                return $c;
+            }),
             'clasificaciones' => \App\Models\Users\CareerClassification::orderBy('name')->get(),
             'comisiones' => $comisiones,
             'logoBase64' => $logoBase64,
