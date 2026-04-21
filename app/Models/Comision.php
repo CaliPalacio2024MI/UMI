@@ -10,8 +10,8 @@ class Comision extends Model
     protected $table = 'comisiones';
 
     protected $fillable = [
-        'ctp_id',    // <-- necesario
-        'lead_id',   // <-- necesario
+        'ctp_id',    
+        'lead_id',   
         'clasificacion',
         'producto',
         'precio',

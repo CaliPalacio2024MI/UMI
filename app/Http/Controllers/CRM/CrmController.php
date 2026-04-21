@@ -287,6 +287,7 @@ class CrmController extends Controller
 
         $leads = $query->get();
         $totalLeads = $leads->count();
+        
         $hoy = Carbon::now()->startOfDay();
 
         /* ===========================
@@ -706,11 +707,11 @@ class CrmController extends Controller
             ->get();
 
         $resultado = $leads->map(function ($lead) {
-            $comision = Comision::where('producto', $lead->carrera?->name)->first(); // 👈 name
+            $comision = Comision::where('producto', $lead->carrera?->name)->first();
 
             return [
                 'clasificacion' => $lead->carrera?->classification?->name ?? 'Sin clasificación',
-                'producto'      => $lead->carrera?->name ?? 'Sin producto', // 👈 name
+                'producto'      => $lead->carrera?->name ?? 'Sin producto', 
                 'alumno'        => $lead->alumno_nombre . ' ' . $lead->alumno_paterno,
                 'comision'      => $comision?->total ?? 0,
             ];

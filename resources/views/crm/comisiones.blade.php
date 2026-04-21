@@ -8,21 +8,21 @@
    <div class="toolbar">
       <div class="filtros-izquierda">
          <!-- Fecha Inicio -->
-<div class="input-group-custom">
-    <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-    <span class="fecha-display" id="display-inicio">Fecha inicio</span>
-    <input type="date" class="input-custom input-fecha" id="fecha-inicio">
-</div>
-<!-- Fecha Fin -->
-<div class="input-group-custom">
-    <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-    <span class="fecha-display" id="display-fin">Fecha fin</span>
-    <input type="date" class="input-custom input-fecha" id="fecha-fin">
-</div>
-         <div class="input-group-custom search-wrapper">
-            <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
-            <input type="text" class="input-custom buscador-ctp" placeholder="Buscar por CTP">
-         </div>
+            <div class="input-group-custom">
+                <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+                <span class="fecha-display" id="display-inicio">Fecha inicio</span>
+                <input type="date" class="input-custom input-fecha" id="fecha-inicio">
+            </div>
+            <!-- Fecha Fin -->
+            <div class="input-group-custom">
+                <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+                <span class="fecha-display" id="display-fin">Fecha fin</span>
+                <input type="date" class="input-custom input-fecha" id="fecha-fin">
+            </div>
+            <div class="input-group-custom search-wrapper">
+                <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
+                <input type="text" class="input-custom buscador-ctp" placeholder="Buscar por CTP">
+            </div>
       </div>
       <div class="toolbar-acciones">
          <button class="btn-comision">
@@ -171,14 +171,12 @@
 
             <div class="mc-table-container">
                 <div class="mc-table-card">
-                    <!-- HEADER 4 COLUMNAS -->
                     <div class="mc-table-header">
                         <div>Clasificación</div>
                         <div>Producto</div>
                         <div>Alumno</div>
                         <div>Comisión</div>
                     </div>
-                    <!-- FILAS DINÁMICAS -->
                     <div class="mc-table-body" id="detalle-comision-body"></div>
                 </div>
             </div>
