@@ -4,7 +4,7 @@
 
 {{-- Inyectamos el CSS específico --}}
 @push('styles')
-    @vite(['resources/css/MiInformacion/clases.css'])
+    @vite(['resources/css/Mi_Informacion/clases.css'])
 @endpush
 
 @section('content')

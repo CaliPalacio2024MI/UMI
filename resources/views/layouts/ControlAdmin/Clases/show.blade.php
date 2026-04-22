@@ -2,7 +2,7 @@
 
 @section('title', 'Ver Clase - ' . session('active_institution_name'))
 
-@vite(['resources/css/courses.css', 'resources/css/control_admin/base.css', 'resources/js/app.js'])
+@vite(['resources/css/Cursos/courses.css', 'resources/css/Control Admin/base.css', 'resources/js/app.js'])
 
 @section('content')
 @php
