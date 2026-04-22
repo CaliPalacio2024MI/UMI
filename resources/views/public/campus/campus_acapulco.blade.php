@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="stylesheet" href="{{ asset('css/campus.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <title>Campus - UMI</title>
@@ -14,6 +13,8 @@
         <!-- IMAGEN O VIDEO DE FONDO -->
         <div class="campus-overlay"></div>
         <video autoplay muted loop class="video-bg">
+    <source src="{{ asset('videos/inicio_alumnos.mp4') }}" type="video/mp4">
+</video>
         
 
         <!-- NAVBAR (igual que landing) -->
@@ -25,7 +26,7 @@
             <div class="nav-right">
                 <div class="nav-links">
                     <a href="#">Programas</a>
-                    <a href="{{ route('public.campus') }}">Campus</a>
+                    <a href="/campus">Campus</a>
                     <a href="#">Admisiones</a>
                 </div>
 

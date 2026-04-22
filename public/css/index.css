@@ -16,6 +16,7 @@ body{
     height:100vh;
     overflow:hidden;
     color:white;
+    min-height:100vh;
 }
 
 /* VIDEO */
@@ -817,4 +818,210 @@ body{
 .menu-right p {
     margin: 10px 0;
     font-size: 18px;
+}
+.alumni{
+    position:relative;
+    background:#0f2742;
+    color:white;
+    padding:180px 10%;
+    text-align:center;
+    overflow:hidden;
+}
+
+/* TEXTO */
+.alumni-content{
+    max-width:1000px;
+    margin:0 auto;
+    position:relative;
+    z-index:2;
+}
+
+.alumni-tag{
+    font-size:11px;
+    letter-spacing:3px;
+    opacity:0.6;
+    margin-bottom:20px;
+    display:block;
+}
+
+
+.alumni-content h2{
+    font-family:'Playfair Display', serif;
+    font-size:55px;
+    font-weight:300;
+    line-height:1.2;
+    letter-spacing:-1px;
+    margin-bottom:40px;
+}
+
+/* BOTON */
+.alumni-content button{
+    padding:14px 35px;
+    border:none;
+    background:#e5e5e5;
+    color:black;
+    font-size:14px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.alumni-content button:hover{
+    background:white;
+}
+
+
+/* POSICIONES DESORDENADAS (ESTILO GLION) */
+.img1{
+    top:80px;
+    left:8%;
+}
+
+.img2{
+    top:40px;
+    right:10%;
+}
+
+.img3{
+    bottom:60px;
+    left:15%;
+}
+.alumni-content h2{
+    max-width:900px;
+    margin-left:auto;
+    margin-right:auto;
+}
+/* ESTADO INICIAL (oculto) */
+.reveal{
+    opacity:0;
+    transition: all 1s ease;
+}
+
+/* CUANDO APARECE */
+.reveal.active{
+    opacity:1;
+    transform:translateY(0);
+}
+
+.alumni-img{
+    position:absolute;
+    width:180px;
+    border-radius:12px;
+    object-fit:cover;
+    opacity:0.9;
+
+    will-change: transform;
+    transition: transform 0.1s linear;
+}
+
+
+/* MENU FULL */
+.menu-full {
+    position: fixed;
+    inset: 0;
+    background: #9c7758;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.4s;
+}
+
+.menu-full.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* HEADER */
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 60px;
+}
+
+.menu-logo img {
+    height: 60px;
+}
+
+/* BOTÓN CERRAR */
+.close-btn {
+    font-size: 28px;
+    color: white;
+    cursor: pointer;
+}
+
+/* CONTENIDO */
+.menu-content {
+    display: flex;
+    height: calc(100% - 100px);
+    padding: 60px;
+}
+
+/* IZQUIERDA */
+.menu-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+}
+
+.menu-left h2 {
+    font-size: 32px;
+    font-weight: 300;
+    color: #e8dccc;
+    transition: 0.3s;
+}
+
+.menu-left .active {
+    color: white;
+}
+
+.menu-left h2:hover {
+    opacity: 0.6;
+}
+
+/* DERECHA */
+.menu-right {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* CARD */
+.campus-card {
+    width: 380px;
+    text-decoration: none;
+    color: white;
+    transition: 0.4s;
+}
+
+.img-container {
+    overflow: hidden;
+}
+
+.img-container img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    transition: 0.6s;
+}
+
+.campus-card h3 {
+    margin-top: 15px;
+    font-size: 24px;
+}
+
+.campus-card p {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+
+.campus-card:hover img {
+    transform: scale(1.1);
+}
+
+.campus-card:hover {
+    transform: translateY(-5px);
 }

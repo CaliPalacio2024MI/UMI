@@ -48,15 +48,18 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
+Route::get('/campus/acapulco', function () {
+    return view('public.campus.campus_acapulco');
+})->name('campus.acapulco');
 
 // FORMULARIO PÚBLICO
+
 Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('public.inscripcion.create');
 
 Route::post('/registro-publico', [LeadPublicController::class, 'store'])
     ->middleware('throttle:3,15')
     ->name('public.inscripcion.store');
     
-Route::get('/campus', [LeadPublicController::class, 'campus'])->name('public.campus');
 
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
