@@ -505,14 +505,14 @@ body{
 .programs-grid{
     display:grid;
     grid-template-columns:repeat(2, 1fr);
-    gap:30px;
+    gap:15px;
 }
 
 /* CARD */
 .card{
     position:relative;
     overflow:hidden;
-    border-radius:15px;
+    border-radius:5px;
     height:250px;
     cursor:pointer;
 }

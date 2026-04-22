@@ -128,8 +128,8 @@
 <section class="destinations-section">
 
     <div class="section-intro">
-        <p class="dest-label">Nuestros destinos</p>
-        <h2 class="dest-title">Acapulco, donde el<br>Pacífico te enamora</h2>
+        <p class="dest-label">Nuestras instalaciones</p>
+        <h2 class="dest-title">Espacios diseñados para<br>impulsar tu aprendizaje</h2>
     </div>
 
     <!-- DESTINO 1 -->
@@ -140,67 +140,20 @@
         <div class="dest-info">
             <span class="dest-num">01</span>
             <span class="dest-tag">México · Acapulco</span>
-            <h3>Palacio</h3>
+            <h3>Campus Mundo Imperial</h3>
             <p>
-                Una franja de costa espectacular al sur de Nápoles, con pueblos de colores 
-                que se aferran a los acantilados y vistas al mar Tirreno que quitan el aliento.
+                Un campus universitario moderno ubicado en la Riviera Diamante de Acapulco, 
+                con instalaciones de primer nivel, tecnología innovadora y un entorno que 
+                impulsa el aprendizaje, la creatividad y el desarrollo profesional.
             </p>
 
             <div class="dest-features">
-                <div class="dest-feature"><span class="dot"></span> 7 días / 6 noches</div>
-                <div class="dest-feature"><span class="dot"></span> Todo incluido</div>
-                <div class="dest-feature"><span class="dot"></span> Vuelo directo</div>
+                <div class="dest-feature"><span class="dot"></span> Instalaciones modernas</div>
+                <div class="dest-feature"><span class="dot"></span> Tecnología de vanguardia</div>
+                <div class="dest-feature"><span class="dot"></span> Vinculación profesional</div>
             </div>
 
-            <a href="#" class="dest-cta">Explorar destino →</a>
-        </div>
-    </div>
-
-    <!-- DESTINO 2 -->
-    <div class="dest-item dest-reverse">
-        <div class="dest-img-wrap">
-            <img src="{{ asset('images/foto2.jpg') }}">
-        </div>
-        <div class="dest-info">
-            <span class="dest-num">02</span>
-            <span class="dest-tag">México · Acapulco</span>
-            <h3>Pierre</h3>
-            <p>
-                Isla de los dioses, donde los templos entre arrozales, las playas volcánicas 
-                y la cultura hindú crean una atmósfera mística sin igual.
-            </p>
-
-            <div class="dest-features">
-                <div class="dest-feature"><span class="dot"></span> 10 días / 9 noches</div>
-                <div class="dest-feature"><span class="dot"></span> Hotel boutique</div>
-                <div class="dest-feature"><span class="dot"></span> Guía local</div>
-            </div>
-
-            <a href="#" class="dest-cta">Explorar destino →</a>
-        </div>
-    </div>
-
-    <!-- DESTINO 3 -->
-    <div class="dest-item">
-        <div class="dest-img-wrap">
-            <img src="{{ asset('images/foto3.jpg') }}">
-        </div>
-        <div class="dest-info">
-            <span class="dest-num">03</span>
-            <span class="dest-tag">México · Acapulco</span>
-            <h3>Princess</h3>
-            <p>
-                Donde el desierto dorado se funde con la arquitectura del futuro. 
-                Una ciudad de récords mundiales y hospitalidad sin fronteras.
-            </p>
-
-            <div class="dest-features">
-                <div class="dest-feature"><span class="dot"></span> 5 días / 4 noches</div>
-                <div class="dest-feature"><span class="dot"></span> Hotel 5 estrellas</div>
-                <div class="dest-feature"><span class="dot"></span> Traslados incluidos</div>
-            </div>
-
-            <a href="#" class="dest-cta">Explorar destino →</a>
+            <a href="{{ route('campus.acapulco') }}">Explorar nuestro campus →</a>
         </div>
     </div>
 

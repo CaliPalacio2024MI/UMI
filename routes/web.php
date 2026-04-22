@@ -48,9 +48,11 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
+
 Route::get('/campus/acapulco', function () {
     return view('public.campus.campus_acapulco');
 })->name('campus.acapulco');
+
 
 // FORMULARIO PÚBLICO
 
