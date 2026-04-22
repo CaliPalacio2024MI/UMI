@@ -201,6 +201,7 @@ body{
     margin-bottom:20px;
     transition:0.3s;
     cursor:pointer;
+    color: #e8dccc;
 }
 
 .menu-left h2:hover{
