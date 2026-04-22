@@ -17,6 +17,13 @@
     box-sizing: border-box;
 }
 
+/* Vista “información enviada con éxito” (espera): sin contorno ni caja exterior */
+.form-container.form-container--espera {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
 /* Título */
 .form-title {
     color: #004085; /* Un azul institucional */

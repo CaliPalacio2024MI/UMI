@@ -47,7 +47,7 @@
         $isCoordinatorCTP = $user->hasActiveRole('coordinador_ctp');
 
         // Usuario aspirante (rol estudiante aún no aceptado como alumno):
-        // debe ver sidebar sin módulos (solo logout y su nombre en header layout).
+        // sidebar: solo título institución, cerrar sesión y logo Mundo Imperial (sin menú).
         $activeRoleName = strtolower((string) session('active_role_name'));
         $academicStatus = trim((string) ($user->academicProfile->status ?? ''));
         $isAspiranteUser = $activeRoleName === 'estudiante'
@@ -56,17 +56,25 @@
     @endphp
 
     {{-- =================================================================== --}}
-    {{-- PARTE SUPERIOR --}}
+    {{-- PARTE SUPERIOR (aspirante: solo título universidad; resto: logo institución) --}}
     {{-- =================================================================== --}}
-    <div class="sidebar-top">
-        <div class="brand" style="margin-bottom: 5px">
-            @if(session('active_institution_logo'))
-                <img src="{{ asset('storage/' . session('active_institution_logo')) }}" alt="Logo Institución" style="width: 100%; height: auto; max-width: 130px;" loading="lazy">
-            @else
-                <span>{{ session('active_institution_name', 'Logo') }}</span> 
-            @endif
+    @if($isAspiranteUser)
+        <div class="sidebar-top sidebar-top--aspirante" style="padding: 18px 14px 16px; text-align: center;">
+            <span class="sidebar-aspirante-institution" style="display: block; font-weight: 400; color: #6b6b6b; font-size: 1rem; line-height: 1.35;">
+                {{ session('active_institution_name', $universityName) }}
+            </span>
         </div>
-    </div>
+    @else
+        <div class="sidebar-top">
+            <div class="brand" style="margin-bottom: 5px">
+                @if(session('active_institution_logo'))
+                    <img src="{{ asset('storage/' . session('active_institution_logo')) }}" alt="Logo Institución" style="width: 100%; height: auto; max-width: 130px;" loading="lazy">
+                @else
+                    <span>{{ session('active_institution_name', 'Logo') }}</span>
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- =================================================================== --}}
     {{-- MENÚ LATERAL --}}
@@ -235,9 +243,6 @@
                                     </li>
                                     <li class="{{ request()->routeIs('escolar.boletas.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('escolar.boletas.index') }}">Boletas de calificaciones</a>
-                                    </li>
-                                    <li class="{{ request()->routeIs('escolar.matriculas.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('escolar.matriculas.index') }}">Matrículas</a>
                                     </li>
                                     <li class="{{ request()->is('control-escolar/becas*') ? 'active-submenu' : '' }}">
                                         <a href="#">Becas</a>

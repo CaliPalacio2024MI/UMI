@@ -58,6 +58,13 @@
     background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Encabezado aspirante: misma posición que el resto, tipografía normal (sin negrita) */
+.header--aspirante .user-name,
+.header--aspirante .user-role,
+.header--aspirante .user-institution {
+  font-weight: 400;
+}
+
 .context-switcher-button img {
     width: 24px;
     height: 24px;

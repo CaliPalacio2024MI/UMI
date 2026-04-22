@@ -22,6 +22,13 @@
 
 </head>
 <body>
+  @php
+      $_hdrUser = Auth::user();
+      $_hdrRole = strtolower((string) session('active_role_name'));
+      $_hdrStatus = trim((string) ($_hdrUser->academicProfile->status ?? ''));
+      $_isAspiranteLayout = $_hdrRole === 'estudiante'
+          && ! in_array($_hdrStatus, ['Alumno', 'Alumno Activo', 'Alumno Inactivo'], true);
+  @endphp
   {{-- Botón menú móvil --}}
   <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Abrir menú">
     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -35,15 +42,23 @@
     @include('layouts.components.sidebar')
     
     <main class="main-content" id="main-content">
-       <div class="header">
+       <div class="header @if($_isAspiranteLayout) header--aspirante @endif">
           <div class="header-user-info">
-             <span class="user-name ">{{ Auth::user()->nombre }} </span>
+             @if($_isAspiranteLayout)
+              <span class="user-name">{{ trim(implode(' ', array_filter([$_hdrUser->nombre, $_hdrUser->apellido_paterno, $_hdrUser->apellido_materno]))) }} </span>
+              <div class="user-context">
+                  <span class="user-role" style="margin-left: 0.3rem;">Aspirante</span>
+                  <span class="user-institution">en {{ session('active_institution_name', 'Sin institución') }}</span>
+              </div>
+             @else
+              <span class="user-name ">{{ Auth::user()->nombre }} </span>
               <div class="user-context">
                   <span class="user-role" style="margin-left: 0.3rem;">
                       {{ session('active_role_display_name', ', Sin rol') }}
                   </span>
                   <span class="user-institution">en {{ session('active_institution_name', 'Sin institución') }}</span>
               </div>
+             @endif
           </div>
           <div class="context-switcher">
             @if (count($availableContexts) > 1)

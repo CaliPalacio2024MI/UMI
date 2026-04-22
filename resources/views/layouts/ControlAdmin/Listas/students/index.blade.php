@@ -404,6 +404,10 @@
     #umi-app-view button.accept-aspirante-btn.add-time-slot-btn {
         box-shadow: none;
     }
+    /* Separar ligeramente la palomita de la línea izquierda de la celda */
+    #umi-app-view .umi-actions-icons button.accept-aspirante-btn {
+        margin-left: 10px;
+    }
     #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty {
         background-color: #aeb4bd !important;
         color: #fff !important;
@@ -414,18 +418,6 @@
     }
     #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty:hover:not(:active) {
         background-color: #aeb4bd !important;
-    }
-    /* Documentación en revisión (aspirante): azul bajito */
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial {
-        background-color: #c5daf0 !important;
-        color: #1a3554 !important;
-    }
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial svg,
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial .add-time-slot-btn__icon {
-        stroke: #1a3554 !important;
-    }
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial:hover:not(:active) {
-        background-color: #b1cbe8 !important;
     }
     /* Toda la documentación y pago listos: puede aceptarse */
     #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--ready:not(:disabled) {

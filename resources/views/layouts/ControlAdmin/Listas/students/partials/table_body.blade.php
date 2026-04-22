@@ -44,29 +44,24 @@
                 $lead->doc_curp,
                 $lead->doc_ine,
                 $lead->doc_ficha_pago,
-                $lead->doc_factura_xml,
             ];
             $leadReqPresent = collect($leadReqPaths)->filter(fn ($p) => filled($p))->count();
             $leadAnyRech = ! empty($lead->doc_acta_rechazado)
                 || ! empty($lead->doc_certificado_rechazado)
                 || ! empty($lead->doc_curp_rechazado)
                 || ! empty($lead->doc_ine_rechazado)
-                || ! empty($lead->doc_ficha_pago_rechazado)
-                || ! empty($lead->doc_factura_xml_rechazado);
+                || ! empty($lead->doc_ficha_pago_rechazado);
             $leadAllPresent = collect($leadReqPaths)->every(fn ($p) => filled($p));
             $acceptAspiranteCanAccept = $leadAllPresent && ! $leadAnyRech;
             if ($leadAnyRech) {
                 $acceptAspiranteDocState = 'rejected';
             } elseif ($acceptAspiranteCanAccept) {
                 $acceptAspiranteDocState = 'ready';
-            } elseif ($leadReqPresent === 0) {
-                $acceptAspiranteDocState = 'empty';
             } else {
-                $acceptAspiranteDocState = 'partial';
+                $acceptAspiranteDocState = 'empty';
             }
             $acceptAspiranteBtnTitles = [
                 'empty' => 'Sin documentos enviados aún',
-                'partial' => 'Faltan PDF/imágenes o comprobantes de pago (ficha y XML)',
                 'rejected' => 'Hay documentos rechazados; corrígelos antes de aceptar',
                 'ready' => 'Listo para aceptar como alumno',
             ];
@@ -192,15 +187,13 @@
                 $umiFirstDocPath($prof?->doc_curp, $user->fallback_lead_doc_curp ?? null, $user->fallback_enrollment_doc_curp ?? null),
                 $umiFirstDocPath($prof?->doc_ine, $user->fallback_lead_doc_ine ?? null, $user->fallback_enrollment_doc_ine ?? null),
                 $umiFirstDocPath($prof?->doc_ficha_pago, $user->fallback_lead_doc_ficha ?? null),
-                $umiFirstDocPath($prof?->doc_factura_xml, $user->fallback_lead_doc_xml ?? null),
             ];
             $userReqPresent = collect($userReqPaths)->filter(fn ($p) => filled($p))->count();
             $userAnyRech = (! empty($prof?->doc_acta_rechazado) || ! empty($user->fallback_lead_doc_rech_acta))
                 || (! empty($prof?->doc_certificado_rechazado) || ! empty($user->fallback_lead_doc_rech_cert))
                 || (! empty($prof?->doc_curp_rechazado) || ! empty($user->fallback_lead_doc_rech_curp))
                 || (! empty($prof?->doc_ine_rechazado) || ! empty($user->fallback_lead_doc_rech_ine))
-                || (! empty($prof?->doc_ficha_pago_rechazado) || ! empty($user->fallback_lead_doc_rech_ficha))
-                || (! empty($prof?->doc_factura_xml_rechazado) || ! empty($user->fallback_lead_doc_rech_xml));
+                || (! empty($prof?->doc_ficha_pago_rechazado) || ! empty($user->fallback_lead_doc_rech_ficha));
             $userAllPresent = collect($userReqPaths)->every(fn ($p) => filled($p));
             $userHasLead = ! empty($user->fallback_lead_id);
             $acceptAspiranteCanAccept = $userAllPresent && ! $userAnyRech && $userHasLead;
@@ -210,14 +203,11 @@
                 $acceptAspiranteDocState = 'rejected';
             } elseif ($acceptAspiranteCanAccept) {
                 $acceptAspiranteDocState = 'ready';
-            } elseif ($userReqPresent === 0) {
-                $acceptAspiranteDocState = 'empty';
             } else {
-                $acceptAspiranteDocState = 'partial';
+                $acceptAspiranteDocState = 'empty';
             }
             $acceptAspiranteBtnTitles = [
                 'empty' => 'Sin documentos enviados aún',
-                'partial' => 'Faltan PDF/imágenes o comprobantes de pago (ficha y XML), o falta vínculo CRM',
                 'rejected' => 'Hay documentos rechazados; corrígelos antes de aceptar',
                 'ready' => 'Listo para aceptar como alumno',
                 'alumno' => 'Aspirante aceptado como alumno',
