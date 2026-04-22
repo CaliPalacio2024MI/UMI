@@ -18,7 +18,7 @@
 
     <!-- VIDEO -->
     <video autoplay muted loop class="video-bg">
-        <source src="{{ asset('videos/inicio_alumnos.mp4') }}" type="video/mp4">
+        <source src="{{ asset('videos/aca_campus.mp4') }}" type="video/mp4">
     </video>
 
     <div class="overlay"></div>

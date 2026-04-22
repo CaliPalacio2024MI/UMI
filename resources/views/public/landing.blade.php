@@ -95,9 +95,9 @@
 </section>
 <section class="alumni">
 
-<img src="{{ asset('images/foto1.jpg') }}" class="alumni-img img1 reveal">
-<img src="{{ asset('images/foto2.jpg') }}" class="alumni-img img2 reveal">
-<img src="{{ asset('images/foto3.jpg') }}" class="alumni-img img3 reveal">
+<img src="{{ asset('images/foto1.jpg') }}" class="alumni-img img1 ">
+<img src="{{ asset('images/foto2.jpg') }}" class="alumni-img img2 ">
+<img src="{{ asset('images/foto3.jpg') }}" class="alumni-img img3 ">
 
 <div class="alumni-content reveal">
 
@@ -161,8 +161,17 @@
 
 <!-- CAREERS -->
 <section class="careers" id="careersSection">
+
+    <div class="volver-container">
+        <button onclick="volverProgramas()" class="btn-volver">
+            ← Volver a programas
+        </button>
+    </div>
+
     <h2 id="tituloCarreras">Programas</h2>
+
     <div class="careers-grid" id="careersGrid"></div>
+
 </section>
 
 <!-- CTA -->
@@ -246,15 +255,14 @@
 
         <!-- IZQUIERDA -->
         <div class="menu-left">
-    <h2 onclick="cambiarSeccion('programas')">Programas</h2>
-    <h2 class="active" onclick="cambiarSeccion('campus')">Campus</h2>
-    <h2 onclick="cambiarSeccion('admisiones')">Admisiones</h2>
-    <h2 onclick="cambiarSeccion('acerca')">Acerca de</h2>
+        <h2 onclick="cambiarSeccion('programas', this)">Programas</h2>
+        <h2 class="active" onclick="cambiarSeccion('campus', this)">Campus</h2>
+        <h2 onclick="cambiarSeccion('admisiones', this)">Admisiones</h2>
+        <h2 onclick="cambiarSeccion('acerca', this)">Acerca de</h2>
     <h2>Alumnado</h2>
 </div>
-
         <!-- DERECHA  -->
-        <div class="menu-right">
+        <div class="menu-right" id="menuContenido">
 
             <a href="{{ route('campus.acapulco') }}" class="campus-card">
                 <div class="img-container">
@@ -314,26 +322,30 @@ function mostrarProgramas(tipo){
         behavior: "smooth"
     });
 }
+function volverProgramas(){
+    document.querySelector(".programs-grid").scrollIntoView({
+        behavior: "smooth"
+    });
+}
 </script>
 <script>
 function revealOnScroll(){
-    const reveals = document.querySelectorAll(".reveal");
+    const section = document.querySelector(".alumni");
+    const content = document.querySelector(".alumni-content");
 
-    reveals.forEach((el) => {
-        const windowHeight = window.innerHeight;
-        const elementTop = el.getBoundingClientRect().top;
+    const rect = section.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
 
-        if(elementTop < windowHeight - 120){
-            el.classList.add("active");
-        }
-    });
+    // cuando la sección entra a pantalla
+    if(rect.top < windowHeight - 150){
+        content.classList.add("active");
+    } else {
+        content.classList.remove("active");
+    }
 }
 
-// activar al cargar
-window.addEventListener("load", revealOnScroll);
-
-// activar al hacer scroll
 window.addEventListener("scroll", revealOnScroll);
+window.addEventListener("load", revealOnScroll);
 </script>
 <script>
 let current = 0;
@@ -343,29 +355,36 @@ window.addEventListener("scroll", () => {
     target = window.scrollY;
 });
 
-function animate(){
+function animateParallax(){
     current += (target - current) * 0.08;
+
+    const section = document.querySelector(".alumni");
+    const rect = section.getBoundingClientRect();
 
     const img1 = document.querySelector(".img1");
     const img2 = document.querySelector(".img2");
     const img3 = document.querySelector(".img3");
 
-    if(img1){
-        img1.style.transform = `translateY(${current * 0.2}px)`;
+    // SOLO cuando está visible
+    if(rect.top < window.innerHeight && rect.bottom > 0){
+
+        const progress = Math.min(Math.max((window.innerHeight - rect.top) / window.innerHeight, 0), 1);
+
+        if(img1){
+            img1.style.transform = `translateY(${progress * 40}px)`;
+        }
+
+        if(img2){
+            img2.style.transform = `translateY(${progress * 60}px)`;
+        }
+
+        if(img3){
+            img3.style.transform = `translateY(${progress * 30}px)`;
+        }
     }
 
-    if(img2){
-        img2.style.transform = `translateY(${current * 0.35}px)`;
-    }
-
-    if(img3){
-        img3.style.transform = `translateY(${current * 0.15}px)`;
-    }
-
-    requestAnimationFrame(animate);
+    requestAnimationFrame(animateParallax);
 }
 
-animate();
-</script>
-</body>
+animateParallax();
 </html>

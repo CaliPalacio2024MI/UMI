@@ -910,7 +910,7 @@ body{
     opacity:0.9;
 
     will-change: transform;
-    transition: transform 0.1s linear;
+    transition: none
 }
 
 
@@ -1024,4 +1024,31 @@ body{
 
 .campus-card:hover {
     transform: translateY(-5px);
+}
+.alumni-content{
+    opacity: 0;
+    transform: translateY(80px);
+    transition: all 1.2s ease;
+}
+
+.alumni-content.active{
+    opacity: 1;
+    transform: translateY(0);
+}
+.volver-container{
+    margin-bottom:10px;
+}
+
+.btn-volver{
+    background:none;
+    border:none;
+    font-size:13px;
+    cursor:pointer;
+    color:#1e3a5f;
+    font-weight:500;
+    padding:0;
+}
+
+.btn-volver:hover{
+    opacity:0.6;
 }
