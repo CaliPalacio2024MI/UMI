@@ -478,9 +478,47 @@ class CrmController extends Controller
             $q->where('career_classification_id', $request->nivel_educativo);
         });
 
-    $totalSinFiltroEstatus = $queryTotal->count();
+    // ← AGREGA ESTO
+    if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
+        $queryTotal->whereHas('seguimientos', function ($q) use ($request) {
+            $q->whereIn('id', function ($sub) {
+                $sub->selectRaw('MAX(id)')
+                    ->from('lead_seguimientos')
+                    ->groupBy('lead_id');
+            });
+            if ($request->filled('fecha_inicio'))
+                $q->whereDate('fecha', '>=', $request->fecha_inicio);
+            if ($request->filled('fecha_fin'))
+                $q->whereDate('fecha', '<=', $request->fecha_fin);
+        });
+    }
 
-        $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
+    // ← AGREGA ESTO
+    $leadsReales = $queryTotal->with([
+        'seguimientos' => function ($q) {
+            $q->orderBy('fecha', 'asc')->orderBy('hora', 'asc');
+        }
+    ])->get();
+
+    $totalFrioReal = 0;
+    $totalCalienteReal = 0;
+    $totalAspiranteReal = 0;
+    $totalAlumnoReal = 0;
+
+    foreach ($leadsReales as $lead) {
+        $ultimoEstado = $lead->seguimientos->last()?->estado ?? 'Prospecto frío';
+        match ($ultimoEstado) {
+            'Prospecto frío'     => $totalFrioReal++,
+            'Prospecto caliente' => $totalCalienteReal++,
+            'Aspirante'          => $totalAspiranteReal++,
+            'Alumno'             => $totalAlumnoReal++,
+            default              => null,
+        };
+    }
+
+    $totalSinFiltroEstatus = $totalFrioReal + $totalCalienteReal + $totalAspiranteReal + $totalAlumnoReal;
+
+    $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
 
         $carreras = $request->filled('nivel_educativo')
             ? \App\Models\Users\Career::where('career_classification_id', $request->nivel_educativo)->orderBy('name')->get()
@@ -495,7 +533,8 @@ class CrmController extends Controller
             'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
             'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
             'porcentajeFrio', 'porcentajeCaliente', 'porcentajeAspirante', 'porcentajeAlumno',
-            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus'
+            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus', 
+            'totalFrioReal', 'totalCalienteReal', 'totalAspiranteReal', 'totalAlumnoReal'
         ));
     }
     
