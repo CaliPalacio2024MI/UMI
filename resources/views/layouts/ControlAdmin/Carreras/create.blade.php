@@ -76,8 +76,8 @@
                     <label for="pricing_mode">Configuración de mensualidad:</label>
                     <select id="pricing_mode" name="pricing_mode"
                         class="js-career-pricing-mode @error('pricing_mode') validation-error @enderror">
-                        <option value="uniform" {{ $pricingMode === 'uniform' ? 'selected' : '' }}>Mismo precio para todos los meses</option>
-                        <option value="per_month" {{ $pricingMode === 'per_month' ? 'selected' : '' }}>Precio distinto por mes</option>
+                        <option value="uniform" {{ $pricingMode === 'uniform' ? 'selected' : '' }}>Precio único</option>
+                        <option value="per_month" {{ $pricingMode === 'per_month' ? 'selected' : '' }}>Precio por mes</option>
                     </select>
                 </div>
                 <div class="form-field js-career-uniform-wrap" @if($pricingMode === 'per_month') style="display: none;" @endif>

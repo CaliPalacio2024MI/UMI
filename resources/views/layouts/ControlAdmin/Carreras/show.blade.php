@@ -32,11 +32,7 @@
                 </div>
                 <div class="career-view-row">
                     <dt>Configuración de mensualidad</dt>
-                    <dd>{{ ($career->pricing_mode ?? 'uniform') === 'per_month' ? 'Precio distinto por mes' : 'Mismo precio para todos los meses' }}</dd>
-                </div>
-                <div class="career-view-row">
-                    <dt>Porcentaje de cargo moratorio</dt>
-                    <dd>{{ $career->porcentaje_cargo_moratorio !== null ? number_format((float) $career->porcentaje_cargo_moratorio, 2) . '%' : '0.00%' }}</dd>
+                    <dd>{{ ($career->pricing_mode ?? 'uniform') === 'per_month' ? 'Precio por mes' : 'Precio único' }}</dd>
                 </div>
                 <div class="career-view-row">
                     <dt>Monto mensualidad</dt>
@@ -63,6 +59,10 @@
                         @endphp
                         {{ '$' . number_format($precioTotal, 2) }}
                     </dd>
+                </div>
+                <div class="career-view-row">
+                    <dt>Porcentaje de cargo moratorio</dt>
+                    <dd>{{ $career->porcentaje_cargo_moratorio !== null ? number_format((float) $career->porcentaje_cargo_moratorio, 2) . '%' : '0.00%' }}</dd>
                 </div>
                 <div class="career-view-row">
                     <dt>Cargo moratorio</dt>

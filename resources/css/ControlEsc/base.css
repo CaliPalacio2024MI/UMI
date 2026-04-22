@@ -320,3 +320,147 @@ hr {
         justify-content: center; /* Centrar el botón en móviles */
     }
 }
+
+/* =======================
+   Becas / Titulación docs
+======================= */
+.doc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    align-items: center;
+    gap: 14px;
+}
+
+.doc-table-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.doc-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.doc-table thead {
+    background-color: #223f70;
+    color: #fff;
+}
+
+.doc-table th,
+.doc-table td {
+    padding: 12px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #ececec;
+}
+
+.doc-subtext {
+    color: #777;
+    font-size: 0.82rem;
+    margin-top: 4px;
+}
+
+.doc-empty {
+    color: #777;
+    text-align: center;
+    padding: 20px;
+}
+
+.doc-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.doc-btn {
+    border: 1px solid transparent;
+    border-radius: 20px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+}
+
+.doc-btn--primary {
+    background: #223f70;
+    color: #fff;
+}
+
+.doc-btn--ghost {
+    background: #f5f7fb;
+    color: #223f70;
+    border-color: #d7dceb;
+}
+
+.doc-btn--danger {
+    background: #fff4f4;
+    color: #b42318;
+    border-color: #f4c7c7;
+}
+
+.doc-link {
+    color: #223f70;
+    text-decoration: underline;
+}
+
+.doc-alert {
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.doc-alert--success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.doc-alert--error {
+    background: #fde8e8;
+    color: #8a1c1c;
+    border: 1px solid #f5c6cb;
+}
+
+.doc-modal-container {
+    max-width: 560px;
+    min-height: auto;
+}
+
+.doc-modal-body {
+    background: #fff;
+    padding: 16px;
+}
+
+.doc-form {
+    display: grid;
+    gap: 12px;
+}
+
+.doc-form-group {
+    display: grid;
+    gap: 6px;
+}
+
+.doc-form-group input,
+.doc-form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cfd5e2;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.doc-form-hint {
+    color: #777;
+}
+
+.doc-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+}

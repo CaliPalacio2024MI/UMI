@@ -33,6 +33,8 @@ use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController;
 use App\Http\Controllers\SchoolarCont\BoletaCalificacionController; 
+use App\Http\Controllers\SchoolarCont\BecasController;
+use App\Http\Controllers\SchoolarCont\TitulacionController;
 
 // --- Controladores CRM ---
 use App\Http\Controllers\CRM\CRMController;
@@ -185,7 +187,19 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::post('/Matriculas/{id}/upload', [MatriculaController::class, 'uploadDocumento'])->name('documentacion.upload');
             
             // 4. Futuros Módulos (Becas, Titulación...)
-            // Route::get('/becas', ...);
+            Route::get('/becas', [BecasController::class, 'index'])->name('becas.index');
+            Route::post('/becas/documentos', [BecasController::class, 'store'])->name('becas.store');
+            Route::get('/becas/documentos/{id}', [BecasController::class, 'show'])->name('becas.show');
+            Route::put('/becas/documentos/{id}', [BecasController::class, 'update'])->name('becas.update');
+            Route::delete('/becas/documentos/{id}', [BecasController::class, 'destroy'])->name('becas.destroy');
+            Route::get('/becas/documentos/{id}/download', [BecasController::class, 'download'])->name('becas.download');
+
+            Route::get('/titulacion', [TitulacionController::class, 'index'])->name('titulacion.index');
+            Route::post('/titulacion/documentos', [TitulacionController::class, 'store'])->name('titulacion.store');
+            Route::get('/titulacion/documentos/{id}', [TitulacionController::class, 'show'])->name('titulacion.show');
+            Route::put('/titulacion/documentos/{id}', [TitulacionController::class, 'update'])->name('titulacion.update');
+            Route::delete('/titulacion/documentos/{id}', [TitulacionController::class, 'destroy'])->name('titulacion.destroy');
+            Route::get('/titulacion/documentos/{id}/download', [TitulacionController::class, 'download'])->name('titulacion.download');
 
             Route::get('/boletas-calificaciones', [BoletaCalificacionController::class, 'index'])->name('boletas.index');
             Route::get('/boletas-calificaciones/export', [BoletaCalificacionController::class, 'export'])->name('boletas.export');

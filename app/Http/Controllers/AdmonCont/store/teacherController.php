@@ -94,9 +94,10 @@ class teacherController extends Controller
     /**
      * Exportar lista de docentes a CSV con todos los datos del formulario.
      */
-    public function export(): StreamedResponse
+    public function export(Request $request): StreamedResponse
     {
         $roleName = 'docente';
+        $search = trim((string) $request->query('search_query', ''));
         $userColumns = ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'email', 'telefono', 'RFC', 'fecha_nacimiento', 'edad', 'address_id'];
         $academicColumns = ['user_id', 'status', 'career_id', 'departamento'];
         $careerColumns = ['id', 'name'];
@@ -108,6 +109,21 @@ class teacherController extends Controller
         $dataList = User::query()
             ->whereHas('roles', function (Builder $query) use ($roleName) {
                 $query->where('name', $roleName);
+            })
+            ->when($search !== '', function (Builder $query) use ($search) {
+                $query->where(function (Builder $q) use ($search) {
+                    $like = '%' . $search . '%';
+                    $q->where('RFC', 'like', $like)
+                        ->orWhere('nombre', 'like', $like)
+                        ->orWhere('apellido_paterno', 'like', $like)
+                        ->orWhere('apellido_materno', 'like', $like)
+                        ->orWhereHas('teachingCareers', function (Builder $cq) use ($like) {
+                            $cq->where('name', 'like', $like);
+                        })
+                        ->orWhereHas('academicProfile.career', function (Builder $cq) use ($like) {
+                            $cq->where('name', 'like', $like);
+                        });
+                });
             })
             ->select($userColumns)
             ->with(['address'])
@@ -185,10 +201,14 @@ class teacherController extends Controller
         }, $filename, $headers);
     }
 
-    public function form(){
+    public function form(Request $request){
         // 1. Cargar las Carreras
         // Asume que el modelo se llama 'Carrera' y tiene las columnas 'id' y 'nombre'.
         $carreras = Career::all();
+
+        if ($request->ajax()) {
+            return view('layouts.ControlAdmin.Listas.members.partials.form_create', compact('carreras'));
+        }
 
         return view('layouts.ControlAdmin.Listas.members.create', compact('carreras' /*, 'campuses' */));
     }

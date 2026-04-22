@@ -245,10 +245,10 @@
                                         <a href="{{ route('escolar.boletas.index') }}">Boletas de calificaciones</a>
                                     </li>
                                     <li class="{{ request()->is('control-escolar/becas*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Becas</a>
+                                        <a href="{{ route('escolar.becas.index') }}">Becas</a>
                                     </li>
                                     <li class="{{ request()->is('control-escolar/titulacion*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Titulación</a>
+                                        <a href="{{ route('escolar.titulacion.index') }}">Titulación</a>
                                     </li>
                                 </ul>
                             </li>

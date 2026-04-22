@@ -38,7 +38,7 @@ class MatriculaController extends Controller
                 $q->where('nombre', 'like', "%{$search}%")
                     ->orWhere('apellido_paterno', 'like', "%{$search}%")
                     ->orWhere('apellido_materno', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('curp', 'like', "%{$search}%")
                     ->orWhereHas('academicProfile', function ($ap) use ($search) {
                         $ap->where('matricula', 'like', "%{$search}%")
                             ->orWhereHas('career', function ($c) use ($search) {
