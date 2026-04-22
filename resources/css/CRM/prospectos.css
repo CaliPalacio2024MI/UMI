@@ -392,7 +392,6 @@ body:has(.crm-prospectos) .main-content {
 
 .chip-filtro:hover { background: rgba(44, 71, 112, 0.08); }
 .chip-filtro.activo { background: #2c4770; color: white; }
-/* El input cubre todo el contenedor, el ícono queda decorativo */
 .input-group-custom {
     position: relative;
 }
@@ -401,7 +400,7 @@ body:has(.crm-prospectos) .main-content {
     position: absolute;
     inset: 0;
     width: 100%;
-    opacity: 0;        /* invisible pero clickeable */
+    opacity: 0;        
     cursor: pointer;
     z-index: 2;
 }
@@ -410,14 +409,14 @@ body:has(.crm-prospectos) .main-content {
 .input-group-custom .fecha-display {
     position: relative;
     z-index: 1;
-    pointer-events: none; /* el ícono ya no intercepta clicks */
+    pointer-events: none; 
 }
 .input-group-custom {
     position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
-    overflow: hidden; /* importante */
+    overflow: hidden; 
 }
 
 .fecha-display {
