@@ -2,36 +2,48 @@
 
 @section('title', 'Estadísticas CRM')
 
+@push('css')
+    @vite('resources/css/CRM/estadisticas.css')
+@endpush
+
 @section('content')
-<link rel="stylesheet" href="{{ Vite::asset('resources/css/CRM/estadisticas.css') }}">
     <div class="crm-estadisticas">
        <form method="GET" action="{{ route('crm.estadisticas') }}">
         {{-- Header --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         
         <div class="header-top">
-            <h1>ESTADÍSTICOS</h1>
-            
-            <div class="header-acciones"> 
-                <!-- Fecha Inicio -->
-                    <div class="input-group-custom input-fecha-header">
-                        <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                        <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                            class="input-custom" onchange="this.form.submit()">
-                    </div>
+            <h1>ESTADÍSTICOS</h1> 
 
-                    <!-- Fecha Fin -->
-                    <div class="input-group-custom input-fecha-header">
-                        <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
-                        <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="input-custom"
-                        onchange="this.form.submit()">
-                    </div>  
-        <!-- Exportar -->
-            <button type="button" class="btn-exportar"onclick="exportarExcel()">
-                <img src="{{ asset('images/icons/export.svg') }}" width="16">
-                Exportar
-            </button>
-        </div>
+            <div class="header-acciones"> 
+
+                <!-- Fecha Inicio -->
+                <div class="input-group-custom input-fecha-header">
+                    <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
+                    <span class="fecha-display">
+                        {{ request('fecha_inicio') ? \Carbon\Carbon::parse(request('fecha_inicio'))->format('d/m/Y') : 'Fecha inicio' }}
+                    </span>
+                    <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
+                        class="input-custom input-fecha" onchange="this.form.submit()">
+                </div>
+
+                <!-- Fecha Fin -->
+                <div class="input-group-custom input-fecha-header">
+                    <img src="{{ asset('images/icons/calendario.svg') }}" alt="Calendario" width="16">
+                    <span class="fecha-display">
+                        {{ request('fecha_fin') ? \Carbon\Carbon::parse(request('fecha_fin'))->format('d/m/Y') : 'Fecha fin' }}
+                    </span>
+                    <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}"
+                        class="input-custom input-fecha" onchange="this.form.submit()">
+                </div>
+
+                <!-- Exportar -->
+                <button type="button" class="btn-exportar" onclick="exportarExcel()">
+                    <img src="{{ asset('images/icons/export.svg') }}" width="16">
+                    Exportar
+                </button>
+
+            </div>
         </div>
 
         {{-- Filters Bar --}}
@@ -39,7 +51,6 @@
             <div class="toolbar mb-8">
 
                 <div class="filtros-izquierda">
-                      
                     <!-- Filtro CTP -->
                    @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
 
@@ -158,7 +169,7 @@
 
             <div class="card-resumen tiempo">
                 <div class="card-icon">
-                    <i class="fa-solid fa-clock"></i>
+                    <i class="fa-solid fa-percent"></i>
                 </div>
                 <div class="card-info">
                     <div class="card-titulo">Conversión General</div>
@@ -425,26 +436,33 @@
     function actualizarGraficaDona(estado) {
         const titulo = document.getElementById("tituloDona");
         const colores = { "Prospecto frío": "#17a2b8", "Prospecto caliente": "#ffc107", "Aspirante": "#28a745", "Alumno": "#6f42c1" };
-        const porcentajes = {
-            "Prospecto frío":     {{ $porcentajeFrio }},
-            "Prospecto caliente": {{ $porcentajeCaliente }},
-            "Aspirante":          {{ $porcentajeAspirante }},
-            "Alumno":             {{ $porcentajeAlumno }}
+        const totalSinFiltro = {{ $totalSinFiltroEstatus }};
+        const totalSinFiltro = {{ $totalSinFiltroEstatus }};
+        const totalesPorEstado = {
+            "Prospecto frío":     {{ $totalFrio }},
+            "Prospecto caliente": {{ $totalCaliente }},
+            "Aspirante":          {{ $totalAspirante }},
+            "Alumno":             {{ $totalAlumno }}
         };
-        if (!estado || estado === "Todos") {
+                if (!estado || estado === "Todos") {
             titulo.innerText = "Tasa de conversión";
             chartCierre.data.labels = ["Prospecto frío","Prospecto caliente","Aspirante","Alumno"];
             chartCierre.data.datasets[0].data            = [{{ $porcentajeFrio }},{{ $porcentajeCaliente }},{{ $porcentajeAspirante }},{{ $porcentajeAlumno }}];
             chartCierre.data.datasets[0].backgroundColor = [colores["Prospecto frío"],colores["Prospecto caliente"],colores["Aspirante"],colores["Alumno"]];
             chartCierre.config.data.centerText = null;
         } else {
-            const porcentaje = porcentajes[estado];
-            titulo.innerText = "Leads vs " + estado;
-            chartCierre.data.labels                      = ["Leads", estado];
-            chartCierre.data.datasets[0].data            = [100 - porcentaje, porcentaje];
-            chartCierre.data.datasets[0].backgroundColor = ["#dee2e6", colores[estado]];
-            chartCierre.config.data.centerText           = porcentaje + "%";
-        }
+        const totalEstado = totalesPorEstado[estado] ?? 0;
+        const porcentaje = totalSinFiltro > 0
+            ? Math.round((totalEstado / totalSinFiltro) * 100 * 10) / 10
+            : 0;
+        const resto = totalSinFiltro - totalEstado;
+
+        titulo.innerText = "Leads vs " + estado;
+        chartCierre.data.labels                      = ["Otros leads", estado];
+        chartCierre.data.datasets[0].data            = [resto, totalEstado];
+        chartCierre.data.datasets[0].backgroundColor = ["#dee2e6", colores[estado]];
+        chartCierre.config.data.centerText           = porcentaje + "%";
+    }
         chartCierre.update();
     }
 

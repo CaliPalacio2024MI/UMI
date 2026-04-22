@@ -287,6 +287,7 @@ class CrmController extends Controller
 
         $leads = $query->get();
         $totalLeads = $leads->count();
+        
         $hoy = Carbon::now()->startOfDay();
 
         /* ===========================
@@ -325,8 +326,9 @@ class CrmController extends Controller
 
         /* ===========================
         TIEMPO PROMEDIO POR ESTADO
-        Criterio: desde que entró al estado actual → hasta hoy
-        Solo leads cuyo estado actual coincide con el estado
+        Criterio: tiempo REAL que cada lead estuvo en cada estado
+        - Si ya avanzó al siguiente: fecha_entrada_siguiente - fecha_entrada_estado
+        - Si sigue en ese estado: hoy - fecha_entrada_estado
         =========================== */
 
         $tiempos = [
@@ -342,23 +344,40 @@ class CrmController extends Controller
 
             if ($seguimientos->isEmpty()) continue;
 
-            // Estado actual = último seguimiento
-            $ultimoSeg   = $seguimientos->last();
-            $estadoActual = $ultimoSeg->estado;
+            // Convertir a array indexado para poder acceder al siguiente
+            $segs = $seguimientos->values();
 
-            if (!isset($tiempos[$estadoActual])) continue;
+            foreach ($segs as $index => $seg) {
 
-            // Fecha en que entró a ese estado actual
-            $fechaEntradaEstado = Carbon::parse(
-                $ultimoSeg->fecha . ' ' . $ultimoSeg->hora
-            );
+                $estado = $seg->estado;
 
-            // Segundos desde que entró al estado hasta hoy
-            $segundos = $fechaEntradaEstado->diffInSeconds($hoy);
+                if (!isset($tiempos[$estado])) continue;
 
-            $tiempos[$estadoActual][] = $segundos;
+                $fechaEntrada = Carbon::parse($seg->fecha . ' ' . $seg->hora);
+
+                // Si existe un seguimiento posterior, usamos su fecha como fecha de salida
+                // Si no existe (es el último = estado actual), usamos hoy
+                $siguiente = $segs->get($index + 1);
+
+                // Si es Alumno (estado final) y no tiene siguiente,
+                // buscamos el seguimiento anterior (Aspirante) para calcular el tiempo de transición
+                if ($estado === 'Alumno' && !$siguiente) {
+                    $anterior = $segs->get($index - 1);
+                    $fechaSalida = $fechaEntrada; // misma entrada
+                    $fechaEntrada = $anterior
+                        ? Carbon::parse($anterior->fecha . ' ' . $anterior->hora)
+                        : $fechaEntrada;
+                } else {
+                    $fechaSalida = $siguiente
+                        ? Carbon::parse($siguiente->fecha . ' ' . $siguiente->hora)
+                        : $hoy;
+                }
+
+                $segundos = $fechaEntrada->diffInSeconds($fechaSalida, true);
+
+                $tiempos[$estado][] = $segundos;
+            }
         }
-
         $convertirSegundos = function (float $segundos): string {
             $seg  = (int) $segundos;
             $dias = intdiv($seg, 86400);
@@ -446,6 +465,21 @@ class CrmController extends Controller
         $aspirantePorMes = $porMes['Aspirante'];
         $alumnoPorMes    = $porMes['Alumno'];
 
+
+    // Total SIN filtro de estatus NI de fecha (universo real para la dona)
+    $queryTotal = Lead::query();
+    if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
+    if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
+        $queryTotal->where('ctp_id', $request->ctp_id);
+    if ($request->filled('carrera_id'))
+        $queryTotal->where('carrera_id', $request->carrera_id);
+    if ($request->filled('nivel_educativo'))
+        $queryTotal->whereHas('carrera', function ($q) use ($request) {
+            $q->where('career_classification_id', $request->nivel_educativo);
+        });
+
+    $totalSinFiltroEstatus = $queryTotal->count();
+
         $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
 
         $carreras = $request->filled('nivel_educativo')
@@ -461,7 +495,7 @@ class CrmController extends Controller
             'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
             'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
             'porcentajeFrio', 'porcentajeCaliente', 'porcentajeAspirante', 'porcentajeAlumno',
-            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno'
+            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus'
         ));
     }
     
@@ -620,7 +654,12 @@ class CrmController extends Controller
         
         return view('crm.comisiones', [
             'ctps'       => $ctps,
-            'carreras'   => \App\Models\Users\Career::orderBy('name')->get(),
+            'carreras'   => \App\Models\Users\Career::orderBy('name')->get()->map(function ($c) {
+                $c->precio_sem1 = $c->pricing_mode === 'per_month'
+                    ? (float) (($c->monthly_prices[1] ?? $c->monthly_prices['1']) ?? 0)
+                    : (float) ($c->monto_mensualidad ?? 0);
+                return $c;
+            }),
             'clasificaciones' => \App\Models\Users\CareerClassification::orderBy('name')->get(),
             'comisiones' => $comisiones,
             'logoBase64' => $logoBase64,
@@ -688,11 +727,11 @@ class CrmController extends Controller
             ->get();
 
         $resultado = $leads->map(function ($lead) {
-            $comision = Comision::where('producto', $lead->carrera?->name)->first(); // 👈 name
+            $comision = Comision::where('producto', $lead->carrera?->name)->first();
 
             return [
                 'clasificacion' => $lead->carrera?->classification?->name ?? 'Sin clasificación',
-                'producto'      => $lead->carrera?->name ?? 'Sin producto', // 👈 name
+                'producto'      => $lead->carrera?->name ?? 'Sin producto', 
                 'alumno'        => $lead->alumno_nombre . ' ' . $lead->alumno_paterno,
                 'comision'      => $comision?->total ?? 0,
             ];

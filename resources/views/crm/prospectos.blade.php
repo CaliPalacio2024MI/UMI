@@ -11,15 +11,17 @@
    <div class="toolbar">
    <div class="filtros-izquierda">
     <!-- Fecha Inicio -->
-    <div class="input-group-custom">
-        <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-        <input type="date" class="input-custom" id="fecha-inicio">
-    </div>
-    <!-- Fecha Fin -->
-    <div class="input-group-custom">
-        <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-        <input type="date" class="input-custom" id="fecha-fin">
-    </div>
+<div class="input-group-custom">
+    <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+    <span class="fecha-display" id="display-inicio">Fecha inicio</span>
+    <input type="date" class="input-custom input-fecha" id="fecha-inicio">
+</div>
+<!-- Fecha Fin -->
+<div class="input-group-custom">
+    <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+    <span class="fecha-display" id="display-fin">Fecha fin</span>
+    <input type="date" class="input-custom input-fecha" id="fecha-fin">
+</div>
     <!-- Buscador -->
     <div class="input-group-custom search-wrapper">
         <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
@@ -423,11 +425,43 @@
 });
 });
 
-    // Buscador + Filtro clasificación
+// Buscador + Filtro clasificación
 let filtroActivo = 'todos';
 
-const buscador = document.querySelector('.buscador');
+const buscador    = document.querySelector('.buscador');
+const fechaInicio = document.getElementById('fecha-inicio');
+const fechaFin    = document.getElementById('fecha-fin');
+
+function aplicarFiltros() {
+    const texto  = buscador?.value.toLowerCase().trim() ?? '';
+    const inicio = fechaInicio.value;
+    const fin    = fechaFin.value;
+
+    // Actualizar displays
+    document.getElementById('display-inicio').textContent =
+        inicio ? inicio.split('-').reverse().join('/') : 'dd/mm/aaaa';
+    document.getElementById('display-fin').textContent =
+        fin ? fin.split('-').reverse().join('/') : 'dd/mm/aaaa';
+
+    document.querySelectorAll('.table-row').forEach(fila => {
+        const coincideTexto  = fila.innerText.toLowerCase().includes(texto);
+
+        const coincideClasif = filtroActivo === 'todos' ||
+            (fila.dataset.clasificacion ?? '').toLowerCase() === filtroActivo.toLowerCase();
+
+        const fechaFila = fila.querySelector('.col-fecha')?.textContent.trim() ?? '';
+        const coincideFechaInicio = !inicio || fechaFila >= inicio;
+        const coincideFechaFin    = !fin    || fechaFila <= fin;
+
+        fila.style.display = (coincideTexto && coincideClasif && coincideFechaInicio && coincideFechaFin)
+            ? '' : 'none';
+    });
+}
+
+// Eventos
 if (buscador) buscador.addEventListener('input', aplicarFiltros);
+fechaInicio.addEventListener('change', aplicarFiltros);
+fechaFin.addEventListener('change', aplicarFiltros);
 
 document.querySelectorAll('.chip-filtro').forEach(chip => {
     chip.addEventListener('click', function () {
@@ -438,44 +472,6 @@ document.querySelectorAll('.chip-filtro').forEach(chip => {
     });
 });
 
-function aplicarFiltros() {
-    const texto = buscador?.value.toLowerCase().trim() ?? '';
-    document.querySelectorAll('.table-row').forEach(fila => {
-        const coincideTexto  = fila.innerText.toLowerCase().includes(texto);
-        const coincideClasif = filtroActivo === 'todos' ||
-            (fila.dataset.clasificacion ?? '').toLowerCase() === filtroActivo.toLowerCase();
-        fila.style.display = (coincideTexto && coincideClasif) ? '' : 'none';
-    });
-}
-    // Filtro por fechas
-const fechaInicio = document.getElementById('fecha-inicio');
-const fechaFin    = document.getElementById('fecha-fin');
-
-function filtrarPorFecha() {
-    const inicio = fechaInicio.value; // "2026-03-04"
-    const fin    = fechaFin.value;
-
-    document.querySelectorAll('.table-row').forEach(fila => {
-        const fechaFila = fila.querySelector('.col-fecha')?.textContent.trim(); // "2026-03-04"
-
-        let visible = true;
-
-        if (inicio && fechaFila < inicio) visible = false;
-        if (fin    && fechaFila > fin)    visible = false;
-
-        fila.style.display = visible ? '' : 'none';
-    });
-}
-
-fechaInicio.addEventListener('change', filtrarPorFecha);
-fechaFin.addEventListener('change',    filtrarPorFecha);
-
-// Abrir calendario al hacer click en el icono
-document.querySelectorAll('.icon-calendar').forEach(icon => {
-    icon.addEventListener('click', function () {
-        this.nextElementSibling.showPicker();
-    });
-});
     // Abrir modal al click en ojo
     document.querySelectorAll('.btn-ver-prospecto').forEach(btn => {
         btn.addEventListener('click', function () {

@@ -51,7 +51,10 @@ Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
 
 // FORMULARIO PÚBLICO
 Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('public.inscripcion.create');
-Route::post('/registro-publico', [LeadPublicController::class, 'store'])->name('public.inscripcion.store');
+
+Route::post('/registro-publico', [LeadPublicController::class, 'store'])
+    ->middleware('throttle:3,15')
+    ->name('public.inscripcion.store');
 
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)

@@ -7,18 +7,22 @@
    </div>
    <div class="toolbar">
       <div class="filtros-izquierda">
-         <div class="input-group-custom">
-            <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-            <input type="date" class="input-custom" id="fecha-inicio">
-         </div>
-         <div class="input-group-custom">
-            <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
-            <input type="date" class="input-custom" id="fecha-fin">
-         </div>
-         <div class="input-group-custom search-wrapper">
-            <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
-            <input type="text" class="input-custom buscador-ctp" placeholder="Buscar por CTP">
-         </div>
+         <!-- Fecha Inicio -->
+            <div class="input-group-custom">
+                <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+                <span class="fecha-display" id="display-inicio">Fecha inicio</span>
+                <input type="date" class="input-custom input-fecha" id="fecha-inicio">
+            </div>
+            <!-- Fecha Fin -->
+            <div class="input-group-custom">
+                <img src="{{ asset('images/icons/calendario.svg') }}" class="icon-calendar">
+                <span class="fecha-display" id="display-fin">Fecha fin</span>
+                <input type="date" class="input-custom input-fecha" id="fecha-fin">
+            </div>
+            <div class="input-group-custom search-wrapper">
+                <img src="{{ asset('images/icons/search.svg') }}" alt="Search" width="16">
+                <input type="text" class="input-custom buscador-ctp" placeholder="Buscar por CTP">
+            </div>
       </div>
       <div class="toolbar-acciones">
          <button class="btn-comision">
@@ -91,11 +95,12 @@
                <select id="mc-producto" class="mc-select">
                   <option value="">Seleccione el producto</option>
                   @foreach($carreras as $carrera)
-                  <option value="{{ $carrera->id }}"
-                          data-nombre="{{ $carrera->name }}"
-                          data-clasificacion="{{ $carrera->career_classification_id }}">
-                      {{ $carrera->name }}
-                  </option>
+                    <option value="{{ $carrera->id }}"
+                            data-nombre="{{ $carrera->name }}"
+                            data-clasificacion="{{ $carrera->career_classification_id }}"
+                            data-precio="{{ $carrera->precio_sem1 }}">
+                        {{ $carrera->name }}
+                    </option>
                   @endforeach
                </select>
             </div>
@@ -103,8 +108,8 @@
          <div class="mc-fila-2">
             <div class="mc-campo-inline">
                <label class="mc-label">Precio:</label>
-               <div class="mc-number-wrapper">
-                  <input type="number" id="mc-precio" class="mc-input-number" value="0" min="0">
+               <div class="mc-number-wrapper"> 
+                    <input type="text" id="mc-precio" class="mc-input-number" value="0" readonly style="cursor: default; pointer-events: none;">
                </div>
             </div>
             <div class="mc-campo-inline">
@@ -167,14 +172,12 @@
 
             <div class="mc-table-container">
                 <div class="mc-table-card">
-                    <!-- HEADER 4 COLUMNAS -->
                     <div class="mc-table-header">
                         <div>Clasificación</div>
                         <div>Producto</div>
                         <div>Alumno</div>
                         <div>Comisión</div>
                     </div>
-                    <!-- FILAS DINÁMICAS -->
                     <div class="mc-table-body" id="detalle-comision-body"></div>
                 </div>
             </div>
@@ -200,36 +203,39 @@ const LOGO_BASE64 = "data:image/png;base64,{{ $logoBase64 }}";
     const tabla = document.getElementById('tabla-comisiones');
     if (!tabla || tabla.dataset.init) return;
     tabla.dataset.init = 'true';
-
+    
     // ===== BUSCADOR =====
-    const buscadorCTP = document.querySelector('.buscador-ctp');
-    const fechaInicio = document.getElementById('fecha-inicio');
-    const fechaFin    = document.getElementById('fecha-fin');
+const buscadorCTP = document.querySelector('.buscador-ctp');
+const fechaInicio = document.getElementById('fecha-inicio');
+const fechaFin    = document.getElementById('fecha-fin');
 
-    function aplicarFiltros() {
-        const texto  = buscadorCTP?.value.toLowerCase().trim() ?? '';
-        const inicio = fechaInicio?.value ?? '';
-        const fin    = fechaFin?.value ?? '';
-        document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
-            const ctp       = (fila.getAttribute('data-ctp') || '').toLowerCase();
-            const fechaFila = (fila.getAttribute('data-fecha') || '');
-            let visible = true;
-            if (texto  && !ctp.includes(texto))  visible = false;
-            if (inicio && fechaFila < inicio)     visible = false;
-            if (fin    && fechaFila > fin)         visible = false;
-            fila.style.display = visible ? '' : 'none';
-        });
-    }
+function aplicarFiltros() {
+    const texto  = buscadorCTP?.value.toLowerCase().trim() ?? '';
+    const inicio = fechaInicio?.value ?? '';
+    const fin    = fechaFin?.value ?? '';
 
-    buscadorCTP?.addEventListener('input',  aplicarFiltros);
-    fechaInicio?.addEventListener('change', aplicarFiltros);
-    fechaFin?.addEventListener('change',    aplicarFiltros);
+    // Actualizar displays
+    document.getElementById('display-inicio').textContent =
+        inicio ? inicio.split('-').reverse().join('/') : 'Fecha inicio';
+    document.getElementById('display-fin').textContent =
+        fin ? fin.split('-').reverse().join('/') : 'Fecha fin';
 
-    document.querySelectorAll('.icon-calendar').forEach(icon => {
-        icon.addEventListener('click', function () {
-            this.nextElementSibling?.showPicker();
-        });
+
+    document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
+        const ctp       = (fila.getAttribute('data-ctp') || '').toLowerCase();
+        const fechaFila = (fila.getAttribute('data-fecha') || '');
+        let visible = true;
+        if (texto  && !ctp.includes(texto))  visible = false;
+        if (inicio && fechaFila < inicio)     visible = false;
+        if (fin    && fechaFila > fin)         visible = false;
+        fila.style.display = visible ? '' : 'none';
     });
+}
+
+buscadorCTP?.addEventListener('input',  aplicarFiltros);
+fechaInicio?.addEventListener('change', aplicarFiltros);
+fechaFin?.addEventListener('change',    aplicarFiltros);
+
 
     // ===== MODAL % COMISIÓN — ABRIR/CERRAR =====
     const modalComision  = document.getElementById('modal-comision');
@@ -259,6 +265,13 @@ const LOGO_BASE64 = "data:image/png;base64,{{ $logoBase64 }}";
                 option.style.display = 'none';
             }
         });
+    });
+
+    // ===== AUTOCOMPLETAR PRECIO DESDE CARRERA =====
+    selectProducto.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const precio = parseFloat(opt?.dataset.precio ?? 0) || 0;
+        document.getElementById('mc-precio').value = precio.toFixed(2);
     });
 
     // ===== AGREGAR O GUARDAR EDICIÓN =====
