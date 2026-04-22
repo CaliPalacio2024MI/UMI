@@ -102,22 +102,7 @@
 
             <input type="hidden" name="credits" value="0">
 
-            {{-- MULTI DEPARTAMENTOS --}}
-            <div class="form-group">
-                <label>Dirigido a Departamentos</label>
-
-                <select name="department_ids[]" multiple required>
-                    @foreach($currentInstitution->departments as $department)
-                        <option value="{{ $department->id }}"
-                            {{ collect(old('department_ids', $course->departments->pluck('id')))
-                                ->contains($department->id) ? 'selected' : '' }}>
-                            {{ $department->name }}
-                        </option>
-                    @endforeach
-                </select>
-
-                <small style="color:#666">Puedes seleccionar uno o varios departamentos</small>
-            </div>
+           
         @endif
 
         {{-- IMAGEN --}}

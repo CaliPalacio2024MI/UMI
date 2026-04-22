@@ -8,6 +8,7 @@ use App\Models\Cursos\Topics;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class SubtopicsController extends Controller
 {

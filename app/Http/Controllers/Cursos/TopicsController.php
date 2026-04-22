@@ -10,6 +10,7 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 
 class TopicsController extends Controller

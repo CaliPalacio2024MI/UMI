@@ -211,13 +211,13 @@
 {{-- EXAMEN FINAL --}}
 @if($finalExamActivity)
     <a href="#content-final-exam" 
-       class="syllabus-link {{ $progress >= 51 ? '' : 'locked' }}" 
+       class="syllabus-link {{ $progress >= 0 ? '' : 'locked' }}" 
        data-target="#content-final-exam"
-       @if($progress < 51) onclick="event.preventDefault(); alert('Debes completar el curso para acceder al examen final.');" @endif>
+       @if($progress < 0) onclick="event.preventDefault(); alert('Debes completar el curso para acceder al examen final.');" @endif>
         
         @if($finalExamData)
             ✅ Examen Final ({{ $finalExamData->score }}%)
-        @elseif($progress >= 100)
+        @elseif($progress >= 0)
             🏆 Examen Final
         @else
             🔒 Examen Final ({{ round($progress) }}%)
@@ -256,7 +256,9 @@
             </button>
         @endif
 
-        <button class="exit" onclick="window.history.back()">Salir</button>
+        <button class="exit" onclick="window.location.href='{{ route('Cursos.index') }}'">
+    Salir
+</button>
 
     </div>
 </div>
@@ -1101,10 +1103,9 @@
     {{-- ========== EXAMEN FINAL ========== --}}
 @if($finalExamActivity)
 <section class="content-panel" id="content-final-exam" style="display: none;">
-    @if($progress >= 51)
+    @if($progress >= 0)
         <h2>{{ $finalExamActivity->title }}</h2>
         <p>{{ $finalExamActivity->description }}</p>
-        
         @if($finalExamData)
             {{-- Ya completó el examen --}}
             <div style="background: #d4edda; border: 2px solid #28a745; border-radius: 10px; padding: 20px; text-align: center;">
@@ -1407,6 +1408,7 @@ async function readPdf(url) {
         speak('No se pudo leer el PDF.');
     }
 }
+
 </script>
 
 <script>
@@ -1616,12 +1618,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const bar = document.querySelector('.course-progress-bar');
 
     let index = 0;
-    let autoplayActive = false; // ✅ MOVER AQUÍ PARA QUE SEA ACCESIBLE
+    let autoplayActive = false;
 
     panels.forEach(p => p.style.display = 'none');
+    
+    // ✅ PRIMERO: Cargar progreso desde BD
+    window.maxProgress = parseFloat({{ $progress }}) || 0;
+    bar.style.width = window.maxProgress + '%';
+    console.log(`🎬 Progreso cargado desde BD: ${Math.round(window.maxProgress)}%`);
+    
+    // ✅ Si es primera vez (0%), contar automáticamente el primer tema
+    if (window.maxProgress === 0) {
+        const firstProgress = (1 / links.length) * 100;
+        window.maxProgress = firstProgress;
+        bar.style.width = firstProgress + '%';
+        saveProgress(firstProgress);
+        console.log(`🎬 Primera visita - contando tema 1: ${Math.round(firstProgress)}%`);
+    }
+    
+    // ✅ DESPUÉS: Mostrar el primer panel
     showIndex(0);
     
-    // CRÍTICO: Pausar videos INMEDIATAMENTE y REPETIDAMENTE
+    // Pausar videos
     function pauseAllVideos() {
         document.querySelectorAll('video:not(.turtle-video)').forEach(video => {
             video.pause();
@@ -1668,7 +1686,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('✅ Videos pausados');
     }, 100);
     
-    // Inicializar Sopa de Letras y Ahorcado al cargar (NO crucigrama)
+    // Inicializar juegos
     setTimeout(() => {
         console.log('🔍 Buscando juegos para inicializar...');
         
@@ -1690,21 +1708,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // ✅ Crucigrama NO se inicializa aquí, solo en showIndex
-        console.log('ℹ️ Crucigrama se inicializará cuando el usuario navegue a ese panel');
+        const crucigramas = document.querySelectorAll('.crucigrama-game');
+        crucigramas.forEach(game => {
+            console.log('✅ Inicializando Crucigrama...');
+            initCrucigrama(game);
+        });
 
     }, 200);
 
+    // ========== FUNCIÓN showIndex ==========
     function showIndex(i){
         if(i < 0 || i >= links.length) return;
-
-        // PAUSAR todos los videos antes de cambiar de panel
-        document.querySelectorAll('video').forEach(video => {
-            if (!video.classList.contains('turtle-video')) {
-                video.pause();
-            }
-        });
-
+        
         panels.forEach(p => p.style.display = 'none');
         links.forEach(l => l.classList.remove('active'));
 
@@ -1715,45 +1730,67 @@ document.addEventListener('DOMContentLoaded', function () {
             panel.style.display = 'block';
             links[i].classList.add('active');
             index = i;
-            bar.style.width = ((i+1)/links.length)*100 + '%';
             
-            setTimeout(() => {
-                // Inicializar Sopa de Letras si existe en el panel actual
-                const sopaGrid = panel.querySelector('.grid-container');
-                if(sopaGrid && sopaGrid.innerHTML.trim().length < 100) {
-                    console.log('🎯 Inicializando sopa desde showIndex');
-                    initSopaDeLetras(sopaGrid);
-                }
-                
-                // Inicializar Ahorcado si existe
-                const ahorcadoGame = panel.querySelector('.ahorcado-game');
-                if(ahorcadoGame && !ahorcadoGame.querySelector('.letter-btn')) {
-                    console.log('🎯 Inicializando ahorcado desde showIndex');
-                    initAhorcado(ahorcadoGame);
-                }
-                
-                // ✅ Crucigrama: solo inicializar una vez con el flag data-initialized
-                const crucigramaGame = panel.querySelector('.crucigrama-game');
-                if(crucigramaGame && !crucigramaGame.dataset.initialized) {
-                    const grid = crucigramaGame.querySelector('.crucigrama-grid');
-                    if(grid && grid.innerHTML.trim().length < 50) {
-                        console.log('🎯 Inicializando crucigrama desde showIndex');
-                        crucigramaGame.dataset.initialized = 'true'; // 🔒 Evitar doble init
-                        initCrucigrama(crucigramaGame);
-                    }
-                }
-            }, 100);
+            // ✅ Calcular progreso basado en posición
+            const newProgress = ((i + 1) / links.length) * 100;
+            
+            // ✅ Calcular último tema visitado
+            const lastVisitedIndex = Math.floor((window.maxProgress / 100) * links.length) - 1;
+
+            if (i <= lastVisitedIndex + 2) {
+                // ✅ Avanzó secuencialmente
+                window.maxProgress = newProgress;
+                bar.style.width = newProgress + '%';
+                saveProgress(newProgress);
+                console.log(`➡️ Avanzando: ${Math.round(newProgress)}%`);
+            } else if (i > lastVisitedIndex + 1) {
+                // ⏭️ Saltó temas
+                bar.style.width = window.maxProgress + '%';
+                console.log(`⏭️ Saltó temas - manteniendo: ${Math.round(window.maxProgress)}%`);
+            } else {
+                // ⬅️ Retrocedió
+                bar.style.width = window.maxProgress + '%';
+                console.log(`⬅️ Retrocediendo - manteniendo: ${Math.round(window.maxProgress)}%`);
+            }
+            
+            pauseAllVideos();
         }
     }
 
-    links.forEach((l,i)=>{
-        l.addEventListener('click', ()=>{
+    // ========== NAVEGACIÓN ==========
+    links.forEach((l, i) => {
+        l.addEventListener('click', () => {
             showIndex(i);
         });
     });
 
-    document.getElementById('btnNext').onclick = ()=> showIndex(index+1);
-    document.getElementById('btnPrev').onclick = ()=> showIndex(index-1);
+    document.getElementById('btnNext').onclick = () => showIndex(index + 1);
+    document.getElementById('btnPrev').onclick = () => showIndex(index - 1);
+
+    // ========== GUARDAR PROGRESO ==========
+    function saveProgress(progressPercentage) {
+        const courseId = {{ $course->id }};
+        
+        console.log(`💾 Guardando progreso: ${Math.round(progressPercentage)}%`);
+        
+        fetch(`/cursos/${courseId}/save-progress`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                progress: progressPercentage
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`✅ Progreso guardado: ${Math.round(data.progress)}%`);
+            }
+        })
+        .catch(err => console.error('❌ Error guardando progreso:', err));
+    }
 
     // ====== AUTOPLAY ======
     const btnAutoplay = document.getElementById('btnAutoplay');
@@ -2888,7 +2925,6 @@ function closeGameModal() {
 }
 </script>
 
-{{-- ========== SOPA DE LETRAS - DEFINIR FUNCIONES PRIMERO ========== --}}
 <script>
 // ========== FUNCIONES DE SOPA DE LETRAS ==========
 function initSopaDeLetras(gridContainer) {
@@ -3318,7 +3354,6 @@ function submitAhorcado(activityId, success) {
     })
     .catch(error => console.error('Error:', error));
 }
-
 // ========== FUNCIONES DE CRUCIGRAMA ==========
 function initCrucigrama(gameContainer) {
     console.log('🎮 Inicializando Crucigrama...');
@@ -3651,6 +3686,7 @@ const welcomeSequence = [
 
 let currentStepIndex = 0;
 let currentAudio = null;
+let isWelcomeActive = true;
 
 function resetTurtles() {
     ['toby', 'mely'].forEach(turtle => {
@@ -3682,6 +3718,8 @@ function startSequence() {
 }
 
 function playWelcomeStep(index) {
+    if (!isWelcomeActive) return; // 🔴 DETENER TODO
+
     if (index >= welcomeSequence.length) {
         setTimeout(() => { closeWelcomeModal(); }, 1000);
         return;
@@ -3714,33 +3752,37 @@ function playWelcomeStep(index) {
     
     currentAudio = new Audio(step.audio);
     currentAudio.onended = () => {
-        activeVideo.classList.remove('welcome-active');
-        activeVideo.pause();
-        activeStatic.classList.add('welcome-active');
-        activeStatic.classList.remove('welcome-hidden');
-        
-        setTimeout(() => { playWelcomeStep(index + 1); }, 500);
-    };
+    if (!isWelcomeActive) return; // 🔴 DETENER
+
+    activeVideo.classList.remove('welcome-active');
+    activeVideo.pause();
+    activeStatic.classList.add('welcome-active');
+    activeStatic.classList.remove('welcome-hidden');
+    
+    setTimeout(() => { 
+        if (isWelcomeActive) {
+            playWelcomeStep(index + 1);
+        }
+    }, 500);
+};
     
     currentAudio.play().catch(e => console.error("Error al reproducir audio:", e));
 }
 
 function closeWelcomeModal() {
-    // Detener audio si está reproduciéndose
+    isWelcomeActive = false; // 🔴 CORTA TODO
+
     if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
     }
-    
-    // Detener videos
+
     document.getElementById('welcome-toby-video').pause();
     document.getElementById('welcome-mely-video').pause();
-    
-    // Cerrar modal
+
     const modal = document.getElementById('welcomeModal');
     modal.style.display = 'none';
-    
-    // Guardar en sessionStorage que ya vio la bienvenida
+
     sessionStorage.setItem('welcomeSeen', 'true');
 }
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\Cursos\TopicsController;
 use App\Http\Controllers\Cursos\SubtopicsController;
 use App\Http\Controllers\Cursos\ActivitiesController;
 use App\Http\Controllers\Cursos\CompletionController;
+use App\Http\Controllers\Cursos\ProgressController;
 
 // --- Controladores de Facturación ---
 use App\Http\Controllers\Facturacion\BillingController;
@@ -90,11 +91,17 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     // ======================================================================
     Route::middleware(['role:master,docente'])->group(function () {
         // Gestión de Cursos
-        Route::get('/cursos/crear', [CourseController::class, 'create'])->name('courses.create'); // <--- Ahora esta va primero
+        Route::get('/cursos/crear', [CourseController::class, 'create'])->name('courses.create'); 
         Route::post('/cursos', [CourseController::class, 'store'])->name('courses.store');
         Route::get('/cursos/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/cursos/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('/cursos/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
+        
+        
+
+        // Lista de asistencia
+        Route::get('/cursos/{course}/asistencia', [CourseController::class, 'attendance'])->name('courses.attendance')->middleware(['role:master,docente,gerente_capacitacion']);
+        Route::get('/cursos/{course}/asistencia/pdf', [CourseController::class, 'exportAttendancePDF'])->name('courses.attendance.pdf')->middleware(['role:master,docente,gerente_capacitacion']);
         
         //Biblioteca de Temas (Plantillas)
         Route::get('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'index'])->name('templates.index');
@@ -125,6 +132,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit'); 
         Route::put('/temas/{topic}', [TopicsController::class, 'update'])->name('topics.update');
         Route::delete('/temas/{topic}', [TopicsController::class, 'destroy'])->name('topics.destroy');
+        
         // routes/web.php
         Route::post('/cursos/{course}/welcome', [CourseController::class, 'updateWelcome'])->name('course.update.welcome')->middleware('auth');
         
@@ -136,7 +144,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         // Actividades (Gestión)
         Route::post('/actividades', [ActivitiesController::class, 'store'])->name('activities.store');
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
-        Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
+        
         
         // Grupos
         Route::post('/api/workstations-by-departments', [WorkstationController::class, 'byDepartments']);
@@ -172,6 +180,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     Route::get('/cursos/{course}', [CourseController::class, 'show'])->name('course.show');
     Route::get('/cursos/{course}/certificado', [CourseController::class, 'showCertificate'])->name('courses.certificate');
     Route::get('/mis-certificados', [CourseController::class, 'myCertificates'])->name('courses.certificates.index');
+    // Guardar progreso
+    Route::post('/cursos/{course}/save-progress', [CourseController::class, 'saveProgress'])->name('courses.saveProgress');
+    Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
     
     
 
