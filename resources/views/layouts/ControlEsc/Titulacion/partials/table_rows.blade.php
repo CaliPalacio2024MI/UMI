@@ -3,7 +3,7 @@
         <td>{{ $item->alumno?->nombre }} {{ $item->alumno?->apellido_paterno }}</td>
         <td>{{ $item->nombre_documento }}</td>
         <td>{{ $item->descripcion ?: '-' }}</td>
-        <td><a class="titulacion-download-link" href="{{ route('escolar.titulacion.download', $item->id) }}" target="_blank">Ver Documento / Descargar Documento</a></td>
+        <td><a class="titulacion-download-link" href="{{ route('escolar.titulacion.download', $item->id) }}" target="_blank">Descargar Documento</a></td>
         <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
         <td>
             <button class="titulacion-btn titulacion-btn--icon" type="button" onclick="editTitulacion({{ $item->id }})" aria-label="Editar" title="Editar">
