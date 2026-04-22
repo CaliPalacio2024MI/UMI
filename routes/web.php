@@ -339,7 +339,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                             Route::post('/comisiones', [CRMController::class, 'storeComision'])->name('comisiones.store');
                             Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');  
                             Route::delete('/comisiones/{id}', [CRMController::class, 'destroyComision'])->name('comisiones.destroy');
+                            Route::get('/comisiones/filtrar', [CRMController::class, 'filtrarComisiones'])->name('comisiones.filtrar');
                             Route::get('/comisiones/{ctpId}/detalle', [CRMController::class, 'detalleComision'])->name('comisiones.detalle');
+
                         });
 
                     // ASIGNAR CTP

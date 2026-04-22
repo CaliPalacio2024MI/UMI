@@ -742,4 +742,48 @@ class CrmController extends Controller
             'total' => $resultado->sum('comision'),
         ]);
     }
+
+    public function filtrarComisiones(Request $request)
+    {
+        $inicio = $request->input('fecha_inicio');
+        $fin    = $request->input('fecha_fin');
+        $buscar = strtolower($request->input('ctp', ''));
+
+        $ctps = User::whereHas('roles', function ($q) {
+            $q->where('name', 'ctp');
+        })->get();
+
+        $ctps = $ctps->filter(function ($ctp) use ($buscar) {
+            if (!$buscar) return true;
+            $nombre = strtolower($ctp->nombre . ' ' . $ctp->apellido_paterno);
+            return str_contains($nombre, $buscar);
+        });
+
+        $ctps->each(function ($ctp) use ($inicio, $fin) {
+            $query = Lead::where('ctp_id', $ctp->id)
+                ->whereHas('seguimientos', function ($q) use ($inicio, $fin) {
+                    $q->where('estado', 'Alumno');
+                    if ($inicio) $q->whereDate('fecha', '>=', $inicio);
+                    if ($fin)    $q->whereDate('fecha', '<=', $fin);
+                });
+
+            $ctp->num_conversiones = $query->count();
+
+            $leads = $query->with('carrera')->get();
+
+            $ctp->total_comisiones = $leads->sum(function ($lead) {
+                $comision = Comision::where('producto', $lead->carrera?->name)->first();
+                return $comision?->total ?? 0;
+            });
+        });
+
+        return response()->json(
+            $ctps->values()->map(fn($ctp) => [
+                'id'               => $ctp->id,
+                'nombre'           => $ctp->nombre . ' ' . $ctp->apellido_paterno,
+                'num_conversiones' => $ctp->num_conversiones,
+                'total_comisiones' => $ctp->total_comisiones,
+            ])
+        );
+    }
 }
