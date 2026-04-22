@@ -4,7 +4,7 @@
 
 {{-- Inyectamos el CSS limpio --}}
 @push('styles')
-    @vite(['resources/css/MiInformacion/historial.css'])
+    @vite(['resources/css/Mi_Informacion/historial_academico.css'])
 @endpush
 
 @section('content')

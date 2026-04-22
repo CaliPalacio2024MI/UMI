@@ -3,7 +3,7 @@
 @section('title', 'Mi Información - ' . session('active_institution_name'))
 
 @push('styles')
-    @vite(['resources/css/MiInformacion/profile.css'])
+    @vite(['resources/css/Mi_Informacion/perfil.css'])
 @endpush
 
 @section('content')
