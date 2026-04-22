@@ -437,7 +437,6 @@
         const titulo = document.getElementById("tituloDona");
         const colores = { "Prospecto frío": "#17a2b8", "Prospecto caliente": "#ffc107", "Aspirante": "#28a745", "Alumno": "#6f42c1" };
         const totalSinFiltro = {{ $totalSinFiltroEstatus }};
-        const totalSinFiltro = {{ $totalSinFiltroEstatus }};
         const totalesPorEstado = {
             "Prospecto frío":     {{ $totalFrio }},
             "Prospecto caliente": {{ $totalCaliente }},

@@ -13,7 +13,9 @@
 
         <!-- IMAGEN O VIDEO DE FONDO -->
         <div class="campus-overlay"></div>
-        <video autoplay muted loop class="video-bg">
+            <video autoplay muted loop class="video-bg">
+                <source src="{{ asset('videos/inicio_alumnos.mp4') }}" type="video/mp4">
+            </video>
         
 
         <!-- NAVBAR (igual que landing) -->
