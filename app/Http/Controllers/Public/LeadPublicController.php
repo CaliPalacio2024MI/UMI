@@ -87,4 +87,10 @@ public function store(Request $request)
     {
         return view('public.landing');
     }
+
+    public function campus()
+    {
+        return view('public.campus');
+    }
 }
+

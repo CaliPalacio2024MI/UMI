@@ -31,7 +31,7 @@
         <div class="nav-right">
             <div class="nav-links">
                 <a href="#">Programas</a>
-                <a href="#">Campus</a>
+                <a href="{{ route('public.campus') }}">Campus</a>
                 <a href="#">Admisiones</a>
             </div>
 

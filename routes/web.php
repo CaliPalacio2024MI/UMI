@@ -55,6 +55,8 @@ Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('
 Route::post('/registro-publico', [LeadPublicController::class, 'store'])
     ->middleware('throttle:3,15')
     ->name('public.inscripcion.store');
+    
+Route::get('/campus', [LeadPublicController::class, 'campus'])->name('public.campus');
 
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
