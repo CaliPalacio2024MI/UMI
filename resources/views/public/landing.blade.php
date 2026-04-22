@@ -31,7 +31,7 @@
         <div class="nav-right">
             <div class="nav-links">
                 <a href="#">Programas</a>
-                <a href="{{ route('public.campus') }}">Campus</a>
+                <a href="#" onclick="abrirMenu('campus')">Campus</a>
                 <a href="#">Admisiones</a>
             </div>
 
@@ -93,6 +93,28 @@
     </div>
 
 </section>
+<section class="alumni">
+
+<img src="{{ asset('images/foto1.jpg') }}" class="alumni-img img1 reveal">
+<img src="{{ asset('images/foto2.jpg') }}" class="alumni-img img2 reveal">
+<img src="{{ asset('images/foto3.jpg') }}" class="alumni-img img3 reveal">
+
+<div class="alumni-content reveal">
+
+    <span class="alumni-tag">ALUMNI NETWORK</span>
+
+    <h2>
+        After graduation, and for the rest of your life,
+        you will be connected to an influential global network
+        of professionals and entrepreneurs.
+    </h2>
+
+    <button>Learn about the Alumni Network</button>
+
+</div>
+
+</section>
+
 
 <!-- FEATURES -->
 <section class="features">
@@ -102,7 +124,7 @@
     <div class="feature"><h3>🏨 Experiencia real</h3><p>Aprendizaje práctico en campo</p></div>
 </section>
 
-<!-- DESTINOS (LA PARTE QUE TE FALTABA 🔥) -->
+<!-- DESTINOS -->
 <section class="destinations-section">
 
     <div class="section-intro">
@@ -257,9 +279,13 @@
 <!-- MENU -->
 <div class="menu-full" id="menuFull">
 
-    <!-- BOTÓN CERRAR -->
+    <!-- HEADER -->
     <div class="menu-header">
-        <button class="close-btn" onclick="cerrarMenu()">Cerrar ✕</button>
+        <div class="menu-logo">
+            <img src="{{ asset('images/LogoUMI-Blanco.png') }}">
+        </div>
+
+        <div class="close-btn" onclick="cerrarMenu()">✕</div>
     </div>
 
     <!-- CONTENIDO -->
@@ -267,18 +293,24 @@
 
         <!-- IZQUIERDA -->
         <div class="menu-left">
-            <h2>Programas</h2>
-            <h2>Campus</h2>
-            <h2>Admisiones</h2>
-            <h2>Acerca de</h2>
-            <h2>Alumnado</h2>
-        </div>
+    <h2 onclick="cambiarSeccion('programas')">Programas</h2>
+    <h2 class="active" onclick="cambiarSeccion('campus')">Campus</h2>
+    <h2 onclick="cambiarSeccion('admisiones')">Admisiones</h2>
+    <h2 onclick="cambiarSeccion('acerca')">Acerca de</h2>
+    <h2>Alumnado</h2>
+</div>
 
-        <!-- DERECHA -->
+        <!-- DERECHA  -->
         <div class="menu-right">
-            <p>Bachelor of Science in Hospitality Business</p>
-            <p>Luxury Business Programs</p>
-            <p>Master Programs</p>
+
+            <a href="{{ route('campus.acapulco') }}" class="campus-card">
+                <div class="img-container">
+                    <img src="{{ asset('images/foto1.jpg') }}">
+                </div>
+                <h3>Acapulco</h3>
+                <p>Guerrero, México</p>
+            </a>
+
         </div>
 
     </div>
@@ -286,17 +318,101 @@
 </div>
 
 <!-- JS -->
-<script src="{{ asset('js/main.js') }}"></script>
-
 <script>
-function abrirMenu(){
-    document.getElementById("menuFull").classList.add("active");
+function abrirMenu(seccion = null){
+    const menu = document.getElementById("menuFull");
+    menu.classList.add("active");
+
+    // Reset estilos
+    document.querySelectorAll(".menu-left h2").forEach(el => {
+        el.classList.remove("active");
+    });
+
+    // Activar sección
+    if(seccion === "campus"){
+        document.querySelector(".menu-left h2:nth-child(2)").classList.add("active");
+    }
 }
 
 function cerrarMenu(){
     document.getElementById("menuFull").classList.remove("active");
 }
-</script>
+function mostrarProgramas(tipo){
+    const contenedor = document.getElementById("careersGrid");
+    const titulo = document.getElementById("tituloCarreras");
 
+    const nombres = {
+        licenciatura: "Licenciaturas",
+        posgrado: "Posgrados",
+        ejecutivo: "Educación continua",
+        online: "Cursos en línea"
+    };
+
+    titulo.innerText = nombres[tipo] || tipo;
+
+    contenedor.innerHTML = `
+        <div class="career-card"><h3>${nombres[tipo]} 1</h3></div>
+        <div class="career-card"><h3>${nombres[tipo]} 2</h3></div>
+        <div class="career-card"><h3>${nombres[tipo]} 3</h3></div>
+    `;
+
+    
+    document.getElementById("careersSection").scrollIntoView({
+        behavior: "smooth"
+    });
+}
+</script>
+<script>
+function revealOnScroll(){
+    const reveals = document.querySelectorAll(".reveal");
+
+    reveals.forEach((el) => {
+        const windowHeight = window.innerHeight;
+        const elementTop = el.getBoundingClientRect().top;
+
+        if(elementTop < windowHeight - 120){
+            el.classList.add("active");
+        }
+    });
+}
+
+// activar al cargar
+window.addEventListener("load", revealOnScroll);
+
+// activar al hacer scroll
+window.addEventListener("scroll", revealOnScroll);
+</script>
+<script>
+let current = 0;
+let target = 0;
+
+window.addEventListener("scroll", () => {
+    target = window.scrollY;
+});
+
+function animate(){
+    current += (target - current) * 0.08;
+
+    const img1 = document.querySelector(".img1");
+    const img2 = document.querySelector(".img2");
+    const img3 = document.querySelector(".img3");
+
+    if(img1){
+        img1.style.transform = `translateY(${current * 0.2}px)`;
+    }
+
+    if(img2){
+        img2.style.transform = `translateY(${current * 0.35}px)`;
+    }
+
+    if(img3){
+        img3.style.transform = `translateY(${current * 0.15}px)`;
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
 </body>
 </html>

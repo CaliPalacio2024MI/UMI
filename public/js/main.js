@@ -44,3 +44,26 @@ function mostrarProgramas(tipo){
         `;
     });
 }
+function revealOnScroll() {
+    const reveals = document.querySelectorAll('.reveal');
+
+    reveals.forEach(el => {
+        const windowHeight = window.innerHeight;
+        const elementTop = el.getBoundingClientRect().top;
+        const elementBottom = el.getBoundingClientRect().bottom;
+
+        const visiblePoint = 100;
+
+        
+        if (elementTop < windowHeight - visiblePoint && elementBottom > 0) {
+            el.classList.add('active');
+        } 
+      
+        else {
+            el.classList.remove('active');
+        }
+    });
+}
+
+window.addEventListener('scroll', revealOnScroll);
+window.addEventListener('load', revealOnScroll);
