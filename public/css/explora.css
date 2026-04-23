@@ -341,3 +341,108 @@ body{
     font-size:14px;
 }
 
+/* ===== JORNADAS ===== */
+.jornadas {
+    padding: 100px 10%;
+    background: #fff;
+}
+
+.jornadas-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+}
+
+.jornadas-img {
+    overflow: hidden;
+}
+
+.jornadas-img img {
+    width: 100%;
+    height: 550px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.jornadas-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+
+.jornadas-desc {
+    color: #666;
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    max-width: 480px;
+}
+
+/* EVENTO */
+.evento-item {
+    border-left: 2px solid #ddd;
+    padding-left: 20px;
+    margin-bottom: 30px;
+}
+
+.evento-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #999;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.evento-fecha {
+    font-weight: 600;
+    font-size: 16px;
+    color: #1a1a1a;
+    margin-bottom: 5px;
+}
+
+.evento-detalle {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+.evento-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    text-decoration: none;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 2px;
+    transition: opacity 0.3s;
+}
+
+.evento-link:hover {
+    opacity: 0.5;
+}
+
+.jornadas-ver-todas {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+    text-decoration: none;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 2px;
+    transition: opacity 0.3s;
+}
+
+.jornadas-ver-todas:hover {
+    opacity: 0.5;
+}
+
+@media(max-width: 768px) {
+    .jornadas-container {
+        grid-template-columns: 1fr;
+    }
+}

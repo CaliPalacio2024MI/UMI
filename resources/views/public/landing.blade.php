@@ -30,7 +30,7 @@
 
         <div class="nav-right">
             <div class="nav-links">
-            <a href="#" onclick="abrirMenu('programas')">Programas</a>
+                <a href="#">Programas</a>
                 <a href="#" onclick="abrirMenu('campus')">Campus</a>
                 <a href="#">Admisiones</a>
             </div>
@@ -284,18 +284,14 @@ function abrirMenu(seccion = null){
     const menu = document.getElementById("menuFull");
     menu.classList.add("active");
 
-    const items = document.querySelectorAll(".menu-left h2");
+    // Reset estilos
+    document.querySelectorAll(".menu-left h2").forEach(el => {
+        el.classList.remove("active");
+    });
 
-    items.forEach(el => el.classList.remove("active"));
-
+    // Activar sección
     if(seccion === "campus"){
-        items[1].classList.add("active");
-        cambiarSeccion('campus', items[1]);
-    }
-
-    if(seccion === "programas"){
-        items[0].classList.add("active");
-        cambiarSeccion('programas', items[0]);
+        document.querySelector(".menu-left h2:nth-child(2)").classList.add("active");
     }
 }
 
@@ -391,72 +387,4 @@ function animateParallax(){
 }
 
 animateParallax();
-</script>
-<script>
-function cambiarSeccion(seccion, el){
-
-const contenedor = document.getElementById("menuContenido");
-
-// quitar active
-document.querySelectorAll(".menu-left h2").forEach(item => {
-    item.classList.remove("active");
-});
-
-// activar seleccionado
-el.classList.add("active");
-
-// 👉 CAMPUS (ya lo tienes bien)
-if(seccion === "campus"){
-    contenedor.innerHTML = `
-        <a href="{{ route('campus.acapulco') }}" class="campus-card">
-            <div class="img-container">
-                <img src="{{ asset('images/foto1.jpg') }}">
-            </div>
-            <h3>Acapulco</h3>
-            <p>Guerrero, México</p>
-        </a>
-    `;
-}
-
-// 🔥 AQUÍ ESTÁ LO NUEVO (LO QUE TE FALTABA)
-if(seccion === "programas"){
-    contenedor.innerHTML = `
-        <div class="menu-programas">
-
-            <div class="col">
-                <span class="menu-subtitle">LICENCIATURAS</span>
-                <p>Administración Hotelera</p>
-                <p>Negocios Internacionales</p>
-                <p>Turismo de Lujo</p>
-                <p>Ver todas</p>
-            </div>
-
-            <div class="col">
-                <span class="menu-subtitle">POSGRADOS</span>
-                <p>Maestría en Hospitality</p>
-                <p>Maestría en Finanzas</p>
-                <p>Maestría en Marketing</p>
-                <p>Ver todos</p>
-            </div>
-
-            <div class="col">
-                <span class="menu-subtitle">EDUCACIÓN EJECUTIVA</span>
-                <p>Diplomado en Negocios</p>
-                <p>Gestión de lujo</p>
-                <p>Leadership Program</p>
-            </div>
-
-            <div class="col">
-                <span class="menu-subtitle">CURSOS</span>
-                <p>Curso de Hospitality</p>
-                <p>Curso de lujo</p>
-                <p>Online programs</p>
-            </div>
-
-        </div>
-    `;
-}
-}
-</script>
-</body>
 </html>

@@ -108,6 +108,50 @@
 
 </section>
 
+<!-- JORNADAS DE PUERTAS ABIERTAS -->
+<section class="jornadas">
+
+    <div class="jornadas-container">
+
+        <!-- IMAGEN IZQUIERDA -->
+        <div class="jornadas-img">
+            <img src="{{ asset('images/foto1.jpg') }}" alt="Puertas abiertas UMI">
+        </div>
+
+        <!-- CONTENIDO DERECHO -->
+        <div class="jornadas-content">
+
+            <h2>Próximas jornadas<br>de puertas abiertas</h2>
+
+            <p class="jornadas-desc">
+                Descubre nuestro campus en persona. Consulta los próximos días de 
+                puertas abiertas y experimenta cómo es la vida estudiantil en UMI.
+            </p>
+
+            <!-- EVENTO 1 -->
+            <div class="evento-item">
+                <span class="evento-label">JORNADAS DE PUERTAS ABIERTAS</span>
+                <p class="evento-fecha">Sábado, 17 de mayo de 2026</p>
+                <p class="evento-detalle">09:00 - 14:00 · Campus UMI, Acapulco</p>
+                <a href="{{ route('public.inscripcion.create') }}" class="evento-link">Regístrate ahora</a>
+            </div>
+
+            <!-- EVENTO 2 -->
+            <div class="evento-item">
+                <span class="evento-label">JORNADAS DE PUERTAS ABIERTAS</span>
+                <p class="evento-fecha">Sábado, 21 de junio de 2026</p>
+                <p class="evento-detalle">09:00 - 14:00 · Campus UMI, Acapulco</p>
+                <a href="{{ route('public.inscripcion.create') }}" class="evento-link">Regístrate ahora</a>
+            </div>
+
+            <a href="#" class="jornadas-ver-todas">Consulta todas nuestras jornadas →</a>
+
+        </div>
+
+    </div>
+
+</section>
+
 <!-- FOOTER -->
 <footer class="footer">
 
