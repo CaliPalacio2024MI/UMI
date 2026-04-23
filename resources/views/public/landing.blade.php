@@ -116,12 +116,38 @@
 </section>
 
 
-<!-- FEATURES -->
-<section class="features">
-    <div class="feature"><h3>🌍 Enfoque global</h3><p>Programas con visión internacional</p></div>
-    <div class="feature"><h3>🎓 Excelencia académica</h3><p>Profesores altamente capacitados</p></div>
-    <div class="feature"><h3>💼 Alta empleabilidad</h3><p>Conexión con empresas reales</p></div>
-    <div class="feature"><h3>🏨 Experiencia real</h3><p>Aprendizaje práctico en campo</p></div>
+<!-- LO QUE NOS DISTINGUE -->
+<section class="distingue">
+
+    <!-- FILA SUPERIOR -->
+    <div class="distingue-header">
+        <h2>Lo que nos distingue</h2>
+        <p>Formamos líderes con visión global en hospitalidad y negocios de lujo, combinando rigor académico con experiencia práctica real.</p>
+    </div>
+
+    <!-- COLUMNAS -->
+    <div class="distingue-grid">
+
+        <div class="distingue-col">
+            <h3>Enfoque global</h3>
+            <p>Programas con visión internacional que preparan a nuestros egresados para competir en los mercados más exigentes del mundo.</p>
+        </div>
+
+        <div class="distingue-col">
+            <h3>Excelencia académica</h3>
+            <p>Profesores altamente capacitados con experiencia en la industria real, comprometidos con el desarrollo integral del alumno.</p>
+        </div>
+
+        <div class="distingue-col">
+            <h3>Alta empleabilidad</h3>
+            <p>Vinculación directa con empresas líderes del sector hotelero y de negocios, con prácticas profesionales desde el primer año.</p>
+        </div>
+        <div class="distingue-col">
+            <h3>Experiencia real</h3>
+            <p>Aprendizaje práctico en campo con acceso directo a hoteles, restaurantes y empresas de lujo para desarrollar habilidades desde el primer día.</p>
+        </div>
+    </div>
+
 </section>
 
 <!-- DESTINOS -->
@@ -132,11 +158,28 @@
         <h2 class="dest-title">Espacios diseñados para<br>impulsar tu aprendizaje</h2>
     </div>
 
-    <!-- DESTINO 1 -->
+    <!-- DESTINO 1 - CARRUSEL -->
     <div class="dest-item">
-        <div class="dest-img-wrap">
-            <img src="{{ asset('images/foto1.jpg') }}">
+
+        <div class="dest-img-wrap carrusel-wrap">
+            
+            <!-- IMAGENES -->
+            <div class="carrusel-track" id="carruselTrack">
+                <img src="{{ asset('images/foto1.jpg') }}">
+                <img src="{{ asset('images/foto6.jpg') }}">
+                <img src="{{ asset('images/foto10.jpg') }}">
+                <img src="{{ asset('images/foto9.jpg') }}">
+            </div>
+
+            <!-- FLECHAS -->
+            <button class="carrusel-btn prev" onclick="moverCarrusel(-1)">‹</button>
+            <button class="carrusel-btn next" onclick="moverCarrusel(1)">›</button>
+
+            <!-- PUNTOS -->
+            <div class="carrusel-dots" id="carruselDots"></div>
+
         </div>
+
         <div class="dest-info">
             <span class="dest-num">01</span>
             <span class="dest-tag">México · Acapulco</span>
@@ -155,6 +198,47 @@
 
             <a href="{{ route('campus.acapulco') }}">Explorar nuestro campus →</a>
         </div>
+
+    </div>
+
+</section>
+<!-- AÑOS DE EXCELENCIA -->
+<section class="excelencia">
+
+    <div class="excelencia-container">
+
+        <!-- IZQUIERDA: IMAGEN CON BADGE -->
+        <div class="excelencia-img-wrap">
+
+            <div class="excelencia-badge">
+                <img src="{{ asset('images/LogoUMI-Blanco.png') }}" alt="UMI">
+                <span>Universidad Mundo Imperial</span>
+            </div>
+
+            <img src="{{ asset('images/foto1.jpg') }}" alt="Estudiantes UMI" class="excelencia-img">
+
+        </div>
+
+        <!-- DERECHA: TEXTO -->
+        <div class="excelencia-texto">
+            <h2>Años de excelencia</h2>
+
+            <p>
+                Formando líderes en hospitalidad y negocios de lujo, estamos 
+                firmemente establecidos como una de las instituciones educativas 
+                más destacadas de México en gestión hotelera y turismo.
+            </p>
+
+            <p>
+                Ofrecemos educación empresarial aplicada, combinando rigor 
+                académico, habilidades prácticas y vinculación profesional, 
+                todo ello con un enfoque en desarrollar las competencias que 
+                demanda la economía global moderna.
+            </p>
+
+            <a href="#" class="excelencia-link">Conoce a nosotros</a>
+        </div>
+
     </div>
 
 </section>
@@ -457,6 +541,40 @@ if(seccion === "programas"){
     `;
 }
 }
+</script>
+<script>
+    let indice = 0;
+    const track = document.getElementById("carruselTrack");
+    const totalImagenes = track.children.length;
+    const dotsContainer = document.getElementById("carruselDots");
+
+    // Crear puntos
+    for(let i = 0; i < totalImagenes; i++){
+        const dot = document.createElement("span");
+        if(i === 0) dot.classList.add("active");
+        dot.onclick = () => irA(i);
+        dotsContainer.appendChild(dot);
+    }
+
+    function actualizarDots(){
+        document.querySelectorAll(".carrusel-dots span").forEach((d, i) => {
+            d.classList.toggle("active", i === indice);
+        });
+    }
+
+    function irA(n){
+        indice = n;
+        track.style.transform = `translateX(-${indice * 100}%)`;
+        actualizarDots();
+    }
+
+    function moverCarrusel(dir){
+        indice = (indice + dir + totalImagenes) % totalImagenes;
+        irA(indice);
+    }
+
+    // Auto avance cada 4 segundos
+    setInterval(() => moverCarrusel(1), 4000);
 </script>
 </body>
 </html>

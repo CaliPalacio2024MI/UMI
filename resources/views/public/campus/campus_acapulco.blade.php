@@ -115,7 +115,7 @@
 
         <!-- IMAGEN IZQUIERDA -->
         <div class="jornadas-img">
-            <img src="{{ asset('images/foto1.jpg') }}" alt="Puertas abiertas UMI">
+            <img src="{{ asset('images/foto4.jpg') }}" alt="Puertas abiertas UMI">
         </div>
 
         <!-- CONTENIDO DERECHO -->
@@ -151,7 +151,56 @@
     </div>
 
 </section>
+<!-- INSTALACIONES -->
+<section class="instalaciones">
 
+    <div class="instalaciones-container">
+
+        <!-- IZQUIERDA -->
+        <div class="instalaciones-texto">
+            <h2>Instalaciones increíbles y una gran variedad de actividades</h2>
+            <p>
+                Disfruta de instalaciones de primer nivel diseñadas para elevar 
+                tu aprendizaje. Desde aulas equipadas con tecnología de punta 
+                hasta espacios de convivencia, cada aspecto del campus UMI está 
+                diseñado para inspirar, involucrar y enriquecer tu camino en la 
+                hospitalidad y los negocios.
+            </p>
+        </div>
+
+        <!-- DERECHA -->
+        <div class="instalaciones-cta">
+            <a href="#" class="btn-instalaciones">Ver todas las instalaciones y actividades</a>
+        </div>
+
+    </div>
+
+</section>
+<!-- VIDA EN ACAPULCO -->
+<section class="vida-campus">
+
+    <div class="vida-inner">
+
+        <img src="{{ asset('images/foto5.jpg') }}" alt="Vida en Acapulco" class="vida-bg-img">
+        <div class="vida-overlay"></div>
+
+        <div class="vida-texto">
+            <h2>Estudios en Acapulco</h2>
+            <p>
+                Acapulco ofrece un escenario único para estudiantes con vocación internacional,
+                con sus playas espectaculares, su rica cultura y un estilo de vida vibrante.
+                Desde explorar la Riviera Diamante hasta conectar con la industria hotelera,
+                siempre hay algo que experimentar.
+            </p>
+        </div>
+
+        <div class="vida-cta">
+            <a href="#" class="btn-vida">Aprende sobre la vida en Acapulco</a>
+        </div>
+
+    </div>
+
+</section>
 <!-- FOOTER -->
 <footer class="footer">
 

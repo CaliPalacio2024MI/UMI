@@ -363,6 +363,7 @@ body{
     height: 550px;
     object-fit: cover;
     object-position: center;
+    border-radius: 5px;
 }
 
 .jornadas-content h2 {
@@ -444,5 +445,150 @@ body{
 @media(max-width: 768px) {
     .jornadas-container {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ===== INSTALACIONES ===== */
+.instalaciones {
+    padding: 100px 10%;
+    background: #fff;
+    border-top: 1px solid #eee;
+}
+
+.instalaciones-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 60px;
+}
+
+.instalaciones-texto {
+    max-width: 520px;
+}
+
+.instalaciones-texto h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 300;
+    color: #1a1a1a;
+    line-height: 1.15;
+    margin-bottom: 25px;
+}
+
+.instalaciones-texto p {
+    color: #666;
+    font-size: 15px;
+    line-height: 1.8;
+    max-width: 460px;
+}
+
+.btn-instalaciones {
+    display: inline-block;
+    background: #1e3a5f;
+    color: white;
+    padding: 16px 28px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+.btn-instalaciones:hover {
+    background: #162d4a;
+}
+
+@media(max-width: 768px) {
+    .instalaciones-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ===== VIDA EN ACAPULCO ===== */
+.vida-campus {
+    padding: 0 5%;
+    background: #f5f5f5;
+    padding-top: 60px;
+    padding-bottom: 60px;
+}
+
+.vida-inner {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 500px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 50px;
+}
+
+.vida-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
+}
+
+.vida-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.65) 40%, rgba(0,0,0,0.1));
+    z-index: 1;
+}
+
+.vida-texto {
+    position: relative;
+    z-index: 2;
+    color: white;
+    max-width: 480px;
+}
+
+.vida-texto h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 70px;
+    font-weight: 300;
+    line-height: 1.15;
+    margin-bottom: 16px;
+}
+
+.vida-texto p {
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0.9;
+}
+
+.vida-cta {
+    position: relative;
+    z-index: 2;
+    align-self: flex-end;
+}
+
+.btn-vida {
+    display: inline-block;
+    background: white;
+    color: #1a1a1a;
+    padding: 16px 24px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+.btn-vida:hover {
+    background: #eee;
+}
+
+@media(max-width: 768px) {
+    .vida-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-end;
+        gap: 20px;
     }
 }
