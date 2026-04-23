@@ -7,6 +7,7 @@
 
     <!-- FUENTES -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <meta charset="UTF-8">
     <title>Universidad</title>
@@ -307,11 +308,23 @@
 
         <!-- REDES -->
         <div class="footer-social">
-            <h4>Síguenos</h4>
-            <p>Instagram</p>
-            <p>Facebook</p>
-            <p>TikTok</p>
-        </div>
+    <h4>Síguenos</h4>
+    
+    <div class="social-icons">
+        <a href="https://www.linkedin.com" target="_blank">
+            <i class="fab fa-linkedin"></i>
+        </a>
+
+        <a href="https://www.instagram.com" target="_blank">
+            <i class="fab fa-instagram"></i>
+        </a>
+
+        <a href="https://www.tiktok.com" target="_blank">
+            <i class="fab fa-tiktok"></i>
+        </a>
+    </div>
+
+</div>
 
     </div>
 
@@ -357,6 +370,21 @@
             </a>
 
         </div>
+        <div class="menu-social">
+
+    <a href="https://www.linkedin.com" target="_blank">
+        <i class="fab fa-linkedin"></i>
+    </a>
+
+    <a href="https://www.instagram.com" target="_blank">
+        <i class="fab fa-instagram"></i>
+    </a>
+
+    <a href="https://www.tiktok.com" target="_blank">
+        <i class="fab fa-tiktok"></i>
+    </a>
+
+</div>
 
     </div>
 
@@ -390,22 +418,55 @@ function mostrarProgramas(tipo){
     const contenedor = document.getElementById("careersGrid");
     const titulo = document.getElementById("tituloCarreras");
 
-    const nombres = {
-        licenciatura: "Licenciaturas",
-        posgrado: "Posgrados",
-        ejecutivo: "Educación continua",
-        online: "Cursos en línea"
-    };
+    const data = {
+    licenciatura: {
+        titulo: "Licenciaturas",
+        items: [
+            { nombre: "Administración Hotelera", img: "images/Princess-85.jpg" },
+            { nombre: "Negocios Internacionales", img: "images/foto6.jpg" },
+            { nombre: "Turismo de Lujo", img: "images/Princess-17.jpg" }
+        ]
+    },
 
-    titulo.innerText = nombres[tipo] || tipo;
+    posgrado: {
+        titulo: "Posgrados",
+        items: [
+            { nombre: "Maestría en Hospitality", img: "images/foto9.jpg" },
+            { nombre: "Maestría en Finanzas", img: "images/Pierre-23.jpg" },
+            { nombre: "Maestría en Marketing", img: "images/foto7.jpg" }
+        ]
+    },
 
-    contenedor.innerHTML = `
-        <div class="career-card"><h3>${nombres[tipo]} 1</h3></div>
-        <div class="career-card"><h3>${nombres[tipo]} 2</h3></div>
-        <div class="career-card"><h3>${nombres[tipo]} 3</h3></div>
-    `;
+    ejecutivo: {
+        titulo: "Educación continua",
+        items: [
+            { nombre: "Diplomado en Negocios", img: "images/foto1.jpg" },
+            { nombre: "Gestión de lujo", img: "images/bebida.jpg" },
+            { nombre: "Leadership Program", img: "images/bebida2.jpg" }
+        ]
+    },
 
-    
+    online: {
+        titulo: "Cursos en línea",
+        items: [
+            { nombre: "Curso de Hospitality", img: "images/building.png" },
+            { nombre: "Curso de lujo", img: "images/foto4.jpg" },
+            { nombre: "Online Business Program", img: "images/foto5.jpg" }
+        ]
+    }
+};
+
+    const info = data[tipo];
+
+    titulo.innerText = info.titulo;
+
+    contenedor.innerHTML = info.items.map(item => `
+        <div class="career-card">
+            <img src="${item.img}" alt="${item.nombre}">
+            <h3>${item.nombre}</h3>
+        </div>
+    `).join("");
+
     document.getElementById("careersSection").scrollIntoView({
         behavior: "smooth"
     });
@@ -505,34 +566,32 @@ if(seccion === "programas"){
     contenedor.innerHTML = `
         <div class="menu-programas">
 
-            <div class="col">
-                <span class="menu-subtitle">LICENCIATURAS</span>
-                <p>Administración Hotelera</p>
-                <p>Negocios Internacionales</p>
-                <p>Turismo de Lujo</p>
-                <p>Ver todas</p>
-            </div>
+        <div class="col">
+    <span class="menu-subtitle">LICENCIATURAS</span>
+    <p onclick="irAPrograma('licenciatura')">Administración Hotelera</p>
+    <p onclick="irAPrograma('licenciatura')">Negocios Internacionales</p>
+    <p onclick="irAPrograma('licenciatura')">Turismo de Lujo</p>
+</div>
 
-            <div class="col">
-                <span class="menu-subtitle">POSGRADOS</span>
-                <p>Maestría en Hospitality</p>
-                <p>Maestría en Finanzas</p>
-                <p>Maestría en Marketing</p>
-                <p>Ver todos</p>
-            </div>
+<div class="col">
+    <span class="menu-subtitle">POSGRADOS</span>
+    <p onclick="irAPrograma('posgrado')">Maestría en Hospitality</p>
+    <p onclick="irAPrograma('posgrado')">Maestría en Finanzas</p>
+    <p onclick="irAPrograma('posgrado')">Maestría en Marketing</p>
+</div>
 
             <div class="col">
                 <span class="menu-subtitle">EDUCACIÓN EJECUTIVA</span>
-                <p>Diplomado en Negocios</p>
-                <p>Gestión de lujo</p>
-                <p>Leadership Program</p>
+                <p onclick="irAPrograma('ejecutivo')">Diplomado en Negocios</p>
+                <p onclick="irAPrograma('ejecutivo')">Gestión de lujo</p>
+                <p onclick="irAPrograma('ejecutivo')">Leadership Program</p>
             </div>
 
             <div class="col">
                 <span class="menu-subtitle">CURSOS</span>
-                <p>Curso de Hospitality</p>
-                <p>Curso de lujo</p>
-                <p>Online programs</p>
+                <p onclick="irAPrograma('online')">Curso de Hospitality</p>
+                <p onclick="irAPrograma('online')">Curso de lujo</p>
+                <p onclick="irAPrograma('online')">Online programs</p>
             </div>
 
         </div>
@@ -573,6 +632,19 @@ if(seccion === "programas"){
 
     // Auto avance cada 4 segundos
     setInterval(() => moverCarrusel(1), 4000);
+</script>
+<script>
+function irAPrograma(tipo){
+    cerrarMenu(); // cierra el menú
+
+    mostrarProgramas(tipo); // carga los programas
+
+    setTimeout(() => {
+        document.getElementById("careersSection").scrollIntoView({
+            behavior: "smooth"
+        });
+    }, 300);
+}
 </script>
 </body>
 </html>

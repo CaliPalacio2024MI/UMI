@@ -1262,3 +1262,71 @@ body{
         font-size: 40px;
     }
 }
+.footer-social {
+    text-align: right;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.social-icons a {
+    color: white;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.social-icons a:hover {
+    opacity: 0.6;
+    transform: translateY(-2px);
+}
+.menu-content {
+    position: relative;
+}
+
+.menu-social {
+    position: absolute;
+    bottom: 30px;
+    right: 40px;
+    display: flex;
+    gap: 20px;
+}
+
+.menu-social a {
+    color: white;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.menu-social a:hover {
+    opacity: 0.6;
+    transform: translateY(-3px);
+}
+.menu-programas p {
+    cursor: pointer;
+}
+.career-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.career-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.career-card h3 {
+    padding: 15px;
+    font-size: 16px;
+}
+
+.career-card:hover {
+    transform: translateY(-5px);
+}
