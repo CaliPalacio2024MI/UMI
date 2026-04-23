@@ -10,12 +10,12 @@ use App\Models\Cursos\CourseSession;
 class GroupsController extends Controller
 {
     public function index()
-    {
-        // Traer grupos con conteo de participantes (opcional)
-        $groups = Group::all();
+{
+    $groups = Group::all();
+    $departments = Department::with('workstations')->get();
 
-        return view('groups.index', compact('groups'));
-    }
+    return view('groups.index', compact('groups', 'departments'));
+}
     public function store(Request $request)
     {
         $session = CourseSession::findOrFail($request->session_id);
@@ -39,9 +39,9 @@ class GroupsController extends Controller
 
     public function destroy(Group $group)
     {
-        $group->delete();
+       $group->delete();
 
-        return back()->with('success', 'Grupo eliminado correctamente');
+       return back()->with('success', 'Grupo eliminado correctamente');
     }
 
     public function edit(Group $group)

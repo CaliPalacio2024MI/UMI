@@ -41,15 +41,16 @@ class Department extends Model
         'institution_id',
     ];
 
-
+    
     public function institution()
     {
         return $this->belongsTo(Institution::class);
     }
 
-
+    
     public function workstations()
     {
         return $this->hasMany(Workstation::class);
     }
+
 }

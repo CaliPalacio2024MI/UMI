@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Cursos;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\StoreCourseRequest;
+use App\Http\Requests\StoreCourseRequest; 
 use App\Models\Cursos\Course;
 use App\Models\Users\Institution;
 use App\Models\Schedule;
@@ -20,9 +20,9 @@ use App\Models\Cursos\Activities;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use App\Models\TopicTemplate;
-use App\Models\Cursos\Topics;
 use App\Models\SubtopicTemplate;
-use App\Models\Cursos\Subtopic;
+use App\Models\Cursos\Topics;
+use App\Models\Cursos\Subtopic;;
 
 class CourseController extends Controller
 {
@@ -51,33 +51,34 @@ class CourseController extends Controller
      * Mostrar formulario de creación de curso
      */
     public function create(): View
-   {
-    // Obtenemos el ID de la institución de la sesión actual del usuario
-    $institutionId = session('active_institution_id');
+    {
+         // Obtenemos el ID de la institución de la sesión actual del usuario
+        $institutionId = session('active_institution_id');
 
-    // Cargamos la institución actual con sus relaciones
-    $currentInstitution = Institution::with(['careers', 'departments.workstations'])
-        ->find($institutionId);
+        // Cargamos la institución actual con sus relaciones (carreras, departamentos, etc.)
+        $currentInstitution = Institution::with(['careers', 'departments.workstations'])->find($institutionId);
 
-    $departmentWorkstationsMap = [];
-    if ($currentInstitution->departments) {
-        $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
-            return [$department->id => $department->workstations->toArray()];
-        });
-    }
-    //Para traer los temas de biblioteca
-    $templates = TopicTemplate::orderBy('title')->get();
+        $departmentWorkstationsMap = [];
+        if ($currentInstitution->departments) {
+            $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
+                return [$department->id => $department->workstations->toArray()];
+            });
+        }
+        //Para traer los temas de la biblioteca
+        $templates = TopicTemplate::orderBy('title')->get();
+        // Pasamos solo la institución actual a la vista.
+        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
 
-    // Traer todos los horarios registrados
-    $schedules = Schedule::all();
+         // Traer todos los horarios registrados
+        $schedules = Schedule::all();
 
-    // Enviar también $schedules a la vista
-    return view('layouts.Cursos.create', compact(
+        // Enviar también $schedules a la vista
+        return view('layouts.Cursos.create', compact(
         'currentInstitution',
         'departmentWorkstationsMap',
         'templates',
         'schedules'
-    ));
+     ));
     }
 
     /**
@@ -136,6 +137,7 @@ class CourseController extends Controller
         }
 
         $course = Course::create($courseData);
+
         //Copiar plantillas de tema
         if ($request->has('template_topics')) {
 
@@ -149,18 +151,18 @@ class CourseController extends Controller
         //Copiar plantillas de subtema
         if ($request->has('template_subtopics')) {
 
-            $selectedTemplates = SubtopicTemplate::whereIn('id', $request->template_subtopics)->get();
+            $selectedSubtopics_templates = SubtopicTemplate::whereIn('id', $request->template_subtopics)->get();
 
-            foreach ($selectedTemplates as $template){
-                Subtopic::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
+            foreach ($selectedSubtopics_templates as $subtopics_template){
+                Subtopic::create(['course_id' => $course->id, 'title' => $subtopics_template->title, 'description' => $subtopics_template->description,]);
             }
         }
 
         if ($request->filled('career_id')) {
             // sync() adjunta el ID y quita cualquier otro que no esté en el array
             $course->careers()->sync([$request->career_id]);
-        }
-        elseif ($request->filled('department_ids')) {
+        } 
+         elseif ($request->filled('department_ids')) {
 
            // Guardar múltiples departamentos
            $course->departments()->sync($request->department_ids);
@@ -191,81 +193,112 @@ class CourseController extends Controller
     /**
      * Mostrar detalles de un curso
      */
-    public function show(Course $course)
-    {
-        // 1. Cargar toda la data del curso
-        $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
+public function show(Course $course)
+{
+    $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
 
-        $user = Auth::user();
-        $departments = Department::with('workstations')->get();
+    $user = Auth::user();
+    $departments = Department::with('workstations')->get();
 
-        // 2. Calcular Total de Items (CRUCIAL para el JS)
-        $totalItems = 0;
-        foreach ($course->topics as $topic) {
-            if ($topic->file_path) $totalItems++;
-            $totalItems += $topic->activities->where('is_final_exam', false)->count();
-            foreach ($topic->subtopics as $sub) {
-                if ($sub->file_path) $totalItems++;
-                $totalItems += $sub->activities->count();
-            }
-        }
+    // ✅ Contar SOLO actividades (no PDFs/videos)
+$totalItems = 0;
+foreach ($course->topics as $topic) {
+    $totalItems += $topic->activities->where('is_final_exam', false)->count();
+    foreach ($topic->subtopics as $sub) {
+        $totalItems += $sub->activities->count();
+    }
+}
 
-        // 3. Lógica de Usuario (Inscripción y Progreso)
-        $progress = 0;
-        $isEnrolled = false;
-        $finalExamData = null;
-        $userCompletions = collect();
+// ✅ Contar actividades independientes (no finales)
+$totalItems += \App\Models\Cursos\Activities::where('course_id', $course->id)
+    ->whereNull('topic_id')
+    ->whereNull('subtopic_id')
+    ->where('is_final_exam', false)
+    ->count();
 
-        if ($user) {
-            // Verificar inscripción
-            $isEnrolled = $user->courses->contains($course->id);
+    $progress = 0;
+    $isEnrolled = false;
+    $finalExamData = null;
+    $userCompletions = collect();
 
-            if (!$isEnrolled) {
-                // Auto-inscribir (si deseas mantener esta lógica)
-                $user->courses()->attach($course->id, ['progress' => 0]);
-                $isEnrolled = true;
-                $progress = 0; // Acaba de entrar, es 0
-            } else {
-                // Si ya estaba inscrito, obtenemos el progreso de la BD
-                // Usamos la relación directa para evitar consultas extra
-                $pivotRow = $user->courses()->where('course_id', $course->id)->first();
-                if ($pivotRow && $pivotRow->pivot) {
-                    $progress = $pivotRow->pivot->progress;
+    if ($user) {
+        $isEnrolled = $user->courses->contains($course->id);
+
+        if (!$isEnrolled) {
+            // ✅ Registrar INICIO del curso (primera vez)
+            $user->courses()->attach($course->id, [
+                'progress' => 0,
+                'started_at' => now() // ✅ Registrar fecha/hora de inicio
+            ]);
+        } else {
+            $pivotRow = $user->courses()->where('course_id', $course->id)->first();
+            if ($pivotRow && $pivotRow->pivot) {
+                $progress = $pivotRow->pivot->progress;
+                
+                // ✅ Si no tiene started_at (usuarios antiguos), registrarlo ahora
+                if (!$pivotRow->pivot->started_at) {
+                    $user->courses()->updateExistingPivot($course->id, [
+                        'started_at' => now()
+                    ]);
                 }
             }
-
-            $userCompletions = $user->completions->map(function ($item) {
-                return [
-                    'type' => class_basename($item->completable_type), // Ej: "Topics", "Activities"
-                    'id'   => $item->completable_id
-                ];
-            });
-
-            // 4. Datos del Examen Final
-            $finalExamActivity = $course->finalExam;
-            if ($finalExamActivity) {
-                $finalExamData = $user->completions()
-                    ->where('completable_type', Activities::class)
-                    ->where('completable_id', $finalExamActivity->id)
-                    ->first();
-            }
-        } else {
-            // Si no hay usuario, el examen final es null (para visualización pública)
-            $finalExamActivity = $course->finalExam;
         }
 
-        // 5. Retornar vista con TODAS las variables
-        return view('layouts.Cursos.show', compact(
-            'departments',
-            'course',
-            'progress',
-            'totalItems',
-            'isEnrolled',
-            'finalExamActivity',
-            'finalExamData',
-            'userCompletions'
-        ));
+        $userCompletions = $user->completions->map(function ($item) {
+            return [
+                'type' => class_basename($item->completable_type),
+                'id'   => $item->completable_id
+            ];
+        });
+
+        // ✅ Calcular progreso basado en actividades completadas
+$completedActivities = $user->completions()
+    ->where('completable_type', Activities::class)
+    ->whereIn('completable_id', function($query) use ($course) {
+        $query->select('id')
+              ->from('activities')
+              ->where('course_id', $course->id)
+              ->where('is_final_exam', false);
+    })
+    ->count();
+
+if ($totalItems > 0) {
+    $progress = round(($completedActivities / $totalItems) * 100, 2);
+} else {
+    $progress = 0;
+}
+
+// ✅ Actualizar progreso en la tabla pivot
+$user->courses()->updateExistingPivot($course->id, [
+    'progress' => $progress
+]);
+
+        $finalExamActivity = $course->finalExam;
+        if ($finalExamActivity) {
+            $finalExamData = $user->completions()
+                ->where('completable_type', Activities::class)
+                ->where('completable_id', $finalExamActivity->id)
+                ->first();
+        }
+    } else {
+        $finalExamActivity = $course->finalExam;
     }
+
+    $topics = $course->topics;
+
+    return view('layouts.Cursos.show', compact(
+        'departments',
+        'course',
+        'topics',        
+        'progress',
+        'totalItems',
+        'isEnrolled',
+        'finalExamActivity',
+        'finalExamData',
+        'userCompletions'
+    ));
+}
+
 
     /**
      * Mostrar formulario de edición
@@ -305,7 +338,7 @@ class CourseController extends Controller
         // 3. Cargar los filtros que el curso YA tiene seleccionados
         //    Usamos pluck('id') para obtener un array simple de IDs [1, 3]
         $course->load('careers', 'departments', 'workstations');
-
+        
         $selectedFilters = [
             'career_id' => $course->careers->pluck('id')->first(), // Asumimos que solo es una carrera
             'department_id' => $course->departments->pluck('id')->first(), // Asumimos que solo es un depto
@@ -313,7 +346,7 @@ class CourseController extends Controller
         ];
 
         return view('layouts.Cursos.edit', compact(
-            'course',
+            'course', 
             'currentInstitution', // Necesario para los filtros
             'departmentWorkstationsMap', // Necesario para el JS
             'selectedFilters' // Necesario para pre-seleccionar
@@ -356,7 +389,7 @@ class CourseController extends Controller
             'modality' => 'required|in:presencial,virtual,hibrida',
             'hours' => 'required|integer|min:0|max:1000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960',
+            'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960', 
             'institution_id' => 'required|exists:institutions,id', // Lo usamos pero no lo actualizamos
             'career_id' => 'nullable|exists:careers,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -387,11 +420,11 @@ class CourseController extends Controller
             $course->careers()->sync([$request->career_id]);
             $course->departments()->sync([]); // Limpiar el otro filtro
             $course->workstations()->sync([]);
-        }
+        } 
         elseif ($request->filled('department_id')) {
             $course->departments()->sync([$request->department_id]);
             $course->careers()->sync([]); // Limpiar el otro filtro
-
+            
             // Si se especificó un puesto, guardarlo. Si no, limpiarlo.
             if ($request->filled('workstation_id')) {
                 $course->workstations()->sync([$request->workstation_id]);
@@ -411,6 +444,23 @@ class CourseController extends Controller
         return redirect()->route('Cursos.index')
             ->with('success', 'Curso actualizado exitosamente.');
     }
+
+    public function updateWelcome(Request $request, Course $course)
+{
+    $activeInstitutionId = session('active_institution_id');
+
+    if ($course->institution_id != $activeInstitutionId) {
+        abort(403, 'No autorizado.');
+    }
+
+    $course->show_welcome = $request->input('show_welcome') == '1';
+    $course->save();
+
+    return response()->json([
+        'success' => true,
+        'show_welcome' => $course->show_welcome
+    ]);
+}
 
     /**
      * Eliminar curso
@@ -474,7 +524,7 @@ class CourseController extends Controller
             $this->authorize('view', $course);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
+                'success' => false, 
                 'message' => 'No tienes permiso para inscribirte en este curso.'
             ], 403);
         }
@@ -484,12 +534,12 @@ class CourseController extends Controller
         $user->courses()->syncWithoutDetaching($course->id);
 
         Log::info('Usuario inscrito en curso', [
-            'user_id' => $user->id,
+            'user_id' => $user->id, 
             'course_id' => $course->id
         ]);
 
         return response()->json([
-            'success' => true,
+            'success' => true, 
             'message' => '¡Inscripción exitosa!'
         ]);
     }
@@ -507,12 +557,12 @@ class CourseController extends Controller
         $user->courses()->detach($course->id);
 
         Log::info('Usuario dado de baja de curso', [
-            'user_id' => $user->id,
+            'user_id' => $user->id, 
             'course_id' => $course->id
         ]);
 
         return response()->json([
-            'success' => true,
+            'success' => true, 
             'message' => 'Has sido dado de baja del curso.'
         ]);
     }
@@ -520,10 +570,10 @@ class CourseController extends Controller
     public function showCertificate(Course $course)
     {
         $user = Auth::user();
-
+        
         // 1. Buscar el examen final del curso
         $finalExam = $course->finalExam;
-
+        
         if (!$finalExam) {
             return redirect()->route('course.show', $course)
                 ->with('error', 'Este curso no tiene certificado disponible.');
@@ -544,7 +594,7 @@ class CourseController extends Controller
         // ---------------------------------------------------------
         // 2. PREPARACIÓN DE DATOS
         // ---------------------------------------------------------
-
+        
         // Formatear fecha elegante: "24 de Noviembre de 2025"
         // Si tu Laravel no está en español, esto ayuda a forzarlo.
         $completionDate = $completion->created_at->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
@@ -562,7 +612,7 @@ class CourseController extends Controller
         // ---------------------------------------------------------
         // 3. GENERACIÓN DEL PDF
         // ---------------------------------------------------------
-
+        
         // Cargamos la vista de diseño que creamos (Cursos.template_v1)
         $pdf = Pdf::loadView('layouts.Cursos.template_v1', $data);
 
@@ -591,7 +641,7 @@ class CourseController extends Controller
             ->with('completable.course') // Cargar curso para ver su institución
             ->get()
             ->filter(function ($completion) use ($activeInstitutionId) {
-
+                
                 // Verificaciones de seguridad (que exista la actividad y el curso)
                 if (!$completion->completable || !$completion->completable->course) {
                     return false;

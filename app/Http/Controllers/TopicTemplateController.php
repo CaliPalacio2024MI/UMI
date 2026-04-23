@@ -37,7 +37,7 @@ class TopicTemplateController extends Controller
     //Formulario para editar un tema existente
     public function edit($id)
     {
-    // El tema que se va a editar
+// El tema que se va a editar
     $template = TopicTemplate::findOrFail($id); 
     
     // Volvemos a traer todos los temas para que la lista de la derecha siga apareciendo
@@ -84,4 +84,10 @@ class TopicTemplateController extends Controller
 
         return redirect()->route('templates.index')->with('success', 'Tema eliminado de la biblioteca.');
     }
+
+    public function create()
+{
+    return view('templates.create');
 }
+}
+

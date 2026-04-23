@@ -106,7 +106,6 @@ input[type="file"] {
     border-radius: 8px;
     margin-top: 10px;
 }
-
 .btn-secondary {
     display: inline-block;
     padding: 8px 14px;
@@ -131,6 +130,29 @@ input[type="file"] {
     font-size: 13px;
     color: #555;
     margin-bottom: 6px;
+}
+
+.turtle-mode-btn {
+    transition: all 0.3s ease;
+}
+
+.turtle-mode-btn:hover {
+    color: #4f46e5 !important;
+}
+
+.video-segment:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.remove-segment-btn:hover {
+    background: #d32f2f !important;
+}
+
+.segment-time:focus,
+.segment-turtle:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
 }
 
 /* ===========================

@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Course;
 
+
+
 class CourseSession extends Model
 {
     use HasFactory;

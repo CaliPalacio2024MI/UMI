@@ -21,21 +21,25 @@ class ActivitiesController extends Controller
             'course_id' => 'required|exists:courses,id', 
             'is_final_exam' => 'nullable|boolean', 
             
-            'topic_id' => 'nullable|exists:topics,id|required_without_all:subtopic_id,is_final_exam',
-            'subtopic_id' => 'nullable|exists:subtopics,id|required_without_all:topic_id,is_final_exam',
+            'topic_id' => 'nullable|exists:topics,id',
+            'subtopic_id' => 'nullable|exists:subtopics,id',
 
             'title' => 'required|string|max:255',
             'type' => 'required|string', 
-            'content' => 'required|array',
+            'content' => 'nullable|array',
+            
+            'video_file' => 'nullable|file|mimes:mp4,webm,ogg,avi,mov|max:163840',
+            'show_turtle' => 'nullable|boolean',
+            'turtle_voice' => 'nullable|integer|in:0,1',
         ]);
 
-        if ($validatedData['type']==='Cuestionario'){
+        // Validaciones específicas por tipo
+        if ($validatedData['type'] === 'Cuestionario'){
             $request->validate([
                 'content.question' => 'required|string',
                 'content.options' => 'required|array|min:4', 
                 'content.options.*' => 'required|string',
                 'content.correct_answer' => 'required', 
-
             ]);
         }
 
@@ -49,20 +53,52 @@ class ActivitiesController extends Controller
             ]);
         }
         
-        // Lógica para 'SopaDeLetras' o 'Crucigrama'
         elseif ($validatedData['type'] === 'SopaDeLetras') {
             $request->validate([
-                'content.words' => 'required|array|min:1', // Debe tener al menos una palabra
-                'content.words.*' => 'required|string|distinct', // Palabras deben ser únicas
-                'content.grid_size' => 'required|integer|min:5|max:20', // Tamaño de 5x5 a 20x20
+                'content.words' => 'required|array|min:1',
+                'content.words.*' => 'required|string|distinct',
+                'content.grid_size' => 'required|integer|min:5|max:20',
             ]);
         }
 
+        elseif ($validatedData['type'] === 'Ahorcado') {
+            $request->validate([
+                'content.word' => 'required|string',
+                'content.hint' => 'nullable|string',
+                'content.max_attempts' => 'required|integer|min:3|max:10',
+            ]);
+        }
+
+        elseif ($validatedData['type'] === 'Crucigrama') {
+            $request->validate([
+                'content.grid_size' => 'required|integer|min:5|max:15',
+                'content.words' => 'required|array|min:1',
+                'content.words.*.word' => 'required|string',
+                'content.words.*.clue' => 'required|string',
+                'content.words.*.direction' => 'required|string|in:horizontal,vertical',
+            ]);
+        }
+
+        //  NUEVO: Manejar videos con tortuguita
+        elseif ($validatedData['type'] === 'Video') {
+            if ($request->hasFile('video_file')) {
+                $validatedData['file_path'] = $request->file('video_file')->store('videos', 'public');
+            }
+            
+            $validatedData['show_turtle'] = $request->has('show_turtle');
+            $validatedData['turtle_voice'] = $request->turtle_voice ?? null;
+            
+            // Video no necesita content
+            $validatedData['content'] = [];
+        }
+
+        //  NUEVO: Guardar show_title
+        $validatedData['show_title'] = $request->has('show_title');
         
         $courseId = $validatedData['course_id'];
         $validatedData['is_final_exam'] = $request->has('is_final_exam');
 
-        // 2. LÓGICA DE LIMPIEZA DE ID (Asegurar que solo uno se guarde)
+        // LÓGICA DE LIMPIEZA DE ID (Asegurar que solo uno se guarde)
         if ($validatedData['is_final_exam']) {
             // Es un examen final, pertenece al CURSO. Anular temas.
             $validatedData['topic_id'] = null;
@@ -90,9 +126,25 @@ class ActivitiesController extends Controller
             }
             $courseId = $topic->course_id;
         } else {
-            // Fallo de seguridad: No se seleccionó nada
-            return redirect()->back()->withErrors(['parent' => 'Debe seleccionar un Tema o un Subtema para la actividad.']);
+            //  CASO 3: Actividad INDEPENDIENTE (mismo nivel que temas)
+            // No pertenece a ningún tema ni subtema
+            $validatedData['topic_id'] = null;
+            $validatedData['subtopic_id'] = null;
         }
+
+        //  NUEVO: Asignar orden automáticamente
+        if ($validatedData['subtopic_id']) {
+            $maxOrder = Activities::where('subtopic_id', $validatedData['subtopic_id'])->max('order');
+        } elseif ($validatedData['topic_id']) {
+            $maxOrder = Activities::where('topic_id', $validatedData['topic_id'])->max('order');
+        } else {
+            // Actividad independiente o examen final
+            $maxOrder = Activities::where('course_id', $validatedData['course_id'])
+                                  ->whereNull('topic_id')
+                                  ->whereNull('subtopic_id')
+                                  ->max('order');
+        }
+        $validatedData['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
 
         Activities::create($validatedData);
         return back()->with('success', 'Actividad creada exitosamente.');
@@ -116,18 +168,16 @@ class ActivitiesController extends Controller
         $score = 0; 
         $message = '¡Actividad completada!';
 
-        // 1. Validar "Cuestionario" (1 pregunta)
         if ($activity->type === 'Cuestionario') {
-            $validated = $request->validate(['answer' => 'required']);
-            $userAnswer = $validated['answer'];
-            $correctAnswer = $activity->content['correct_answer'] ?? null;
-
-            if (strval($userAnswer) !== strval($correctAnswer)) {
-                return response()->json(['success' => false, 'message' => 'Respuesta incorrecta.'], 422);
-            }
-            $score = 100.00; // Si es correcta, 100
-        }
-
+    $validated = $request->validate(['answer' => 'required']);
+    $userAnswer = $validated['answer'];
+    $correctAnswer = $activity->content['correct_answer'] ?? null;
+    
+    if (strval($userAnswer) !== strval($correctAnswer)) {
+        return response()->json(['success' => false, 'message' => 'Respuesta incorrecta.'], 422);
+    }
+    $score = 100.00;
+}
         // 2. Validar "Examen" (múltiples preguntas)
         elseif ($activity->type === 'Examen') {
             $userAnswersData = $request->validate(['answers' => 'required|array']);
@@ -154,7 +204,19 @@ class ActivitiesController extends Controller
             }
         }
 
-        // 2. Marcar como completado usando el sistema polimórfico
+        // 3. Validar "Sopa de Letras"
+        elseif ($activity->type === 'SopaDeLetras') {
+            $validated = $request->validate(['completed' => 'required|boolean']);
+            
+            if ($validated['completed']) {
+                $score = 100.00;
+                $message = '¡Sopa de letras completada!';
+            } else {
+                return response()->json(['success' => false, 'message' => 'No has completado la sopa de letras.'], 422);
+            }
+        }
+
+        // 4. Marcar como completado usando el sistema polimórfico
         $completion = $user->completions()->updateOrCreate(
             [
                 'completable_type' => Activities::class, 
@@ -185,8 +247,26 @@ class ActivitiesController extends Controller
             'success' => true,
             'created' => $completion->wasRecentlyCreated, // Para que el JS sepa si debe actualizar la barra
             'score'   => $score,
-            'message' => '¡Actividad completada exitosamente!'
+            'message' => $message
         ]);
     }
-
+    
+    /**
+     * Actualizar orden de actividades (Drag & Drop)
+     */
+    public function updateOrder(Request $request)
+    {
+        try {
+            $activities = $request->activities;
+            
+            foreach ($activities as $activity) {
+                Activities::where('id', intval($activity['id']))->update(['order' => intval($activity['order'])]);
+            }
+            
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Error en activities updateOrder: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

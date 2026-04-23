@@ -175,7 +175,7 @@
 
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora fin</label>
-                                <input type="time" name="end_time" id="end_time" class="form-control-custom" required readonly>
+                                <input type="time" name="end_time" id="end_time" class="form-control-custom" required>
                             </div>
                         </div>
 

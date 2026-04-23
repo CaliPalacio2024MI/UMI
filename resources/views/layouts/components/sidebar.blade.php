@@ -4,21 +4,21 @@
     {{-- =================================================================== --}}
     @php
         $user = Auth::user();
-
+        
         // --- 1. CONTEXTO ---
         $universityName = 'Universidad Mundo Imperial';
         $isUniversity   = (session('active_institution_name') == $universityName);
 
         // --- 2. ROLES ---
         $isMaster       = $user->hasActiveRole('master');
-        $isControlAdmin = $user->hasActiveRole('control_administrativo');
-
+        $isControlAdmin = $user->hasActiveRole('control_administrativo'); 
+        
         // Agrupando "Control Administrativo" y "Gerente TH"
         $isControlGroup = $isControlAdmin || $user->hasActiveRole('gerente_th');
-
+        
         // Agrupando "Docente" y "Gerente Capacitación"
         $isDocenteGroup = $user->hasActiveRole('docente') || $user->hasActiveRole('gerente_capacitacion');
-
+        
         // Agrupando "Estudiante" y "Anfitrión"
         $isStudentGroup = $user->hasActiveRole('estudiante') || $user->hasActiveRole('anfitrion');
 
@@ -51,7 +51,7 @@
             @if(session('active_institution_logo'))
                 <img src="{{ asset('storage/' . session('active_institution_logo')) }}" alt="Logo Institución" style="width: 100%; height: auto; max-width: 130px;" loading="lazy">
             @else
-                <span>{{ session('active_institution_name', 'Logo') }}</span>
+                <span>{{ session('active_institution_name', 'Logo') }}</span> 
             @endif
         </div>
     </div>
@@ -86,7 +86,7 @@
                         <li class="{{ request()->routeIs('MiInformacion.historial') ? 'active-submenu' : '' }}">
                             <a href="{{ route('MiInformacion.historial') }}">Historial Académico</a>
                         </li>
-
+                       
                         {{-- Opciones Extra (Boletas) --}}
                         @if($isDocenteGroup || $isStudentGroup)
                              <li class="{{ request()->routeIs('MiInformacion.boletas') ? 'active-submenu' : '' }}">
@@ -115,19 +115,17 @@
                     </span>
                     <span class="text">Cursos</span>
                 </a>
-
+                
                 {{-- Submenú --}}
                 <ul class="submenu">
                     {{-- Opción 1: Cursos Disponibles (Ruta original) --}}
                     <li class="{{ request()->routeIs('Cursos.index') ? 'active-submenu' : '' }}">
                         <a href="{{ route('Cursos.index') }}">Cursos Disponibles</a>
-                    {{-- Grupo --}}
-                   <li class="{{ request()->routeIs('groups.index') ? 'active-submenu' : '' }}">
-                        <a href="{{ route('groups.index') }}">Grupo</a>
                     </li>
+
                     {{-- Opción 2: Mis Certificados (Nueva Ruta) --}}
                     <li class="{{ request()->routeIs('courses.certificates.index') ? 'active-submenu' : '' }}">
-                        <a href="{{ route('courses.certificates.index') }}">Mis Certificados</a>
+                        <a href="{{ route('courses.certificates.index') }}">Mis Certificados</a> 
                     </li>
                     {{--Boton bilbioteca de temas--}}
                     <li>
@@ -135,12 +133,13 @@
                             <span>Biblioteca de temas</span>
                         </a>
                     </li>
-                    {{--Boton bilbioteca de temas--}}
+                     {{--Boton bilbioteca de subtemas--}}
                     <li>
                         <a href="{{ route('subtopics_template.index') }}">
                             <span>Biblioteca de subtemas</span>
                         </a>
                     </li>
+
                 </ul>
             </li>
 
@@ -148,7 +147,7 @@
             @if($hasFacturacionSubmenu)
                 {{-- CASO A: Master y Control Administrativo (Con submenú flotante) --}}
                 <li class="has-submenu submenu-flotante {{ request()->routeIs('Facturacion.*') ? 'active' : '' }}">
-
+                    
                     {{-- El enlace principal lleva al Index (Panel General) --}}
                     <a href="{{ route('Facturacion.index') }}">
                         <span class="icon" aria-hidden="true">
@@ -156,7 +155,7 @@
                         </span>
                         <span class="text">Facturación</span>
                     </a>
-
+                    
                     {{-- SUBMENÚ FLOTANTE A LA DERECHA --}}
                     <ul class="submenu">
                         <li class="{{ request()->routeIs('facturacion.conceptos.*') ? 'active-submenu' : '' }}">
@@ -185,7 +184,7 @@
                         </span>
                         <span class="text">Control Administrativo</span>
                     </a>
-
+                    
                     <ul class="submenu">
                         @if($canSeeEscolar)
                             <li class="has-submenu {{ request()->routeIs('escolar.*') ? 'active open' : '' }}">
@@ -236,7 +235,7 @@
                                         <a href="{{ route('control.schedules.index') }}">Horarios</a>
                                     </li>
                                     <li class="{{ request()->routeIs('control.classes.*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Clases</a>
+                                        <a href="#">Clases</a> 
                                     </li>
                                     <li class="{{ request()->routeIs('control.students.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('control.students.index') }}">Lista de Alumnos</a>

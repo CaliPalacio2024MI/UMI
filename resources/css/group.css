@@ -1,0 +1,41 @@
+.group-card-ui {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.799);
+    transition: .2s;
+}
+
+.group-card-ui:hover {
+    transform: translateY(-3px);
+}
+
+.group-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.modal,
+.modal-dialog,
+.modal-content {
+    pointer-events: auto !important;
+}
+
+.modal-backdrop {
+    pointer-events: none !important;
+}
+
+.turtle-container {
+    z-index: 1 !important;
+}
+.btn-danger {
+    background-color: #cf8989;
+    border: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background-color: #b68282;
+    transform: scale(1.05);
+}

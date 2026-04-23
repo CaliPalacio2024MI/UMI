@@ -51,6 +51,8 @@ class Activities extends Model
         'type',
         'content',
         'is_final_exam',
+        'show_title',
+        'order',
         
     ];
 
@@ -83,3 +85,4 @@ class Activities extends Model
 
 
 }
+

@@ -41,26 +41,13 @@
 
         {{-- MODALIDAD --}}
         <div class="form-group">
-            <label>Modalidad</label>
-            <div style="display:flex; gap:20px">
-                <label>
-                    <input type="radio" name="modality" value="virtual"
-                        {{ old('modality', $course->modality) === 'virtual' ? 'checked' : '' }} required>
-                    Virtual
-                </label>
-
-                <label>
-                    <input type="radio" name="modality" value="presencial"
-                        {{ old('modality', $course->modality) === 'presencial' ? 'checked' : '' }} required>
-                    Presencial
-                </label>
-
-                <label>
-                    <input type="radio" name="modality" value="hibrida"
-                        {{ old('modality', $course->modality) === 'hibrida' ? 'checked' : '' }} required>
-                    Hibrida
-                </label>
-            </div>
+            <label for="modality">Modalidad</label>
+            <select id="modality" name="modality" required>
+                <option value="" disabled selected>Selecciona la modalidad</option>
+                <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
+                <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
+                <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
+            </select>
         </div>
 
         {{-- UNIVERSIDAD --}}
@@ -70,13 +57,13 @@
                 <div class="form-group">
                     <label>Horas</label>
                     <input type="number" name="hours"
-                           value="{{ old('hours', $course->hours) }}" required>
+                        value="{{ old('hours', $course->hours) }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Créditos</label>
                     <input type="number" name="credits"
-                           value="{{ old('credits', $course->credits) }}" required>
+                        value="{{ old('credits', $course->credits) }}" required>
                 </div>
             </div>
 
@@ -102,7 +89,7 @@
 
             <input type="hidden" name="credits" value="0">
 
-            {{-- MULTI DEPARTAMENTOS --}}
+            {{-- MULTI DEPARTAMENTOS
             <div class="form-group">
                 <label>Dirigido a Departamentos</label>
 
@@ -117,7 +104,7 @@
                 </select>
 
                 <small style="color:#666">Puedes seleccionar uno o varios departamentos</small>
-            </div>
+            </div> --}}
         @endif
 
         {{-- IMAGEN --}}
@@ -151,31 +138,43 @@
             </div>
         </div>
 
-        {{-- CERTIFICADO --}}
-        <h2 class="section-title">Configuración del Certificado</h2>
-
-        <div class="form-group">
-            <label class="file-upload-label">Imagen de Fondo</label>
-            <input type="file" name="cert_bg_image">
+        {{-- CERTIFICADO - IMAGEN DE FONDO --}}
+<div class="form-group">
+    <label class="file-upload-label" for="cert_bg_image">
+        Imagen de Fondo del Certificado
+    </label>
+    <input 
+        type="file" 
+        id="cert_bg_image" 
+        name="cert_bg_image" 
+        accept="image/*">
+    
+    @if ($course->cert_bg_image_path ?? $course->cert_background_path)
+        <div class="current-file-box" style="margin-top: 10px;">
+            <small>Imagen actual:</small><br>
+            <img src="{{ asset('storage/' . ($course->cert_bg_image_path ?? $course->cert_background_path)) }}"
+                 style="max-width: 250px; border-radius: 8px; border: 1px solid #ddd;">
         </div>
+    @endif
+</div>
 
         <div class="form-row">
-            <div class="form-group">
-                <label class="file-upload-label">Firma 1</label>
-                <input type="file" name="cert_sig_1_image">
-                <input type="text" name="cert_sig_1_name"
-                       value="{{ old('cert_sig_1_name', $course->cert_sig_1_name) }}"
-                       placeholder="Nombre / Cargo">
-            </div>
+    <div class="form-group">
+        <label class="file-upload-label" for="cert_sig_1_image">Firma 1</label>
+        <input type="file" id="cert_sig_1_image" name="cert_sig_1_image" accept="image/png,image/jpeg">
+        <input type="text" name="cert_sig_1_name" 
+               value="{{ old('cert_sig_1_name', $course->cert_sig_1_name) }}"
+               placeholder="Nombre / Cargo">
+    </div>
 
-            <div class="form-group">
-                <label class="file-upload-label">Firma 2</label>
-                <input type="file" name="cert_sig_2_image">
-                <input type="text" name="cert_sig_2_name"
-                       value="{{ old('cert_sig_2_name', $course->cert_sig_2_name) }}"
-                       placeholder="Nombre / Cargo">
-            </div>
-        </div>
+    <div class="form-group">
+        <label class="file-upload-label" for="cert_sig_2_image">Firma 2</label>
+        <input type="file" id="cert_sig_2_image" name="cert_sig_2_image" accept="image/png,image/jpeg">
+        <input type="text" name="cert_sig_2_name" 
+               value="{{ old('cert_sig_2_name', $course->cert_sig_2_name) }}"
+               placeholder="Nombre / Cargo">
+    </div>
+</div>
 
         {{-- BOTONES --}}
         <div class="form-row">
@@ -190,4 +189,22 @@
 
     </form>
 </div>
+<script>
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    const label = document.querySelector(`label[for="${input.id}"]`);
+    
+    input.addEventListener('change', () => {
+        if (input.files[0]) {
+            // Opcional: mostrar nombre debajo
+            let nameTag = input.nextElementSibling;
+            if (!nameTag || !nameTag.classList.contains('file-name')) {
+                nameTag = document.createElement('p');
+                nameTag.className = 'file-name';
+                input.after(nameTag);
+            }
+            nameTag.textContent = input.files[0].name;
+        }
+    });
+});
+</script>
 @endsection

@@ -1,3 +1,4 @@
+/* Esto obliga al fondo del navegador a ser blanco en pantalla completa */
 ::backdrop {
     background-color: white !important;
     opacity: 1;
@@ -46,6 +47,8 @@ body {
     cursor: pointer;
     margin-bottom: 6px;
     transition: .2s;
+    text-decoration: none;
+    color: inherit;
 }
 
 .syllabus-link:hover {
@@ -71,10 +74,10 @@ body {
 /* ===== VIEWER ===== */
 .course-viewer {
     flex: 1;
-    background: transparent;
+    background: transparent; /* Antes era #ffffff, cámbialo a transparente */
     display: flex;
     flex-direction: column;
-    box-shadow: none;
+    box-shadow: none; /* Quitamos la sombra de aquí para dársela al panel */
 }
 
 /* ===== PROGRESS ===== */
@@ -96,8 +99,8 @@ body {
 
 /* ===== CONTENT ===== */
 .content-panel {
-    background: transparent;
-    padding: 0;
+    background: transparent;  /* Se funde con el fondo del visor */
+    padding: 0;               /* Deja que el padre maneje el espacio */
     display: none;
 }
 
@@ -125,7 +128,7 @@ body {
     margin-top: 8px;
     width: 100%;
     height: auto;
-    max-height: 70vh;
+    max-height: 69.5vh;
     border-radius: 14px;
     object-fit: contain;
     background: #ffffff;
@@ -793,13 +796,14 @@ body {
     background: #e3f2fd;
 }
 
-/* ========== TORTUGUITA MASCOTA ========== */
+/* ========== TORTUGUITA MASCOTA (MUCHO MÁS GRANDE Y PEGADA A LA ESQUINA) ========== */
+/* TORTUGUITA - PEGADA EXACTAMENTE EN LA ESQUINA SUPERIOR DERECHA DE LA PANTALLA */
 
 .turtle-container {
     position: fixed !important;
     bottom: 0 !important;           /* borde superior de la pantalla */
     right: 0 !important;         /* borde derecho de la pantalla */
-    z-index: 999999 !important;
+    z-index: 999999 !important;  /* encima de todo */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.35s ease;
@@ -814,7 +818,7 @@ body {
 }
 
 .turtle-wrapper {
-    width: 250px;
+    width: 250px;                /* ajusta si quieres cambiar el tamaño */
     height: 250px;
     margin: 0 !important;
     padding: 0 !important;
@@ -826,7 +830,7 @@ body {
     width: 150% !important;
     height: 150% !important;
     object-fit: contain !important;
-    object-position: 100% 0 !important;
+    object-position: 100% 0 !important;   /* ancla a superior derecha: 100% horizontal (derecha), 0 vertical (arriba) */
     margin: 0 !important;
     padding: 0 !important;
     background: transparent !important;
@@ -1042,6 +1046,174 @@ body {
     border-radius: 8px;
     display: block;
 }
+
+/* ========== MODAL DE BIENVENIDA - CSS COMPLETO ========== */
+
+/* Overlay oscuro de fondo */
+.welcome-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Caja blanca del modal */
+.welcome-modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 30px 25px;
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Contenedor de las dos tortuguitas */
+.turtles-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+/* Caja individual de cada tortuguita */
+.welcome-turtle-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Wrapper para posicionar imagen y video superpuestos */
+.welcome-turtle-wrapper {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Imagen estática y video */
+.welcome-turtle-static,
+.welcome-turtle-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: opacity 0.3s ease;
+}
+
+/* Estados de la imagen estática */
+.welcome-turtle-static.welcome-active {
+    opacity: 1;
+    z-index: 2;
+}
+
+.welcome-turtle-static.welcome-hidden {
+    opacity: 0;
+    z-index: 1;
+}
+
+.welcome-turtle-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+    opacity: 0;
+    z-index: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translate(0, 0) scale(1); 
+}
+
+.welcome-turtle-video.welcome-active {
+    opacity: 1;
+    z-index: 2;
+    transform: translate(0, -5%) scale(2.0); 
+}
+
+/* Nombre de la tortuguita */
+.welcome-turtle-name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c5f2d;
+    margin: 0;
+    text-align: center;
+}
+
+/* Botón de saltar */
+.welcome-skip-btn {
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    border: 2px solid #ccc;
+    border-radius: 30px;
+    padding: 10px 30px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    display: block;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.welcome-skip-btn:hover {
+    background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+    border-color: #999;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.welcome-skip-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+    .welcome-modal-content {
+        padding: 30px 20px;
+    }
+    
+    .turtles-container {
+        flex-direction: column;
+        gap: 40px;
+    }
+    
+    .welcome-turtle-wrapper {
+        width: 220px;
+        height: 220px;
+    }
+    
+    .welcome-turtle-name {
+        font-size: 20px;
+    }
+}
+
 /* ===== BOTON QR ===== */
 .btn-qr {
     width: 100%;
@@ -1093,7 +1265,7 @@ body {
 
     background: linear-gradient(135deg, #1e40af, #3b82f6);
 
-    color: white;
+    color: rgb(0, 0, 0);
     font-weight: 500;
     font-size: 14px;
 
@@ -1274,4 +1446,40 @@ body.modal-open .turtle-container {
 .grid::-webkit-scrollbar-thumb {
     background: #e2e8f0;
     border-radius: 10px;
+}
+
+/* Botón guía del curso (simple como los demás) */
+.btn-guide {
+    background: #4f46e5; /* usa el mismo color base que tus botones */
+    color: rgb(0, 0, 0);
+    border: none;
+    padding: 6px 22px; /* más largo, menos alto (evita lo "gordito") */
+    border-radius: 4px; /* igual que botones normales */
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px; /* 🔥 importante: misma altura que los otros */
+ min-width: 150px; /* 🔥 clave: asegura que quepa el texto */
+    white-space: nowrap; /* 🔥 evita que se rompa en 2 líneas */
+}
+
+/* Hover simple */
+.btn-guide:hover {
+    background: #4338ca;
+}
+
+/* Para cuando no hay guía */
+.btn-guide.disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+
+.right-controls {
+    margin-left: auto; /* empuja todo a la derecha */
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 🔥 controla qué tan pegados están */
 }

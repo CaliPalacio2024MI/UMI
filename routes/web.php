@@ -10,8 +10,6 @@ use App\Http\Controllers\Ajustes\AjustesController;
 
 // --- Controladores LMS (Cursos) ---
 use App\Http\Controllers\Cursos\CourseController;
-use App\Http\Controllers\Cursos\CourseSessionController;
-use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\Cursos\TopicsController;
 use App\Http\Controllers\Cursos\SubtopicsController;
 use App\Http\Controllers\Cursos\ActivitiesController;
@@ -19,7 +17,7 @@ use App\Http\Controllers\Cursos\CompletionController;
 
 // --- Controladores de Facturación ---
 use App\Http\Controllers\Facturacion\BillingController;
-use App\Http\Controllers\Facturacion\PaymentController;
+use App\Http\Controllers\Facturacion\PaymentController; 
 use App\Http\Controllers\Facturacion\BillingConceptController;
 
 // --- Controladores Administrativos y Escolares ---
@@ -31,19 +29,15 @@ use App\Http\Controllers\AdmonCont\store\careerController;
 use App\Http\Controllers\AdmonCont\MateriaController;
 use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
-use App\Http\Controllers\SchoolarCont\MatriculaController;
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\PractitionerController;
-use App\Http\Controllers\TopicTemplateController;
-use App\Http\Controllers\SubtopicTemplateController;
+use App\Http\Controllers\SchoolarCont\MatriculaController; 
+
 
 //Grupos
 use App\Http\Controllers\GroupsController;
 use App\Http\Controllers\Api\GroupDataController;
 use App\Http\Controllers\WorkstationController;
-use App\Http\Controllers\Group\GroupController;
-
-
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\Cursos\CourseSessionController;
 
 Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
 //Filtrado de practicantes
@@ -51,13 +45,13 @@ Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('p
 //Lector QR
 Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
 
-
 // ==========================================================================
 // 1. ACCESO PÚBLICO
 // ==========================================================================
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
@@ -65,8 +59,8 @@ Route::get('/', function () {
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
 // ==========================================================================
-Route::middleware(['auth'])->group(function () {
-
+Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
+    
     // --- Contexto (Cambio de Rol/Institución) ---
     Route::match(['get', 'post'], '/set-context', [ContextController::class, 'setContext'])->name('context.set');
     Route::match(['get', 'post'], '/context/switch/{institutionId}/{roleId}', [ContextController::class, 'setContext'])->name('context.switch');
@@ -101,10 +95,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/cursos/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/cursos/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('/cursos/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
-
+        
         //Biblioteca de Temas (Plantillas)
         Route::get('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'index'])->name('templates.index');
-        //Route::get('/biblioteca-temas/crear', [\App\Http\Controllers\TopicTemplateController::class, 'create'])->name('templates.create');
+        Route::get('/biblioteca-temas/crear', [\App\Http\Controllers\TopicTemplateController::class, 'create'])->name('templates.create');
         Route::post('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'store'])->name('templates.store');
         //Ruta para mostrar el formulario de edicion
         Route::get('/biblioteca-temas/{id}/editar',[\App\Http\Controllers\TopicTemplateController::class, 'edit'])->name('templates.edit');
@@ -113,9 +107,10 @@ Route::middleware(['auth'])->group(function () {
         //Ruta para eliminar
         Route::delete('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'destroy'])->name('templates.destroy');
 
+
         //Biblioteca de Subtemas (Plantillas)
         Route::get('/biblioteca-subtemas', [\App\Http\Controllers\SubtopicTemplateController::class, 'index'])->name('subtopics_template.index');
-        //Route::get('/biblioteca-subtemas/crear', [\App\Http\Controllers\SubtopicTemplateController::class, 'create'])->name('subtopics_template.create');
+        Route::get('/biblioteca-subtemas/crear', [\App\Http\Controllers\SubtopicTemplateController::class, 'create'])->name('subtopics_template.create');
         Route::post('/biblioteca-subtemas', [\App\Http\Controllers\SubtopicTemplateController::class, 'store'])->name('subtopics_template.store');
         //Ruta para mostrar el formulario de edicion
         Route::get('/biblioteca-subtemas/{id}/editar',[\App\Http\Controllers\SubtopicTemplateController::class, 'edit'])->name('subtopics_template.edit');
@@ -124,28 +119,25 @@ Route::middleware(['auth'])->group(function () {
         //Ruta para eliminar
         Route::delete('/biblioteca-subtemas/{id}', [\App\Http\Controllers\SubtopicTemplateController::class, 'destroy'])->name('subtopics_template.destroy');
 
-
         // Temas y Subtemas
         Route::get('/cursos/{course}/temas/crear', [TopicsController::class, 'create'])->name('course.topic.create');
         Route::post('/temas', [TopicsController::class, 'store'])->name('topics.store');
-        Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit');
+        Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit'); 
         Route::put('/temas/{topic}', [TopicsController::class, 'update'])->name('topics.update');
         Route::delete('/temas/{topic}', [TopicsController::class, 'destroy'])->name('topics.destroy');
+        // routes/web.php
+        Route::post('/cursos/{course}/welcome', [CourseController::class, 'updateWelcome'])->name('course.update.welcome')->middleware('auth');
+        
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
-        Route::post('/actividades/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
         Route::post('/topics/update-order', [TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
-
-        //Orden de temas (Arrastrar)
-        Route::post('/topics/update-order',[TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
-        Route::resource('templates', TopicTemplateController::class);
-        Route::resource('topics.subtopics', SubtopicsController::class);
-        Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
-
+        Route::post('/activities/update-order', [ActivitiesController::class, 'updateOrder'])->name('activities.updateOrder');
+        
         // Actividades (Gestión)
         Route::post('/actividades', [ActivitiesController::class, 'store'])->name('activities.store');
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
-
+        Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
+        
         // Grupos
         Route::post('/api/workstations-by-departments', [WorkstationController::class, 'byDepartments']);
         Route::post('/groups', [GroupsController::class, 'store'])->name('groups.store');
@@ -155,7 +147,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/session/{id}/participants', function ($id) {$group = \App\Models\Group::whereHas('sessions', function ($q) use ($id) {$q->where('course_session_id', $id);})->with('participants')->first();return response()->json($group ? $group->participants : []);});
         Route::post('/groups/add-participants', [App\Http\Controllers\GroupsController::class, 'addParticipants'])->name('groups.addParticipants');
         Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
-
         // Vista principal
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
 
@@ -167,7 +158,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sessions/{id}/group-data', [CourseSessionController::class, 'getGroupData']);
 
     });
-// ===============================
+    // ===============================
     // HORARIOS (SESIONES PRESENCIALES)
     // ===============================
     Route::get('/cursos/{course}/horarios', [\App\Http\Controllers\Cursos\CourseSessionController::class, 'index'])->name('courses.sessions.index');
@@ -175,19 +166,22 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/courses/{course}/sessions/{session}',[CourseSessionController::class, 'destroy'])->name('courses.sessions.destroy');
     Route::patch('/cursos/{course}/horarios/{session}/toggle',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'toggle'])->name('courses.sessions.toggle');
     Route::put('/cursos/{course}/horarios/{session}',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'update'])->name('courses.sessions.update');
-
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
     // Estas rutas atrapan {course}, por eso van AL FINAL de la sección de cursos
     Route::get('/cursos', [CourseController::class, 'index'])->name('Cursos.index');
     Route::get('/cursos/{course}', [CourseController::class, 'show'])->name('course.show');
     Route::get('/cursos/{course}/certificado', [CourseController::class, 'showCertificate'])->name('courses.certificate');
     Route::get('/mis-certificados', [CourseController::class, 'myCertificates'])->name('courses.certificates.index');
+    
+    
 
+    
     // Acciones del Alumno
     Route::post('/cursos/{course}/inscribir', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/cursos/{course}/desinscribir', [CourseController::class, 'unenroll'])->name('courses.unenroll');
     Route::post('/completions/mark', [CompletionController::class, 'mark'])->name('completions.mark');
     Route::post('/actividades/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
+    
 
 
     // ======================================================================
@@ -196,26 +190,26 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:master,control_administrativo'])->group(function () {
 
     // --- Gestión de Facturación (Cobros y Pagos) ---
-    Route::post('/facturacion', [BillingController::class, 'store'])->name('Facturacion.store');
+    Route::post('/facturacion', [BillingController::class, 'store'])->name('Facturacion.store'); 
     Route::delete('/facturacion/{billing}', [BillingController::class, 'destroy'])->name('Facturacion.destroy');
     Route::post('facturacion/payments', [PaymentController::class, 'store'])->name('payments.store');
     Route::get('/facturacion/export', [BillingController::class, 'exportCsv'])->name('Facturacion.export');
         // Grupo de rutas para Conceptos de Facturación
     Route::prefix('facturacion/conceptos')->name('facturacion.conceptos.')->group(function () {
-
+        
         // 1. Vista Principal (Tabla y Modales)
         Route::get('/', [BillingConceptController::class, 'index'])->name('index');
-
+        
         // 2. Operaciones CRUD
         // Guardar nuevo concepto (POST)
         Route::post('/', [BillingConceptController::class, 'store'])->name('store');
-
+        
         // Actualizar concepto existente (PUT)
         Route::put('/{id}', [BillingConceptController::class, 'update'])->name('update');
-
+        
         // Eliminar concepto (DELETE)
         Route::delete('/{id}', [BillingConceptController::class, 'destroy'])->name('destroy');
-
+        
         // 3. Acción Extra (Toggle Activo/Inactivo)
         Route::post('/{id}/toggle-status', [BillingConceptController::class, 'toggleStatus'])->name('toggleStatus');
     });
@@ -223,17 +217,17 @@ Route::middleware(['auth'])->group(function () {
         // A. CONTROL ESCOLAR (Flujo de Ingreso)
         // ------------------------------------------------------------
         Route::prefix('control-escolar')->name('escolar.')->group(function () {
-
+            
             Route::get('/inicio', [ControlAdministrativoController::class, 'showEscolar'])->name('dashboard');
 
             // 1. Inscripción / Reinscripción
             Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
             Route::get('/inscripcion/nuevo', [InscripcionController::class, 'create'])->name('inscripcion.create');
             Route::post('/inscripcion/nuevo', [InscripcionController::class, 'store'])->name('inscripcion.store');
-
+            
             Route::get('/inscripcion/{id}/reinscribir', [InscripcionController::class, 'edit'])->name('inscripcion.edit');
-            Route::put('/inscripcion/{id}', [InscripcionController::class, 'update'])->name('inscripcion.update');
-
+            Route::put('/inscripcion/{id}', [InscripcionController::class, 'update'])->name('inscripcion.update'); 
+                
             // 2. Lista de Alumnos (Gestión y Contraseña)
             Route::get('/lista-alumnos', [studentController::class, 'index'])->name('students.index');
             Route::get('/lista-alumnos/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
@@ -245,7 +239,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/matriculas/{id}', [MatriculaController::class, 'update'])->name('matriculas.update');
             Route::post('/matriculas/{id}/asignar', [MatriculaController::class, 'store'])->name('matriculas.store');
             Route::post('/Matriculas/{id}/upload', [MatriculaController::class, 'uploadDocumento'])->name('documentacion.upload');
-
+            
             // 4. Futuros Módulos (Becas, Titulación...)
             // Route::get('/becas', ...);
         });
@@ -255,7 +249,7 @@ Route::middleware(['auth'])->group(function () {
         // B. CONTROL ADMINISTRATIVO / ACADÉMICO (Infraestructura)
         // ------------------------------------------------------------
         Route::prefix('control-administrativo')->name('control.')->group(function () {
-
+            
             Route::get('/academico', [ControlAdministrativoController::class, 'showAcademico'])->name('academico');
             Route::get('/planeacion', [ControlAdministrativoController::class, 'showPlaneacion'])->name('planeacion');
 
@@ -267,7 +261,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/lista-docentes/{id}',[teacherController::class, 'update'])->name('teachers.update');
 
             // Carreras y Materias
-            Route::get('/carreras', [careerController::class, 'index'])->name('careers.index');
+            Route::get('/carreras', [careerController::class, 'index'])->name('careers.index'); 
             Route::get('/carreras/create',[careerController::class,'create'])->name('careers.create');
             Route::post('/carreras', [careerController::class, 'store'])->name('careers.store');
             Route::put('/carreras/{carrera}', [careerController::class, 'update'])->name('careers.update');
@@ -282,9 +276,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/aulas/crear',[FacilityController::class, 'createForm'])->name('facilities.create');
             Route::post('/aulas', [FacilityController::class, 'store'])->name('facilities.store');
             Route::delete('/aulas/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
-
+            
             Route::resource('horarios', HorarioController::class)->names('schedules');
-
+            
             // Espejo de Alumnos para Admin
             Route::get('/lista-estudiantes', [studentController::class, 'index'])->name('students.index');
             Route::get('/lista-estudiantes/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
@@ -300,14 +294,14 @@ Route::middleware(['auth'])->group(function () {
             // Acciones Específicas (Toggles)
             Route::post('users/{id}/toggle-status', [AjustesController::class, 'toggleUserStatus'])->name('users.toggleStatus');
             Route::post('periods/{id}/toggle-status', [AjustesController::class, 'togglePeriodStatus'])->name('periods.toggleStatus');
-
+            
             // CRUD Dinámico (Usuarios, Periodos, Departamentos, Puestos)
             Route::get('/{seccion}/create-form', [AjustesController::class, 'getCreateForm'])->name('getCreateForm');
             Route::get('/{seccion}/{id}/edit-form', [AjustesController::class, 'getEditForm'])->name('getEditForm');
             Route::post('/{seccion}', [AjustesController::class, 'store'])->name('store');
             Route::put('/{seccion}/{id}', [AjustesController::class, 'update'])->name('update');
             Route::delete('/{seccion}/{id}', [AjustesController::class, 'destroy'])->name('destroy');
-
+            
             // Vista General (Al final por el comodín {seccion})
             Route::get('/{seccion}', [AjustesController::class, 'show'])->name('show');
         });
@@ -315,3 +309,4 @@ Route::middleware(['auth'])->group(function () {
     }); // Fin Middleware Administrativo
 
 }); // Fin Middleware Auth + Ajax + SPA
+

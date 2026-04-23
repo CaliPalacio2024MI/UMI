@@ -2,7 +2,6 @@
 
 namespace App\Models\Cursos;
 
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,8 +76,13 @@ class Course extends Model
         'cert_sig_2_path',
         'cert_sig_1_name',
         'cert_sig_2_name',
+        'show_welcome', // ✅ AGREGAR ESTA LÍNEA
 
     ];
+
+    protected $casts = [
+    'show_welcome' => 'boolean', // ✅ AGREGAR ESTA LÍNEA
+];
 
     public function instructor()
     {
@@ -94,10 +98,12 @@ class Course extends Model
     {
         return $this->hasMany(Topics::class, 'course_id');
     }
+
     public function sessions()
     {
         return $this->hasMany(CourseSession::class);
     }
+
     // Relación polimórfica para las carreras
     public function careers()
     {
@@ -115,6 +121,7 @@ class Course extends Model
     {
         return $this->morphedByMany(Workstation::class, 'targetable');
     }
+
     public function schedules()
     {
         return $this->belongsToMany(\App\Models\Schedule::class);
@@ -146,12 +153,12 @@ class Course extends Model
         // 1. Contar TOTAL de items del curso (Archivos + Actividades)
         // Usamos withCount para que la base de datos haga el trabajo pesado, no PHP
         $this->loadMissing(['topics.subtopics', 'topics.activities', 'finalExam']);
-
+        
         $totalItems = 0;
 
         foreach ($this->topics as $topic) {
             if ($topic->file_path) $totalItems++; // Archivo del tema
-
+            
             // Actividades directas del tema
             $totalItems += $topic->activities()->where('is_final_exam', false)->count();
 
@@ -168,7 +175,7 @@ class Course extends Model
         // Necesitamos ver cuántos de esos items están en la tabla 'completions'
         // IMPORTANTE: Esto asume que tienes una forma de relacionar completions con el curso.
         // Si no tienes course_id en completions, filtraremos por los IDs obtenidos arriba.
-
+        
         // Simplificación: Obtenemos el conteo directo usando las relaciones cargadas
         $user = User::find($userId);
         $completionsMap = $user->completions()
@@ -176,9 +183,9 @@ class Course extends Model
                             ->map(function ($c) {
                                 return $c->completable_type . '-' . $c->completable_id;
                             });
-
+                            
         $completedItems = 0;
-
+        
         // Repetimos la lógica de iteración pero solo para checar existencia en el mapa (muy rápido en memoria)
         foreach ($this->topics as $topic) {
             if ($topic->file_path && $completionsMap->contains('App\Models\Cursos\Topics-' . $topic->id)) {

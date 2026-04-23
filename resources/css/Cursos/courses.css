@@ -197,7 +197,7 @@
 }
 
 .btn-delete:hover {
-    background: #a87d88 !important;
+    background: #adadad !important;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -221,22 +221,14 @@
 
 /* Selector específico para el botón de borrar */
 .btn-delete {
-    background: #c7a3aa !important; /* Rojo */
-    color: white !important;         /* Icono blanco */
-    padding: 0 12px;                 /* Relleno lateral para dar aire al icono */
-    width: auto !important;          /* Permite que el ancho crezca según el icono */
-    height: 38px;                    /* Mantiene la misma altura que los otros */
-}
-
-/* Asegura que el icono de borrar NO se escale */
-.btn-delete i {
-    font-size: 18px !important;
-    width: auto !important;          /* El ancho del icono es automático */
-    height: auto !important;
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
 }
 
 .btn-delete:hover {
-    background: #c3b1b6 !important;
+    background: #fecaca !important;
+    color: #dc2626 !important;
+    transform: translateY(-2px) scale(1.08);
 }
 
 /* ================= RESPONSIVE ================= */

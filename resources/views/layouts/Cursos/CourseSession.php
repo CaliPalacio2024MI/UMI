@@ -38,12 +38,12 @@ class CourseSession extends Model
         'group_id'
     );
     }
-    public function groupConfig()
+   public function groupConfig()
     {
-        return $this->hasOne(SessionGroup::class);
+       return $this->hasOne(SessionGroup::class);
     }
 
-    public function participants()
+   public function participants()
     {
         return $this->belongsToMany(User::class);
     }

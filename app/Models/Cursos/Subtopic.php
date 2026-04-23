@@ -39,6 +39,18 @@ class Subtopic extends Model
         'description',
         'file_path',
         'order',
+        'show_title',
+        'show_turtle',
+        'video_segments',
+        'turtle_voice',
+        'order',
+    ];
+
+    // Nuevo)
+    protected $casts = [
+        'show_title' => 'boolean',
+        'show_turtle' => 'boolean',
+        'video_segments' => 'array',
     ];
 
     public function topic()

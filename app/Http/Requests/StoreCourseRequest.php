@@ -33,7 +33,6 @@ class StoreCourseRequest extends FormRequest
             $creditsRule = 'required|integer|min:0'; // Required only for UMI
         }
 
-
         return [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',

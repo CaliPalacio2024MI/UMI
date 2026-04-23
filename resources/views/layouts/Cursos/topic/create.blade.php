@@ -42,11 +42,34 @@
                 <div class="header-topic" style="display:flex; justify-content: space-between;">
                 <h3>Añadir Nuevo Tema</h3>
                 </div>
-                <form id="topic-form" action="{{ route('topics.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{route('topics.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="course_id" value="{{ $course->id}}">
+
+                    <div class="form-group">
+                        <label style="font-weight: bold;">Seleccionar Temas de la Biblioteca</label>
+
+                        <div class="form-group mb-2">
+                            <input type="text" id="searchTopics" class="form-control" placeholder="Buscar tema...">
+                        </div>    
+
+                        <select id="topic_templates" name="topic_templates[]" class="form-control" multiple>
+                            @foreach ($topicTemplates as $topic)
+                                <option value="{{ $topic->id}}">
+                                    {{ $topic->title }}
+                                </option>    
+                            @endforeach
+                        </select>
+                        
+                        <small class="text-muted">
+                            Puedes seleccionar varios manteniendo CTRL.
+                        </small>
+                    </div>        
+                {{-- <form id="topic-form" action="{{ route('topics.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
 
-                    {{-- Título con checkbox inline --}}
+                    {{-- Título con checkbox inline 
                     <div class="form-group">
                         <label for="title">
                             Título del Tema
@@ -55,21 +78,21 @@
                         <input type="text" id="title" name="title" required>
                     </div>
 
-                    {{-- Descripción --}}
+                    {{-- Descripción 
                     <div class="form-group">
                         <label for="description">Descripción Detallada del Tema</label>
                         <textarea id="description" name="description" rows="5"></textarea>
                     </div>
 
-                    {{-- Archivo --}}
+                    {{-- Archivo --
                     <div class="form-group">
                         <label for="file">Adjuntar Archivo (PDF o Video)</label>
                         <input type="file" id="file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
-                    </div>
+                    </div> --}}
 
                     {{-- OPCIONES DE TORTUGUITA CON SEGMENTOS --}}
 <div id="topic-turtle-options" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
-
+    
     <div class="form-group">
         <label>
             <input type="checkbox" name="show_turtle" value="1" id="topic_show_turtle_checkbox" style="width: auto; height: auto;">
@@ -81,7 +104,7 @@
     </div>
 
     <div id="topic-turtle-voice-selector" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
-
+        
         <!-- TABS -->
         <div style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd;">
             <button type="button" class="turtle-mode-btn active" data-mode="simple" data-form="topic" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid #4f46e5; font-weight: bold;">
@@ -96,8 +119,8 @@
         <div id="topic-turtle-simple-mode" style="display: block;">
             <label for="topic_turtle_voice">Selecciona la tortuguita:</label>
             <select name="turtle_voice" id="topic_turtle_voice" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="0">🐢 Toby (Masculino)</option>
-                <option value="1">🐢 Mely (Femenino)</option>
+                <option value="0">🐢 Toby</option>
+                <option value="1">🐢 Mely</option>
             </select>
             <small style="display: block; margin-top: 5px; color: #666;">
                 La tortuguita aparecerá durante todo el video
@@ -121,7 +144,7 @@
             </small>
         </div>
     </div>
-
+    
 </div>
 
                      <button type="submit" class="btn-successs">+ Añadir Tema </button>
@@ -136,13 +159,49 @@
                     <h3 id="subtopic-form-title">Añadir Nuevo Subtema</h3>
                     <p id="subtopic-context" style="color: #007bff; font-weight: bold;"></p>
                 </div>
-                <form id="subtopic-form" action="{{$formActions}}" method="POST" enctype="multipart/form-data">
+                <form id="subtopic-form" action="{{ route('topics.subtopics.store', 0) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     {{-- Necesitaremos JS para establecer esta ruta y el topic_id --}}
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
                     <input type="hidden" name="topic_id" id="subtopic-topic-id">
+                    
+                    <div class="form-group">
+                        <label style="font-weight: bold;">Seleccionar Tema del curso</label>
 
-                    {{-- Campos Subtema (simples) --}}
+                        <select name="topic_id" class="form-control" required>
+                            <option value="">--Seleccionar un tema --</option>
+
+                            @foreach ($courseTopics as $topic)
+                                <option value="{{ $topic->id}}">
+                                    {{ $topic->title }}
+                                </option>    
+                            @endforeach
+                        </select>
+                    </div>
+                    {{-- 
+                    <div class="form-group">
+                        <input type="text" id="searchSubtopics" class="form-control" placeholder="Buscar subtema...">
+                    </div> --}}
+                    
+                    <div class="form-group">
+                        <label style="font-weight: bold;">Seleccionar subtemas desde la biblioteca</label>
+
+                        <input type="text" id="searchSubtopics" class="form-control" placeholder="Buscar subtema...">
+
+                        <select id="subtopic_templates" name="subtopic_templates[]" class="form-control" multiple>
+                            @foreach($subtopicTemplates as $sub)
+                                <option value="{{ $sub->id }}">
+                                    {{ $sub->title }}
+                                </option>    
+                            @endforeach
+                        </select>
+                        
+                        <small class="text-muted">
+                            Puedes seleccionar varios con CTRL
+                        </small>
+                    </div>        
+
+                    {{-- Campos Subtema (simples) 
                     <div class="form-group">
                         <label for="subtopic-title">
                             Título del Subtema
@@ -154,11 +213,11 @@
                         <label for="subtopic-description">Descripción Detallada</label>
                         <textarea id="subtopic-description" name="description" rows="5"></textarea>
                     </div>
-                    {{-- Archivo --}}
+                    {{-- Archivo 
                     <div class="form-group">
                         <label for="subtopic-file">Adjuntar Archivo (PDF o Video)</label>
                         <input type="file" id="subtopic-file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
-                    </div>
+                    </div> --}}
 
                     {{-- OPCIONES DE TORTUGUITA (solo para videos en SUBTEMAS) --}}
                     <div id="subtopic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
@@ -171,12 +230,12 @@
                                 La tortuguita permanecerá visible mientras el video se reproduce
                             </small>
                         </div>
-
+                        
                         <div id="subtopic-turtle-voice-selector" style="display: none; margin-left: 24px;">
                             <label for="subtopic_turtle_voice">¿Cuál tortuguita?</label>
                             <select name="turtle_voice" id="subtopic_turtle_voice">
-                                <option value="0">🐢 Toby (Masculino)</option>
-                                <option value="1">🐢 Mely (Femenino)</option>
+                                <option value="0">🐢 Toby</option>
+                                <option value="1">🐢 Mely</option>
                             </select>
                         </div>
                     </div>
@@ -196,7 +255,7 @@
                         <h5>Nueva Actividad</h5>
                         <button type="submit" class="btn-primary">+ Añadir Actividad</button>
                     </div>
-
+                    
                     <div class="form-group">
                         <label>
                             Título de la actividad
@@ -236,7 +295,7 @@
                                  <div class="form-group">
                                         <label>Pregunta del cuestionario:</label>
                                         <input type="text" name="content[question]" class="form-field-cuestionario" placeholder="Escribe la pregunta aquí" disabled>
-
+                                    
                                 </div>
                                 <label>Opciones de respuesta (marca la correcta):</label>
                                 @for ($i = 0; $i < 4; $i++)
@@ -248,18 +307,18 @@
                             </div>
                         </div>
                         <div id="template-SopaDeLetras" class="activity-template" style="display: none;">
-
+                            
                             <div class="form-group">
                                 <label for="content_grid_size">Tamaño de Cuadrícula (Ej: 10 para 10x10)</label>
-                                <input type="number" name="content[grid_size]" id="content_grid_size"
+                                <input type="number" name="content[grid_size]" id="content_grid_size" 
                                     value="10" min="5" max="20" disabled>
                             </div>
-
+                            
                             <div class="form-group">
                                 <label for="ws_word_input">Palabras a encontrar</label>
                                 <div style="display: flex; gap: 10px;">
-                                    <input type="text" id="ws_word_input"
-                                        placeholder="Escribe una palabra y presiona 'Añadir'"
+                                    <input type="text" id="ws_word_input" 
+                                        placeholder="Escribe una palabra y presiona 'Añadir'" 
                                         style="flex: 1;" disabled>
                                     <button type="button" id="ws_add_word_btn" class="btn-secondary" disabled>Añadir</button>
                                 </div>
@@ -268,7 +327,7 @@
 
                             <label>Palabras añadidas:</label>
                             <ul id="ws_word_list" style="list-style: disc; margin-left: 20px; min-height: 50px; background: #f4f4f4; border-radius: 4px; padding: 10px;"></ul>
-
+                            
                             <div id="ws_hidden_inputs"></div>
 
                         </div>
@@ -287,27 +346,27 @@
                             <div class="activity-fields-container">
                                 <div class="form-group">
                                     <label for="ahorcado_word">Palabra a adivinar:</label>
-                                    <input type="text" name="content[word]" id="ahorcado_word"
-                                           class="form-field-ahorcado"
-                                           placeholder="Ej: PROGRAMACION"
-                                           pattern="[A-ZÑ]+"
+                                    <input type="text" name="content[word]" id="ahorcado_word" 
+                                           class="form-field-ahorcado" 
+                                           placeholder="Ej: PROGRAMACION" 
+                                           pattern="[A-ZÑ]+" 
                                            disabled>
                                     <small>Solo letras mayúsculas sin espacios ni acentos</small>
                                 </div>
-
+                                
                                 <div class="form-group">
                                     <label for="ahorcado_hint">Pista (opcional):</label>
-                                    <input type="text" name="content[hint]" id="ahorcado_hint"
-                                           class="form-field-ahorcado"
-                                           placeholder="Ej: Proceso de escribir código"
+                                    <input type="text" name="content[hint]" id="ahorcado_hint" 
+                                           class="form-field-ahorcado" 
+                                           placeholder="Ej: Proceso de escribir código" 
                                            disabled>
                                 </div>
-
+                                
                                 <div class="form-group">
                                     <label for="ahorcado_attempts">Intentos máximos:</label>
-                                    <input type="number" name="content[max_attempts]" id="ahorcado_attempts"
-                                           value="6" min="3" max="10"
-                                           class="form-field-ahorcado"
+                                    <input type="number" name="content[max_attempts]" id="ahorcado_attempts" 
+                                           value="6" min="3" max="10" 
+                                           class="form-field-ahorcado" 
                                            disabled>
                                 </div>
                             </div>
@@ -318,12 +377,12 @@
                             <div class="activity-fields-container">
                                 <div class="form-group">
                                     <label for="cw_grid_size">Tamaño de Cuadrícula:</label>
-                                    <input type="number" name="content[grid_size]" id="cw_grid_size"
-                                           value="10" min="5" max="15"
-                                           class="form-field-crucigrama"
+                                    <input type="number" name="content[grid_size]" id="cw_grid_size" 
+                                           value="10" min="5" max="15" 
+                                           class="form-field-crucigrama" 
                                            disabled>
                                 </div>
-
+                                
                                 <div class="form-group">
                                     <h4>Palabras y Pistas del Crucigrama</h4>
                                     <div id="cw_words_container" style="margin-bottom: 10px;">
@@ -335,7 +394,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> 
                 </form>
             </div>
             {{-- 2.4 FORMULARIO DE EDICIÓN DE TEMA (Inicialmente oculto) --}}
@@ -347,7 +406,7 @@
                 <form id="edit-topic-form" action="" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-
+                    
                     {{-- Campo oculto para el ID del tema --}}
                     <input type="hidden" name="topic_id" id="edit-topic-id" value="PUT">
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
@@ -370,7 +429,7 @@
                     {{-- Archivo --}}
                     <div class="form-group">
                         <label for="edit-file">Reemplazar Archivo (Opcional)</label>
-                        <input type="file" id="edit-file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
+                        <input type="file" id="edit-file" name="file_path" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                         <div id="current-file-info" style="margin-top: 5px;">
                             <small id="current-file-text"></small>
                             {{-- Campo oculto para mantener el file_path actual si no se sube nuevo archivo --}}
@@ -380,7 +439,7 @@
 
                     {{-- OPCIONES DE TORTUGUITA CON SEGMENTOS (EDICIÓN) --}}
 <div id="edit-topic-turtle-options" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
-
+    
     <div class="form-group">
         <label>
             <input type="checkbox" name="show_turtle" value="1" id="edit_topic_show_turtle_checkbox" style="width: auto; height: auto;">
@@ -392,7 +451,7 @@
     </div>
 
     <div id="edit-topic-turtle-voice-selector" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
-
+        
         <!-- TABS -->
         <div style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd;">
             <button type="button" class="turtle-mode-btn active" data-mode="simple" data-form="edit" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid #4f46e5; font-weight: bold;">
@@ -407,8 +466,8 @@
         <div id="edit-turtle-simple-mode" style="display: block;">
             <label for="edit_topic_turtle_voice">Selecciona la tortuguita:</label>
             <select name="turtle_voice" id="edit_topic_turtle_voice" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                <option value="0">🐢 Toby (Masculino)</option>
-                <option value="1">🐢 Mely (Femenino)</option>
+                <option value="0">🐢 Toby</option>
+                <option value="1">🐢 Mely</option>
             </select>
             <small style="display: block; margin-top: 5px; color: #666;">
                 La tortuguita aparecerá durante todo el video
@@ -432,7 +491,7 @@
             </small>
         </div>
     </div>
-
+    
 </div>
 
                     <div style="display: flex; gap: 10px;">
@@ -441,32 +500,47 @@
                     </div>
                 </form>
             </div>
+            
+        </div>   
 
-        </div>
-
-        {{-- Columna lista de temas --}}
-        <div class="topics-list">
-            <div class="topics-list-header">
-                <div style="margin-bottom: 5px;">
-                    <h3>Temas del Curso ({{ $course->topics->count() }})</h3>
-                    <p id="selection-context" style="font-size: 0.9em; color: #555; min-height: 1.2em;"></p>
-                </div>
-                <div class="content-btn" style="display: flex; gap: 8px; margin-bottom: 10px;">
-                        <button id="mode-topic" class="btn-topic" data-mode="topic">+ Añadir Tema </button>
-                        <button id="mode-subtopic" class="btn-subtopic" data-mode="subtopic" disabled>+ Añadir Subtema </button>
-                        <button id="mode-activity" class="btn-activities" data-mode="activity" disabled>+ Añadir Actividad </button>
-                </div>
+       {{-- Columna lista de temas --}}                
+<div class="topics-list">
+    <div class="topics-list-header">
+        <div style="margin-bottom: 5px;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px;">
+                <h3>Temas del Curso ({{ $course->topics->count() }})</h3>
+                
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input 
+                        type="checkbox" 
+                        name="show_welcome" 
+                        id="show_welcome"
+                        data-course-id="{{ $course->id }}"
+                        {{ $course->show_welcome ? 'checked' : '' }}
+                        style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 14px;">🐢 Mostrar bienvenida</span>
+</label>
+                </label>
             </div>
-
+            
+            <p id="selection-context" style="font-size: 0.9em; color: #555; min-height: 1.2em;"></p>
+        </div>
+        <div class="content-btn" style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <button id="mode-topic" class="btn-topic" data-mode="topic">+ Añadir Tema </button>
+            <button id="mode-subtopic" class="btn-subtopic" data-mode="subtopic" disabled>+ Añadir Subtema </button>
+            <button id="mode-activity" class="btn-activities" data-mode="activity" disabled>+ Añadir Actividad </button>
+        </div>
+    </div>
+                
             {{-- Lista de temas y subtemas --}}
             <div class="topics-list-content" id="sortable-topics">
                 @if ($course->finalExam)
                     @php $activity = $course->finalExam; @endphp
-
+                    
                     <div class="topic-card final-exam-card" data-activity-id="{{ $activity->id }}" style="margin-bottom: 20px;">
                         <div class="card-body" style="border-left: 5px solid #BC8A55; padding: 15px; border-radius: 4px; background: #fffbe6;">
                             <div class="topic-header" style="align-items: center; justify-content: space-between;">
-
+                                
                                 <div>
                                     <h5 style="color: #BC8A55; font-weight: 700; margin-bottom: 5px;">
                                          EXAMEN FINAL DEL CURSO
@@ -474,15 +548,15 @@
                                     <p class="topic-title" style="font-weight: 600; font-size: 15px;">{{ $activity->title }}</p>
                                     <p style="font-size: 0.9em; color: #555;">Tipo: {{ $activity->type }} ({{ count($activity->content['questions'] ?? []) }} preguntas)</p>
                                 </div>
-
+                                
                                 <div class="topic-actions">
                                     {{-- Botón eliminar actividad/examen usando la ruta existente --}}
-                                    <form action="{{ route('activities.destroy', $activity) }}" method="POST"
+                                    <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
                                         onsubmit="return confirm('¿Eliminar el Examen Final? Esto no se puede deshacer.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-danger" title="Eliminar Examen">
-                                            <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar"
+                                            <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar" 
                                                 style="width:24px;height:24px" loading="lazy">
                                         </button>
                                     </form>
@@ -491,7 +565,7 @@
                         </div>
                     </div>
                 @endif
-
+                
                 {{-- ===== MEZCLAR TOPICS Y ACTIVITIES POR ORDEN ===== --}}
                 @php
                     // Obtener actividades independientes
@@ -501,26 +575,26 @@
                         ->where('is_final_exam', false)
                         ->orderBy('order')
                         ->get();
-
+                    
                     // Mezclar topics y activities ordenados por 'order'
                     $allItems = collect();
-
+                    
                     foreach ($course->topics as $topic) {
                         $allItems->push(['type' => 'topic', 'order' => $topic->order, 'data' => $topic]);
                     }
-
+                    
                     foreach ($independentActivities as $activity) {
                         $allItems->push(['type' => 'activity', 'order' => $activity->order, 'data' => $activity]);
                     }
-
+                    
                     // Ordenar TODO por 'order'
                     $allItems = $allItems->sortBy('order')->values();
                 @endphp
-
+                
                 @forelse ($allItems as $item)
                     @if($item['type'] === 'topic')
                         @php $topic = $item['data']; @endphp
-
+                        
                 <div class="topic-card" data-topic-id="{{ $topic->id }}" data-topic-title="{{ $topic->title }}">
                     <div class="card-body">
 
@@ -534,7 +608,7 @@
                                 </div>
                             </div>
 
-                            <div class="topic-actions">
+                            <div class="topic-actions"> 
                                 {{-- BOTÓN DE EDITAR --}}
                                 <button type="button" class="btn-edit-topic"
                                         data-id="{{ $topic->id }}"
@@ -547,18 +621,18 @@
                                         data-video-segments='@json($topic->video_segments)'
                                         data-update-url="{{ route('topics.update', $topic->id) }}"
                                         title="Editar Tema">
-                                    <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}"
+                                    <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" 
                                         alt="Editar" style="width:24px;height:24px" loading="lazy">
                                 </button>
 
 
                                 {{-- Botón eliminar tema --}}
-                                <form action="{{ route('topics.destroy', $topic) }}" method="POST"
+                                <form action="{{ route('topics.destroy', $topic) }}" method="POST" 
                                     onsubmit="return confirm('¿Eliminar este tema y todas sus actividades?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn-danger" title="Eliminar">
-                                        <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar"
+                                        <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar" 
                                             style="width:24px;height:24px" loading="lazy">
                                     </button>
                                 </form>
@@ -590,7 +664,7 @@
                                         @if($activity->show_turtle)
                                             <span style="font-size: 12px; color: #28a745;">🐢 Voz {{ $activity->turtle_voice + 1 }}</span>
                                         @endif
-                                        <form action="{{ route('activities.destroy', $activity) }}" method="POST"
+                                        <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
                                             onsubmit="return confirm('¿Eliminar esta actividad?');" class="ms-2">
                                             @csrf
                                             @method('DELETE')
@@ -611,23 +685,23 @@
                             <p class="subtopics-label"></p>
                             @foreach ($topic->subtopics as $subtopic)
                                 <div class="subtopic-item"
-                                    data-subtopic-id="{{ $subtopic->id }}"
-                                    data-subtopic-title="{{ $subtopic->title }}"
+                                    data-subtopic-id="{{ $subtopic->id }}" 
+                                    data-subtopic-title="{{ $subtopic->title }}" 
                                     data-topic-id="{{ $topic->id }}">
-
-                                    <div class="subtopic-header">
+                                    
+                                    <div class="subtopic-header">    
                                         {{-- Título y descripción --}}
                                         <div>
                                             <h6 class="subtopic-title" style="font-size: 13px">• {{ $subtopic->title }}</h6>
                                             <p class="subtopic-description" style="margin-left: 10px">{{ $subtopic->description }}</p>
                                         </div>
                                         {{-- Botón eliminar Subtema --}}
-                                        <form action="{{ route('subtopics.destroy', $subtopic) }}" method="POST"
+                                        <form action="{{ route('subtopics.destroy', $subtopic) }}" method="POST" 
                                             onsubmit="return confirm('¿Eliminar este subtema?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-danger" title="Eliminar">
-                                                <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar"
+                                                <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar" 
                                                     style="width:24px;height:24px" loading="lazy">
                                             </button>
                                         </form>
@@ -656,7 +730,7 @@
                                                 @if($activity->show_turtle)
                                                     <span style="font-size: 12px; color: #28a745;">🐢 Voz {{ $activity->turtle_voice + 1 }}</span>
                                                 @endif
-                                                <form action="{{ route('activities.destroy', $activity) }}" method="POST"
+                                                <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
                                                     onsubmit="return confirm('¿Eliminar esta actividad?');">
                                                     @csrf
                                                     @method('DELETE')
@@ -670,15 +744,15 @@
                         </div>
                     @endif
                 </div>
-
+                
                     @else
                         {{-- ===== ACTIVIDAD INDEPENDIENTE ===== --}}
                         @php $activity = $item['data']; @endphp
-
+                        
                         <div class="topic-card" data-topic-id="activity-{{ $activity->id }}" style="border-left: 4px solid #4f46e5;">
                             <div class="topic-header">
                                 <div class="drag-handle" style="cursor: grab; margin-right: 10px; color: #999;">⋮⋮</div>
-
+                                
                                 <div style="flex: 1;">
                                     <h5 class="topic-title" style="color: #4f46e5; margin: 0;">
                                         🎮 {{ $activity->title }}
@@ -689,12 +763,12 @@
                                 </div>
 
                                 <div style="display: flex; gap: 8px;">
-                                    <form action="{{ route('activities.destroy', $activity) }}" method="POST"
+                                    <form action="{{ route('activities.destroy', $activity) }}" method="POST" 
                                         onsubmit="return confirm('¿Eliminar esta actividad?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-danger" title="Eliminar">
-                                            <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar"
+                                            <img src="{{ asset('images/icons/Vector.svg') }}" alt="Eliminar" 
                                                 style="width:24px;height:24px" loading="lazy">
                                         </button>
                                     </form>
@@ -702,7 +776,7 @@
                             </div>
                         </div>
                     @endif
-
+                    
                 @empty
                     <div class="no-topics">
                         <p>Aún no has añadido ningún tema a este curso.</p>
@@ -710,7 +784,7 @@
                 @endforelse
             </div>
         </div>
-
+    
 </div>
 @endsection
 
@@ -746,25 +820,25 @@ document.addEventListener('DOMContentLoaded', function() {
             ghostClass: 'sortable-ghost',
             onEnd: function (evt) {
                 console.log('🔄 Reordenando items...');
-
+                
                 // Recopilar nuevo orden de TODOS los items (topics y activities)
                 const items = [];
                 document.querySelectorAll('.topic-card[data-topic-id]').forEach((card, index) => {
                     const topicId = card.dataset.topicId;
-
+                    
                     // Detectar si es actividad (empieza con "activity-")
                     if (topicId.startsWith('activity-')) {
                         const activityId = topicId.replace('activity-', '');
-                        items.push({
+                        items.push({ 
                             type: 'activity',
-                            id: parseInt(activityId),
-                            order: index
+                            id: parseInt(activityId), 
+                            order: index 
                         });
                     } else {
-                        items.push({
+                        items.push({ 
                             type: 'topic',
-                            id: parseInt(topicId),
-                            order: index
+                            id: parseInt(topicId), 
+                            order: index 
                         });
                     }
                 });
@@ -776,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     id: item.id,
                     order: item.order
                 }));
-
+                
                 const activities = items.filter(item => item.type === 'activity').map(item => ({
                     id: item.id,
                     order: item.order
@@ -788,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Enviar AJAX para actualizar orden de TOPICS
                 if (topics.length > 0) {
                     console.log('📤 Enviando topics:', topics);
-
+                    
                     fetch('/topics/update-order', {
                         method: 'POST',
                         headers: {
@@ -818,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Enviar AJAX para actualizar orden de ACTIVITIES
                 if (activities.length > 0) {
                     console.log('📤 Enviando activities:', activities);
-
+                    
                     fetch('/activities/update-order', {
                         method: 'POST',
                         headers: {
@@ -920,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('mode-subtopic').disabled = true;
         }
         selectionContextP.textContent = context ? `Selección actual: ${context}` : '';
-
+        
         const canAddActivity = selectedTopicId || selectedSubtopicId;
         document.getElementById('mode-activity').disabled = !canAddActivity;
     }
@@ -946,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
     topicCards.forEach(card => {
         const topicId = card.dataset.topicId;
         const topicTitle = card.dataset.topicTitle;
-
+        
         card.addEventListener('click', function(e) {
             if (e.target.closest('.topic-actions') || e.target.closest('.drag-handle')) return;
             updateSelectionState(topicId, null, topicTitle);
@@ -959,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.querySelectorAll('.subtopic-item').forEach(subcard => {
             const subtopicId = subcard.dataset.subtopicId;
             const subtopicTitle = subcard.dataset.subtopicTitle;
-
+            
             subcard.addEventListener('click', function(e) {
                 e.stopPropagation();
                 updateSelectionState(topicId, subtopicId, topicTitle, subtopicTitle);
@@ -978,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', function() {
         activityTypeSelect.addEventListener('change', function () {
             const selectedType = this.value;
             const form = this.closest('form');
-
+            
             // Ocultar TODAS las plantillas
             const allTemplates = form.querySelectorAll('.activity-template');
             allTemplates.forEach(template => {
@@ -995,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 activeTemplate.querySelectorAll('input, button, select, textarea').forEach(input => {
                     input.disabled = false;
                 });
-
+                
                 if (selectedType === 'Crucigrama') {
                     initCrucigramaForm();
                 }
@@ -1006,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===================================================
     // 7.5 DETECTAR VIDEO EN TEMAS Y SUBTEMAS (TORTUGUITAS)
     // ===================================================
-
+    
     // PARA TEMAS
     const topicFileInput = document.getElementById('file');
     const topicTurtleOptions = document.getElementById('topic-turtle-options');
@@ -1018,12 +1092,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = this.files[0];
             if (file) {
                 const fileName = file.name.toLowerCase();
-                const isVideo = fileName.endsWith('.mp4') ||
-                               fileName.endsWith('.webm') ||
-                               fileName.endsWith('.avi') ||
+                const isVideo = fileName.endsWith('.mp4') || 
+                               fileName.endsWith('.webm') || 
+                               fileName.endsWith('.avi') || 
                                fileName.endsWith('.mov') ||
                                fileName.endsWith('.wmv');
-
+                
                 if (isVideo) {
                     topicTurtleOptions.style.display = 'block';
                 } else {
@@ -1058,12 +1132,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = this.files[0];
             if (file) {
                 const fileName = file.name.toLowerCase();
-                const isVideo = fileName.endsWith('.mp4') ||
-                               fileName.endsWith('.webm') ||
-                               fileName.endsWith('.avi') ||
+                const isVideo = fileName.endsWith('.mp4') || 
+                               fileName.endsWith('.webm') || 
+                               fileName.endsWith('.avi') || 
                                fileName.endsWith('.mov') ||
                                fileName.endsWith('.wmv');
-
+                
                 if (isVideo) {
                     subtopicTurtleOptions.style.display = 'block';
                 } else {
@@ -1098,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addWordBtn) {
         const addWord = () => {
             let word = wordInput.value.trim().toUpperCase();
-
+            
             if (word === '' || word.includes(' ')) {
                 alert('Por favor, escribe una sola palabra sin espacios.');
                 return;
@@ -1122,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 wordList.removeChild(li);
             };
             li.appendChild(removeBtn);
-
+            
             wordList.appendChild(li);
             wordInput.value = '';
             wordInput.focus();
@@ -1193,21 +1267,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // 10. LÓGICA CRUCIGRAMA
     // ===================================================
     let crucigramaWordCounter = 0;
-
+    
     function initCrucigramaForm() {
         const addWordBtn = document.getElementById('cw_add_word_btn');
         const wordsContainer = document.getElementById('cw_words_container');
-
+        
         if (addWordBtn && !addWordBtn.dataset.initialized) {
             addWordBtn.dataset.initialized = 'true';
             addWordBtn.addEventListener('click', function() {
                 addCrucigramaWord(wordsContainer);
             });
-
+            
             addCrucigramaWord(wordsContainer);
         }
     }
-
+    
     function addCrucigramaWord(container) {
         const index = crucigramaWordCounter++;
         const wordBlock = document.createElement('div');
@@ -1217,32 +1291,32 @@ document.addEventListener('DOMContentLoaded', function() {
         wordBlock.style.marginBottom = '10px';
         wordBlock.style.borderRadius = '6px';
         wordBlock.style.backgroundColor = '#f9f9f9';
-
+        
         wordBlock.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h5 style="margin: 0;">Palabra ${index + 1}</h5>
                 <button type="button" class="btn-danger-small btn-remove-cw-word">Eliminar</button>
             </div>
-
+            
             <div class="form-group" style="margin-bottom: 10px;">
                 <label>Palabra:</label>
-                <input type="text"
-                       name="content[words][${index}][word]"
-                       placeholder="Ej: MATEMATICA"
-                       pattern="[A-ZÑ]+"
-                       required
+                <input type="text" 
+                       name="content[words][${index}][word]" 
+                       placeholder="Ej: MATEMATICA" 
+                       pattern="[A-ZÑ]+" 
+                       required 
                        style="text-transform: uppercase;">
                 <small>Solo letras mayúsculas, sin espacios ni acentos</small>
             </div>
-
+            
             <div class="form-group" style="margin-bottom: 10px;">
                 <label>Pista:</label>
-                <input type="text"
-                       name="content[words][${index}][clue]"
-                       placeholder="Ej: Ciencia de los números"
+                <input type="text" 
+                       name="content[words][${index}][clue]" 
+                       placeholder="Ej: Ciencia de los números" 
                        required>
             </div>
-
+            
             <div class="form-group" style="margin-bottom: 10px;">
                 <label>Dirección:</label>
                 <select name="content[words][${index}][direction]" required>
@@ -1251,11 +1325,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </div>
         `;
-
+        
         wordBlock.querySelector('.btn-remove-cw-word').addEventListener('click', function() {
             wordBlock.remove();
         });
-
+        
         container.appendChild(wordBlock);
     }
 
@@ -1298,61 +1372,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (filePath) {
                     const fileName = filePath.split('/').pop();
                     currentFileText.textContent = `Archivo actual: ${fileName}`;
-
+                    
                     // Detectar si es video
                     const isVideo = fileName.toLowerCase().endsWith('.mp4') ||
                                    fileName.toLowerCase().endsWith('.webm') ||
                                    fileName.toLowerCase().endsWith('.avi') ||
                                    fileName.toLowerCase().endsWith('.mov') ||
                                    fileName.toLowerCase().endsWith('.wmv');
-
+                    
                     if (isVideo && editTurtleOptions) {
     editTurtleOptions.style.display = 'block';
-
+    
     // Cargar valores existentes
     if (showTurtle === '1') {
         editShowTurtleCheckbox.checked = true;
         editTurtleVoiceSelector.style.display = 'block';
-
+        
         // ✅ CARGAR SEGMENTOS SI EXISTEN
         console.log('📂 Cargando datos de tortuguita...');
         console.log('videoSegments raw:', videoSegments);
-
+        
         if (videoSegments && videoSegments !== 'null' && videoSegments !== '' && videoSegments !== '[]') {
             try {
                 let segments;
-
+                
                 // Si es string, parsearlo
                 if (typeof videoSegments === 'string') {
                     segments = JSON.parse(videoSegments);
                 } else {
                     segments = videoSegments;
                 }
-
+                
                 console.log('✅ Segmentos parseados:', segments);
-
+                
                 // Si hay segmentos, cambiar a tab de segmentos
                 if (segments && segments.length > 0) {
                     console.log(`📊 Encontrados ${segments.length} segmentos, cambiando a modo segmentos...`);
-
+                    
                     // Click en tab de segmentos
                     const editTabSegments = document.querySelector('.turtle-mode-btn[data-form="edit"][data-mode="segments"]');
                     if (editTabSegments) {
                         editTabSegments.click();
-
+                        
                         // Esperar un poco para que el DOM se actualice
                         setTimeout(() => {
                             const editContainer = document.getElementById('edit-segments-container');
                             if (editContainer) {
                                 // Limpiar container
                                 editContainer.innerHTML = '';
-
+                                
                                 // Cargar cada segmento
                                 segments.forEach((seg, index) => {
                                     console.log(`  ➕ Cargando segmento ${index + 1}:`, seg);
                                     addSegment('edit', seg.start, seg.end, seg.turtle.toString());
                                 });
-
+                                
                                 console.log('✅ Todos los segmentos cargados!');
                             }
                         }, 100);
@@ -1392,12 +1466,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = this.files[0];
             if (file) {
                 const fileName = file.name.toLowerCase();
-                const isVideo = fileName.endsWith('.mp4') ||
-                               fileName.endsWith('.webm') ||
-                               fileName.endsWith('.avi') ||
+                const isVideo = fileName.endsWith('.mp4') || 
+                               fileName.endsWith('.webm') || 
+                               fileName.endsWith('.avi') || 
                                fileName.endsWith('.mov') ||
                                fileName.endsWith('.wmv');
-
+                
                 if (isVideo) {
                     editTurtleOptions.style.display = 'block';
                 } else {
@@ -1448,7 +1522,7 @@ document.querySelectorAll('.turtle-mode-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const mode = this.dataset.mode;
         const form = this.dataset.form;
-
+        
         const tabs = this.parentElement.querySelectorAll('.turtle-mode-btn');
         tabs.forEach(t => {
             t.classList.remove('active');
@@ -1456,16 +1530,16 @@ document.querySelectorAll('.turtle-mode-btn').forEach(btn => {
             t.style.fontWeight = 'normal';
             t.style.color = '#666';
         });
-
+        
         this.classList.add('active');
         this.style.borderBottom = '3px solid #4f46e5';
         this.style.fontWeight = 'bold';
         this.style.color = '#000';
-
+        
         const simpleMode = document.getElementById(`${form}-turtle-simple-mode`);
         const segmentsMode = document.getElementById(`${form}-turtle-segments-mode`);
         const container = document.getElementById(`${form}-segments-container`);
-
+        
         if (mode === 'simple') {
             simpleMode.style.display = 'block';
             segmentsMode.style.display = 'none';
@@ -1494,16 +1568,16 @@ if (subtopicAddBtn) {
 function addSegment(form, start = '', end = '', turtle = '0') {
     const count = form === 'topic' ? ++topicSegmentCount : (form === 'subtopic' ? ++subtopicSegmentCount : ++editSegmentCount);
     const container = document.getElementById(`${form}-segments-container`);
-
+    
     console.log(`➕ Agregando segmento #${count} a formulario: ${form}`, {start, end, turtle}); // ✅ AGREGAR ESTE LOG
-
+    
     const div = document.createElement('div');
     // ... resto del código
     div.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px;border:1px solid #ddd;border-radius:4px;background:white';
     div.innerHTML = `
         <div style="flex:1">
             <label style="font-size:12px;color:#666">Inicio</label>
-            <input type="text" name="video_segments[${count}][start]" placeholder="00:00" value="${start}"
+            <input type="text" name="video_segments[${count}][start]" placeholder="00:00" value="${start}" 
                    class="segment-time" style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px" pattern="[0-9]{2}:[0-9]{2}">
         </div>
         <div style="flex:1">
@@ -1520,12 +1594,12 @@ function addSegment(form, start = '', end = '', turtle = '0') {
         </div>
         <button type="button" class="remove-segment" style="padding:8px 12px;background:#ff5252;color:white;border:none;border-radius:4px;cursor:pointer;align-self:flex-end">🗑️</button>
     `;
-
+    
     div.querySelector('.remove-segment').addEventListener('click', () => {
         if (container.children.length > 1) div.remove();
         else alert('Debe haber al menos un segmento');
     });
-
+    
     container.appendChild(div);
 }
 
@@ -1550,28 +1624,62 @@ if (editAddBtn) {
     editAddBtn.addEventListener('click', () => addSegment('edit', '', '', '0'));
 }
 
+// ✅ Limpiar segmentos vacíos antes de enviar
+const segmentInputs = editForm.querySelectorAll('[name^="video_segments"]');
+const segmentsToRemove = [];
+
+// Agrupar por índice
+const segmentsByIndex = {};
+segmentInputs.forEach(input => {
+    const match = input.name.match(/video_segments\[(\d+)\]/);
+    if (match) {
+        const index = match[1];
+        if (!segmentsByIndex[index]) {
+            segmentsByIndex[index] = {};
+        }
+        
+        if (input.name.includes('[start]')) segmentsByIndex[index].start = input.value;
+        if (input.name.includes('[end]')) segmentsByIndex[index].end = input.value;
+        if (input.name.includes('[turtle]')) segmentsByIndex[index].turtle = input.value;
+    }
+});
+
+// Eliminar segmentos incompletos
+Object.keys(segmentsByIndex).forEach(index => {
+    const segment = segmentsByIndex[index];
+    
+    // Si está vacío o incompleto, eliminarlo
+    if (!segment.start || !segment.end || segment.turtle === undefined) {
+        console.log(`🗑️ Eliminando segmento ${index} incompleto:`, segment);
+        
+        // Remover los inputs de ese índice
+        const inputsToRemove = editForm.querySelectorAll(`[name^="video_segments[${index}]"]`);
+        inputsToRemove.forEach(input => input.remove());
+    }
+});
+
 
 // 🔍 DEBUG TEMPORAL - Ver qué se envía en edición
 const editFormDebug = document.getElementById('edit-topic-form');
 if (editFormDebug) {
     editFormDebug.addEventListener('submit', function(e) {
         const formData = new FormData(this);
-
+        
         console.log('📤 ENVIANDO FORMULARIO DE EDICIÓN:');
         console.log('='.repeat(50));
-
+        
         for (let [key, value] of formData.entries()) {
             if (key.includes('video_segments')) {
                 console.log(`✅ ${key} = ${value}`);
             }
         }
-
+        
         console.log('='.repeat(50));
-
+        
         // Verificar si hay inputs de segmentos en el DOM
         const segmentInputs = this.querySelectorAll('[name^="video_segments"]');
         console.log(`📊 Total de inputs de segmentos encontrados: ${segmentInputs.length}`);
-
+        
         segmentInputs.forEach(input => {
             console.log(`  - ${input.name} = ${input.value}`);
         });
@@ -1579,6 +1687,102 @@ if (editFormDebug) {
 }
 
 </script>
+
+<script>
+// ========== AUTO-GUARDAR CHECKBOX DE BIENVENIDA ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('show_welcome');
+    
+    if (!checkbox) {
+        console.warn('Checkbox show_welcome no encontrado');
+        return;
+    }
+
+    const courseId = checkbox.dataset.courseId;
+    const originalValue = {{ $course->show_welcome ? 'true' : 'false' }};
+
+    console.log('🐢 Checkbox inicializado - Valor original:', originalValue);
+
+    checkbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+
+        console.log('🔄 Cambiando a:', isChecked);
+
+        const formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('show_welcome', isChecked ? '1' : '0');
+
+        fetch(`/cursos/${courseId}/welcome`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('✅ Respuesta del servidor:', data);
+
+            if (data.success) {
+                // Feedback visual
+                checkbox.style.outline = '3px solid #4CAF50';
+                
+                setTimeout(() => {
+                    checkbox.style.outline = 'none';
+                    
+                    // Recargar solo si cambió el valor
+                    if (isChecked !== (originalValue === 'true')) {
+                        console.log('🔄 Recargando página para actualizar vista...');
+                        setTimeout(() => location.reload(), 600);
+                    }
+                }, 800);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            alert('Error al guardar la configuración');
+            checkbox.checked = !isChecked; // revertir
+        });
+    });
+});
+</script>
+
+{{-- Script para el buscador de temas --}}
+<script>
+    document.getElementById('searchTopics').addEventListener('keyup', function(){
+
+        let search = this.value.toLowerCase();
+        let options = document.getElementById('topic_templates').options;
+
+        for (let i = 0; i < options.length; i++) {
+            let text = options[i].text.toLowerCase();
+
+            if (text.includes(search)) {
+                options[i].style.display = '';
+            } else {
+                options[i].style.display = 'none';
+            }
+        }
+    });
+</script>
+
+{{-- Script para el buscador de subtemas --}}
+<script>
+    document.getElementById('searchSubtopics').addEventListener('keyup', function(){
+
+        let search = this.value.toLowerCase();
+        let options = document.getElementById('suntopic_templates').options;
+
+        for (let i = 0; i < options.length; i++) {
+            let text = options[i].text.toLowerCase();
+
+            options[i].style.display = text.includes(search) ? '' : 'none';
+        }
+    });
+</script>    
+
+
 
 @endpush
 @endonce

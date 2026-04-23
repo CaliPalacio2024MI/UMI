@@ -122,7 +122,7 @@
         </div>
 
 
-        {{--Seleccion de Temas --}}
+        {{--Seleccion de Temas 
         <div class="form-group m-3">
             <label for="template_topics">Temas desde biblioteca</label>
 
@@ -139,14 +139,14 @@
             </small>
         </div> 
 
-        {{--Seleccion de Subtemas
+        {{--Seleccion de Subtemas 
         <div class="form-group m-3">
             <label for="template_subtopics">Subtemas desde biblioteca</label>
 
             <select name="template_subtopics[]" id="template_subtopics" class="form-control" multiple>
-                @foreach($subtopicstemplate as $subtopics)
-                <option value="{{ $subtopics->id }}">
-                    {{ $subtopics->title }}
+                @foreach($templates as $template)
+                <option value="{{ $template->id }}">
+                    {{ $template->title }}
                 </option>
                 @endforeach
             </select>

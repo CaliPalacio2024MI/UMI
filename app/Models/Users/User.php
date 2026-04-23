@@ -130,7 +130,7 @@ class User extends Authenticatable
     }
     public function groups()
     {
-        return $this->belongsToMany(\App\Models\Group::class);
+       return $this->belongsToMany(\App\Models\Group::class);
     }
 
     public function roles(): BelongsToMany
@@ -206,7 +206,7 @@ class User extends Authenticatable
     {
         $contexts = [];
 
-    $userContexts = DB::table('user_roles_institution')
+       $userContexts = DB::table('user_roles_institution')
         ->join('roles', 'user_roles_institution.role_id', '=', 'roles.id')
         ->join('institutions', 'user_roles_institution.institution_id', '=', 'institutions.id')
         ->where('user_roles_institution.user_id', $this->id)

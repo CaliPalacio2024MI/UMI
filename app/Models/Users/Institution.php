@@ -8,10 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Models\Cursos\Course;
-use App\Models\Users\Career;
+use App\Models\Users\Career;     
 use App\Models\Users\Department;
 use App\Models\Users\Workstation;
-
 
 
 /**
@@ -71,6 +70,7 @@ class Institution extends Model
 
     public function workstations(): HasManyThrough
     {
+        
         return $this->hasManyThrough(Workstation::class, Department::class);
     }
 }

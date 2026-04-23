@@ -18,13 +18,13 @@
             <input type="text" name="title"
                 style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; font-size:1rem">
         </div>
-        
+
         <div style="margin-bottom:20px;">
             <label style="display:block; margin-bottom:8px; font-weight:bold; color:#555;">Descripción Detallada del Tema</label>
             <textarea name="description"
                 style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; font-size:1rem; min-height:120px;"></textarea>
         </div>
-        
+
         <div style="margin-bottom:20px;">
             <label style="display:block; margin-bottom:8px; font-weight:bold; color:#555;">Adjuntar Archivo (PDF o Videos)</label>
             <input type="file" name="file"
@@ -34,7 +34,7 @@
         <div style="text-aligh:left;">
         <button type="submit" style="background-color:#004085; color:white; border:none; padding:10px 20px; border-radius:4px; font-size:1rem; font-weight:bold; cursos:pointer; transition: background-color 0.2s;">Guardar Tema</button>
         </div>
-    
+
     </form>
 
 </div>

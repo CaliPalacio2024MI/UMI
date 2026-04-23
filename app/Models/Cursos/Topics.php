@@ -42,6 +42,18 @@ class Topics extends Model
         'title',
         'description',
         'file_path',
+        'show_title', 
+        'show_turtle', 
+        'video_segments',
+        'turtle_voice',
+        'order',
+    ];
+
+    // ✅ AGREGAR ESTO (nuevo)
+    protected $casts = [
+        'show_title' => 'boolean',
+        'show_turtle' => 'boolean',
+        'video_segments' => 'array',
     ];
 
     /**

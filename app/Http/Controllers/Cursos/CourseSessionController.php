@@ -96,15 +96,6 @@ class CourseSessionController extends Controller
             ]);
         }
 
-        // VALIDACIÓN EXACTA
-        $expectedEnd = $start->copy()->addHours($course->hours);
-
-        if (!$end->equalTo($expectedEnd)) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
-            ]);
-        }
-
         $session->update([
             'date' => $request->date,
             'start_time' => $request->start_time,
@@ -128,15 +119,6 @@ class CourseSessionController extends Controller
         if ($end <= $start) {
             return back()->withErrors([
                 'error' => 'La hora fin debe ser mayor a la hora inicio'
-            ]);
-        }
-
-        // VALIDACIÓN EXACTA
-        $expectedEnd = $start->copy()->addHours($course->hours);
-
-        if (!$end->equalTo($expectedEnd)) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
             ]);
         }
 
