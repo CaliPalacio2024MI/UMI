@@ -489,7 +489,6 @@ document.querySelectorAll(".menu-left h2").forEach(item => {
 // activar seleccionado
 el.classList.add("active");
 
-// 👉 CAMPUS (ya lo tienes bien)
 if(seccion === "campus"){
     contenedor.innerHTML = `
         <a href="{{ route('campus.acapulco') }}" class="campus-card">
@@ -502,7 +501,6 @@ if(seccion === "campus"){
     `;
 }
 
-// 🔥 AQUÍ ESTÁ LO NUEVO (LO QUE TE FALTABA)
 if(seccion === "programas"){
     contenedor.innerHTML = `
         <div class="menu-programas">
