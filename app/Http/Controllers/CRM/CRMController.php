@@ -604,7 +604,7 @@ class CRMController extends Controller
         
         $lead->save();
 
-        // 👇 Registrar "Prospecto frío" automáticamente si no existe
+        // Registrar "Prospecto frío" automáticamente si no existe
         $yaExiste = $lead->seguimientos()->where('estado', 'Prospecto frío')->exists();
         if (!$yaExiste) {
             $lead->seguimientos()->create([
