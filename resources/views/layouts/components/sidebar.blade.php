@@ -24,8 +24,8 @@
 
         // --- 3. BANDERAS DE VISIBILIDAD ---
 
-        // Submenú "Facturación": Solo Master y Control Admin
-        $hasFacturacionSubmenu = $isMaster || $isControlAdmin;
+        // Submenú "Facturación": Solo en Universidad; Master y Control Admin ven submenú, resto enlace directo
+        $hasFacturacionSubmenu = $isUniversity && ($isMaster || $isControlAdmin);
 
         // Submenú "Mi Información"
         $hasInfoSubmenu = $isStudentGroup || $isDocenteGroup || ($isMaster && $isUniversity);
@@ -155,11 +155,11 @@
             </li>
             @endif
 
-            {{-- 3. FACTURACIÓN --}}
-            @if(!$isCoordinatorCTP && !$isCTP)
+            {{-- 3. FACTURACIÓN (solo unidad Universidad Mundo Imperial) --}}
+            @if($isUniversity && !$isCoordinatorCTP && !$isCTP)
             @if($hasFacturacionSubmenu)
-                {{-- CASO A: Master y Control Administrativo (Con submenú flotante) --}}
-                <li class="has-submenu submenu-flotante {{ request()->routeIs('Facturacion.*', 'facturacion.conceptos.*') ? 'active' : '' }}">
+                {{-- CASO A: Master y Control Administrativo (submenú debajo, mismo patrón que Cursos / Mi Información) --}}
+                <li class="has-submenu {{ request()->routeIs('Facturacion.*', 'facturacion.conceptos.*') ? 'active' : '' }}">
                     <a href="#">
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
@@ -167,7 +167,6 @@
                         <span class="text">Facturación</span>
                     </a>
                     
-                    {{-- SUBMENÚ FLOTANTE A LA DERECHA --}}
                     <ul class="submenu">
                         <li class="{{ request()->routeIs('Facturacion.*') ? 'active-submenu' : '' }}">
                             <a href="{{ route('Facturacion.index') }}">Estado de cuenta</a>

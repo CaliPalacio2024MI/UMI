@@ -312,6 +312,24 @@ if (formFactura) {
                 if (cargoInput && !cargoInput.disabled) {
                     cargoInput.value = (cargo !== null && String(cargo).trim() !== '') ? String(cargo) : '';
                 }
+
+                // Factura extra (EXT-): fecha de vencimiento desde el concepto (catálogo Conceptos y montos).
+                const uidPrefixEl = document.getElementById('modal_uid_prefix');
+                const esFacturaExtra = uidPrefixEl && String(uidPrefixEl.value || '').indexOf('EXT') === 0;
+                if (esFacturaExtra) {
+                    const fvAttr = option.getAttribute('data-fecha-vencimiento-moratorio');
+                    const fechaInput = document.getElementById('modal_fecha');
+                    let fechaISO = '';
+                    if (fvAttr && String(fvAttr).trim() !== '') {
+                        fechaISO = String(fvAttr).trim().slice(0, 10);
+                    } else {
+                        const hoy = new Date();
+                        fechaISO = hoy.toISOString().split('T')[0];
+                    }
+                    if (fechaInput && /^(\d{4})-(\d{2})-(\d{2})$/.test(fechaISO)) {
+                        fechaInput.value = fechaISO;
+                    }
+                }
             }
         }
     });
@@ -428,18 +446,17 @@ function fillAndOpenModal(modal, btn) {
             fechaISO = hoy.toISOString().split('T')[0];
         }
 
-        // 5. VISUALIZACIÓN (Estilo Azul Simple)
-        // Guardamos la fecha en el input oculto
+        // 5. Fecha de vencimiento (campo date: se envía con el formulario)
         setVal('#modal_fecha', fechaISO);
-
-        // Mostramos solo la fecha bonita (DD/MM/YYYY)
-        const [y, m, d] = fechaISO.split('-');
-        const textoFecha = modal.querySelector('#texto_fecha_vencimiento');
-        
-        if (textoFecha) {
-            textoFecha.style.color = '#223F70'; // Azul Institucional
-            textoFecha.style.fontWeight = 'bold';
-            textoFecha.textContent = `${d}/${m}/${y}`; // Solo la fecha, sin mensajes extra
+        const fechaInputEl = modal.querySelector('#modal_fecha');
+        if (fechaInputEl && fechaInputEl.type === 'date') {
+            if (prefix === 'MEN-') {
+                fechaInputEl.readOnly = true;
+                fechaInputEl.title = 'Fecha definida por el periodo de mensualidad.';
+            } else {
+                fechaInputEl.readOnly = false;
+                fechaInputEl.title = 'Puede ajustar la fecha; por defecto viene del concepto o del día de registro.';
+            }
         }
 
         // 6. Periodo

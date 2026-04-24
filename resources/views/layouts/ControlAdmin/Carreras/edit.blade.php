@@ -130,6 +130,16 @@
                         value="{{ $cargoPreview }}"
                         style="background: #f5f5f5; cursor: default;">
                 </div>
+                @php
+                    $fvMoratorio = $career->fecha_vencimiento_moratorio;
+                    $fvMoratorioTxt = $fvMoratorio ? \Carbon\Carbon::parse($fvMoratorio)->format('d/m/Y') : '—';
+                @endphp
+                <div class="form-field">
+                    <label for="fecha_vencimiento_moratorio_display_{{ $career->id }}">Fecha vencimiento (asignada por sistema):</label>
+                    <input type="text" id="fecha_vencimiento_moratorio_display_{{ $career->id }}" readonly tabindex="-1"
+                        value="{{ $fvMoratorioTxt }}"
+                        style="background: #f5f5f5; cursor: default;">
+                </div>
                 
                 <div class="modal-footer-custom mt-3">
                     <button type="submit" class="submit-button">+ Actualizar</button>

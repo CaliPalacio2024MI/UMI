@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'ajax' => \App\Http\Middleware\AjaxMiddleware::class,
             'spa' => \App\Http\Middleware\SpaResponseMiddleware::class,
+            'university.institution' => \App\Http\Middleware\EnsureActiveInstitutionIsUniversity::class,
         ]);
         
         

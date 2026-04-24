@@ -82,9 +82,4 @@ public function store(Request $request)
     return redirect()->back()->with('success', 'Registro enviado correctamente');
 }
 
-    // Muestra la página de inicio (Landing Page)
-    public function landing()
-    {
-        return view('public.landing');
-    }
 }

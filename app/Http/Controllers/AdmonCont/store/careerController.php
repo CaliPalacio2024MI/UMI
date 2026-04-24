@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdmonCont\store;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 //Modelos
 use App\Models\Users\Career;
 use App\Models\Users\CareerClassification;
@@ -172,6 +173,8 @@ class careerController extends Controller
             $precioTotal = round($monto * $sem, 2);
         }
         $cargoMonetario = round($precioTotal * ($porcentajeCargoMoratorio / 100), 2);
+        // Fecha de vencimiento moratorio: asignada por el sistema (31 de diciembre del año siguiente al alta).
+        $fechaVencimientoMoratorio = Carbon::now()->addYear()->endOfYear()->toDateString();
 
         Career::create([
             'name'           => $request->name,
@@ -190,6 +193,7 @@ class careerController extends Controller
                 : null,
             'monto_mensualidad' => $monto,
             'cargo_monetario' => $cargoMonetario,
+            'fecha_vencimiento_moratorio' => $fechaVencimientoMoratorio,
         ]);
 
         return redirect()
@@ -363,6 +367,9 @@ class careerController extends Controller
             $data['monthly_prices'] = null;
             $data['monto_mensualidad'] = $monto;
             $data['cargo_monetario'] = $monto !== null ? round($precioTotal * ($porcentajeCargoMoratorio / 100), 2) : null;
+        }
+        if ($carrera->fecha_vencimiento_moratorio === null) {
+            $data['fecha_vencimiento_moratorio'] = Carbon::now()->addYear()->endOfYear()->toDateString();
         }
         $carrera->update($data);
 

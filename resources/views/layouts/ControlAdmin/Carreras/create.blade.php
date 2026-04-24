@@ -104,6 +104,12 @@
                         value=""
                         style="background: #f5f5f5; cursor: default;">
                 </div>
+                <div class="form-field">
+                    <label for="createCareerFechaVencimientoMoratorio">Fecha vencimiento (asignada por sistema):</label>
+                    <input type="text" id="createCareerFechaVencimientoMoratorio" readonly tabindex="-1"
+                        value="Se asigna al guardar"
+                        style="background: #f5f5f5; cursor: default;">
+                </div>
 
                 <div class="modal-footer-custom mt-3">
                     <button type="submit" class="submit-button">+ Agregar</button>

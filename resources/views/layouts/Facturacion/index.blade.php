@@ -378,7 +378,8 @@
                                 <option value="{{ $c->concept }}"
                                         data-amount="{{ $c->amount }}"
                                         data-porcentaje-cargo-moratorio="{{ $c->porcentaje_cargo_moratorio }}"
-                                        data-cargo-monetario="{{ $c->cargo_monetario }}">
+                                        data-cargo-monetario="{{ $c->cargo_monetario }}"
+                                        data-fecha-vencimiento-moratorio="{{ $c->fecha_vencimiento_moratorio ? \Carbon\Carbon::parse($c->fecha_vencimiento_moratorio)->format('Y-m-d') : '' }}">
                                     {{ $c->concept }}
                                 </option>
                             @endforeach
@@ -439,14 +440,13 @@
                        style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; color: #333; box-sizing: border-box;">
                 </div>
 
-                {{-- 4. Fecha Vencimiento --}}
-                <strong style="display:block; margin-top: 10px;">Fecha Vencimiento (Asignada por sistema):</strong>
-                
-                {{-- IMPORTANTE: Se mantiene el ID 'modal_fecha' para que tu JS funcione --}}
-                <input type="hidden" id="modal_fecha" name="fecha" required>
-                
-                {{-- IMPORTANTE: Se mantiene el ID 'texto_fecha_vencimiento' para que tu JS muestre la fecha --}}
-                <p id="texto_fecha_vencimiento" style="font-weight: bold; color: #223F70; margin: 5px 0 15px 0; font-size: 1.1em;"></p>
+                {{-- 4. Fecha Vencimiento (valor enviado en el formulario; EXT- editable, MEN- solo lectura vía JS) --}}
+                <label for="modal_fecha" style="font-weight:bold; display:block; margin-top:10px;">Fecha vencimiento (asignada por sistema):</label>
+                <input type="date"
+                       id="modal_fecha"
+                       name="fecha"
+                       required
+                       style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px;">
 
                 {{-- 5. Estado --}}
                 <label for="modal_status" style="font-weight:bold; display:block; margin-top:10px;">Estado:</label>

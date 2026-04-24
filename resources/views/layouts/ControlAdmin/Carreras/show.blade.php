@@ -68,6 +68,16 @@
                     <dt>Cargo moratorio</dt>
                     <dd>{{ $career->cargo_monetario !== null ? '$' . number_format((float) $career->cargo_monetario, 2) : '—' }}</dd>
                 </div>
+                <div class="career-view-row">
+                    <dt>Fecha vencimiento (asignada por sistema)</dt>
+                    <dd>
+                        @if($career->fecha_vencimiento_moratorio)
+                            {{ \Carbon\Carbon::parse($career->fecha_vencimiento_moratorio)->format('d/m/Y') }}
+                        @else
+                            —
+                        @endif
+                    </dd>
+                </div>
             </dl>
         </div>
     </div>

@@ -98,6 +98,7 @@
         async function fetchJson(endpoint) {
             const r = await fetch('/external-data?endpoint=' + encodeURIComponent(endpoint), {
                 method: 'GET',
+                cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
@@ -114,14 +115,20 @@
             const props = Array.isArray(data) ? data : (data?.propiedades ?? data?.data ?? []);
             if (!Array.isArray(props) || props.length === 0) throw new Error('API: no devolvió propiedades');
 
-            let match = null;
-            if (instKey) {
-                match = props.find(p => {
-                    const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
-                    return n.includes(instKey);
-                });
+            if (!instKey) {
+                throw new Error(
+                    'Catálogo de puestos por API solo aplica en Palacio, Princess o Pierre. Unidad activa: "' +
+                    (activeInstitutionName || '(sin nombre)') + '".'
+                );
             }
-            if (!match) match = props[0];
+
+            const match = props.find(p => {
+                const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
+                return n.includes(instKey);
+            });
+            if (!match) {
+                throw new Error('No se encontró en la API una propiedad que coincida con la unidad activa (' + instKey + ').');
+            }
 
             const propId =
                 match?.id ??
@@ -162,12 +169,13 @@
                 return n && n.includes(wanted);
             });
 
+            // La API externa usa id_departamento en la ruta (ej. "0001"), no confundir con id numérico si viene ambos.
             const deptId =
-                match?.id ??
                 match?.id_departamento ??
-                match?.departmentId ??
-                match?.department_id ??
                 match?.departamento_id ??
+                match?.department_id ??
+                match?.departmentId ??
+                match?.id ??
                 null;
 
             if (deptId == null || deptId === '') throw new Error('No se encontró external deptId para: ' + internalDepartmentName);

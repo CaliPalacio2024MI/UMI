@@ -19,6 +19,7 @@ class BillingConcept extends Model
         'amount',
         'porcentaje_cargo_moratorio',
         'cargo_monetario',
+        'fecha_vencimiento_moratorio',
         'description',
         'is_active',
     ];
@@ -28,5 +29,6 @@ class BillingConcept extends Model
         'amount'    => 'decimal:2',
         'porcentaje_cargo_moratorio' => 'decimal:2',
         'cargo_monetario' => 'decimal:2',
+        'fecha_vencimiento_moratorio' => 'date',
     ];
 }

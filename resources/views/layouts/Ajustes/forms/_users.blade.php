@@ -37,6 +37,11 @@
 <p class="form-intro-question" style="font-weight: 600; color: #BC8A55; margin: 0 0 12px 0; font-size: 0.95rem;">
     ¿Qué usuario vas a crear?
 </p>
+@if ($errors->any())
+    <div style="margin: 0 0 10px 0; padding: 8px 10px; border: 1px solid #dc3545; border-radius: 6px; background: #fff5f5; color: #a61d2a; font-size: 0.9rem;">
+        {{ $errors->first() }}
+    </div>
+@endif
 <input type="hidden" name="tipo_usuario_creacion" id="tipo_usuario_creacion" value="{{ $tipoCreacion }}">
 <div class="form-group" style="margin-bottom: 14px;">
     <div class="tipo-usuario-inline" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
@@ -183,13 +188,20 @@
         $selectedInstitutionId = isset($item) ? (optional($item->institutions)->first()->id ?? $item->institution_id ?? null) : null;
         $selectedInstitutionId = $selectedInstitutionId ?? session('active_institution_id');
     }
+    $selectedInstitutionName = collect($institutions ?? [])->firstWhere('id', (int) $selectedInstitutionId)->name ?? '';
 @endphp
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
         <label for="institution_id" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Unidad de Negocio</label>
         <div style="flex: 1 1 auto; min-width: 0;">
-            <div class="umi-form-select-pill" id="institution_id_pill">
-                <select id="institution_id" name="institution_id" required class="form-control umi-form-select-pill-inner" style="width: 100%;">
+            <input type="text"
+                   id="institution_id_display"
+                   value="{{ $selectedInstitutionName }}"
+                   style="width: 100%; margin-bottom: 8px; background-color: transparent; color: #444; cursor: not-allowed; border: none; border-bottom: 2px solid #dc3545; border-radius: 0; box-shadow: none; padding: 0.375rem 0;"
+                   readonly>
+            <input type="hidden" id="institution_id_hidden" name="institution_id" value="{{ $selectedInstitutionId }}">
+            <div class="umi-form-select-pill" id="institution_id_pill" style="display: none;">
+                <select id="institution_id" class="form-control umi-form-select-pill-inner" style="width: 100%;">
                     <option value="">Seleccione la ud. de negocio</option>
                     @foreach($institutions ?? [] as $inst)
                         <option value="{{ $inst->id }}" {{ $selectedInstitutionId == $inst->id ? 'selected' : '' }}>
@@ -201,7 +213,7 @@
         </div>
     </div>
     @error('institution_id')
-        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
+        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 6px; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; word-break: break-word;">
             <strong>{{ $message }}</strong>
         </span>
     @enderror
@@ -255,6 +267,197 @@
         }
     </style>
 </div>
+<div class="form-group" style="margin-top: -4px;">
+    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%;">
+        <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 6px;">
+            <label for="role_switch_ui" style="position: relative; display: inline-block; width: 46px; height: 24px; margin: 0; cursor: pointer;">
+                <input type="checkbox" id="role_switch_ui" style="opacity: 0; width: 0; height: 0;">
+                <span style="position: absolute; inset: 0; background-color: #c6c6c6; border-radius: 999px; transition: 0.2s;"></span>
+                <span style="position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); transition: 0.2s;"></span>
+            </label>
+            <label id="role_switch_state" for="role_switch_ui" style="font-size: 0.9rem; color: #BC8A55; margin: 0; cursor: pointer;">Accesos</label>
+        </div>
+    </div>
+</div>
+<div class="form-group" id="institution-access-wrapper" style="margin-top: 6px;">
+    <div id="institution-access-list" style="display: grid; gap: 8px;"></div>
+</div>
+<script>
+    (function () {
+        const roleSwitch = document.getElementById('role_switch_ui');
+        const roleSwitchState = document.getElementById('role_switch_state');
+        const institutionSelect = document.getElementById('institution_id');
+        const institutionHidden = document.getElementById('institution_id_hidden');
+        const institutionDisplay = document.getElementById('institution_id_display');
+        const institutionAccessWrapper = document.getElementById('institution-access-wrapper');
+        const institutionAccessList = document.getElementById('institution-access-list');
+        const selectedInstitutionIdFromServer = @json((string) ($selectedInstitutionId ?? ''));
+        const allInstitutions = @json($all_institutions ?? []);
+
+        if (!roleSwitch || !roleSwitchState) return;
+
+        const defaultInstitutionOptions = institutionSelect
+            ? Array.from(institutionSelect.options).map(option => ({
+                value: option.value,
+                text: option.textContent
+            }))
+            : [];
+
+        function normalizeInstitutionList(sourceList) {
+            return (sourceList || [])
+                .map(item => ({
+                    value: String(item.value ?? item.id ?? ''),
+                    text: String(item.text ?? item.name ?? '')
+                }))
+                .filter(item => item.value !== '' && item.text.trim() !== '');
+        }
+
+        function populateInstitutionOptions(sourceList, selectedValue) {
+            if (!institutionSelect) return;
+            institutionSelect.innerHTML = '';
+
+            normalizeInstitutionList(sourceList).forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.value;
+                option.textContent = item.text;
+                if (String(selectedValue) !== '' && String(selectedValue) === option.value) {
+                    option.selected = true;
+                }
+                institutionSelect.appendChild(option);
+            });
+
+            if (!institutionSelect.value && institutionSelect.options.length > 0) {
+                institutionSelect.selectedIndex = 0;
+            }
+        }
+
+        function renderInstitutionAccessList(sourceList) {
+            if (!institutionAccessList || !institutionSelect) return;
+            institutionAccessList.innerHTML = '';
+
+            const normalized = normalizeInstitutionList(sourceList);
+            const selectedValue = String(institutionSelect.value || selectedInstitutionIdFromServer || '');
+
+            normalized.forEach(item => {
+                const row = document.createElement('label');
+                row.style.display = 'inline-flex';
+                row.style.alignItems = 'center';
+                row.style.gap = '10px';
+                row.style.cursor = 'pointer';
+                row.style.margin = '0';
+
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'institution_access_ui';
+                input.value = item.value;
+                input.checked = selectedValue !== '' && selectedValue === item.value;
+                input.style.width = '16px';
+                input.style.height = '16px';
+
+                const text = document.createElement('span');
+                text.textContent = item.text;
+                text.style.fontSize = '0.98rem';
+                text.style.color = '#444';
+
+                input.addEventListener('change', function () {
+                    const allChecks = institutionAccessList.querySelectorAll('input[name="institution_access_ui"]');
+                    allChecks.forEach(chk => {
+                        if (chk !== input) chk.checked = false;
+                    });
+                    // Se comporta como radio: siempre deja una unidad seleccionada.
+                    input.checked = true;
+                    institutionSelect.value = input.value;
+                    syncInstitutionFields();
+                });
+
+                row.appendChild(input);
+                row.appendChild(text);
+                institutionAccessList.appendChild(row);
+            });
+
+            if (!institutionSelect.value && normalized.length > 0) {
+                institutionSelect.value = normalized[0].value;
+            }
+        }
+
+        function ensureInstitutionSelection() {
+            if (!institutionSelect) return;
+            if (institutionSelect.value) return;
+            const firstValid = Array.from(institutionSelect.options).find(opt => String(opt.value || '').trim() !== '');
+            if (firstValid) {
+                institutionSelect.value = firstValid.value;
+            }
+        }
+
+        function syncInstitutionFields() {
+            const selectedOption = institutionSelect?.options[institutionSelect.selectedIndex];
+            if (institutionHidden) {
+                institutionHidden.value = institutionSelect?.value || '';
+            }
+            if (institutionDisplay) {
+                institutionDisplay.value = selectedOption ? (selectedOption.textContent || '').trim() : '';
+            }
+        }
+
+        function paintSwitch() {
+            const container = roleSwitch.nextElementSibling;
+            const knob = container?.nextElementSibling;
+            if (!container || !knob) return;
+
+            container.style.backgroundColor = roleSwitch.checked ? '#e0b84f' : '#c6c6c6';
+            knob.style.transform = roleSwitch.checked ? 'translateX(22px)' : 'translateX(0)';
+            roleSwitchState.textContent = 'Accesos';
+
+            if (!institutionSelect) return;
+            if (roleSwitch.checked) {
+                if (institutionAccessWrapper) institutionAccessWrapper.style.display = 'block';
+                // Activo: mostrar todas las unidades dadas de alta en el sistema.
+                populateInstitutionOptions(allInstitutions, institutionSelect.value || selectedInstitutionIdFromServer);
+                ensureInstitutionSelection();
+                renderInstitutionAccessList(allInstitutions);
+                syncInstitutionFields();
+            } else {
+                if (institutionAccessWrapper) institutionAccessWrapper.style.display = 'none';
+                // Inactivo: volver al set original (contexto permitido) y cerrar menú de accesos.
+                populateInstitutionOptions(defaultInstitutionOptions, institutionSelect.value || selectedInstitutionIdFromServer);
+                ensureInstitutionSelection();
+                renderInstitutionAccessList(defaultInstitutionOptions);
+                syncInstitutionFields();
+            }
+        }
+
+        const modalForm = document.getElementById('modalForm');
+        if (modalForm) {
+            modalForm.addEventListener('submit', function () {
+                // Evita bloqueo HTML5 por campos required ocultos (display:none, etc.)
+                const requiredFields = modalForm.querySelectorAll('[required]');
+                requiredFields.forEach(field => {
+                    const isVisible = field.offsetParent !== null;
+                    if (!isVisible) {
+                        field.dataset.wasRequired = '1';
+                        field.removeAttribute('required');
+                    }
+                });
+
+                ensureInstitutionSelection();
+                syncInstitutionFields();
+                // Mensaje útil para detectar qué campo HTML5 está bloqueando el submit.
+                const invalidField = modalForm.querySelector(':invalid');
+                if (invalidField) {
+                    const fieldName = invalidField.getAttribute('name') || invalidField.getAttribute('id') || 'campo desconocido';
+                    alert('No se puede guardar. Falta completar o corregir el campo: ' + fieldName);
+                    invalidField.focus();
+                }
+            });
+        }
+        if (institutionSelect) {
+            institutionSelect.addEventListener('change', syncInstitutionFields);
+        }
+        roleSwitch.addEventListener('change', paintSwitch);
+        paintSwitch();
+        syncInstitutionFields();
+    })();
+</script>
 
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
@@ -564,7 +767,8 @@ setTimeout(function() {
                 'control_administrativo',
                 'control_escolar',
                 'ctp',
-                'coordinador_ctp'
+                'coordinador_ctp',
+                'master'
             ];
 
             filteredRoles = allRoles.filter(role => uniRoles.includes(role.name));
