@@ -34,7 +34,7 @@ class CRMController extends Controller
 
         // Solo master y coordinador necesitan la lista de CTPs
         $ctps = [];
-        if (in_array($rol, ['master', 'coordinador_ctp'])) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo'])) {
             $ctps = \App\Models\Users\User::whereHas('roles', function ($q) {
                 $q->where('name', 'ctp');
             })->get();
@@ -63,7 +63,7 @@ class CRMController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -241,7 +241,7 @@ class CRMController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -469,8 +469,8 @@ class CRMController extends Controller
     // Total SIN filtro de estatus NI de fecha (universo real para la dona)
     $queryTotal = Lead::query();
     if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
-    if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
-        $queryTotal->where('ctp_id', $request->ctp_id);
+    if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id'))
+    $queryTotal->where('ctp_id', $request->ctp_id);
     if ($request->filled('carrera_id'))
         $queryTotal->where('carrera_id', $request->carrera_id);
     if ($request->filled('nivel_educativo'))

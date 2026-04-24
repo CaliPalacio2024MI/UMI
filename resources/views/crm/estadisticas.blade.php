@@ -52,7 +52,7 @@
 
                 <div class="filtros-izquierda">
                     <!-- Filtro CTP -->
-                   @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
+                    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp', 'control_administrativo']))
 
                     <div class="input-group-custom select-wrapper">
 
