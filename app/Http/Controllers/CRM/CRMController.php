@@ -15,7 +15,7 @@ use App\Exports\EstadisticasExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 
-class CrmController extends Controller
+class CRMController extends Controller
 {
     public function leads()
     {
@@ -649,7 +649,7 @@ class CrmController extends Controller
         ->select('comisiones.*', 'career_classifications.name as clasificacion_nombre')
         ->get();
 
-        $logoPath = public_path('images/logoUMI-Azul.png');
+        $logoPath = public_path('images/LogoUMI-Azul.png');
         $logoBase64 = base64_encode(file_get_contents($logoPath));
         
         return view('crm.comisiones', [
