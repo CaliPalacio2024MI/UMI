@@ -15,6 +15,7 @@ use App\Http\Controllers\Cursos\SubtopicsController;
 use App\Http\Controllers\Cursos\ActivitiesController;
 use App\Http\Controllers\Cursos\CompletionController;
 use App\Http\Controllers\Cursos\ProgressController;
+use App\Http\Controllers\Cursos\CoursePeriodsController;
 
 // --- Controladores de Facturación ---
 use App\Http\Controllers\Facturacion\BillingController;
@@ -96,12 +97,17 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/cursos/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/cursos/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::delete('/cursos/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
-        
-        
 
         // Lista de asistencia
         Route::get('/cursos/{course}/asistencia', [CourseController::class, 'attendance'])->name('courses.attendance')->middleware(['role:master,docente,gerente_capacitacion']);
         Route::get('/cursos/{course}/asistencia/pdf', [CourseController::class, 'exportAttendancePDF'])->name('courses.attendance.pdf')->middleware(['role:master,docente,gerente_capacitacion']);
+
+        // Gestión de períodos
+        Route::prefix('cursos/{course}/periodos')->name('courses.periods.')->group(function () {
+        Route::get('/', [CoursePeriodsController::class, 'index'])->name('index');
+        Route::post('/', [CoursePeriodsController::class, 'store'])->name('store');
+        Route::put('/{period}', [CoursePeriodsController::class, 'update'])->name('update');
+        Route::delete('/{period}', [CoursePeriodsController::class, 'destroy'])->name('destroy');})->middleware(['role:master,docente,gerente_capacitacion']);
         
         //Biblioteca de Temas (Plantillas)
         Route::get('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'index'])->name('templates.index');
@@ -109,7 +115,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::post('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'store'])->name('templates.store');
         //Ruta para mostrar el formulario de edicion
         Route::get('/biblioteca-temas/{id}/editar',[\App\Http\Controllers\TopicTemplateController::class, 'edit'])->name('templates.edit');
-        //Ruta para procesar la actualizacion (usa PUT o PATCH)
+        //Ruta para procesar la actualizacion
         Route::put('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'update'])->name('templates.update');
         //Ruta para eliminar
         Route::delete('/biblioteca-temas/{id}', [\App\Http\Controllers\TopicTemplateController::class, 'destroy'])->name('templates.destroy');

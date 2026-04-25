@@ -39,29 +39,28 @@
             <textarea name="description" rows="4" required>{{ old('description', $course->description) }}</textarea>
         </div>
 
-        {{-- MODALIDAD --}}
-        <div class="form-group">
-            <label>Modalidad</label>
-            <div style="display:flex; gap:20px">
-                <label>
-                    <input type="radio" name="modality" value="virtual"
-                        {{ old('modality', $course->modality) === 'virtual' ? 'checked' : '' }} required>
-                    Virtual
-                </label>
+        {{-- Modalidad --}}
+<div class="form-group">
+    <label for="modality">Modalidad</label>
+    <select id="modality" name="modality" required>
+        <option value="" disabled>Selecciona la modalidad</option>
 
-                <label>
-                    <input type="radio" name="modality" value="presencial"
-                        {{ old('modality', $course->modality) === 'presencial' ? 'checked' : '' }} required>
-                    Presencial
-                </label>
+        <option value="presencial"
+            {{ old('modality', $course->modality) == 'presencial' ? 'selected' : '' }}>
+            Presencial
+        </option>
 
-                <label>
-                    <input type="radio" name="modality" value="hibrida"
-                        {{ old('modality', $course->modality) === 'hibrida' ? 'checked' : '' }} required>
-                    Hibrida
-                </label>
-            </div>
-        </div>
+        <option value="virtual"
+            {{ old('modality', $course->modality) == 'virtual' ? 'selected' : '' }}>
+            Virtual
+        </option>
+
+        <option value="hibrida"
+            {{ old('modality', $course->modality) == 'hibrida' ? 'selected' : '' }}>
+            Híbrido
+        </option>
+    </select>
+</div>
 
         {{-- UNIVERSIDAD --}}
         @if ($currentInstitution->name === 'Universidad Mundo Imperial')

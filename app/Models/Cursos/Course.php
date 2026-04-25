@@ -132,6 +132,16 @@ class Course extends Model
         return $this->hasMany(Group::class);
     }
 
+    public function periods()
+    {
+    return $this->hasMany(CoursePeriod::class);
+    }
+
+    public function currentPeriod()
+    {
+    return $this->hasOne(CoursePeriod::class)->current();
+   }
+
     /**
      * Los usuarios inscritos en este curso.
      */
