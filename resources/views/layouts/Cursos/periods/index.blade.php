@@ -21,7 +21,7 @@
     {{-- Formulario crear período --}}
     <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
         <h3 style="margin: 0 0 20px 0;">➕ Crear Nuevo Período</h3>
-        <form action="{{ route('courses.periods.store', $course) }}" method="POST" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 15px; align-items: end;">
+        <form action="{{ route('courses.periods.store', $course) }}" method="POST" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; align-items: end;">
             @csrf
             <div>
                 <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nombre del Período</label>
@@ -29,17 +29,11 @@
             </div>
             <div>
                 <label style="display: block; margin-bottom: 5px; font-weight: 600;">Fecha Inicio</label>
-                <input type="date" name="start_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                <input type="date" name="start_date" min="{{ now()->format('Y-m-d') }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
             <div>
                 <label style="display: block; margin-bottom: 5px; font-weight: 600;">Fecha Fin</label>
-                <input type="date" name="end_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            </div>
-            <div>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_active" value="1" checked>
-                    <span>Activo</span>
-                </label>
+                <input type="date" name="end_date" min="{{ now()->format('Y-m-d') }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
             <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">
                 ✓ Crear
@@ -56,29 +50,35 @@
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Fecha Inicio</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Fecha Fin</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Estado</th>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Vigente</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($periods as $period)
+                @php
+                    $today = \Carbon\Carbon::today();
+                    $estado = 'No iniciado';
+                    $color = '#6c757d';
+                    
+                    if ($today->lessThan($period->start_date)) {
+                        $estado = '⏳ No iniciado';
+                        $color = '#6c757d';
+                    } elseif ($today->greaterThan($period->end_date)) {
+                        $estado = '✓ Finalizado';
+                        $color = '#dc3545';
+                    } else {
+                        $estado = '🟢 Activo';
+                        $color = '#28a745';
+                    }
+                @endphp
                 <tr style="border-bottom: 1px solid #dee2e6;">
                     <td style="padding: 15px; font-weight: 500;">{{ $period->name }}</td>
                     <td style="padding: 15px; text-align: center;">{{ $period->start_date->format('d/m/Y') }}</td>
                     <td style="padding: 15px; text-align: center;">{{ $period->end_date->format('d/m/Y') }}</td>
                     <td style="padding: 15px; text-align: center;">
-                        @if($period->is_active)
-                            <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 5px; font-size: 0.9em;">✓ Activo</span>
-                        @else
-                            <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 5px; font-size: 0.9em;">✗ Inactivo</span>
-                        @endif
-                    </td>
-                    <td style="padding: 15px; text-align: center;">
-                        @if($period->isCurrentlyActive())
-                            <span style="background: #cfe2ff; color: #084298; padding: 4px 10px; border-radius: 5px; font-size: 0.9em;">📅 En curso</span>
-                        @else
-                            <span style="color: #999;">—</span>
-                        @endif
+                        <span style="background: {{ $color }}20; color: {{ $color }}; padding: 4px 12px; border-radius: 5px; font-size: 0.9em; font-weight: 600;">
+                            {{ $estado }}
+                        </span>
                     </td>
                     <td style="padding: 15px; text-align: center;">
                         <form action="{{ route('courses.periods.destroy', [$course, $period]) }}" method="POST" style="display: inline;" onsubmit="return confirm('¿Eliminar este período?');">
@@ -92,7 +92,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="padding: 40px; text-align: center; color: #999;">
+                    <td colspan="5" style="padding: 40px; text-align: center; color: #999;">
                         No hay períodos creados. Crea el primero arriba.
                     </td>
                 </tr>

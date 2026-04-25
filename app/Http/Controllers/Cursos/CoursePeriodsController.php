@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cursos\Course;
 use App\Models\Cursos\CoursePeriod;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class CoursePeriodsController extends Controller
 {
@@ -30,10 +31,15 @@ class CoursePeriodsController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'start_date' => 'required|date',
+            'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'is_active' => 'boolean'
+        ], [
+            'start_date.after_or_equal' => 'La fecha de inicio no puede ser anterior a hoy.',
+            'end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
         ]);
+        
+        // ✅ is_active siempre es true (se determina por fechas)
+        $validated['is_active'] = true;
         
         $course->periods()->create($validated);
         
@@ -51,7 +57,6 @@ class CoursePeriodsController extends Controller
             'name' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'is_active' => 'boolean'
         ]);
         
         $period->update($validated);
