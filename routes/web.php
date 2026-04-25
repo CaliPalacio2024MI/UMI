@@ -48,6 +48,7 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
+Route::get('/programas/{slug}', [LeadPublicController::class, 'programa'])->name('public.programa');
 
 Route::get('/campus/acapulco', function () {
     return view('public.campus.campus_acapulco');

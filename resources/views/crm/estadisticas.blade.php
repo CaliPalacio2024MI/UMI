@@ -525,9 +525,9 @@
 })();
 
 function exportarExcel() {
-    const form   = document.querySelector('form');
-    const params = new URLSearchParams(new FormData(form)).toString();
-    window.location = "{{ route('crm.estadisticas.exportar') }}?" + params;
+    // Toma los parámetros directamente de la URL actual
+    const params = window.location.search;
+    window.location = "{{ route('crm.estadisticas.exportar') }}" + params;
 }
 </script>
 @endpush

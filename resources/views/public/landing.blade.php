@@ -2,352 +2,528 @@
 <html lang="es">
 <head>
 
-    <!-- CSS -->
+  
     <link rel="stylesheet" href="{{ asset('css/index.css') }}">
-
-    <!-- FUENTES -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-
     <meta charset="UTF-8">
     <title>Universidad</title>
 </head>
 
 <body>
  
-<section class="hero">
+    <section class="hero">
 
-    <!-- VIDEO -->
-    <video autoplay muted loop class="video-bg">
-        <source src="{{ asset('videos/inicio_alumnos.mp4') }}" type="video/mp4">
-    </video>
+    
+        <video autoplay muted loop class="video-bg">
+            <source src="{{ asset('videos/inicio_alumnos.mp4') }}" type="video/mp4">
+        </video>
 
-    <div class="overlay"></div>
+        <div class="overlay"></div>
 
-    <div class="navbar">
-        <div class="logo">
-            <img src="{{ asset('images/LogoUMI-Blanco.png') }}">
-        </div>
-
-        <div class="nav-right">
-            <div class="nav-links">
-            <a href="#" onclick="abrirMenu('programas')">Programas</a>
-                <a href="#" onclick="abrirMenu('campus')">Campus</a>
-                <a href="#">Admisiones</a>
+        <div class="navbar">
+            <div class="logo">
+                <img src="{{ asset('images/LogoUMI-Blanco.png') }}">
             </div>
 
-            <div class="menu" onclick="abrirMenu()">
-                <span>Menu</span>
-                <div class="hamburger">
-                    <div></div><div></div><div></div>
+            <div class="nav-right">
+                <div class="nav-links">
+                <a href="#" onclick="abrirMenu('programas')">Programas</a>
+                    <a href="#" onclick="abrirMenu('campus')">Campus</a>
+                    <a href="#">Admisiones</a>
+                </div>
+
+                <div class="menu" onclick="abrirMenu()">
+                    <span>Menu</span>
+                    <div class="hamburger">
+                        <div></div><div></div><div></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="content">
-        <h3 class="script-text">Excelentes en</h3>
-        <h1>Hospitalidad y lujo<br>educación de negocios</h1>
+        <div class="content">
+            <h3 class="script-text">Excelentes en</h3>
+            <h1>Hospitalidad y lujo<br>educación de negocios</h1>
 
-        <p class="subtitle">
-            UMI offers career-focused programs designed to develop global leaders 
-            in hospitality and luxury business.
-        </p>
+            <p class="subtitle">
+                UMI offers career-focused programs designed to develop global leaders 
+                in hospitality and luxury business.
+            </p>
 
-        <div class="buttons">
-            <button class="btn1">Descarga el folleto</button>
-            <button class="btn2">Acerca de UMI</button>
-        </div>
-    </div>
-
-</section>
-
-<!-- PROGRAMAS -->
-<section class="destinations-section">
-
-    <div class="programs-title">
-        <h2>Explora nuestros programas</h2>
-    </div>
-
-    <div class="programs-grid">
-
-        <div class="card" onclick="mostrarProgramas('licenciatura')">
-            <img src="{{ asset('images/IMAGEN.jpg') }}">
-            <h3>Licenciaturas</h3>
+            <div class="buttons">
+                <button class="btn1">Descarga el folleto</button>
+                <button class="btn2">Acerca de UMI</button>
+            </div>
         </div>
 
-        <div class="card" onclick="mostrarProgramas('posgrado')">
-            <img src="{{ asset('images/posgrado.jpg') }}">
-            <h3>Posgrados</h3>
+    </section>
+
+    <!-- PROGRAMAS -->
+    <section class="destinations-section">
+
+        <div class="programs-title">
+            <h2>Explora nuestros programas</h2>
         </div>
 
-        <div class="card" onclick="mostrarProgramas('ejecutivo')">
-            <img src="{{ asset('images/edu_continua.jpg') }}">
-            <h3>Educación continua</h3>
+        <div class="programs-grid">
+
+            <div class="card" onclick="mostrarProgramas('licenciatura')">
+                <img src="{{ asset('images/IMAGEN.jpg') }}">
+                <h3>Licenciaturas</h3>
+            </div>
+
+            <div class="card" onclick="mostrarProgramas('posgrado')">
+                <img src="{{ asset('images/posgrado.jpg') }}">
+                <h3>Posgrados</h3>
+            </div>
+
+            <div class="card" onclick="mostrarProgramas('ejecutivo')">
+                <img src="{{ asset('images/edu_continua.jpg') }}">
+                <h3>Educación continua</h3>
+            </div>
+
+            <div class="card" onclick="mostrarProgramas('online')">
+                <img src="{{ asset('images/en_linea.jpg') }}">
+                <h3>Cursos en línea</h3>
+            </div>
+
         </div>
 
-        <div class="card" onclick="mostrarProgramas('online')">
-            <img src="{{ asset('images/en_linea.jpg') }}">
-            <h3>Cursos en línea</h3>
+    </section>
+
+    <section class="alumni">
+
+    
+        <div class="alumni-collage">
+            <div class="collage-grande">
+                <img src="{{ asset('images/foto13.jpg') }}">
+            </div>
+            <div class="collage-pequeñas">
+                <img src="{{ asset('images/foto12.jpg') }}">
+                <img src="{{ asset('images/foto14.jpg') }}">
+            </div>
+            <div class="collage-ancha">
+                <img src="{{ asset('images/foto11.jpg') }}">
+            </div>
         </div>
 
-    </div>
-
-</section>
-<section class="alumni">
-
-<img src="{{ asset('images/foto1.jpg') }}" class="alumni-img img1 ">
-<img src="{{ asset('images/foto2.jpg') }}" class="alumni-img img2 ">
-<img src="{{ asset('images/foto3.jpg') }}" class="alumni-img img3 ">
-
-<div class="alumni-content reveal">
-
-    <span class="alumni-tag">ALUMNI NETWORK</span>
-
-    <h2>
-        After graduation, and for the rest of your life,
-        you will be connected to an influential global network
-        of professionals and entrepreneurs.
-    </h2>
-
-    <button>Learn about the Alumni Network</button>
-
-</div>
-
-</section>
-
-
-<!-- LO QUE NOS DISTINGUE -->
-<section class="distingue">
-
-    <!-- FILA SUPERIOR -->
-    <div class="distingue-header">
-        <h2>Lo que nos distingue</h2>
-        <p>Formamos líderes con visión global en hospitalidad y negocios de lujo, combinando rigor académico con experiencia práctica real.</p>
-    </div>
-
-    <!-- COLUMNAS -->
-    <div class="distingue-grid">
-
-        <div class="distingue-col">
-            <h3>Enfoque global</h3>
-            <p>Programas con visión internacional que preparan a nuestros egresados para competir en los mercados más exigentes del mundo.</p>
+    
+        <div class="alumni-content reveal">
+            <span class="alumni-tag">ALUMNI NETWORK</span>
+            <h2>
+                After graduation, and for the rest of your life,
+                you will be connected to an influential global network
+                of professionals and entrepreneurs.
+            </h2>
+            <button>Learn about the Alumni Network</button>
         </div>
 
-        <div class="distingue-col">
-            <h3>Excelencia académica</h3>
-            <p>Profesores altamente capacitados con experiencia en la industria real, comprometidos con el desarrollo integral del alumno.</p>
+    </section>
+
+
+    <!-- DESTINOS -->
+    <section class="destinations-section">
+
+        <div class="section-intro">
+            <p class="dest-label">Nuestras instalaciones</p>
+            <h2 class="dest-title">Espacios diseñados para<br>impulsar tu aprendizaje</h2>
         </div>
 
-        <div class="distingue-col">
-            <h3>Alta empleabilidad</h3>
-            <p>Vinculación directa con empresas líderes del sector hotelero y de negocios, con prácticas profesionales desde el primer año.</p>
+        
+        <div class="dest-item">
+
+            <div class="dest-img-wrap carrusel-wrap">
+                
+                
+                <div class="carrusel-track" id="carruselTrack">
+                    <img src="{{ asset('images/foto1.jpg') }}">
+                    <img src="{{ asset('images/foto6.jpg') }}">
+                    <img src="{{ asset('images/foto10.jpg') }}">
+                    <img src="{{ asset('images/foto9.jpg') }}">
+                </div>
+
+                
+                <button class="carrusel-btn prev" onclick="moverCarrusel(-1)">‹</button>
+                <button class="carrusel-btn next" onclick="moverCarrusel(1)">›</button>
+
+              
+                <div class="carrusel-dots" id="carruselDots"></div>
+
+            </div>
+
+            <div class="dest-info">
+                <span class="dest-num">01</span>
+                <span class="dest-tag">México · Acapulco</span>
+                <h3>Campus Mundo Imperial</h3>
+                <p>
+                    Un campus universitario moderno ubicado en la Riviera Diamante de Acapulco, 
+                    con instalaciones de primer nivel, tecnología innovadora y un entorno que 
+                    impulsa el aprendizaje, la creatividad y el desarrollo profesional.
+                </p>
+
+                <div class="dest-features">
+                    <div class="dest-feature"><span class="dot"></span> Instalaciones modernas</div>
+                    <div class="dest-feature"><span class="dot"></span> Tecnología de vanguardia</div>
+                    <div class="dest-feature"><span class="dot"></span> Vinculación profesional</div>
+                </div>
+
+                <a href="{{ route('campus.acapulco') }}">Explorar nuestro campus →</a>
+            </div>
+
         </div>
-        <div class="distingue-col">
-            <h3>Experiencia real</h3>
-            <p>Aprendizaje práctico en campo con acceso directo a hoteles, restaurantes y empresas de lujo para desarrollar habilidades desde el primer día.</p>
+
+    </section>
+
+ <!-- LO QUE NOS DISTINGUE -->
+    <section class="distingue">
+
+       
+        <div class="distingue-header">
+            <h2>Lo que nos distingue</h2>
+            <p>Formamos líderes con visión global en hospitalidad y negocios de lujo, combinando rigor académico con experiencia práctica real.</p>
         </div>
-    </div>
 
-</section>
+        
+        <div class="distingue-grid">
 
-<!-- DESTINOS -->
-<section class="destinations-section">
+            <div class="distingue-col">
+                <h3>Enfoque global</h3>
+                <p>Programas con visión internacional que preparan a nuestros egresados para competir en los mercados más exigentes del mundo.</p>
+            </div>
 
-    <div class="section-intro">
-        <p class="dest-label">Nuestras instalaciones</p>
-        <h2 class="dest-title">Espacios diseñados para<br>impulsar tu aprendizaje</h2>
-    </div>
+            <div class="distingue-col">
+                <h3>Excelencia académica</h3>
+                <p>Profesores altamente capacitados con experiencia en la industria real, comprometidos con el desarrollo integral del alumno.</p>
+            </div>
 
-    <!-- DESTINO 1 - CARRUSEL -->
-    <div class="dest-item">
+            <div class="distingue-col">
+                <h3>Alta empleabilidad</h3>
+                <p>Vinculación directa con empresas líderes del sector hotelero y de negocios, con prácticas profesionales desde el primer año.</p>
+            </div>
+            <div class="distingue-col">
+                <h3>Experiencia real</h3>
+                <p>Aprendizaje práctico en campo con acceso directo a hoteles, restaurantes y empresas de lujo para desarrollar habilidades desde el primer día.</p>
+            </div>
+        </div>
 
-        <div class="dest-img-wrap carrusel-wrap">
+    </section>
+
+
+    <!-- AÑOS DE EXCELENCIA -->
+    <section class="excelencia">
+
+        <div class="excelencia-container">
+
             
-            <!-- IMAGENES -->
-            <div class="carrusel-track" id="carruselTrack">
-                <img src="{{ asset('images/foto1.jpg') }}">
-                <img src="{{ asset('images/foto6.jpg') }}">
-                <img src="{{ asset('images/foto10.jpg') }}">
-                <img src="{{ asset('images/foto9.jpg') }}">
+            <div class="excelencia-img-wrap">
+
+                <div class="excelencia-badge">
+                    <img src="{{ asset('images/LogoUMI-Blanco.png') }}" alt="UMI">
+                    <span>Universidad Mundo Imperial</span>
+                </div>
+
+                <img src="{{ asset('images/foto1.jpg') }}" alt="Estudiantes UMI" class="excelencia-img">
+
             </div>
 
-            <!-- FLECHAS -->
-            <button class="carrusel-btn prev" onclick="moverCarrusel(-1)">‹</button>
-            <button class="carrusel-btn next" onclick="moverCarrusel(1)">›</button>
+            
+            <div class="excelencia-texto">
+                <h2>Años de excelencia</h2>
 
-            <!-- PUNTOS -->
-            <div class="carrusel-dots" id="carruselDots"></div>
+                <p>
+                    Formando líderes en hospitalidad y negocios de lujo, estamos 
+                    firmemente establecidos como una de las instituciones educativas 
+                    más destacadas de México en gestión hotelera y turismo.
+                </p>
 
-        </div>
+                <p>
+                    Ofrecemos educación empresarial aplicada, combinando rigor 
+                    académico, habilidades prácticas y vinculación profesional, 
+                    todo ello con un enfoque en desarrollar las competencias que 
+                    demanda la economía global moderna.
+                </p>
 
-        <div class="dest-info">
-            <span class="dest-num">01</span>
-            <span class="dest-tag">México · Acapulco</span>
-            <h3>Campus Mundo Imperial</h3>
-            <p>
-                Un campus universitario moderno ubicado en la Riviera Diamante de Acapulco, 
-                con instalaciones de primer nivel, tecnología innovadora y un entorno que 
-                impulsa el aprendizaje, la creatividad y el desarrollo profesional.
-            </p>
-
-            <div class="dest-features">
-                <div class="dest-feature"><span class="dot"></span> Instalaciones modernas</div>
-                <div class="dest-feature"><span class="dot"></span> Tecnología de vanguardia</div>
-                <div class="dest-feature"><span class="dot"></span> Vinculación profesional</div>
-            </div>
-
-            <a href="{{ route('campus.acapulco') }}">Explorar nuestro campus →</a>
-        </div>
-
-    </div>
-
-</section>
-<!-- AÑOS DE EXCELENCIA -->
-<section class="excelencia">
-
-    <div class="excelencia-container">
-
-        <!-- IZQUIERDA: IMAGEN CON BADGE -->
-        <div class="excelencia-img-wrap">
-
-            <div class="excelencia-badge">
-                <img src="{{ asset('images/LogoUMI-Blanco.png') }}" alt="UMI">
-                <span>Universidad Mundo Imperial</span>
-            </div>
-
-            <img src="{{ asset('images/foto1.jpg') }}" alt="Estudiantes UMI" class="excelencia-img">
-
-        </div>
-
-        <!-- DERECHA: TEXTO -->
-        <div class="excelencia-texto">
-            <h2>Años de excelencia</h2>
-
-            <p>
-                Formando líderes en hospitalidad y negocios de lujo, estamos 
-                firmemente establecidos como una de las instituciones educativas 
-                más destacadas de México en gestión hotelera y turismo.
-            </p>
-
-            <p>
-                Ofrecemos educación empresarial aplicada, combinando rigor 
-                académico, habilidades prácticas y vinculación profesional, 
-                todo ello con un enfoque en desarrollar las competencias que 
-                demanda la economía global moderna.
-            </p>
-
-            <a href="#" class="excelencia-link">Conoce a nosotros</a>
-        </div>
-
-    </div>
-
-</section>
-
-<!-- CAREERS -->
-<section class="careers" id="careersSection">
-
-    <div class="volver-container">
-        <button onclick="volverProgramas()" class="btn-volver">
-            ← Volver a programas
-        </button>
-    </div>
-
-    <h2 id="tituloCarreras">Programas</h2>
-
-    <div class="careers-grid" id="careersGrid"></div>
-
-</section>
-
-<!-- CTA -->
-<section class="cta-section">
-    <div class="cta-box">
-        <h2>¿Listo para comenzar tu futuro?</h2>
-        <a href="/registro-publico">
-            <button>Solicitar información</button>
-        </a>
-    </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="footer">
-
-    <div class="footer-container">
-
-        <!-- IZQUIERDA -->
-        <div class="footer-left">
-            <h2>UMI</h2>
-            <p>Universidad Mundo Imperial</p>
-        </div>
-
-        <!-- LINKS -->
-        <div class="footer-links">
-
-            <div>
-                <h4>Información</h4>
-                <a href="#">Acerca de</a>
-                <a href="#">Programas</a>
-                <a href="#">Campus</a>
-            </div>
-
-            <div>
-                <h4>Admisiones</h4>
-                <a href="#">Solicitar info</a>
-                <a href="#">Becas</a>
-                <a href="#">Requisitos</a>
-            </div>
-
-            <div>
-                <h4>Contacto</h4>
-                <a href="#">Email</a>
-                <a href="#">Teléfono</a>
-                <a href="#">Ubicación</a>
+                <a href="#" class="excelencia-link">Conoce a nosotros</a>
             </div>
 
         </div>
 
-        <!-- REDES -->
-        <div class="footer-social">
-            <h4>Síguenos</h4>
-            <p>Instagram</p>
-            <p>Facebook</p>
-            <p>TikTok</p>
+    </section>
+
+    <!-- CAREERS -->
+    <section class="careers" id="careersSection">
+
+        <div class="volver-container">
+            <button onclick="volverProgramas()" class="btn-volver">
+                ← Volver a programas
+            </button>
+        </div>
+
+        <h2 id="tituloCarreras">Programas</h2>
+
+        <div class="careers-grid" id="careersGrid"></div>
+
+    </section>
+
+    
+    <section class="cta-section">
+        <div class="cta-box">
+            <h2>¿Listo para comenzar tu futuro?</h2>
+            <a href="/registro-publico">
+                <button>Solicitar información</button>
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+
+        <div class="footer-container">
+
+           
+            <div class="footer-left">
+                <h2>UMI</h2>
+                <p>Universidad Mundo Imperial</p>
+            </div>
+
+            
+            <div class="footer-links">
+
+                <div>
+                    <h4>Información</h4>
+                    <a href="#">Acerca de</a>
+                    <a href="#">Programas</a>
+                    <a href="#">Campus</a>
+                </div>
+
+                <div>
+                    <h4>Admisiones</h4>
+                    <a href="#">Solicitar info</a>
+                    <a href="#">Becas</a>
+                    <a href="#">Requisitos</a>
+                </div>
+
+                <div>
+                    <h4>Contacto</h4>
+                    <a href="#">Email</a>
+                    <a href="#">Teléfono</a>
+                    <a href="#">Ubicación</a>
+                </div>
+
+            </div>
+
+            
+            <div class="footer-social">
+                <h4>Síguenos</h4>
+                <p>Instagram</p>
+                <p>Facebook</p>
+                <p>TikTok</p>
+            </div>
+
+        </div>
+
+        
+        <div class="footer-bottom">
+            <p>© 2026 UMI. Todos los derechos reservados.</p>
+        </div>
+
+    </footer>
+
+    
+    <div class="menu-full" id="menuFull">
+
+        
+        <div class="menu-header">
+            <div class="menu-logo">
+                <img src="{{ asset('images/LogoUMI-Blanco.png') }}">
+            </div>
+
+            <div class="close-btn" onclick="cerrarMenu()">✕</div>
+        </div>
+
+        
+        <div class="menu-content">
+
+            
+            <div class="menu-left">
+            <h2 onclick="cambiarSeccion('programas', this)">Programas</h2>
+            <h2 class="active" onclick="cambiarSeccion('campus', this)">Campus</h2>
+            <h2 onclick="cambiarSeccion('admisiones', this)">Admisiones</h2>
+            <h2 onclick="cambiarSeccion('acerca', this)">Acerca de</h2>
+        <h2>Alumnado</h2>
+    </div>
+           
+            <div class="menu-right" id="menuContenido">
+
+                <a href="{{ route('campus.acapulco') }}" class="campus-card">
+                    <div class="img-container">
+                        <img src="{{ asset('images/foto1.jpg') }}">
+                    </div>
+                    <h3>Acapulco</h3>
+                    <p>Guerrero, México</p>
+                </a>
+
+            </div>
+
         </div>
 
     </div>
 
-    <!-- LINEA FINAL -->
-    <div class="footer-bottom">
-        <p>© 2026 UMI. Todos los derechos reservados.</p>
-    </div>
+    
+    <script>
+    function abrirMenu(seccion = null){
+        const menu = document.getElementById("menuFull");
+        menu.classList.add("active");
 
-</footer>
+        const items = document.querySelectorAll(".menu-left h2");
 
-<!-- MENU -->
-<div class="menu-full" id="menuFull">
+        items.forEach(el => el.classList.remove("active"));
 
-    <!-- HEADER -->
-    <div class="menu-header">
-        <div class="menu-logo">
-            <img src="{{ asset('images/LogoUMI-Blanco.png') }}">
-        </div>
+        if(seccion === "campus"){
+            items[1].classList.add("active");
+            cambiarSeccion('campus', items[1]);
+        }
 
-        <div class="close-btn" onclick="cerrarMenu()">✕</div>
-    </div>
+        if(seccion === "programas"){
+            items[0].classList.add("active");
+            cambiarSeccion('programas', items[0]);
+        }
+    }
 
-    <!-- CONTENIDO -->
-    <div class="menu-content">
+    function cerrarMenu(){
+        document.getElementById("menuFull").classList.remove("active");
+    }
 
-        <!-- IZQUIERDA -->
-        <div class="menu-left">
-        <h2 onclick="cambiarSeccion('programas', this)">Programas</h2>
-        <h2 class="active" onclick="cambiarSeccion('campus', this)">Campus</h2>
-        <h2 onclick="cambiarSeccion('admisiones', this)">Admisiones</h2>
-        <h2 onclick="cambiarSeccion('acerca', this)">Acerca de</h2>
-    <h2>Alumnado</h2>
-</div>
-        <!-- DERECHA  -->
-        <div class="menu-right" id="menuContenido">
+    function mostrarProgramas(tipo){
+        const contenedor = document.getElementById("careersGrid");
+        const titulo = document.getElementById("tituloCarreras");
 
+        const nombres = {
+            licenciatura: "Licenciaturas",
+            posgrado: "Posgrados",
+            ejecutivo: "Educación continua",
+            online: "Cursos en línea"
+        };
+
+        const programas = {
+            licenciatura: [
+                { nombre: "Administración Hotelera",  slug: "administracion-hotelera" },
+                { nombre: "Negocios Internacionales", slug: "negocios-internacionales" },
+                { nombre: "Gastronomía",              slug: "gastronomia" }
+            ],
+            posgrado: [
+                { nombre: "Maestría en Hospitality Management", slug: "maestria-hospitality" },
+                { nombre: "Maestría en Finanzas",               slug: "maestria-finanzas" },
+                { nombre: "Maestría en Marketing de Lujo",      slug: "maestria-marketing" }
+            ],
+            ejecutivo: [
+                { nombre: "Diplomado en Gestión Hotelera",  slug: "diplomado-gestion-hotelera" },
+                { nombre: "Diplomado en Negocios de Lujo",  slug: "diplomado-negocios-lujo" },
+                { nombre: "Leadership Program",             slug: "leadership-program" }
+            ],
+            online: [
+                { nombre: "Curso de Hospitalidad",       slug: "curso-hospitalidad" },
+                { nombre: "Curso de Revenue Management", slug: "curso-revenue-management" },
+                { nombre: "Curso de Marketing Digital",  slug: "curso-marketing-digital" }
+            ]
+        };
+
+        titulo.innerText = nombres[tipo] || tipo;
+        contenedor.innerHTML = programas[tipo]
+            .map(({ nombre, slug }) => `
+                <a href="/programas/${slug}" class="career-card" style="text-decoration:none; color:inherit;">
+                    <h3>${nombre}</h3>
+                </a>
+            `)
+            .join('');
+
+        document.getElementById("careersSection").scrollIntoView({
+            behavior: "smooth"
+        });
+    }
+    
+    function volverProgramas(){
+        document.querySelector(".programs-grid").scrollIntoView({
+            behavior: "smooth"
+        });
+    }
+    </script>
+    <script>
+    function revealOnScroll(){
+        const section = document.querySelector(".alumni");
+        const content = document.querySelector(".alumni-content");
+
+        const rect = section.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+
+        
+        if(rect.top < windowHeight - 150){
+            content.classList.add("active");
+        } else {
+            content.classList.remove("active");
+        }
+    }
+
+    window.addEventListener("scroll", revealOnScroll);
+    window.addEventListener("load", revealOnScroll);
+    </script>
+    <script>
+    let current = 0;
+    let target = 0;
+
+    window.addEventListener("scroll", () => {
+        target = window.scrollY;
+    });
+
+    function animateParallax(){
+        current += (target - current) * 0.08;
+
+        const section = document.querySelector(".alumni");
+        const rect = section.getBoundingClientRect();
+
+        const img1 = document.querySelector(".img1");
+        const img2 = document.querySelector(".img2");
+        const img3 = document.querySelector(".img3");
+
+        
+        if(rect.top < window.innerHeight && rect.bottom > 0){
+
+            const progress = Math.min(Math.max((window.innerHeight - rect.top) / window.innerHeight, 0), 1);
+
+            if(img1){
+                img1.style.transform = `translateY(${progress * 40}px)`;
+            }
+
+            if(img2){
+                img2.style.transform = `translateY(${progress * 60}px)`;
+            }
+
+            if(img3){
+                img3.style.transform = `translateY(${progress * 30}px)`;
+            }
+        }
+
+        requestAnimationFrame(animateParallax);
+    }
+
+    animateParallax();
+    </script>
+    <script>
+    function cambiarSeccion(seccion, el){
+
+    const contenedor = document.getElementById("menuContenido");
+
+    
+    document.querySelectorAll(".menu-left h2").forEach(item => {
+        item.classList.remove("active");
+    });
+
+    
+    el.classList.add("active");
+
+    
+    if(seccion === "campus"){
+        contenedor.innerHTML = `
             <a href="{{ route('campus.acapulco') }}" class="campus-card">
                 <div class="img-container">
                     <img src="{{ asset('images/foto1.jpg') }}">
@@ -355,226 +531,82 @@
                 <h3>Acapulco</h3>
                 <p>Guerrero, México</p>
             </a>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- JS -->
-<script>
-function abrirMenu(seccion = null){
-    const menu = document.getElementById("menuFull");
-    menu.classList.add("active");
-
-    const items = document.querySelectorAll(".menu-left h2");
-
-    items.forEach(el => el.classList.remove("active"));
-
-    if(seccion === "campus"){
-        items[1].classList.add("active");
-        cambiarSeccion('campus', items[1]);
+        `;
     }
-
-    if(seccion === "programas"){
-        items[0].classList.add("active");
-        cambiarSeccion('programas', items[0]);
-    }
-}
-
-function cerrarMenu(){
-    document.getElementById("menuFull").classList.remove("active");
-}
-function mostrarProgramas(tipo){
-    const contenedor = document.getElementById("careersGrid");
-    const titulo = document.getElementById("tituloCarreras");
-
-    const nombres = {
-        licenciatura: "Licenciaturas",
-        posgrado: "Posgrados",
-        ejecutivo: "Educación continua",
-        online: "Cursos en línea"
-    };
-
-    titulo.innerText = nombres[tipo] || tipo;
-
-    contenedor.innerHTML = `
-        <div class="career-card"><h3>${nombres[tipo]} 1</h3></div>
-        <div class="career-card"><h3>${nombres[tipo]} 2</h3></div>
-        <div class="career-card"><h3>${nombres[tipo]} 3</h3></div>
-    `;
 
     
-    document.getElementById("careersSection").scrollIntoView({
-        behavior: "smooth"
-    });
-}
-function volverProgramas(){
-    document.querySelector(".programs-grid").scrollIntoView({
-        behavior: "smooth"
-    });
-}
-</script>
-<script>
-function revealOnScroll(){
-    const section = document.querySelector(".alumni");
-    const content = document.querySelector(".alumni-content");
+    if(seccion === "programas"){
+        contenedor.innerHTML = `
+            <div class="menu-programas">
 
-    const rect = section.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
+                <div class="col">
+                    <span class="menu-subtitle">LICENCIATURAS</span>
+                    <p>Administración Hotelera</p>
+                    <p>Negocios Internacionales</p>
+                    <p>Turismo de Lujo</p>
+                    <p>Ver todas</p>
+                </div>
 
-    // cuando la sección entra a pantalla
-    if(rect.top < windowHeight - 150){
-        content.classList.add("active");
-    } else {
-        content.classList.remove("active");
+                <div class="col">
+                    <span class="menu-subtitle">POSGRADOS</span>
+                    <p>Maestría en Hospitality</p>
+                    <p>Maestría en Finanzas</p>
+                    <p>Maestría en Marketing</p>
+                    <p>Ver todos</p>
+                </div>
+
+                <div class="col">
+                    <span class="menu-subtitle">EDUCACIÓN EJECUTIVA</span>
+                    <p>Diplomado en Negocios</p>
+                    <p>Gestión de lujo</p>
+                    <p>Leadership Program</p>
+                </div>
+
+                <div class="col">
+                    <span class="menu-subtitle">CURSOS</span>
+                    <p>Curso de Hospitality</p>
+                    <p>Curso de lujo</p>
+                    <p>Online programs</p>
+                </div>
+
+            </div>
+        `;
     }
-}
+    }
+    </script>
+    <script>
+        let indice = 0;
+        const track = document.getElementById("carruselTrack");
+        const totalImagenes = track.children.length;
+        const dotsContainer = document.getElementById("carruselDots");
 
-window.addEventListener("scroll", revealOnScroll);
-window.addEventListener("load", revealOnScroll);
-</script>
-<script>
-let current = 0;
-let target = 0;
-
-window.addEventListener("scroll", () => {
-    target = window.scrollY;
-});
-
-function animateParallax(){
-    current += (target - current) * 0.08;
-
-    const section = document.querySelector(".alumni");
-    const rect = section.getBoundingClientRect();
-
-    const img1 = document.querySelector(".img1");
-    const img2 = document.querySelector(".img2");
-    const img3 = document.querySelector(".img3");
-
-    // SOLO cuando está visible
-    if(rect.top < window.innerHeight && rect.bottom > 0){
-
-        const progress = Math.min(Math.max((window.innerHeight - rect.top) / window.innerHeight, 0), 1);
-
-        if(img1){
-            img1.style.transform = `translateY(${progress * 40}px)`;
+    
+        for(let i = 0; i < totalImagenes; i++){
+            const dot = document.createElement("span");
+            if(i === 0) dot.classList.add("active");
+            dot.onclick = () => irA(i);
+            dotsContainer.appendChild(dot);
         }
 
-        if(img2){
-            img2.style.transform = `translateY(${progress * 60}px)`;
+        function actualizarDots(){
+            document.querySelectorAll(".carrusel-dots span").forEach((d, i) => {
+                d.classList.toggle("active", i === indice);
+            });
         }
 
-        if(img3){
-            img3.style.transform = `translateY(${progress * 30}px)`;
+        function irA(n){
+            indice = n;
+            track.style.transform = `translateX(-${indice * 100}%)`;
+            actualizarDots();
         }
-    }
 
-    requestAnimationFrame(animateParallax);
-}
+        function moverCarrusel(dir){
+            indice = (indice + dir + totalImagenes) % totalImagenes;
+            irA(indice);
+        }
 
-animateParallax();
-</script>
-<script>
-function cambiarSeccion(seccion, el){
-
-const contenedor = document.getElementById("menuContenido");
-
-// quitar active
-document.querySelectorAll(".menu-left h2").forEach(item => {
-    item.classList.remove("active");
-});
-
-// activar seleccionado
-el.classList.add("active");
-
-// 👉 CAMPUS (ya lo tienes bien)
-if(seccion === "campus"){
-    contenedor.innerHTML = `
-        <a href="{{ route('campus.acapulco') }}" class="campus-card">
-            <div class="img-container">
-                <img src="{{ asset('images/foto1.jpg') }}">
-            </div>
-            <h3>Acapulco</h3>
-            <p>Guerrero, México</p>
-        </a>
-    `;
-}
-
-// 🔥 AQUÍ ESTÁ LO NUEVO (LO QUE TE FALTABA)
-if(seccion === "programas"){
-    contenedor.innerHTML = `
-        <div class="menu-programas">
-
-            <div class="col">
-                <span class="menu-subtitle">LICENCIATURAS</span>
-                <p>Administración Hotelera</p>
-                <p>Negocios Internacionales</p>
-                <p>Turismo de Lujo</p>
-                <p>Ver todas</p>
-            </div>
-
-            <div class="col">
-                <span class="menu-subtitle">POSGRADOS</span>
-                <p>Maestría en Hospitality</p>
-                <p>Maestría en Finanzas</p>
-                <p>Maestría en Marketing</p>
-                <p>Ver todos</p>
-            </div>
-
-            <div class="col">
-                <span class="menu-subtitle">EDUCACIÓN EJECUTIVA</span>
-                <p>Diplomado en Negocios</p>
-                <p>Gestión de lujo</p>
-                <p>Leadership Program</p>
-            </div>
-
-            <div class="col">
-                <span class="menu-subtitle">CURSOS</span>
-                <p>Curso de Hospitality</p>
-                <p>Curso de lujo</p>
-                <p>Online programs</p>
-            </div>
-
-        </div>
-    `;
-}
-}
-</script>
-<script>
-    let indice = 0;
-    const track = document.getElementById("carruselTrack");
-    const totalImagenes = track.children.length;
-    const dotsContainer = document.getElementById("carruselDots");
-
-    // Crear puntos
-    for(let i = 0; i < totalImagenes; i++){
-        const dot = document.createElement("span");
-        if(i === 0) dot.classList.add("active");
-        dot.onclick = () => irA(i);
-        dotsContainer.appendChild(dot);
-    }
-
-    function actualizarDots(){
-        document.querySelectorAll(".carrusel-dots span").forEach((d, i) => {
-            d.classList.toggle("active", i === indice);
-        });
-    }
-
-    function irA(n){
-        indice = n;
-        track.style.transform = `translateX(-${indice * 100}%)`;
-        actualizarDots();
-    }
-
-    function moverCarrusel(dir){
-        indice = (indice + dir + totalImagenes) % totalImagenes;
-        irA(indice);
-    }
-
-    // Auto avance cada 4 segundos
-    setInterval(() => moverCarrusel(1), 4000);
-</script>
+        
+        setInterval(() => moverCarrusel(1), 4000);
+    </script>
 </body>
 </html>

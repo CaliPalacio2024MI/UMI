@@ -92,5 +92,38 @@ public function store(Request $request)
     {
         return view('public.campus');
     }
+
+    public function programa($slug)
+{
+    $programas = [
+        'gastronomia' => [
+            'nombre'      => 'Gastronomía',
+            'descripcion' => 'Forma profesionales con visión empresarial en la industria gastronómica de lujo.',
+            'duracion'    => '4 años',
+            'modalidad'   => 'Presencial',
+            'imagen'      => 'images/foto1.jpg',
+            'competencias' => [
+                ['titulo' => 'Cocina profesional',    'descripcion' => 'Técnicas culinarias nacionales e internacionales de alto nivel.'],
+                ['titulo' => 'Gestión de restaurantes', 'descripcion' => 'Administración y operación de establecimientos gastronómicos.'],
+                ['titulo' => 'Enología y maridaje',   'descripcion' => 'Conocimiento de vinos y su armonización con platillos.'],
+                ['titulo' => 'Emprendimiento',        'descripcion' => 'Herramientas para crear y gestionar tu propio negocio gastronómico.'],
+            ],
+        ],
+        'administracion-hotelera' => [
+            'nombre'      => 'Administración Hotelera',
+            'descripcion' => 'Prepara líderes para la industria hotelera...',
+            'duracion'    => '4 años',
+            'modalidad'   => 'Presencial',
+            'imagen'      => 'images/hotelera.jpg',
+        ],
+        // agrega más programas aquí
+    ];
+
+    if (!isset($programas[$slug])) {
+        abort(404);
+    }
+
+    return view('public.programa', ['programa' => $programas[$slug]]);
+}
 }
 

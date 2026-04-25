@@ -245,6 +245,8 @@ class CrmController extends Controller
             ? round(($totalAlumnoReal / $totalGeneral) * 100, 1)
             : 0;
 
+
+            
         // ================= EXCEL =================
         $data = [
             ['RESUMEN'],
