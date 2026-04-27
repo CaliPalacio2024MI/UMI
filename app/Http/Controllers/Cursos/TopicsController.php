@@ -9,14 +9,20 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Controller;
+use App\Models\SubtopicTemplate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
-
+use App\Models\TopicTemplate;
 
 class TopicsController extends Controller
 {
     public function create(Course $course): View
     {
+        //Cargar temas de biblioteca
+        $topicTemplates = TopicTemplate::orderBy('title')->get();
+        //Para que los temas cargados en cursos se muestren en subtemas
+        $courseTopics = Topics::where('course_id', $course->id) ->orderBy('title') ->get();
+        //Para los subtemas
+        $subtopicTemplates = SubtopicTemplate::orderBy('title')->get();
         // ✅ Cargar topics ORDENADOS por 'order'
         $course->load(['topics' => function($query) {
             $query->orderBy('order');
@@ -25,7 +31,10 @@ class TopicsController extends Controller
         $formActions = route('topics.store');
         return view('layouts.Cursos.topic.create', [
             'course' => $course, 
-            'formActions' => $formActions
+            'formActions' => $formActions,
+            'topicTemplates' => $topicTemplates,
+            'courseTopics' => $courseTopics,
+            'subtopicTemplates' => $subtopicTemplates
         ]);
     }
 
@@ -34,6 +43,27 @@ class TopicsController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        //Guardar temas desde biblioteca
+        if ($request->filled('topic_templates')) {
+
+            foreach ($request->topic_templates as $templateId) {
+                $template = TopicTemplate::find($templateId);
+
+                $maxOrder = Topics::where('course_id', $request->course_id)->max('order');
+                $order = $maxOrder !==null ? $maxOrder + 1 : 0;
+
+                Topics::create([
+                    'course_id' => $request->course_id,
+                    'title' => $template->title,
+                    'description' => $template->description,
+                    'file_path' => $template->file_path,
+                    'order' => $order,
+                ]);
+            }
+
+            return back()->with('success', 'Temas agregados desde la biblioteca');
+        }
+        
         $validatedData = $request->validate([
             'course_id'   => 'required|exists:courses,id',
             'title'       => 'required|string|max:255',

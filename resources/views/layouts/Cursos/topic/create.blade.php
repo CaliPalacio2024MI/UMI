@@ -40,13 +40,36 @@
             @endif
             <div id="form-topic" class="form-mode-container" style="display: block;">
                 <div class="header-topic" style="display:flex; justify-content: space-between;">
-                <h3>Añadir Nuevo Tema</h3>
+                 <h3>Añadir Nuevo Tema</h3>
                 </div>
-                <form id="topic-form" action="{{ route('topics.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{route('topics.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="course_id" value="{{ $course->id}}">
+
+                    <div class="form-group">
+                        <label style="font-weight: bold;">Seleccionar Temas de la Biblioteca</label>
+
+                        <div class="form-group mb-2">
+                            <input type="text" id="searchTopics" class="form-control" placeholder="Buscar tema...">
+                        </div>    
+
+                        <select id="topic_templates" name="topic_templates[]" class="form-control" multiple>
+                            @foreach ($topicTemplates as $topic)
+                                <option value="{{ $topic->id}}">
+                                    {{ $topic->title }}
+                                </option>    
+                            @endforeach
+                        </select>
+                        
+                        <small class="text-muted">
+                            Puedes seleccionar varios manteniendo CTRL.
+                        </small>
+                    </div>        
+                {{-- <form id="topic-form" action="{{ route('topics.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
 
-                    {{-- Título con checkbox inline --}}
+                    {{-- Título con checkbox inline 
                     <div class="form-group">
                         <label for="title">
                             Título del Tema
@@ -55,17 +78,18 @@
                         <input type="text" id="title" name="title" required>
                     </div>
 
-                    {{-- Descripción --}}
+                    {{-- Descripción 
                     <div class="form-group">
                         <label for="description">Descripción Detallada del Tema</label>
                         <textarea id="description" name="description" rows="5"></textarea>
                     </div>
 
-                    {{-- Archivo --}}
+                    {{-- Archivo --
                     <div class="form-group">
                         <label for="file">Adjuntar Archivo (PDF o Video)</label>
                         <input type="file" id="file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
-                    </div>
+                    </div> --}}
+
 
                     {{-- OPCIONES DE TORTUGUITA CON SEGMENTOS --}}
 <div id="topic-turtle-options" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
@@ -136,13 +160,49 @@
                     <h3 id="subtopic-form-title">Añadir Nuevo Subtema</h3>
                     <p id="subtopic-context" style="color: #007bff; font-weight: bold;"></p>
                 </div>
-                <form id="subtopic-form" action="{{$formActions}}" method="POST" enctype="multipart/form-data">
+                <form id="subtopic-form" action="{{ route('topics.subtopics.store', 0) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     {{-- Necesitaremos JS para establecer esta ruta y el topic_id --}}
                     <input type="hidden" name="course_id" value="{{ $course->id }}">
-                    <input type="hidden" name="topic_id" id="subtopic-topic-id"> 
+                    <input type="hidden" name="topic_id" id="subtopic-topic-id">
+                    
+                    <div class="form-group">
+                        <label style="font-weight: bold;">Seleccionar Tema del curso</label>
 
-                    {{-- Campos Subtema (simples) --}}
+                        <select name="topic_id" class="form-control" required>
+                            <option value="">--Seleccionar un tema --</option>
+
+                            @foreach ($courseTopics as $topic)
+                                <option value="{{ $topic->id}}">
+                                    {{ $topic->title }}
+                                </option>    
+                            @endforeach
+                        </select>
+                    </div>
+                    {{-- 
+                    <div class="form-group">
+                        <input type="text" id="searchSubtopics" class="form-control" placeholder="Buscar subtema...">
+                    </div> --}}
+                    
+                    <div class="form-group">
+                        <label style="font-weight: bold;">Seleccionar subtemas desde la biblioteca</label>
+
+                        <input type="text" id="searchSubtopics" class="form-control" placeholder="Buscar subtema...">
+
+                        <select id="subtopic_templates" name="subtopic_templates[]" class="form-control" multiple>
+                            @foreach($subtopicTemplates as $sub)
+                                <option value="{{ $sub->id }}">
+                                    {{ $sub->title }}
+                                </option>    
+                            @endforeach
+                        </select>
+                        
+                        <small class="text-muted">
+                            Puedes seleccionar varios con CTRL
+                        </small>
+                    </div>        
+
+                    {{-- Campos Subtema (simples) 
                     <div class="form-group">
                         <label for="subtopic-title">
                             Título del Subtema
@@ -154,11 +214,11 @@
                         <label for="subtopic-description">Descripción Detallada</label>
                         <textarea id="subtopic-description" name="description" rows="5"></textarea>
                     </div>
-                    {{-- Archivo --}}
+                    {{-- Archivo 
                     <div class="form-group">
                         <label for="subtopic-file">Adjuntar Archivo (PDF o Video)</label>
                         <input type="file" id="subtopic-file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
-                    </div>
+                    </div> --}}
 
                     {{-- OPCIONES DE TORTUGUITA (solo para videos en SUBTEMAS) --}}
                     <div id="subtopic-turtle-options" class="form-group" style="display: none; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; margin-top: 10px;">
@@ -1688,6 +1748,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script>
+    document.getElementById('searchTopics').addEventListener('keyup', function(){
+
+        let search = this.value.toLowerCase();
+        let options = document.getElementById('topic_templates').options;
+
+        for (let i = 0; i < options.length; i++) {
+            let text = options[i].text.toLowerCase();
+
+            if (text.includes(search)) {
+                options[i].style.display = '';
+            } else {
+                options[i].style.display = 'none';
+            }
+        }
+    });
+    </script>
+
+    <script>
+    document.getElementById('searchSubtopics').addEventListener('keyup', function(){
+
+        let search = this.value.toLowerCase();
+        let options = document.getElementById('suntopic_templates').options;
+
+        for (let i = 0; i < options.length; i++) {
+            let text = options[i].text.toLowerCase();
+
+            options[i].style.display = text.includes(search) ? '' : 'none';
+        }
+    });
+</script>
+
 
 @endpush
 @endonce

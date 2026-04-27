@@ -66,6 +66,7 @@ class CourseController extends Controller
             });
         }
 
+        //Para traer los temas de la biblioteca
         $templates = TopicTemplate::orderBy('title')->get();
         // Pasamos solo la institución actual a la vista.
         return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
@@ -77,6 +78,7 @@ class CourseController extends Controller
         return view('layouts.Cursos.create', compact(
         'currentInstitution',
         'departmentWorkstationsMap',
+        'templates',
         'schedules'
      ));
     }

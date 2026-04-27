@@ -8,7 +8,7 @@ use App\Models\Cursos\Topics;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
+use App\Models\SubtopicTemplate;
 
 class SubtopicsController extends Controller
 {
@@ -36,8 +36,32 @@ class SubtopicsController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Topics $topic)
+    public function store(Request $request)
     {
+        // Guardar subtemas desde biblioteca
+        if ($request->has('subtopic_templates') && count($request->subtopic_templates) >0) {
+            foreach ($request->subtopic_templates as $templateId) {
+                $template = SubtopicTemplate::find($templateId);
+
+                //Calcular orden
+                $maxOrder = Subtopic::where('topic_id', $request->topic_id)->max('order');
+                $order = $maxOrder !==null ? $maxOrder + 1 : 0;
+
+                Subtopic::create([
+                    'topic_id' => $request->topic_id, //Clave
+                    'title' => $template->title,
+                    'description' => $template->description,
+                    'file_path' => $template->file_path,
+                    'order' => $order,
+                    'show_title' => true,
+                    'show_turtle' => false,
+                    'turtle_voice' => null,
+                ]);
+            }
+
+            return back()->with('success', 'Subtemas agregados desde la biblioteca.');
+        }
+
         $validatedData = $request->validate([
             'title' => 'required|string|max:150',
             'description' => 'nullable|string',
