@@ -58,6 +58,7 @@ class Career extends Model
         'porcentaje_cargo_moratorio',
         'monto_mensualidad',
         'cargo_monetario',
+        'fecha_vencimiento_moratorio',
     ];
 
     protected $casts = [
@@ -65,6 +66,7 @@ class Career extends Model
         'porcentaje_cargo_moratorio' => 'decimal:2',
         'monto_mensualidad' => 'decimal:2',
         'cargo_monetario' => 'decimal:2',
+        'fecha_vencimiento_moratorio' => 'date',
     ];
 
     // --- RELACIONES ---

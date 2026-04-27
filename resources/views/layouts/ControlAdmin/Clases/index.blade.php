@@ -36,6 +36,15 @@
 #form-filtros select#semestre_id.placeholder {
     color: #ACACAC !important;
 }
+#form-filtros select#career_classification_id:not(.clasificacion-placeholder) {
+    color: #212529 !important;
+}
+#form-filtros select#career_classification_id option {
+    color: #212529;
+}
+#form-filtros select#career_classification_id option[value=""] {
+    color: #ACACAC;
+}
 #form-filtros select#semestre_id:not(.semestre-placeholder):not(.placeholder) {
     color: #212529;
 }

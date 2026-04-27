@@ -75,6 +75,7 @@
         // 1) Traer propiedades de la API externa
         fetch('/external-data?endpoint=/api/external/propiedades', {
             method: 'GET',
+            cache: 'no-store',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
@@ -112,8 +113,11 @@
                 });
                 if (!match) throw new Error('No se encontró propiedad "pierre" en la API');
             } else {
-                // Si no reconocimos la unidad, usamos el primero como fallback
-                match = props[0];
+                // Sin fallback: nunca mezclar departamentos de otra propiedad.
+                throw new Error(
+                    'Catálogo de departamentos por API solo aplica en Palacio, Princess o Pierre. ' +
+                    'Unidad activa: "' + (activeInstitutionName || '(sin nombre)') + '".'
+                );
             }
 
             const propId =
@@ -130,6 +134,7 @@
             // 2) Traer departamentos de esa propiedad (Palacio / Princess / Pierre)
             return fetch('/external-data?endpoint=/api/external/propiedades/' + encodeURIComponent(propId) + '/departamentos', {
                 method: 'GET',
+                cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'

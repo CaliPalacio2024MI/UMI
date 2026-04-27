@@ -121,6 +121,10 @@
     color: #2d3748;
     white-space: pre-wrap;
 }
+.reticula-materia-modal .reticula-materia-row {
+    border-bottom: 2px solid #DB5865;
+    padding-bottom: 10px;
+}
 .reticula-footer {
     display: flex; justify-content: flex-end; margin-top: 0.75rem;
 }

@@ -83,15 +83,14 @@ class ClaseController extends Controller
                 : $query->first();
 
             if ($clase) {
-                $semestreClase = $clase->materia->semestre ?? null;
                 $alumnosInscritos = $clase->alumnos->pluck('id')->toArray();
 
                 $alumnosDisponibles = User::query()
                     ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
-                    ->whereHas('academicProfile', function ($q) use ($carreraId, $semestreClase) {
+                    ->whereHas('academicProfile', function ($q) use ($carreraId, $semestre) {
                         $q->where('status', 'Alumno Activo')->where('career_id', $carreraId);
-                        if ($semestreClase !== null && $semestreClase !== '') {
-                            $q->where('semestre', $semestreClase);
+                        if ($semestre !== null && $semestre !== '') {
+                            $q->where('semestre', $semestre);
                         }
                     })
                     ->with('academicProfile.career')
@@ -227,22 +226,24 @@ class ClaseController extends Controller
 
             $alumnosParaTabla = $alumnosQuery->get();
 
-            $careersWithStudent = $alumnosParaTabla->map(fn ($u) => (int) ($u->academicProfile->career_id ?? 0))->unique();
-            $careerIdsSinAlumno = $careerIds->filter(fn ($id) => !$careersWithStudent->contains((int) $id))->values();
+            if ($semestre === null || $semestre === '') {
+                $careersWithStudent = $alumnosParaTabla->map(fn ($u) => (int) ($u->academicProfile->career_id ?? 0))->unique();
+                $careerIdsSinAlumno = $careerIds->filter(fn ($id) => !$careersWithStudent->contains((int) $id))->values();
 
-            if ($careerIdsSinAlumno->isNotEmpty()) {
-                $alumnosFallback = User::query()
-                    ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
-                    ->whereHas('academicProfile', fn($q) => $q->whereIn('career_id', $careerIdsSinAlumno->all()))
-                    ->with('academicProfile.career')
-                    ->orderBy('nombre')
-                    ->orderBy('apellido_paterno')
-                    ->orderBy('apellido_materno')
-                    ->get();
-                foreach ($alumnosFallback->groupBy(fn($u) => (int) ($u->academicProfile->career_id ?? 0)) as $cid => $items) {
-                    if ($items->isNotEmpty() && !$careersWithStudent->contains($cid)) {
-                        $alumnosParaTabla->push($items->first());
-                        $careersWithStudent->push($cid);
+                if ($careerIdsSinAlumno->isNotEmpty()) {
+                    $alumnosFallback = User::query()
+                        ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
+                        ->whereHas('academicProfile', fn($q) => $q->whereIn('career_id', $careerIdsSinAlumno->all()))
+                        ->with('academicProfile.career')
+                        ->orderBy('nombre')
+                        ->orderBy('apellido_paterno')
+                        ->orderBy('apellido_materno')
+                        ->get();
+                    foreach ($alumnosFallback->groupBy(fn($u) => (int) ($u->academicProfile->career_id ?? 0)) as $cid => $items) {
+                        if ($items->isNotEmpty() && !$careersWithStudent->contains($cid)) {
+                            $alumnosParaTabla->push($items->first());
+                            $careersWithStudent->push($cid);
+                        }
                     }
                 }
             }
@@ -423,15 +424,10 @@ class ClaseController extends Controller
     {
         $clase->load(['carrera', 'materia', 'alumnos']);
         $carreraId = $clase->career_id;
-        $semestreClase = $clase->materia->semestre ?? null;
-
         $alumnosDisponibles = User::query()
             ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
-            ->whereHas('academicProfile', function ($q) use ($carreraId, $semestreClase) {
+            ->whereHas('academicProfile', function ($q) use ($carreraId) {
                 $q->where('status', 'Alumno Activo')->where('career_id', $carreraId);
-                if ($semestreClase !== null && $semestreClase !== '') {
-                    $q->where('semestre', $semestreClase);
-                }
             })
             ->with('academicProfile')
             ->orderBy('nombre')
@@ -488,15 +484,10 @@ class ClaseController extends Controller
     {
         $clase->load('materia');
         $carreraId = $clase->career_id;
-        $semestreClase = $clase->materia->semestre ?? null;
-
         $ids = User::query()
             ->whereHas('roles', fn($q) => $q->where('name', 'estudiante'))
-            ->whereHas('academicProfile', function ($q) use ($carreraId, $semestreClase) {
+            ->whereHas('academicProfile', function ($q) use ($carreraId) {
                 $q->where('status', 'Alumno Activo')->where('career_id', $carreraId);
-                if ($semestreClase !== null && $semestreClase !== '') {
-                    $q->where('semestre', $semestreClase);
-                }
             })
             ->pluck('id');
 

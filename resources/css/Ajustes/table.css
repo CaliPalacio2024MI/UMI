@@ -100,11 +100,24 @@
 /* --- Contenedor de la Tabla --- */
 .table-container {
   width: 100%;
-  overflow-x: auto; 
+  overflow: hidden;
   background-color: #ffffff; 
   border-radius: 12px; 
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
   border: 1px solid #dee2e6; 
+}
+
+/* Área con scroll (vertical + horizontal en pantallas chicas) */
+.ajustes-table-scroll {
+  width: 100%;
+  max-height: min(70vh, 720px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tabla usuarios: ancho mínimo para que en móvil se vea scroll horizontal en lugar de aplastar columnas */
+.main-table.main-table--users-wide {
+  min-width: 720px;
 }
 
 /* --- Tabla Principal --- */

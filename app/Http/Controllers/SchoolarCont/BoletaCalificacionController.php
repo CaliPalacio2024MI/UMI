@@ -7,7 +7,6 @@ use App\Models\AdmonCont\Materia;
 use App\Models\Users\Career;
 use App\Models\Users\Period;
 use App\Models\Users\User;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -18,11 +17,12 @@ class BoletaCalificacionController extends Controller
 {
     /** Marcador visual cuando aún no hay captura de calificaciones. */
     private const PLACEHOLDER = '----';
+    private const PARCIALES_PLACEHOLDER = "----  ----  ----";
 
     /**
      * Lista alumnos de la institución (lista tipo matrículas) con columnas de calificación en espera.
      */
-    public function index(Request $request): View
+    public function index(Request $request)
     {
         $institutionId = (int) session('active_institution_id', 0);
         $careerIds = Career::query()
@@ -47,6 +47,7 @@ class BoletaCalificacionController extends Controller
 
         $estudiantes = $this->queryEstudiantesParaBoletas($request, $careerIds);
         $rows = $this->mapEstudiantesABoletaRows($estudiantes, $materiaNombre);
+        $rows = $this->filterRowsBySearch($rows, $search);
 
         $page = max(1, (int) $request->get('page', 1));
         $perPage = 30;
@@ -62,6 +63,13 @@ class BoletaCalificacionController extends Controller
         );
 
         $periodoSeleccionado = $periodoId ? $periodos->firstWhere('id', $periodoId) : null;
+
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'tbody' => view('layouts.ControlEsc.Boletas.partials.table_rows', ['rows' => $paginator])->render(),
+                'pagination' => $paginator->hasPages() ? (string) $paginator->withQueryString()->links() : '',
+            ]);
+        }
 
         return view('layouts.ControlEsc.Boletas.index', [
             'rows' => $paginator,
@@ -86,10 +94,12 @@ class BoletaCalificacionController extends Controller
             ->get(['id', 'nombre']);
 
         $materiaId = $request->filled('materia_id') ? (int) $request->get('materia_id') : null;
+        $search = trim((string) $request->get('search', ''));
         $materiaNombre = $materiaId ? ($materias->firstWhere('id', $materiaId)?->nombre) : null;
 
         $estudiantes = $this->queryEstudiantesParaBoletas($request, $careerIds);
         $rows = $this->mapEstudiantesABoletaRows($estudiantes, $materiaNombre);
+        $rows = $this->filterRowsBySearch($rows, $search);
 
         $periodoLabel = '';
         if ($request->filled('periodo_id')) {
@@ -104,33 +114,28 @@ class BoletaCalificacionController extends Controller
         return new StreamedResponse(function () use ($rows, $periodoLabel): void {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
+            fwrite($handle, "sep=,\r\n");
             fputcsv($handle, [
                 'Alumno',
-                'RFC',
                 'CURP',
                 'Carrera',
                 'Materia',
                 'Docente',
                 'Parciales',
                 'Calificación final',
-                'Evaluación',
-                'Observaciones',
                 'Periodo (filtro)',
-            ], ';');
+            ], ',');
             foreach ($rows as $r) {
                 fputcsv($handle, [
                     $r->alumno_nombre,
-                    $r->alumno_rfc,
                     $r->alumno_curp,
                     $r->carrera,
                     $r->materia,
                     $r->docente,
                     $r->parciales,
                     $r->final,
-                    $r->evaluacion,
-                    $r->observaciones,
                     $periodoLabel,
-                ], ';');
+                ], ',');
             }
             fclose($handle);
         }, 200, [
@@ -158,7 +163,7 @@ class BoletaCalificacionController extends Controller
             ->whereHas('academicProfile', static function ($q) use ($careerIds) {
                 $q->whereIn('career_id', $careerIds);
             })
-            ->with(['academicProfile.career'])
+            ->with(['academicProfile.career', 'horarioClases.materia'])
             ->when($materiaId, static function ($q) use ($materiaId, $careerIds) {
                 $q->whereHas('horarioClases', static function ($hc) use ($materiaId, $careerIds) {
                     $hc->where('materia_id', $materiaId)
@@ -187,25 +192,58 @@ class BoletaCalificacionController extends Controller
      */
     private function mapEstudiantesABoletaRows(EloquentCollection $estudiantes, ?string $materiaNombreFiltro): Collection
     {
-        $materiaEtiqueta = $materiaNombreFiltro ?? '—';
+        $materiaEtiqueta = $materiaNombreFiltro ?? '-';
 
         return $estudiantes->map(function (User $u) use ($materiaEtiqueta, $materiaNombreFiltro) {
             $nombre = trim(
                 $u->nombre.' '.$u->apellido_paterno.' '.($u->apellido_materno ?? '')
             );
+            $materiasAlumno = $u->horarioClases
+                ->pluck('materia.nombre')
+                ->filter()
+                ->unique()
+                ->values();
+            $materiaTexto = $materiaNombreFiltro
+                ? $materiaEtiqueta
+                : ($materiasAlumno->isNotEmpty() ? $materiasAlumno->implode(' / ') : '-');
 
             return (object) [
                 'alumno_nombre' => $nombre !== '' ? $nombre : '—',
                 'alumno_rfc' => $u->RFC ?? '',
                 'alumno_curp' => $u->curp ?? '',
                 'carrera' => $u->academicProfile?->career?->name ?? '—',
-                'materia' => $materiaNombreFiltro ? $materiaEtiqueta : '—',
+                'materia' => $materiaTexto,
                 'docente' => self::PLACEHOLDER,
-                'parciales' => self::PLACEHOLDER,
+                'parciales' => self::PARCIALES_PLACEHOLDER,
                 'final' => self::PLACEHOLDER,
                 'evaluacion' => self::PLACEHOLDER,
                 'observaciones' => self::PLACEHOLDER,
             ];
         });
+    }
+
+    /**
+     * Filtra por campos visibles de la boleta: alumno, final, evaluacion y observaciones.
+     *
+     * @param  Collection<int, object>  $rows
+     * @return Collection<int, object>
+     */
+    private function filterRowsBySearch(Collection $rows, string $search): Collection
+    {
+        $search = trim(mb_strtolower($search));
+        if ($search === '') {
+            return $rows;
+        }
+
+        return $rows->filter(static function ($row) use ($search): bool {
+            $haystack = mb_strtolower(implode(' ', [
+                (string) ($row->alumno_nombre ?? ''),
+                (string) ($row->final ?? ''),
+                (string) ($row->evaluacion ?? ''),
+                (string) ($row->observaciones ?? ''),
+            ]));
+
+            return str_contains($haystack, $search);
+        })->values();
     }
 }

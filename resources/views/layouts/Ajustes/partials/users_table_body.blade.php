@@ -1,11 +1,14 @@
 @forelse ($data as $item)
 <tr>
+    @php
+        $displayInstitutionId = (int) ($item->institution_id ?? optional($item->institutions->first())->id ?? 0);
+    @endphp
     <td>{{ $item->RFC }}</td>
     <td>{{ $item->institutions->first()->name ?? 'N/A' }}</td>
     <td>{{ $item->nombre }}</td>
     <td>{{ $item->apellido_paterno }}</td>
     <td>{{ $item->apellido_materno }}</td>
-    <td>{{ $item->roleDisplayNameForAjustes() }}</td>
+    <td>{{ $item->roleDisplayNameForAjustes($displayInstitutionId > 0 ? $displayInstitutionId : null) }}</td>
     <td>
         <div class="actions">
             <a href="#" title="Editar" class="btn-icon btn-edit" data-id="{{ $item->id }}">

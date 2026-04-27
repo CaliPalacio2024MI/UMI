@@ -437,6 +437,15 @@ class studentController extends Controller
             $q->where('name', 'estudiante');
         })->with(['academicProfile.career.classification']);
 
+        if ($request->filled('filter_classification')) {
+            $classificationId = (int) $request->input('filter_classification');
+            if ($classificationId > 0) {
+                $query->whereHas('academicProfile.career', function ($cq) use ($classificationId) {
+                    $cq->where('career_classification_id', $classificationId);
+                });
+            }
+        }
+
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
             $query->where(function ($q) use ($search) {
@@ -475,6 +484,15 @@ class studentController extends Controller
     private function aspiranteLeadsQuery(Request $request)
     {
         $q = Lead::queryBaseAspirantesControlEscolar()->with(['carrera.classification']);
+
+        if ($request->filled('filter_classification')) {
+            $classificationId = (int) $request->input('filter_classification');
+            if ($classificationId > 0) {
+                $q->whereHas('carrera', function ($cq) use ($classificationId) {
+                    $cq->where('career_classification_id', $classificationId);
+                });
+            }
+        }
 
         if ($request->filled('search')) {
             $search = trim($request->input('search'));

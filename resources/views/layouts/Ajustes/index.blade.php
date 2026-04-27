@@ -19,9 +19,10 @@
             </button>
         </div>
     </header>
-    {{-- Contenedor de la tabla --}}
+    {{-- Contenedor de la tabla (scroll interno + responsive) --}}
     <div class="table-container">
-        <table class="main-table">
+        <div class="ajustes-table-scroll">
+        <table class="main-table @if($seccion === 'users') main-table--users-wide @endif">
             <thead>
                 <tr>
                     @if ($seccion === 'institutions')
@@ -118,17 +119,7 @@
                         {{-- =================================================== --}}
                         <td> 
                             <div class="actions">
-                            {{-- 1. Botón "Ver" (solo para secciones distintas de usuarios) --}}
-                            @if ($seccion !== 'users')
-                            <a href="#" 
-                                title="Ver" 
-                                class="btn-icon btn-view"
-                                data-id="{{ $item->id }}">
-                                <img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="Ver"> 
-                            </a>
-                            @endif
-
-                            {{-- 2. Botón "Editar" --}}
+                            {{-- 1. Botón "Editar" --}}
                             <a href="#" 
                                 title="Editar" 
                                 class="btn-icon btn-edit"
@@ -136,7 +127,7 @@
                                 <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="Editar">
                             </a>
                             
-                            {{-- 3. Botón "Eliminar" --}}
+                            {{-- 2. Botón "Eliminar" --}}
                             <form action="{{ route('ajustes.destroy', ['seccion' => $seccion, 'id' => $item->id]) }}" 
                                 method="POST" 
                                 class="inline-form"
@@ -159,6 +150,7 @@
                 @endforelse 
             </tbody>
         </table>
+        </div>
         @if($data instanceof \Illuminate\Pagination\LengthAwarePaginator && $data->hasPages())
             <div class="pagination-container">
                 {{ $data->links() }}

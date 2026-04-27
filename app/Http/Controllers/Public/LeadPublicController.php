@@ -94,63 +94,64 @@ public function store(Request $request)
     }
 
     public function programa($slug)
-{
-    $programas = [
-        'gastronomía' => [
-            'nombre'      => 'Gastronomía',
-            'descripcion' => 'Forma profesionales con visión empresarial en la industria gastronómica de lujo.',
-            'duracion'    => '4 años',
-            'modalidad'   => 'Presencial',
-            'imagen'      => 'images/foto1.jpg',
-            'competencias' => [
-                ['titulo' => 'Cocina profesional',    'descripcion' => 'Técnicas culinarias nacionales e internacionales de alto nivel.'],
-                ['titulo' => 'Gestión de restaurantes', 'descripcion' => 'Administración y operación de establecimientos gastronómicos.'],
-                ['titulo' => 'Enología y maridaje',   'descripcion' => 'Conocimiento de vinos y su armonización con platillos.'],
-                ['titulo' => 'Emprendimiento',        'descripcion' => 'Herramientas para crear y gestionar tu propio negocio gastronómico.'],
+    {
+        $programas = [
+            'gastronomía' => [
+                'nombre'      => 'Gastronomía',
+                'descripcion' => 'Forma profesionales con visión empresarial en la industria gastronómica de lujo.',
+                'duracion'    => '4 años',
+                'modalidad'   => 'Presencial',
+                'imagen'      => 'images/foto1.jpg',
+                'competencias' => [
+                    ['titulo' => 'Cocina profesional',    'descripcion' => 'Técnicas culinarias nacionales e internacionales de alto nivel.'],
+                    ['titulo' => 'Gestión de restaurantes', 'descripcion' => 'Administración y operación de establecimientos gastronómicos.'],
+                    ['titulo' => 'Enología y maridaje',   'descripcion' => 'Conocimiento de vinos y su armonización con platillos.'],
+                    ['titulo' => 'Emprendimiento',        'descripcion' => 'Herramientas para crear y gestionar tu propio negocio gastronómico.'],
+                ],
             ],
-        ],
-        'administracion-hotelera' => [
-            'nombre'      => 'Administración Hotelera',
-            'descripcion' => 'Prepara líderes para la industria hotelera...',
-            'duracion'    => '4 años',
-            'modalidad'   => 'Presencial',
-            'imagen'      => 'images/hotelera.jpg',
-        ],
+            'administracion-hotelera' => [
+                'nombre'      => 'Administración Hotelera',
+                'descripcion' => 'Prepara líderes para la industria hotelera...',
+                'duracion'    => '4 años',
+                'modalidad'   => 'Presencial',
+                'imagen'      => 'images/hotelera.jpg',
+            ],
 
-        'negocios-internacionales' => [
-            'nombre'      => 'Negocios Internacionales',
-            'descripcion' => 'Prepara profesionales para competir en mercados globales.',
-            'duracion'    => '4 años',
-            'modalidad'   => 'Presencial',
-            'imagen'      => 'images/foto6.jpg',
-            'competencias' => [
-                ['titulo' => 'Comercio exterior',        'descripcion' => 'Operaciones de importación y exportación.'],
-                ['titulo' => 'Negociación',              'descripcion' => 'Técnicas de negociación intercultural.'],
-                ['titulo' => 'Finanzas internacionales', 'descripcion' => 'Mercados financieros globales.'],
-                ['titulo' => 'Idiomas',                  'descripcion' => 'Dominio del inglés y un segundo idioma.'],
+            'negocios-internacionales' => [
+                'nombre'      => 'Negocios Internacionales',
+                'descripcion' => 'Prepara profesionales para competir en mercados globales.',
+                'duracion'    => '4 años',
+                'modalidad'   => 'Presencial',
+                'imagen'      => 'images/foto6.jpg',
+                'competencias' => [
+                    ['titulo' => 'Comercio exterior',        'descripcion' => 'Operaciones de importación y exportación.'],
+                    ['titulo' => 'Negociación',              'descripcion' => 'Técnicas de negociación intercultural.'],
+                    ['titulo' => 'Finanzas internacionales', 'descripcion' => 'Mercados financieros globales.'],
+                    ['titulo' => 'Idiomas',                  'descripcion' => 'Dominio del inglés y un segundo idioma.'],
+                ],
             ],
-        ],
-        'turismo-de-lujo' => [
-            'nombre'      => 'Turismo de Lujo',
-            'descripcion' => 'Especialización en experiencias turísticas de alto nivel.',
-            'duracion'    => '4 años',
-            'modalidad'   => 'Presencial',
-            'imagen'      => 'images/Princess-17.jpg',
-            'competencias' => [
-                ['titulo' => 'Diseño de experiencias', 'descripcion' => 'Creación de viajes exclusivos y personalizados.'],
-                ['titulo' => 'Marketing turístico',    'descripcion' => 'Estrategias para el sector turístico de lujo.'],
-                ['titulo' => 'Gestión cultural',       'descripcion' => 'Patrimonio cultural y turismo sostenible.'],
-                ['titulo' => 'Hospitalidad',           'descripcion' => 'Estándares de servicio premium.'],
+            'turismo-de-lujo' => [
+                'nombre'      => 'Turismo de Lujo',
+                'descripcion' => 'Especialización en experiencias turísticas de alto nivel.',
+                'duracion'    => '4 años',
+                'modalidad'   => 'Presencial',
+                'imagen'      => 'images/Princess-17.jpg',
+                'competencias' => [
+                    ['titulo' => 'Diseño de experiencias', 'descripcion' => 'Creación de viajes exclusivos y personalizados.'],
+                    ['titulo' => 'Marketing turístico',    'descripcion' => 'Estrategias para el sector turístico de lujo.'],
+                    ['titulo' => 'Gestión cultural',       'descripcion' => 'Patrimonio cultural y turismo sostenible.'],
+                    ['titulo' => 'Hospitalidad',           'descripcion' => 'Estándares de servicio premium.'],
+                ],
             ],
-        ],
-        // agrega más programas aquí
-    ];
+            // agrega más programas aquí
+        ];
 
-    if (!isset($programas[$slug])) {
-        abort(404);
+        if (!isset($programas[$slug])) {
+            abort(404);
+        }
+
+        return view('public.programa', ['programa' => $programas[$slug]]);
+
     }
-
-    return view('public.programa', ['programa' => $programas[$slug]]);
-}
 }
 

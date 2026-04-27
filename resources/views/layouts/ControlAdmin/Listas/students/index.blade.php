@@ -404,6 +404,10 @@
     #umi-app-view button.accept-aspirante-btn.add-time-slot-btn {
         box-shadow: none;
     }
+    /* Separar ligeramente la palomita de la línea izquierda de la celda */
+    #umi-app-view .umi-actions-icons button.accept-aspirante-btn {
+        margin-left: 10px;
+    }
     #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty {
         background-color: #aeb4bd !important;
         color: #fff !important;
@@ -414,18 +418,6 @@
     }
     #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--empty:hover:not(:active) {
         background-color: #aeb4bd !important;
-    }
-    /* Documentación en revisión (aspirante): azul bajito */
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial {
-        background-color: #c5daf0 !important;
-        color: #1a3554 !important;
-    }
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial svg,
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial .add-time-slot-btn__icon {
-        stroke: #1a3554 !important;
-    }
-    #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--partial:hover:not(:active) {
-        background-color: #b1cbe8 !important;
     }
     /* Toda la documentación y pago listos: puede aceptarse */
     #umi-app-view button.accept-aspirante-btn.accept-aspirante-btn--ready:not(:disabled) {
@@ -1366,8 +1358,20 @@
         })
         .then(function() {
             closeLeadEditModal();
-            var form = document.getElementById('umi-search-form');
-            if (form) {
+            var showSuccessModal = function() {
+                var successModal = document.getElementById('careerSuccessModal');
+                var successModalMessage = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successModalMessage) {
+                    successModalMessage.textContent = 'Expediente actualizado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+            };
+            var refreshStudentsTable = function() {
+                var form = document.getElementById('umi-search-form');
+                if (!form) {
+                    showSuccessModal();
+                    return;
+                }
                 var params = new URLSearchParams(new FormData(form));
                 var url = form.action + (params.toString() ? '?' + params.toString() : '');
                 fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
@@ -1375,8 +1379,12 @@
                     .then(function(html) {
                         var tbody = document.getElementById('students-table-body');
                         if (tbody) tbody.innerHTML = html;
+                    })
+                    .finally(function() {
+                        showSuccessModal();
                     });
-            }
+            };
+            refreshStudentsTable();
         })
         .catch(function(err) { alert(err.message); })
         .finally(function() {
@@ -1442,6 +1450,7 @@
         if (!exportForm || !searchForm) return;
         exportForm.addEventListener('submit', function () {
             exportForm.querySelectorAll('input[data-toolbar-sync]').forEach(function (el) { el.remove(); });
+            // 1) Sincroniza valores visibles del toolbar (prioridad alta).
             ['search', 'filter_status', 'filter_classification'].forEach(function (name) {
                 var el = searchForm.querySelector('[name="' + name + '"]');
                 if (!el) return;
@@ -1451,6 +1460,21 @@
                 h.type = 'hidden';
                 h.name = name;
                 h.value = val;
+                h.setAttribute('data-toolbar-sync', '1');
+                exportForm.appendChild(h);
+            });
+
+            // 2) Copia cualquier otro query param activo de la URL (excepto paginación),
+            // para exportar exactamente lo que el usuario tiene filtrado en pantalla.
+            var params = new URLSearchParams(window.location.search || '');
+            params.delete('page');
+            params.forEach(function (value, key) {
+                if (!key || value === '' || value == null) return;
+                if (exportForm.querySelector('input[name="' + key + '"]')) return;
+                var h = document.createElement('input');
+                h.type = 'hidden';
+                h.name = key;
+                h.value = value;
                 h.setAttribute('data-toolbar-sync', '1');
                 exportForm.appendChild(h);
             });

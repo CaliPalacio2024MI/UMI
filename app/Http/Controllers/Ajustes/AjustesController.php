@@ -59,9 +59,13 @@ class AjustesController extends Controller
         
         
         $this->applyAuthFilters($query, $seccion);
-        
-        
-        $data = $query->paginate(15)->withQueryString(); 
+
+        // Usuarios: sin paginación; lista completa con scroll en la vista (tabla responsiva).
+        if ($seccion === 'users') {
+            $data = $query->get();
+        } else {
+            $data = $query->paginate(15)->withQueryString();
+        } 
         
         $titles = $this->getSectionTitles($seccion);
         $page_title = $titles['plural'];
@@ -251,18 +255,7 @@ class AjustesController extends Controller
             ]);
             $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
 
-            // Restricción: Máster en contexto Universidad no puede crear usuarios para Propiedades desde aquí.
-            $activeInstitutionId = (int) session('active_institution_id');
-            $activeInstitutionName = (string) session('active_institution_name');
-            if (
-                Auth::user()?->hasActiveRole('master')
-                && $activeInstitutionName === 'Universidad Mundo Imperial'
-                && (int) $validatedData['institution_id'] !== $activeInstitutionId
-            ) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'institution_id' => 'Desde Universidad solo puedes crear usuarios para la unidad activa.',
-                ]);
-            }
+            // Se permite crear usuarios en la unidad seleccionada desde el formulario.
  
             $selectedRole = Role::find($validatedData['role_id']);
             if ($tipoCreacion === 'alumno') {
@@ -543,18 +536,7 @@ public function update(Request $request, $seccion, $id)
                 $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
                 $u = $validatedData['RFC'];
 
-                // Restricción: Máster en contexto Universidad no puede mover/asignar usuarios a Propiedades desde aquí.
-                $activeInstitutionId = (int) session('active_institution_id');
-                $activeInstitutionName = (string) session('active_institution_name');
-                if (
-                    Auth::user()?->hasActiveRole('master')
-                    && $activeInstitutionName === 'Universidad Mundo Imperial'
-                    && (int) $validatedData['institution_id'] !== $activeInstitutionId
-                ) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'institution_id' => 'Desde Universidad solo puedes asignar usuarios a la unidad activa.',
-                    ]);
-                }
+                // Se permite asignar usuarios a la unidad seleccionada desde el formulario.
 
                 if (User::where('id', '!=', $item->id)
                     ->where(function ($q) use ($u) {
@@ -742,9 +724,7 @@ public function update(Request $request, $seccion, $id)
             case 'users':
                 $query = User::with([
                     'institutions',
-                    'roles'=> function($query) use ($activeInstitutionId){
-                        $query->where('user_roles_institution.institution_id', $activeInstitutionId);
-                    }
+                    'roles'
                 ]); 
                 if ($search) {
                     $term = "%{$search}%";
@@ -791,9 +771,13 @@ public function update(Request $request, $seccion, $id)
         $activeInstitutionId = session('active_institution_id');
 
         if ($seccion === 'users') {
-            $query->whereHas('institutions', function($q) use ($activeInstitutionId) {
-                $q->where('institutions.id', $activeInstitutionId);
-            });
+            // Master puede ver usuarios de todas las unidades.
+            // El resto de perfiles se mantiene filtrado por unidad activa.
+            if (! $user->hasActiveRole('master')) {
+                $query->whereHas('institutions', function($q) use ($activeInstitutionId) {
+                    $q->where('institutions.id', $activeInstitutionId);
+                });
+            }
         } elseif ($seccion !== 'institutions') {
             $query->where('institution_id', $activeInstitutionId);
         }
@@ -862,6 +846,7 @@ public function update(Request $request, $seccion, $id)
                 break;
                 
             case 'users':
+                $data['all_institutions'] = Institution::orderBy('name')->get();
                 if ($user->hasActiveRole('master') && $data['isActiveInstitutionUniversity']) {
                     $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
                 } else {

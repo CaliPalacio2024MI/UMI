@@ -51,7 +51,7 @@
         @if($isStudent && $user->academicProfile)
             <div class="profile-info-row">
                 <span class="profile-info-title">Carrera:</span>
-                <span class="profile-info-content">{{ $user->academicProfile->carrera ?? 'No asignada' }}</span>
+                <span class="profile-info-content">{{ $user->academicProfile?->career?->name ?? 'No asignada' }}</span>
             </div>
             <div class="profile-inline-group">
                  <div class="profile-inline-pair">
@@ -59,8 +59,8 @@
                     <span class="profile-info-content">{{ $user->academicProfile->semestre ?? 'N/A' }}</span>
                 </div>
                  <div class="profile-inline-pair">
-                    <span class="profile-info-title">Especialidad:</span>
-                    <span class="profile-info-content">Ingeniería de Software</span>
+                    <span class="profile-info-title">Clasificación:</span>
+                    <span class="profile-info-content">{{ $user->academicProfile?->career?->classification?->name ?? 'No asignada' }}</span>
                 </div>
             </div>
             <div class="profile-divider"></div>
@@ -71,7 +71,7 @@
             <div class="profile-inline-pair">
                 
                 <span class="profile-info-title">{{ $isStudent ? 'Matrícula:' : 'RFC/Usuario:' }}</span>
-                <span class="profile-info-content">{{ $user->RFC }}</span>
+                <span class="profile-info-content">{{ $isStudent ? 'xxxxxxxxxxxxx' : ($user->RFC ?? 'Sin registro') }}</span>
             </div>
              <div class="profile-inline-pair">
                 <span class="profile-info-title">Correo:</span>
@@ -135,7 +135,7 @@
             </div>
              <div class="profile-info-row">
                 <span class="profile-info-title">C.P.:</span>
-                <span class="profile-info-content">{{ $addr->cp ?? 'N/A' }}</span>
+                <span class="profile-info-content">{{ $addr->codigo_postal ?? $addr->cp ?? 'N/A' }}</span>
             </div>
         @endif
 

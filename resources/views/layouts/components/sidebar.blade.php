@@ -24,8 +24,8 @@
 
         // --- 3. BANDERAS DE VISIBILIDAD ---
 
-        // Submenú "Facturación": Solo Master y Control Admin
-        $hasFacturacionSubmenu = $isMaster || $isControlAdmin;
+        // Submenú "Facturación": Solo en Universidad; Master y Control Admin ven submenú, resto enlace directo
+        $hasFacturacionSubmenu = $isUniversity && ($isMaster || $isControlAdmin);
 
         // Submenú "Mi Información"
         $hasInfoSubmenu = $isStudentGroup || $isDocenteGroup || ($isMaster && $isUniversity);
@@ -47,7 +47,7 @@
         $isCoordinatorCTP = $user->hasActiveRole('coordinador_ctp');
 
         // Usuario aspirante (rol estudiante aún no aceptado como alumno):
-        // debe ver sidebar sin módulos (solo logout y su nombre en header layout).
+        // sidebar: solo título institución, cerrar sesión y logo Mundo Imperial (sin menú).
         $activeRoleName = strtolower((string) session('active_role_name'));
         $academicStatus = trim((string) ($user->academicProfile->status ?? ''));
         $isAspiranteUser = $activeRoleName === 'estudiante'
@@ -56,17 +56,25 @@
     @endphp
 
     {{-- =================================================================== --}}
-    {{-- PARTE SUPERIOR --}}
+    {{-- PARTE SUPERIOR (aspirante: solo título universidad; resto: logo institución) --}}
     {{-- =================================================================== --}}
-    <div class="sidebar-top">
-        <div class="brand" style="margin-bottom: 5px">
-            @if(session('active_institution_logo'))
-                <img src="{{ asset('storage/' . session('active_institution_logo')) }}" alt="Logo Institución" style="width: 100%; height: auto; max-width: 130px;" loading="lazy">
-            @else
-                <span>{{ session('active_institution_name', 'Logo') }}</span> 
-            @endif
+    @if($isAspiranteUser)
+        <div class="sidebar-top sidebar-top--aspirante" style="padding: 18px 14px 16px; text-align: center;">
+            <span class="sidebar-aspirante-institution" style="display: block; font-weight: 400; color: #6b6b6b; font-size: 1rem; line-height: 1.35;">
+                {{ session('active_institution_name', $universityName) }}
+            </span>
         </div>
-    </div>
+    @else
+        <div class="sidebar-top">
+            <div class="brand" style="margin-bottom: 5px">
+                @if(session('active_institution_logo'))
+                    <img src="{{ asset('storage/' . session('active_institution_logo')) }}" alt="Logo Institución" style="width: 100%; height: auto; max-width: 130px;" loading="lazy">
+                @else
+                    <span>{{ session('active_institution_name', 'Logo') }}</span>
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- =================================================================== --}}
     {{-- MENÚ LATERAL --}}
@@ -147,11 +155,11 @@
             </li>
             @endif
 
-            {{-- 3. FACTURACIÓN --}}
-            @if(!$isCoordinatorCTP && !$isCTP)
+            {{-- 3. FACTURACIÓN (solo unidad Universidad Mundo Imperial) --}}
+            @if($isUniversity && !$isCoordinatorCTP && !$isCTP)
             @if($hasFacturacionSubmenu)
-                {{-- CASO A: Master y Control Administrativo (Con submenú flotante) --}}
-                <li class="has-submenu submenu-flotante {{ request()->routeIs('Facturacion.*', 'facturacion.conceptos.*') ? 'active' : '' }}">
+                {{-- CASO A: Master y Control Administrativo (submenú debajo, mismo patrón que Cursos / Mi Información) --}}
+                <li class="has-submenu {{ request()->routeIs('Facturacion.*', 'facturacion.conceptos.*') ? 'active' : '' }}">
                     <a href="#">
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
@@ -159,10 +167,9 @@
                         <span class="text">Facturación</span>
                     </a>
                     
-                    {{-- SUBMENÚ FLOTANTE A LA DERECHA --}}
                     <ul class="submenu">
                         <li class="{{ request()->routeIs('Facturacion.*') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('Facturacion.index') }}">Estado de cuenta</a>
+                            <a href="{{ route('Facturacion.index') }}">Facturacion</a>
                         </li>
                         <li class="{{ request()->routeIs('facturacion.conceptos.*') ? 'active-submenu' : '' }}">
                             <a href="{{ route('facturacion.conceptos.index') }}">Conceptos y montos</a>
@@ -176,7 +183,7 @@
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
                         </span>
-                        <span class="text">Estado de cuenta</span>
+                        <span class="text">Facturacion</span>
                     </a>
                 </li>
             @endif
@@ -236,14 +243,11 @@
                                     <li class="{{ request()->routeIs('escolar.boletas.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('escolar.boletas.index') }}">Boletas de calificaciones</a>
                                     </li>
-                                    <li class="{{ request()->routeIs('escolar.matriculas.*') ? 'active-submenu' : '' }}">
-                                        <a href="{{ route('escolar.matriculas.index') }}">Matrículas</a>
-                                    </li>
                                     <li class="{{ request()->is('control-escolar/becas*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Becas</a>
+                                        <a href="{{ route('escolar.becas.index') }}">Becas</a>
                                     </li>
                                     <li class="{{ request()->is('control-escolar/titulacion*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Titulación</a>
+                                        <a href="{{ route('escolar.titulacion.index') }}">Titulación</a>
                                     </li>
                                 </ul>
                             </li>

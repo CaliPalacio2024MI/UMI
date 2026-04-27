@@ -76,8 +76,8 @@
                     <label for="pricing_mode">Configuración de mensualidad:</label>
                     <select id="pricing_mode" name="pricing_mode"
                         class="js-career-pricing-mode @error('pricing_mode') validation-error @enderror">
-                        <option value="uniform" {{ $pricingMode === 'uniform' ? 'selected' : '' }}>Mismo precio para todos los meses</option>
-                        <option value="per_month" {{ $pricingMode === 'per_month' ? 'selected' : '' }}>Precio distinto por mes</option>
+                        <option value="uniform" {{ $pricingMode === 'uniform' ? 'selected' : '' }}>Precio único</option>
+                        <option value="per_month" {{ $pricingMode === 'per_month' ? 'selected' : '' }}>Precio por mes</option>
                     </select>
                 </div>
                 <div class="form-field js-career-uniform-wrap" @if($pricingMode === 'per_month') style="display: none;" @endif>
@@ -102,6 +102,12 @@
                     <label for="createCareerCargoMonetario">Cargo moratorio:</label>
                     <input type="text" id="createCareerCargoMonetario" class="js-career-cargo-out" readonly tabindex="-1"
                         value=""
+                        style="background: #f5f5f5; cursor: default;">
+                </div>
+                <div class="form-field">
+                    <label for="createCareerFechaVencimientoMoratorio">Fecha vencimiento (asignada por sistema):</label>
+                    <input type="text" id="createCareerFechaVencimientoMoratorio" readonly tabindex="-1"
+                        value="Se asigna al guardar"
                         style="background: #f5f5f5; cursor: default;">
                 </div>
 

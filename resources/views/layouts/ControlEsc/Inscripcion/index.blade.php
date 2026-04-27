@@ -1,4 +1,5 @@
-@extends((request('modal') || request()->routeIs('escolar.inscripcion.create')) ? 'layouts.iframe_content' : 'layouts.app')
+{{-- Solo layout mínimo (sin panel) cuando viene embebido en modal del admin (?modal=1). La ruta /inscripcion/nuevo debe usar layouts.app para que el aspirante vea nombre + cerrar sesión. --}}
+@extends(request('modal') ? 'layouts.iframe_content' : 'layouts.app')
 
 @php
     // En "Nuevo Registro" (inscripción) el controlador puede pasar $alumno para prellenar datos,
@@ -8,7 +9,7 @@
 
 @section('title', $esReinscripcion ? 'Proceso de Reinscripción' : 'Inscripción')
 
-@if(!(request('modal') || request()->routeIs('escolar.inscripcion.create')))
+@if(!request('modal'))
 @vite(['resources/css/ControlEsc/base.css','resources/js/app.js'])
 @endif
 
@@ -348,16 +349,9 @@
 
                                 {{-- 2. Concepto --}}
                                 <label for="modal_concepto" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</label>
+                                {{-- Solo concepto ligado a la carrera (monto desde data-cargo-monetario); sin catálogo billing_concepts --}}
                                 <select id="modal_concepto" name="concepto" class="filter-select" style="width: 100%; padding: 8px;">
-                                    <option value="" data-amount="">-- Seleccione un concepto --</option>
-                                    <option value="Inscripción" data-from-career="1">Inscripción</option>
-                                    @if(isset($conceptosDisponibles) && $conceptosDisponibles->isNotEmpty())
-                                        @foreach($conceptosDisponibles as $c)
-                                            <option value="{{ $c->concept }}" data-amount="{{ $c->amount }}">
-                                                {{ $c->concept }} — $ {{ number_format((float)$c->amount, 2) }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    <option value="Inscripción" data-from-career="1" selected>Inscripción</option>
                                 </select>
 
                                 {{-- 3. Monto --}}

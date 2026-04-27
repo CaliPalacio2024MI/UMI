@@ -38,6 +38,19 @@
             {{-- BUCLE REAL: Muestra las clases de la base de datos --}}
             {{-- (Si $clases está vacío, mostrará el bloque @empty) --}}
             @forelse($clases as $clase)
+                @php
+                    $diasLargo = [1 => 'Lun', 2 => 'Mar', 3 => 'Mie', 4 => 'Jue', 5 => 'Vie', 6 => 'Sab', 7 => 'Dom'];
+                    $franjasResumen = [];
+                    foreach (($clase->franjas ?? collect()) as $f) {
+                        $dias = $f->dias_semana;
+                        if (is_string($dias)) { $dias = json_decode($dias, true); }
+                        if (!is_array($dias)) { $dias = $dias !== null && $dias !== '' ? [(int)$dias] : []; }
+                        $diasTxt = collect($dias)->map(fn($d) => $diasLargo[(int)$d] ?? ('Dia ' . $d))->implode(', ');
+                        $inicio = \Carbon\Carbon::parse($f->hora_inicio)->format('H:i');
+                        $fin = \Carbon\Carbon::parse($f->hora_fin)->format('H:i');
+                        $franjasResumen[] = trim($diasTxt . ' ' . $inicio . '-' . $fin);
+                    }
+                @endphp
                 <div class="class-card">
                     <div class="class-icon-container">
                         <img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="Ícono">
@@ -45,16 +58,16 @@
                     <div class="class-content">
                         <div class="class-title">{{ $clase->materia->nombre ?? 'Materia' }}</div>
                         @if($clase->carrera)
-                            <div class="class-subtitle" style="font-size: 0.85rem; color: #666;">{{ $clase->carrera->name }}</div>
+                            <div class="class-subtitle">{{ $clase->carrera->name }}</div>
                         @endif
+                        <div class="class-meta"><strong>Docente:</strong> {{ $clase->user->nombre ?? 'Sin asignar' }}</div>
+                        <div class="class-meta"><strong>Aula:</strong> {{ $clase->aula?->nombre_aula ?? 'Sin asignar' }}</div>
+                        <div class="class-meta class-meta--horario"><strong>Horario:</strong> {{ !empty($franjasResumen) ? implode(' | ', array_unique($franjasResumen)) : 'Sin horario' }}</div>
                         <div class="class-orange-line"></div>
                         <div class="class-footer">
                             {{-- Botones de acción con Font Awesome --}}
                             <div class="class-icon-placeholder" title="Ver detalles">
                                 <i class="fa-solid fa-eye"></i>
-                            </div>
-                            <div class="class-icon-placeholder" title="Agregar">
-                                <i class="fa-solid fa-plus"></i>
                             </div>
                         </div>
                     </div>

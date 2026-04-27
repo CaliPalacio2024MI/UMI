@@ -1068,7 +1068,10 @@ document.addEventListener('click', (e) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const formWrap = doc.querySelector('.form-body') || doc.querySelector('.form-container') || doc.querySelector('#main-content .container');
-            content.innerHTML = formWrap ? formWrap.innerHTML : (doc.querySelector('#main-content')?.innerHTML || '');
+            const directForm = doc.querySelector('#form-registro-docente');
+            content.innerHTML = formWrap
+                ? formWrap.innerHTML
+                : (directForm ? directForm.outerHTML : (doc.querySelector('#main-content')?.innerHTML || ''));
             syncDocenteEdadFromFecha(modal);
             modal.style.display = 'flex';
             modal.classList.add('is-visible');
@@ -1101,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Envío del formulario de registro de docente (modal): JSON + careerSuccessModal + refrescar lista
 document.addEventListener('submit', (e) => {
-    const form = e.target && e.target.closest && e.target.closest('#modalRegistroDocente') && e.target.tagName === 'FORM' ? e.target : null;
+    const form = (e.target instanceof HTMLFormElement && e.target.id === 'form-registro-docente') ? e.target : null;
     if (!form || form.id !== 'form-registro-docente') return;
     e.preventDefault();
     e.stopPropagation();

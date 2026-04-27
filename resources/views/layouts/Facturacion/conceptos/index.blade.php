@@ -99,6 +99,12 @@
                     <input type="number" id="cargo_monetario" name="cargo_monetario" class="form-control" step="0.01" min="0" placeholder="0.00" readonly title="Calculado automáticamente: Monto × (Porcentaje / 100)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background-color: #f8f9fa;">
                 </div>
 
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="fecha_vencimiento_moratorio" style="font-weight: bold; display: block; margin-bottom: 5px;">Fecha vencimiento (asignada por sistema):</label>
+                    <input type="date" id="fecha_vencimiento_moratorio" name="fecha_vencimiento_moratorio" class="form-control"
+                        style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+
                 {{-- CORRECCIÓN DEL CHECKBOX --}}
                 <div class="form-group" style="margin-top: 20px; display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
     <label for="is_active" style="font-weight: bold; margin: 0; cursor: pointer;">¿Concepto Activo?</label>
@@ -207,7 +213,24 @@
             modalForm.querySelectorAll('.text-danger').forEach(el => el.remove());
             const check = document.getElementById('is_active');
             if(check) check.checked = true;
+            const fvInput = document.getElementById('fecha_vencimiento_moratorio');
+            if (fvInput) fvInput.value = '';
             recalcConceptCargoMoratorio();
+        }
+
+        /** Convierte respuesta API/JSON a valor yyyy-mm-dd para input[type=date]. */
+        function fechaVencimientoToDateInputValue(raw) {
+            if (!raw) return '';
+            const s = String(raw).slice(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            const d = new Date(raw);
+            if (!Number.isNaN(d.getTime())) {
+                const y = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const da = String(d.getDate()).padStart(2, '0');
+                return y + '-' + mo + '-' + da;
+            }
+            return '';
         }
 
         function recalcConceptCargoMoratorio() {
@@ -259,6 +282,11 @@
             document.getElementById('porcentaje_cargo_moratorio').value = data.porcentaje_cargo_moratorio ?? '';
             document.getElementById('cargo_monetario').value = data.cargo_monetario ?? '';
             recalcConceptCargoMoratorio();
+
+            const fvInput = document.getElementById('fecha_vencimiento_moratorio');
+            if (fvInput) {
+                fvInput.value = fechaVencimientoToDateInputValue(data.fecha_vencimiento_moratorio ?? null);
+            }
 
             const check = document.getElementById('is_active');
             if(check) check.checked = (data.is_active == 1);

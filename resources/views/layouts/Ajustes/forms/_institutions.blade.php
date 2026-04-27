@@ -1,16 +1,5 @@
 @php
     $currentValue = old('name', isset($item) ? $item->name : '');
-    $defaultUnidadTipo = '';
-
-    if ($currentValue === 'Pierre Mundo Imperial') {
-        $defaultUnidadTipo = 'pierre';
-    } elseif ($currentValue === 'Palacio Mundo Imperial') {
-        $defaultUnidadTipo = 'palacio';
-    } elseif ($currentValue === 'Princess Mundo Imperial') {
-        $defaultUnidadTipo = 'princes';
-    } elseif ($currentValue === 'Universidad Mundo Imperial') {
-        $defaultUnidadTipo = 'universidad';
-    }
 @endphp
 
 <div class="form-group tipo-unidad-flags-group">
@@ -20,7 +9,7 @@
     <div class="tipo-unidad-checkboxes-row" role="group" aria-labelledby="tipoUnidadQuestion">
         <div class="checkbox-inline">
             <input type="checkbox" id="flag_administrativo" name="is_administrativo" value="1" @checked(old('is_administrativo', isset($item) && $item->is_administrativo ? '1' : '0') === '1')>
-            <label for="flag_administrativo">Administrativo</label>
+            <label for="flag_administrativo">Propiedades</label>
         </div>
         <span class="tipo-unidad-separator" aria-hidden="true">/</span>
         <div class="checkbox-inline">
@@ -30,26 +19,11 @@
     </div>
 </div>
 
-@php
-    $isAdminChecked = old('is_administrativo', isset($item) && $item->is_administrativo ? '1' : '0') === '1';
-    $isUniChecked = old('is_universidad', isset($item) && $item->is_universidad ? '1' : '0') === '1';
-    $showUnidadTipoSelect = $isAdminChecked && ! $isUniChecked;
-@endphp
-
-<div class="form-group" id="unidadTipoGroup" style="{{ $showUnidadTipoSelect ? '' : 'display: none;' }}">
-    <select id="unidadTipo" name="unidad_tipo" style="width: 100%;" aria-label="Tipo de Unidad" {{ $showUnidadTipoSelect ? '' : 'disabled' }}>
-        <option value="" {{ $defaultUnidadTipo === '' ? 'selected' : '' }}>Selecione un Dato</option>
-        <option value="pierre" {{ $defaultUnidadTipo === 'pierre' ? 'selected' : '' }}>Pierre</option>
-        <option value="palacio" {{ $defaultUnidadTipo === 'palacio' ? 'selected' : '' }}>Palacio</option>
-        <option value="princes" {{ $defaultUnidadTipo === 'princes' ? 'selected' : '' }}>Princess</option>
-    </select>
-</div>
-
 <div class="form-group">
     {{-- Campo para Pierre/Palacio/Princess (se llena desde la API) --}}
     <select id="nameSelect" name="name" disabled>
         <option value="">-- Seleccione Unidad de Negocio --</option>
-        @if(!empty($currentValue) && in_array($defaultUnidadTipo, ['pierre','palacio','princes']))
+        @if(!empty($currentValue))
             <option value="{{ $currentValue }}" selected>{{ $currentValue }}</option>
         @endif
     </select>
@@ -76,13 +50,11 @@
 <script>
     (function () {
         const select = document.getElementById('nameSelect');
-        const unidadTipoSelect = document.getElementById('unidadTipo');
-        const unidadTipoGroup = document.getElementById('unidadTipoGroup');
         const flagAdministrativo = document.getElementById('flag_administrativo');
         const flagUniversidad = document.getElementById('flag_universidad');
         const inputContainer = document.getElementById('nameInputContainer');
         const nameInputLabel = document.getElementById('nameInputLabel');
-        if (!select || !unidadTipoSelect || !unidadTipoGroup || !flagAdministrativo || !flagUniversidad || !inputContainer || !nameInputLabel) return;
+        if (!select || !flagAdministrativo || !flagUniversidad || !inputContainer || !nameInputLabel) return;
 
         if (flagAdministrativo.checked && flagUniversidad.checked) {
             flagUniversidad.checked = false;
@@ -90,6 +62,8 @@
 
         // Valor inicial que viene del backend (old('name') o $item->name)
         const currentValue = (@json($currentValue) || '').trim();
+        /** Unidad en la que está logueado el usuario (Palacio / Pierre / Princess / …). */
+        const activeInstitutionName = (@json($activeInstitutionName ?? '') || '').trim();
         let cachedPropiedades = null; // Cacheamos para no consumir la API más de una vez
         let input = null;
 
@@ -99,16 +73,6 @@
 
         function isAdministrativoFlagOn() {
             return flagAdministrativo.checked;
-        }
-
-        /** Muestra el select Pierre/Palacio/Princess solo con Administrativo y sin modo Universidad. */
-        function syncUnidadTipoGroup() {
-            const show = isAdministrativoFlagOn() && !isUniversidadFlagOn();
-            unidadTipoGroup.style.display = show ? '' : 'none';
-            unidadTipoSelect.disabled = !show;
-            if (!show) {
-                unidadTipoSelect.value = '';
-            }
         }
 
         function ensureInputElement() {
@@ -132,34 +96,8 @@
             return input;
         }
 
-        function keywordFilterForUnidadTipo(unidadTipo) {
-            // Ajusta estas palabras clave si la API regresa otros textos.
-            const map = {
-                pierre: 'Pierre',
-                palacio: 'Palacio',
-                princes: 'Princess',
-            };
-            return map[unidadTipo] || '';
-        }
-
-        function setMode(unidadTipo) {
-            // Caso: aún no eligió (placeholder vacío)
-            if (!unidadTipo) {
-                if (input) {
-                    input.remove();
-                    input = null;
-                }
-                inputContainer.style.display = 'none';
-                nameInputLabel.style.display = 'none';
-
-                select.disabled = true;
-                select.required = false;
-                select.style.display = 'none';
-                return;
-            }
-
-            const isUni = unidadTipo === 'universidad';
-            if (isUni) {
+        function setMode() {
+            if (isUniversidadFlagOn()) {
                 // Universidad: crear input escribible, sin consumir API
                 const uniInput = ensureInputElement();
                 uniInput.disabled = false;
@@ -175,7 +113,7 @@
                 return;
             }
 
-            // Pierre/Palacio/Princess: select habilitado
+            // Si no es universidad, removemos input manual.
             if (input) {
                 input.remove();
                 input = null;
@@ -183,22 +121,54 @@
             inputContainer.style.display = 'none';
             nameInputLabel.style.display = 'none';
 
-            select.disabled = false;
-            select.required = true;
-            select.style.display = 'block';
+            // Propiedades (administrativo): mostrar select.
+            if (isAdministrativoFlagOn()) {
+                select.disabled = false;
+                select.required = true;
+                select.style.display = 'block';
+                return;
+            }
+
+            // Ninguna opción seleccionada: ocultar select.
+            select.disabled = true;
+            select.required = false;
+            select.style.display = 'none';
         }
 
-        function populateSelectFromPropiedades(propiedades, unidadTipo) {
-            // Para Pierre/Palacio/Princess pediste mostrar TODAS las unidades que regrese la API.
-            // Por eso NO filtramos por keywords aquí.
-            const list = Array.isArray(propiedades)
+        /** Palabra clave según la unidad activa (misma lógica que puestos/departamentos). */
+        function keywordForActiveInstitution(instName) {
+            const x = (instName || '').toLowerCase();
+            if (x.includes('palacio')) return 'palacio';
+            if (x.includes('princess')) return 'princess';
+            if (x.includes('pierre')) return 'pierre';
+            return '';
+        }
+
+        function filterPropiedadesForActiveUnit(list) {
+            if (!Array.isArray(list)) return list;
+            const key = keywordForActiveInstitution(activeInstitutionName);
+            if (!key) return list;
+            const filtered = list.filter(p => {
+                const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
+                return n.includes(key);
+            });
+            if (filtered.length === 0) {
+                console.warn('Ninguna propiedad de la API coincide con la unidad activa:', activeInstitutionName, 'keyword:', key);
+            }
+            return filtered;
+        }
+
+        function populateSelectFromPropiedades(propiedades) {
+            const raw = Array.isArray(propiedades)
                 ? propiedades
                 : (propiedades?.propiedades ?? propiedades?.data ?? propiedades);
 
-            if (!Array.isArray(list)) {
+            if (!Array.isArray(raw)) {
                 console.warn('Respuesta inesperada al cargar propiedades:', propiedades);
                 return;
             }
+
+            const list = filterPropiedadesForActiveUnit(raw);
 
             select.innerHTML = '';
             const placeholder = document.createElement('option');
@@ -224,10 +194,10 @@
             }
         }
 
-        async function loadPropiedadesIfNeeded(unidadTipo) {
-            if (unidadTipo === 'universidad') return;
+        async function loadPropiedadesIfNeeded() {
+            if (!isAdministrativoFlagOn() || isUniversidadFlagOn()) return;
             if (cachedPropiedades) {
-                populateSelectFromPropiedades(cachedPropiedades, unidadTipo);
+                populateSelectFromPropiedades(cachedPropiedades);
                 return;
             }
 
@@ -245,64 +215,41 @@
             const list = data?.propiedades ?? data?.data ?? data;
             cachedPropiedades = list;
 
-            populateSelectFromPropiedades(cachedPropiedades, unidadTipo);
-        }
-        function getSelectedUnidadTipo() {
-            return unidadTipoSelect.disabled ? '' : unidadTipoSelect.value;
+            populateSelectFromPropiedades(cachedPropiedades);
         }
 
-        /** Modo efectivo: checkbox Universidad usa flujo escribible sin el desplegable administrativo. */
-        function getEffectiveUnidadTipo() {
-            if (isUniversidadFlagOn()) {
-                return 'universidad';
-            }
-            return getSelectedUnidadTipo();
-        }
-
-        async function applyTipoFromFlags() {
-            syncUnidadTipoGroup();
-            const effective = getEffectiveUnidadTipo();
-            setMode(effective);
-            if (effective && effective !== 'universidad') {
+        async function applyModeFromFlags() {
+            setMode();
+            if (isAdministrativoFlagOn() && !isUniversidadFlagOn()) {
                 try {
-                    await loadPropiedadesIfNeeded(effective);
+                    await loadPropiedadesIfNeeded();
                 } catch (e) {
                     console.error('No se pudo cargar propiedades para el select:', e);
                 }
             }
         }
 
-        unidadTipoSelect.addEventListener('change', async () => {
-            if (unidadTipoSelect.disabled) return;
-            const unidadTipo = getSelectedUnidadTipo();
-            setMode(unidadTipo);
-            try {
-                await loadPropiedadesIfNeeded(unidadTipo);
-            } catch (e) {
-                console.error('No se pudo cargar propiedades para el select:', e);
-            }
-        });
-
         flagAdministrativo.addEventListener('change', () => {
             if (flagAdministrativo.checked) {
                 flagUniversidad.checked = false;
             }
-            applyTipoFromFlags();
+            applyModeFromFlags();
         });
 
         flagUniversidad.addEventListener('change', () => {
             if (flagUniversidad.checked) {
                 flagAdministrativo.checked = false;
             }
-            applyTipoFromFlags();
+            applyModeFromFlags();
         });
 
-        // Inicializar: desplegable solo visible con Administrativo; Universidad activa flujo escribible.
-        syncUnidadTipoGroup();
-        const initialEffective = getEffectiveUnidadTipo();
-        setMode(initialEffective);
-        if (initialEffective && initialEffective !== 'universidad') {
-            loadPropiedadesIfNeeded(initialEffective).catch(e => {
+        // Inicializar:
+        // - Universidad: input manual
+        // - Propiedades: select desde API
+        // - Ninguna: ocultar ambos campos
+        setMode();
+        if (isAdministrativoFlagOn() && !isUniversidadFlagOn()) {
+            loadPropiedadesIfNeeded().catch(e => {
                 console.error('No se pudo cargar propiedades al inicializar:', e);
             });
         }

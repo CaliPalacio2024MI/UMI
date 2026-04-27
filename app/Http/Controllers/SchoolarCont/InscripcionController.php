@@ -20,7 +20,6 @@ use App\Models\Users\AcademicProfile;
 use App\Models\Users\Enrollment; 
 use App\Models\Users\Period;
 use App\Models\Facturacion\Billing;
-use App\Models\Facturacion\BillingConcept;
 use App\Models\Lead;
 
 class InscripcionController extends Controller
@@ -39,9 +38,6 @@ class InscripcionController extends Controller
         }
 
         $carreras = Career::all();
-
-        // Obtener Conceptos de Facturación Disponibles
-        $conceptosDisponibles = BillingConcept::all();
 
         // Si el usuario autenticado es estudiante, prellenamos el formulario
         // con sus datos actuales, pero manteniendo el modo "Nuevo Registro de Aspirante".
@@ -145,7 +141,6 @@ class InscripcionController extends Controller
             'carreras',
             'periodoActivo',
             'periods',
-            'conceptosDisponibles',
             'alumno',
             'modoReinscripcion',
             'bloqueadoPorAceptacion'
@@ -548,7 +543,6 @@ class InscripcionController extends Controller
         $user = User::with(['address', 'academicProfile'])->findOrFail($id);
         $carreras = Career::all();
         $historialInscripciones = Enrollment::where('user_id', $id)->orderBy('created_at', 'desc')->get();
-        $conceptosDisponibles = BillingConcept::all();
 
         return view('layouts.ControlEsc.Inscripcion.index', [
             'alumno' => $user,
@@ -556,7 +550,6 @@ class InscripcionController extends Controller
             'periodoActivo' => $periodoActivo,
             'periods' => $periods,
             'historialInscripciones' => $historialInscripciones,
-            'conceptosDisponibles' => $conceptosDisponibles
         ]);
     }
 

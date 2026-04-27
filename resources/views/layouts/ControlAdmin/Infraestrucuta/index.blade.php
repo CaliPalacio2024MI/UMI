@@ -34,6 +34,16 @@
     @if(session('success'))
         <div class="alert alert-success" style="margin-bottom: 1rem; padding: 10px 16px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724;">{{ session('success') }}</div>
     @endif
+    @if(!$data->isEmpty())
+        <div class="list-header-toolbar">
+            <div class="toolbar__section toolbar__section--left">
+                <div class="toolbar__search toolbar__search--aulas">
+                    <img src="{{ asset('images/icons/magnifying-glass-svgrepo-com.svg') }}" alt="" class="toolbar__search-icon" aria-hidden="true">
+                    <input type="text" id="aulasSearchNombre" placeholder="Buscar por..." autocomplete="off">
+                </div>
+            </div>
+        </div>
+    @endif
     <!-- Aulas -->
     @if($data->isEmpty())
         <div class="aulas-empty-state" role="status">
@@ -47,6 +57,7 @@
                         <th>Nombre del aula</th>
                         <th>Carrera</th>
                         <th>Materia</th>
+                        <th>Clasificación</th>
                         @if(Auth::user()->hasAnyRole(['master']))
                             <th class="aulas-tabla-acciones">Acciones</th>
                         @endif
@@ -58,6 +69,7 @@
                             <td>{{ $item->nombre_aula ?? '—' }}</td>
                             <td>{{ $item->career->name ?? '—' }}</td>
                             <td>{{ $item->tipo_materia ? $item->tipo_materia : '—' }}</td>
+                            <td>{{ $item->career?->classification?->name ?? '—' }}</td>
                             @if(Auth::user()->hasAnyRole(['master']))
                                 <td class="aulas-tabla-acciones">
                                     <div class="aulas-acciones">
@@ -225,6 +237,24 @@
                 hideModal();
             }
         });
+
+        const aulasSearchInput = document.getElementById('aulasSearchNombre');
+        const tbody = document.querySelector('.tabla-base.tabla-aulas .cuerpo-tabla');
+        if (aulasSearchInput && tbody) {
+            const applyAulasSearch = () => {
+                const search = (aulasSearchInput.value || '').trim().toLowerCase();
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                rows.forEach((tr) => {
+                    const nombreAula = (tr.querySelector('td:nth-child(1)')?.textContent || '').trim().toLowerCase();
+                    const carrera = (tr.querySelector('td:nth-child(2)')?.textContent || '').trim().toLowerCase();
+                    const materia = (tr.querySelector('td:nth-child(3)')?.textContent || '').trim().toLowerCase();
+                    const clasificacion = (tr.querySelector('td:nth-child(4)')?.textContent || '').trim().toLowerCase();
+                    const textoBusqueda = `${nombreAula} ${carrera} ${materia} ${clasificacion}`;
+                    tr.style.display = (!search || textoBusqueda.includes(search)) ? '' : 'none';
+                });
+            };
+            aulasSearchInput.addEventListener('input', applyAulasSearch);
+        }
     }
 
     if (document.readyState === 'loading') {

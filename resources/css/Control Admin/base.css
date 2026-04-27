@@ -575,6 +575,27 @@
     width: 200px;
 }
 
+/* Lista Materias: columna Carrera en 2 lineas maximo */
+.tabla-materias thead th:nth-child(3),
+.tabla-materias tbody td:nth-child(3) {
+    width: 180px;
+    max-width: 180px;
+}
+
+.tabla-materias tbody td:nth-child(3) {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.tabla-materias tbody td:nth-child(3) .materia-career-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.25;
+}
+
 /* Módulo Materias: más ancho a izquierda y derecha (menos padding/márgenes laterales) */
 .container--materias {
     padding-left: 8px;
@@ -734,6 +755,22 @@
 .schedule-table #horarios-tbody td:nth-child(4) {
     width: 24%;
     min-width: 150px;
+}
+.schedule-table .tabla-base thead th:nth-child(5),
+.schedule-table #horarios-tbody td:nth-child(5) {
+    width: 12%;
+    min-width: 120px;
+}
+.schedule-table .schedule-actions-col {
+    white-space: nowrap;
+    text-align: center;
+}
+#horarios-tbody .carrer-btn-section {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
 }
 .schedule-table {
     margin-top: 1rem;
@@ -1219,6 +1256,17 @@
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 }
 /* Placeholder "Seleccione una Carrera" en gris solo cuando está cerrado; el menú en color normal */
+#clasificacion_select {
+    text-align: center;
+    text-align-last: center;
+}
+#clasificacion_select.select-placeholder {
+    color: #888;
+}
+#clasificacion_select:not(.select-placeholder),
+#clasificacion_select:focus {
+    color: #212529;
+}
 #carrera_select {
     text-align: center;
 }
@@ -2221,7 +2269,9 @@
 #createCareerModal .form-field input.js-career-monto[type="number"],
 [id^="editCareerModal_"] .form-field input.js-career-month-price[type="number"],
 #createCareerModal .form-field input.js-career-month-price[type="number"],
-[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"] {
+[id^="editCareerModal_"] .form-field input.js-career-monto[type="number"],
+#createCareerModal .form-field input.js-career-porcentaje[type="number"],
+[id^="editCareerModal_"] .form-field input.js-career-porcentaje[type="number"] {
     padding: 5px 8px;
     width: 100%;
     box-sizing: border-box;
@@ -2269,6 +2319,8 @@
 [id^="editCareerModal_"] .form-field input.js-career-month-price[type="number"]:focus,
 #createCareerModal .form-field input.js-career-month-price[type="number"]:focus,
 [id^="editCareerModal_"] .form-field input.js-career-monto[type="number"]:focus,
+#createCareerModal .form-field input.js-career-porcentaje[type="number"]:focus,
+[id^="editCareerModal_"] .form-field input.js-career-porcentaje[type="number"]:focus,
 #createCareerModal .form-field input.js-career-semestres[type="number"]:focus,
 [id^="editCareerModal_"] .form-field input.js-career-semestres[type="number"]:focus {
     border-color: #fff !important;
@@ -2356,6 +2408,10 @@
     text-align: left;
     /* Alineado más a la izquierda que los text (evita padding extra del UA + el 4px de name/official) */
     padding: 5px 8px 5px 0;
+    font-family: 'Poppins', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
 }
 
 .form-field select {
@@ -2628,7 +2684,7 @@ select[name="semesters"],
 }
 
 /* Campo semestres en modal Editar carrera: centrado */
-[id^="editCareerModal"] [id^="semesters_"] {
+[id^="editCareerModal"] .form-field input[id^="semesters_"][type="number"] {
     text-align: center;
     text-align-last: center;
 }
@@ -3851,6 +3907,10 @@ select[name="semesters"],
 
 /* Imprimir desde la vista completa de Horario de Docente (no modal) */
 @media print {
+    @page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
     body.print-teacher-horario-page .mobile-menu-toggle,
     body.print-teacher-horario-page .sidebar,
     body.print-teacher-horario-page .main-content > .header {
@@ -3860,6 +3920,61 @@ select[name="semesters"],
     body.print-teacher-horario-page .horario-export-pdf-btn,
     body.print-teacher-horario-page .horario-close-btn {
         display: none !important;
+    }
+    body.print-teacher-horario-page .app-container,
+    body.print-teacher-horario-page .main-content,
+    body.print-teacher-horario-page #main-content,
+    body.print-teacher-horario-page .container {
+        height: auto !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-body {
+        width: 100% !important;
+        max-width: none !important;
+        overflow: visible !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla-wrapper,
+    body.print-teacher-horario-page .teacher-horarios-grilla-scroll,
+    body.print-teacher-horario-page .teacher-horarios-grilla {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla thead {
+        position: static !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla tbody tr {
+        page-break-inside: avoid;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla .grilla-col-hora {
+        width: 8% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla thead th:not(.grilla-col-hora),
+    body.print-teacher-horario-page .teacher-horarios-grilla tbody td.grilla-cell {
+        width: 13.14% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 0.2rem !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla {
+        font-size: 0.75rem !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla .grilla-clase-card {
+        margin-bottom: 0.2rem !important;
+        padding: 0.2rem 0.35rem !important;
     }
 }
 

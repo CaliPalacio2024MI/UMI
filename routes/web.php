@@ -33,6 +33,8 @@ use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController;
 use App\Http\Controllers\SchoolarCont\BoletaCalificacionController; 
+use App\Http\Controllers\SchoolarCont\BecasController;
+use App\Http\Controllers\SchoolarCont\TitulacionController;
 
 // --- Controladores CRM ---
 use App\Http\Controllers\CRM\CRMController;
@@ -46,6 +48,7 @@ use App\Http\Controllers\Public\LeadPublicController;
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
 
 Route::get('/', [LeadPublicController::class, 'landing'])->name('landing');
 Route::get('/programas/{slug}', [LeadPublicController::class, 'programa'])->name('public.programa');
@@ -89,8 +92,10 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         });
     });
 
-    // --- Módulo: Facturación (Vista General - Alumnos ven sus pagos, Admin ve todo) ---
-    Route::get('/facturacion', [BillingController::class, 'index'])->name('Facturacion.index');
+    // --- Módulo: Facturación (solo contexto Universidad Mundo Imperial) ---
+    Route::middleware(['university.institution'])->group(function () {
+        Route::get('/facturacion', [BillingController::class, 'index'])->name('Facturacion.index');
+    });
 
     // ======================================================================
     // 3. GESTIÓN ACADÉMICA (Docentes y Master)
@@ -139,29 +144,20 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     // ======================================================================
     Route::middleware(['role:master,control_administrativo'])->group(function () {
 
-    // --- Gestión de Facturación (Cobros y Pagos) ---
-    Route::post('/facturacion', [BillingController::class, 'store'])->name('Facturacion.store'); 
-    Route::delete('/facturacion/{billing}', [BillingController::class, 'destroy'])->name('Facturacion.destroy');
-    Route::post('facturacion/payments', [PaymentController::class, 'store'])->name('payments.store');
-    Route::get('/facturacion/export', [BillingController::class, 'exportCsv'])->name('Facturacion.export');
+    Route::middleware(['university.institution'])->group(function () {
+        // --- Gestión de Facturación (Cobros y Pagos) ---
+        Route::post('/facturacion', [BillingController::class, 'store'])->name('Facturacion.store');
+        Route::delete('/facturacion/{billing}', [BillingController::class, 'destroy'])->name('Facturacion.destroy');
+        Route::post('facturacion/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::get('/facturacion/export', [BillingController::class, 'exportCsv'])->name('Facturacion.export');
         // Grupo de rutas para Conceptos de Facturación
-    Route::prefix('facturacion/conceptos')->name('facturacion.conceptos.')->group(function () {
-        
-        // 1. Vista Principal (Tabla y Modales)
-        Route::get('/', [BillingConceptController::class, 'index'])->name('index');
-        
-        // 2. Operaciones CRUD
-        // Guardar nuevo concepto (POST)
-        Route::post('/', [BillingConceptController::class, 'store'])->name('store');
-        
-        // Actualizar concepto existente (PUT)
-        Route::put('/{id}', [BillingConceptController::class, 'update'])->name('update');
-        
-        // Eliminar concepto (DELETE)
-        Route::delete('/{id}', [BillingConceptController::class, 'destroy'])->name('destroy');
-        
-        // 3. Acción Extra (Toggle Activo/Inactivo)
-        Route::post('/{id}/toggle-status', [BillingConceptController::class, 'toggleStatus'])->name('toggleStatus');
+        Route::prefix('facturacion/conceptos')->name('facturacion.conceptos.')->group(function () {
+            Route::get('/', [BillingConceptController::class, 'index'])->name('index');
+            Route::post('/', [BillingConceptController::class, 'store'])->name('store');
+            Route::put('/{id}', [BillingConceptController::class, 'update'])->name('update');
+            Route::delete('/{id}', [BillingConceptController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/toggle-status', [BillingConceptController::class, 'toggleStatus'])->name('toggleStatus');
+        });
     });
         // ------------------------------------------------------------
         // A. CONTROL ESCOLAR (Flujo de Ingreso)
@@ -194,7 +190,19 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::post('/Matriculas/{id}/upload', [MatriculaController::class, 'uploadDocumento'])->name('documentacion.upload');
             
             // 4. Futuros Módulos (Becas, Titulación...)
-            // Route::get('/becas', ...);
+            Route::get('/becas', [BecasController::class, 'index'])->name('becas.index');
+            Route::post('/becas/documentos', [BecasController::class, 'store'])->name('becas.store');
+            Route::get('/becas/documentos/{id}', [BecasController::class, 'show'])->name('becas.show');
+            Route::put('/becas/documentos/{id}', [BecasController::class, 'update'])->name('becas.update');
+            Route::delete('/becas/documentos/{id}', [BecasController::class, 'destroy'])->name('becas.destroy');
+            Route::get('/becas/documentos/{id}/download', [BecasController::class, 'download'])->name('becas.download');
+
+            Route::get('/titulacion', [TitulacionController::class, 'index'])->name('titulacion.index');
+            Route::post('/titulacion/documentos', [TitulacionController::class, 'store'])->name('titulacion.store');
+            Route::get('/titulacion/documentos/{id}', [TitulacionController::class, 'show'])->name('titulacion.show');
+            Route::put('/titulacion/documentos/{id}', [TitulacionController::class, 'update'])->name('titulacion.update');
+            Route::delete('/titulacion/documentos/{id}', [TitulacionController::class, 'destroy'])->name('titulacion.destroy');
+            Route::get('/titulacion/documentos/{id}/download', [TitulacionController::class, 'download'])->name('titulacion.download');
 
             Route::get('/boletas-calificaciones', [BoletaCalificacionController::class, 'index'])->name('boletas.index');
             Route::get('/boletas-calificaciones/export', [BoletaCalificacionController::class, 'export'])->name('boletas.export');

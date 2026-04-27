@@ -23,11 +23,33 @@ class MatriculaController extends Controller
 
         if ($request->filled('search')) {
             $search = trim((string) $request->search);
+            $needle = mb_strtolower($search);
+            $isStatusOrMatriculaKeyword = in_array($needle, [
+                'pagado', 'pagados',
+                'pendiente', 'pendientes', 'no pagado', 'no pagados',
+                'con matricula', 'con matrícula',
+                'sin matricula', 'sin matrícula',
+            ], true);
+
+            // Si el término es keyword de estado, evitamos filtrar por texto en SQL
+            // para no dejar la colección vacía antes del filtro en memoria.
+            if (! $isStatusOrMatriculaKeyword) {
             $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
                     ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('apellido_materno', 'like', "%{$search}%")
+                    ->orWhere('curp', 'like', "%{$search}%")
+                    ->orWhereHas('academicProfile', function ($ap) use ($search) {
+                        $ap->where('matricula', 'like', "%{$search}%")
+                            ->orWhereHas('career', function ($c) use ($search) {
+                                $c->where('name', 'like', "%{$search}%")
+                                    ->orWhereHas('classification', function ($cl) use ($search) {
+                                        $cl->where('name', 'like', "%{$search}%");
+                                    });
+                            });
+                    });
             });
+            }
         }
 
         $students = $query->paginate(15);
@@ -58,11 +80,33 @@ class MatriculaController extends Controller
             return $student;
         });
 
-        if ($request->get('filter_status') == 'pagados') {
-            $filteredCollection = $students->getCollection()->filter(function ($student) {
-                return $student->billing_status === 'Pagado';
-            });
-            $students->setCollection($filteredCollection);
+        // Filtros por búsqueda "inteligente" (cuando el texto representa estados)
+        if ($request->filled('search')) {
+            $needle = mb_strtolower(trim((string) $request->search));
+
+            // Status pago
+            if (in_array($needle, ['pagado', 'pagados'], true)) {
+                $students->setCollection($students->getCollection()->filter(fn ($s) => ($s->billing_status ?? '') === 'Pagado'));
+            } elseif (in_array($needle, ['pendiente', 'pendientes', 'no pagado', 'no pagados'], true)) {
+                $students->setCollection($students->getCollection()->filter(fn ($s) => ($s->billing_status ?? '') === 'Pendiente'));
+            }
+
+            // Matrícula
+            if (in_array($needle, ['con matricula', 'con matrícula'], true)) {
+                $students->setCollection($students->getCollection()->filter(fn ($s) => ! empty($s->academicProfile?->matricula)));
+            } elseif (in_array($needle, ['sin matricula', 'sin matrícula'], true)) {
+                $students->setCollection($students->getCollection()->filter(fn ($s) => empty($s->academicProfile?->matricula)));
+            }
+
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'tbody' => view('layouts.ControlEsc.Matriculas.partials.table_rows', [
+                    'dataList' => $students,
+                ])->render(),
+                'pagination' => (string) $students->appends($request->query())->links(),
+            ]);
         }
 
         return view('layouts.ControlEsc.Matriculas.index', [

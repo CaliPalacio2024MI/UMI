@@ -102,8 +102,8 @@
                     <label for="pricing_mode_{{ $career->id }}">Configuración de mensualidad:</label>
                     <select id="pricing_mode_{{ $career->id }}" name="pricing_mode"
                         class="js-career-pricing-mode @error('pricing_mode') validation-error @enderror">
-                        <option value="uniform" {{ $pricingModeEdit === 'uniform' ? 'selected' : '' }}>Mismo precio para todos los meses</option>
-                        <option value="per_month" {{ $pricingModeEdit === 'per_month' ? 'selected' : '' }}>Precio distinto por mes</option>
+                        <option value="uniform" {{ $pricingModeEdit === 'uniform' ? 'selected' : '' }}>Precio único</option>
+                        <option value="per_month" {{ $pricingModeEdit === 'per_month' ? 'selected' : '' }}>Precio por mes</option>
                     </select>
                 </div>
                 <div class="form-field js-career-uniform-wrap" @if($pricingModeEdit === 'per_month') style="display: none;" @endif>
@@ -128,6 +128,16 @@
                     <label for="cargo_monetario_{{ $career->id }}">Cargo moratorio:</label>
                     <input type="text" id="cargo_monetario_{{ $career->id }}" class="js-career-cargo-out" readonly tabindex="-1"
                         value="{{ $cargoPreview }}"
+                        style="background: #f5f5f5; cursor: default;">
+                </div>
+                @php
+                    $fvMoratorio = $career->fecha_vencimiento_moratorio;
+                    $fvMoratorioTxt = $fvMoratorio ? \Carbon\Carbon::parse($fvMoratorio)->format('d/m/Y') : '—';
+                @endphp
+                <div class="form-field">
+                    <label for="fecha_vencimiento_moratorio_display_{{ $career->id }}">Fecha vencimiento (asignada por sistema):</label>
+                    <input type="text" id="fecha_vencimiento_moratorio_display_{{ $career->id }}" readonly tabindex="-1"
+                        value="{{ $fvMoratorioTxt }}"
                         style="background: #f5f5f5; cursor: default;">
                 </div>
                 
