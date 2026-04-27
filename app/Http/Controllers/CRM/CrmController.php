@@ -835,7 +835,7 @@ class CrmController extends Controller
         ]);
     }
 
-      public function filtrarComisiones(Request $request)
+    public function filtrarComisiones(Request $request)
     {
         $inicio = $request->input('fecha_inicio');
         $fin    = $request->input('fecha_fin');
