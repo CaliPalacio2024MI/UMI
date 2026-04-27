@@ -124,7 +124,7 @@
                <div class="mc-table-header">
                   <div>Clasificación</div>
                   <div>Producto</div>
-                  <div>Precio (Mes)</div>
+                  <div>Precio (Semestre)</div>
                   <div>% de Comisión</div>
                   <div>Total</div>
                   <div>Acciones</div>
@@ -204,38 +204,60 @@ const LOGO_BASE64 = "data:image/png;base64,{{ $logoBase64 }}";
     if (!tabla || tabla.dataset.init) return;
     tabla.dataset.init = 'true';
     
-    // ===== BUSCADOR =====
-const buscadorCTP = document.querySelector('.buscador-ctp');
-const fechaInicio = document.getElementById('fecha-inicio');
-const fechaFin    = document.getElementById('fecha-fin');
+    // ===== BUSCADOR + FILTRO FECHAS (AJAX) =====
+    const buscadorCTP = document.querySelector('.buscador-ctp');
+    const fechaInicio = document.getElementById('fecha-inicio');
+    const fechaFin    = document.getElementById('fecha-fin');
 
-function aplicarFiltros() {
-    const texto  = buscadorCTP?.value.toLowerCase().trim() ?? '';
-    const inicio = fechaInicio?.value ?? '';
-    const fin    = fechaFin?.value ?? '';
+    let timerId = null;
 
-    // Actualizar displays
-    document.getElementById('display-inicio').textContent =
-        inicio ? inicio.split('-').reverse().join('/') : 'Fecha inicio';
-    document.getElementById('display-fin').textContent =
-        fin ? fin.split('-').reverse().join('/') : 'Fecha fin';
+    async function aplicarFiltros() {
+        // Actualizar displays de fecha
+        const inicio = fechaInicio?.value ?? '';
+        const fin    = fechaFin?.value ?? '';
 
+        document.getElementById('display-inicio').textContent =
+            inicio ? inicio.split('-').reverse().join('/') : 'Fecha inicio';
+        document.getElementById('display-fin').textContent =
+            fin ? fin.split('-').reverse().join('/') : 'Fecha fin';
 
-    document.querySelectorAll('#tabla-comisiones .table-row').forEach(fila => {
-        const ctp       = (fila.getAttribute('data-ctp') || '').toLowerCase();
-        const fechaFila = (fila.getAttribute('data-fecha') || '');
-        let visible = true;
-        if (texto  && !ctp.includes(texto))  visible = false;
-        if (inicio && fechaFila < inicio)     visible = false;
-        if (fin    && fechaFila > fin)         visible = false;
-        fila.style.display = visible ? '' : 'none';
+        // Construir query string
+        const params = new URLSearchParams();
+        if (inicio) params.append('fecha_inicio', inicio);
+        if (fin)    params.append('fecha_fin', fin);
+        if (buscadorCTP?.value.trim()) params.append('ctp', buscadorCTP.value.trim());
+
+        const res  = await fetch(`/crm/comisiones/filtrar?${params}`, {
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+        });
+        const data = await res.json();
+
+        // Actualizar filas existentes
+        const filas = document.querySelectorAll('#tabla-comisiones .table-row');
+
+        // Ocultar todas primero
+        filas.forEach(f => f.style.display = 'none');
+
+        data.forEach(ctp => {
+            const fila = document.querySelector(`#tabla-comisiones .table-row [data-id="${ctp.id}"]`)
+                ?.closest('.table-row');
+            if (!fila) return;
+
+            fila.querySelector('.col-conversiones').textContent = ctp.num_conversiones;
+            fila.querySelector('.col-total').textContent =
+                '$' + parseFloat(ctp.total_comisiones).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+            fila.style.display = '';
+        });
+    }
+
+    // Debounce en el buscador para no disparar en cada letra
+    buscadorCTP?.addEventListener('input', () => {
+        clearTimeout(timerId);
+        timerId = setTimeout(aplicarFiltros, 400);
     });
-}
 
-buscadorCTP?.addEventListener('input',  aplicarFiltros);
-fechaInicio?.addEventListener('change', aplicarFiltros);
-fechaFin?.addEventListener('change',    aplicarFiltros);
-
+    fechaInicio?.addEventListener('change', aplicarFiltros);
+    fechaFin?.addEventListener('change',    aplicarFiltros);
 
     // ===== MODAL % COMISIÓN — ABRIR/CERRAR =====
     const modalComision  = document.getElementById('modal-comision');
