@@ -1256,6 +1256,17 @@
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 }
 /* Placeholder "Seleccione una Carrera" en gris solo cuando está cerrado; el menú en color normal */
+#clasificacion_select {
+    text-align: center;
+    text-align-last: center;
+}
+#clasificacion_select.select-placeholder {
+    color: #888;
+}
+#clasificacion_select:not(.select-placeholder),
+#clasificacion_select:focus {
+    color: #212529;
+}
 #carrera_select {
     text-align: center;
 }
