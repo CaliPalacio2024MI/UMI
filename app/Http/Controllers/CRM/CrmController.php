@@ -277,8 +277,6 @@ class CrmController extends Controller
     }
 
 
-   
-
     public function estadisticas(Request $request)
     {
         $query = Lead::with([
@@ -520,19 +518,57 @@ class CrmController extends Controller
         $alumnoPorMes    = $porMes['Alumno'];
 
 
-    // Total SIN filtro de estatus NI de fecha (universo real para la dona)
-    $queryTotal = Lead::query();
-    if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
-    if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
-        $queryTotal->where('ctp_id', $request->ctp_id);
-    if ($request->filled('carrera_id'))
-        $queryTotal->where('carrera_id', $request->carrera_id);
-    if ($request->filled('nivel_educativo'))
-        $queryTotal->whereHas('carrera', function ($q) use ($request) {
-            $q->where('career_classification_id', $request->nivel_educativo);
-        });
+        // Total SIN filtro de estatus NI de fecha (universo real para la dona)
+        $queryTotal = Lead::query();
+        if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
+        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
+            $queryTotal->where('ctp_id', $request->ctp_id);
+        if ($request->filled('carrera_id'))
+            $queryTotal->where('carrera_id', $request->carrera_id);
+        if ($request->filled('nivel_educativo'))
+            $queryTotal->whereHas('carrera', function ($q) use ($request) {
+                $q->where('career_classification_id', $request->nivel_educativo);
+            });
 
-    $totalSinFiltroEstatus = $queryTotal->count();
+        
+        if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
+            $queryTotal->whereHas('seguimientos', function ($q) use ($request) {
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                });
+                if ($request->filled('fecha_inicio'))
+                    $q->whereDate('fecha', '>=', $request->fecha_inicio);
+                if ($request->filled('fecha_fin'))
+                    $q->whereDate('fecha', '<=', $request->fecha_fin);
+            });
+        }
+
+    
+        $leadsReales = $queryTotal->with([
+            'seguimientos' => function ($q) {
+                $q->orderBy('fecha', 'asc')->orderBy('hora', 'asc');
+            }
+        ])->get();
+
+        $totalFrioReal = 0;
+        $totalCalienteReal = 0;
+        $totalAspiranteReal = 0;
+        $totalAlumnoReal = 0;
+
+        foreach ($leadsReales as $lead) {
+            $ultimoEstado = $lead->seguimientos->last()?->estado ?? 'Prospecto frío';
+            match ($ultimoEstado) {
+                'Prospecto frío'     => $totalFrioReal++,
+                'Prospecto caliente' => $totalCalienteReal++,
+                'Aspirante'          => $totalAspiranteReal++,
+                'Alumno'             => $totalAlumnoReal++,
+                default              => null,
+            };
+        }
+
+        $totalSinFiltroEstatus = $totalFrioReal + $totalCalienteReal + $totalAspiranteReal + $totalAlumnoReal;
 
         $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
 
@@ -549,9 +585,11 @@ class CrmController extends Controller
             'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
             'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
             'porcentajeFrio', 'porcentajeCaliente', 'porcentajeAspirante', 'porcentajeAlumno',
-            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus'
+            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus', 
+            'totalFrioReal', 'totalCalienteReal', 'totalAspiranteReal', 'totalAlumnoReal'
         ));
     }
+
     
     public function update(Request $request, Lead $lead)
     {
@@ -796,4 +834,49 @@ class CrmController extends Controller
             'total' => $resultado->sum('comision'),
         ]);
     }
+
+      public function filtrarComisiones(Request $request)
+    {
+        $inicio = $request->input('fecha_inicio');
+        $fin    = $request->input('fecha_fin');
+        $buscar = strtolower($request->input('ctp', ''));
+
+        $ctps = User::whereHas('roles', function ($q) {
+            $q->where('name', 'ctp');
+        })->get();
+
+        $ctps = $ctps->filter(function ($ctp) use ($buscar) {
+            if (!$buscar) return true;
+            $nombre = strtolower($ctp->nombre . ' ' . $ctp->apellido_paterno);
+            return str_contains($nombre, $buscar);
+        });
+
+        $ctps->each(function ($ctp) use ($inicio, $fin) {
+            $query = Lead::where('ctp_id', $ctp->id)
+                ->whereHas('seguimientos', function ($q) use ($inicio, $fin) {
+                    $q->where('estado', 'Alumno');
+                    if ($inicio) $q->whereDate('fecha', '>=', $inicio);
+                    if ($fin)    $q->whereDate('fecha', '<=', $fin);
+                });
+
+            $ctp->num_conversiones = $query->count();
+
+            $leads = $query->with('carrera')->get();
+
+            $ctp->total_comisiones = $leads->sum(function ($lead) {
+                $comision = Comision::where('producto', $lead->carrera?->name)->first();
+                return $comision?->total ?? 0;
+            });
+        });
+
+        return response()->json(
+            $ctps->values()->map(fn($ctp) => [
+                'id'               => $ctp->id,
+                'nombre'           => $ctp->nombre . ' ' . $ctp->apellido_paterno,
+                'num_conversiones' => $ctp->num_conversiones,
+                'total_comisiones' => $ctp->total_comisiones,
+            ])
+        );
+    }
+
 }
