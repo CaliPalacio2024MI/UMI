@@ -48,6 +48,7 @@
                 <tr>
                     <th>RFC</th>
                     <th>Carrera</th>
+                    <th>Clasificación</th>
                     <th>Nombre</th>
                     <th>Apellido<br>Paterno</th>
                     <th>Apellido<br>Materno</th>
@@ -67,8 +68,20 @@
                             $careerShortText = $teachingCareers->count() > 1
                                 ? ($teachingCareers->first() . '...')
                                 : $careerFullText;
+                            $teachingClassifications = $user->teachingCareers
+                                ->pluck('classification.name')
+                                ->filter()
+                                ->unique()
+                                ->values();
+                            $classificationFullText = $teachingClassifications->isNotEmpty()
+                                ? $teachingClassifications->implode(', ')
+                                : ($user->academicProfile?->career?->classification?->name ?? 'Sin datos');
+                            $classificationShortText = $teachingClassifications->count() > 1
+                                ? ($teachingClassifications->first() . '...')
+                                : $classificationFullText;
                         @endphp
                         <td data-label="Carrera" title="{{ $careerFullText }}">{{ $careerShortText }}</td>
+                        <td data-label="Clasificación" title="{{ $classificationFullText }}">{{ $classificationShortText }}</td>
                         <td data-label="Nombre">{{ $user->nombre }}</td>
                         <td data-label="Paterno">{{ $user->apellido_paterno }}</td>
                         <td data-label="Materno">{{ $user->apellido_materno }}</td>

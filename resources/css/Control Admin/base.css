@@ -756,6 +756,22 @@
     width: 24%;
     min-width: 150px;
 }
+.schedule-table .tabla-base thead th:nth-child(5),
+.schedule-table #horarios-tbody td:nth-child(5) {
+    width: 12%;
+    min-width: 120px;
+}
+.schedule-table .schedule-actions-col {
+    white-space: nowrap;
+    text-align: center;
+}
+#horarios-tbody .carrer-btn-section {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
 .schedule-table {
     margin-top: 1rem;
     display: flex;

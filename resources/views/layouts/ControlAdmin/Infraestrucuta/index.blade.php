@@ -57,6 +57,7 @@
                         <th>Nombre del aula</th>
                         <th>Carrera</th>
                         <th>Materia</th>
+                        <th>Clasificación</th>
                         @if(Auth::user()->hasAnyRole(['master']))
                             <th class="aulas-tabla-acciones">Acciones</th>
                         @endif
@@ -68,6 +69,7 @@
                             <td>{{ $item->nombre_aula ?? '—' }}</td>
                             <td>{{ $item->career->name ?? '—' }}</td>
                             <td>{{ $item->tipo_materia ? $item->tipo_materia : '—' }}</td>
+                            <td>{{ $item->career?->classification?->name ?? '—' }}</td>
                             @if(Auth::user()->hasAnyRole(['master']))
                                 <td class="aulas-tabla-acciones">
                                     <div class="aulas-acciones">
@@ -246,7 +248,8 @@
                     const nombreAula = (tr.querySelector('td:nth-child(1)')?.textContent || '').trim().toLowerCase();
                     const carrera = (tr.querySelector('td:nth-child(2)')?.textContent || '').trim().toLowerCase();
                     const materia = (tr.querySelector('td:nth-child(3)')?.textContent || '').trim().toLowerCase();
-                    const textoBusqueda = `${nombreAula} ${carrera} ${materia}`;
+                    const clasificacion = (tr.querySelector('td:nth-child(4)')?.textContent || '').trim().toLowerCase();
+                    const textoBusqueda = `${nombreAula} ${carrera} ${materia} ${clasificacion}`;
                     tr.style.display = (!search || textoBusqueda.includes(search)) ? '' : 'none';
                 });
             };

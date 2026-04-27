@@ -169,7 +169,7 @@
                     
                     <ul class="submenu">
                         <li class="{{ request()->routeIs('Facturacion.*') ? 'active-submenu' : '' }}">
-                            <a href="{{ route('Facturacion.index') }}">Estado de cuenta</a>
+                            <a href="{{ route('Facturacion.index') }}">Facturacion</a>
                         </li>
                         <li class="{{ request()->routeIs('facturacion.conceptos.*') ? 'active-submenu' : '' }}">
                             <a href="{{ route('facturacion.conceptos.index') }}">Conceptos y montos</a>
@@ -183,7 +183,7 @@
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/money-bill-solid-full.svg') }}" alt="" style="width:24px;height:24px" loading="lazy">
                         </span>
-                        <span class="text">Estado de cuenta</span>
+                        <span class="text">Facturacion</span>
                     </a>
                 </li>
             @endif

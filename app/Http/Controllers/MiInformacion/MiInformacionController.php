@@ -31,7 +31,29 @@ class MiInformacionController extends Controller
     public function showClases()
     {
         $user = Auth::user();
-        $clases = $user->horarioClases()->with(['materia', 'carrera', 'user'])->get();
+        $user->load('academicProfile');
+
+        // 1) Clases explícitamente asignadas al alumno (pivot horario_clase_user)
+        $clases = $user->horarioClases()
+            ->with(['materia', 'carrera', 'user', 'aula', 'franjas'])
+            ->get();
+
+        // 2) Respaldo: si aún no hay asignación en pivot, mostrar las clases de su carrera/semestre
+        // para que el alumno sí vea sus clases del periodo.
+        if ($clases->isEmpty() && $user->academicProfile?->career_id) {
+            $careerId = (int) $user->academicProfile->career_id;
+            $semestre = $user->academicProfile->semestre;
+
+            $clases = \App\Models\AdmonCont\HorarioClase::query()
+                ->with(['materia', 'carrera', 'user', 'aula', 'franjas'])
+                ->where('career_id', $careerId)
+                ->when($semestre !== null && $semestre !== '', function ($q) use ($semestre) {
+                    $q->whereHas('materia', fn ($mq) => $mq->where('semestre', $semestre));
+                })
+                ->orderBy('materia_id')
+                ->get();
+        }
+
         return view('layouts.MiInformacion.clases', compact('user', 'clases'));
     }
 
@@ -41,10 +63,29 @@ class MiInformacionController extends Controller
     public function showHorario()
     {
         $user = Auth::user();
+        $user->load('academicProfile');
 
-        // TODO: Aquí harás la consulta para traer el horario
-        
-        return view('layouts.MiInformacion.horario');
+        // 1) Horarios explícitamente asignados al alumno
+        $clases = $user->horarioClases()
+            ->with(['materia', 'carrera', 'user', 'aula', 'franjas'])
+            ->get();
+
+        // 2) Respaldo por carrera/semestre cuando aún no hay pivot cargado
+        if ($clases->isEmpty() && $user->academicProfile?->career_id) {
+            $careerId = (int) $user->academicProfile->career_id;
+            $semestre = $user->academicProfile->semestre;
+
+            $clases = \App\Models\AdmonCont\HorarioClase::query()
+                ->with(['materia', 'carrera', 'user', 'aula', 'franjas'])
+                ->where('career_id', $careerId)
+                ->when($semestre !== null && $semestre !== '', function ($q) use ($semestre) {
+                    $q->whereHas('materia', fn ($mq) => $mq->where('semestre', $semestre));
+                })
+                ->orderBy('materia_id')
+                ->get();
+        }
+
+        return view('layouts.MiInformacion.horario', compact('user', 'clases'));
     }
 
     /**

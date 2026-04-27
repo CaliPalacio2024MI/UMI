@@ -26,7 +26,7 @@
                 <span class="schedule-edit-header__title">Editar horario</span>
                 <button type="button" class="schedule-edit-close" id="schedule_edit_close" title="Salir de edición" aria-label="Salir de edición">✕</button>
             </div>
-            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-index-url="{{ route('control.schedules.index') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($modoEdicion && isset($horario) && $horario->aula_id) data-initial-aula-id="{{ $horario->aula_id }}" @endif @if($modoEdicion && isset($horario) && $horario->aula) data-initial-aula-label="{{ e(\App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)) }}" @endif @if($modoEdicion && isset($horario) && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
+            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
                 @csrf
                 @if ($modoEdicion)
                     @method('PUT') 
@@ -134,6 +134,11 @@
                     <label for = "aula_select">Aula</label>
                     <select id="aula_select" name="aula_id">
                         <option value="" class="select-placeholder">Seleccione Aula</option>
+                    {{-- Aquí va el loop para cargar las carreras desde la BD --}}
+                    @foreach ($aulas as $aula)
+                        <option value = "{{$aula->id}}" @if ($modoEdicion && $aula->id == $horario->aula_id) selected @endif>{{$aula->numero_aula}}</option>
+                    @endforeach
+                    
                     </select>
                 </div>
                 <div class="schedule-submit">
@@ -160,8 +165,9 @@
                         <tr>
                                 <th>Carrera</th>
                                 <th>Materia</th>
+                                <th>Clasificación</th>
                                 <th>Docentes</th>
-                                <th>Acciones</th>
+                                <th class="schedule-actions-col">Acciones</th>
                         </tr>
                     </theader>
                     <tbody class="cuerpo-tabla" id="horarios-tbody">
@@ -183,9 +189,10 @@
                                 @endphp
                                 <td>{!! $celdaCarrera !!}</td>
                                 <td>{!! str_replace('Orientada a ', 'Orientada a<br>', e($horario->materia?->nombre ?? '')) !!}</td>
+                                <td>{{ $horario->carrera?->classification?->name ?? '—' }}</td>
                                 <td>{{ $horario->user?->nombre ?? '—' }}</td>
-                                <td>
-                                    <div class="carrer-btn-section" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                                <td class="schedule-actions-col">
+                                    <div class="carrer-btn-section">
                                         <a href="{{ route('control.schedules.show', $horario->id) }}" class="btn-view" data-show-url="{{ route('control.schedules.show', $horario->id) }}" title="Ver información">
                                             <svg width="20" height="20" viewBox="0 0 29 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M14.4987 0.625C10.4307 0.625 7.17322 2.49375 4.80187 4.71797C2.44562 6.92188 0.869748 9.5625 0.124609 11.3754C-0.0415365 11.7766 -0.0415365 12.2234 0.124609 12.6246C0.869748 14.4375 2.44562 17.0781 4.80187 19.282C7.17322 21.5063 10.4307 23.375 14.4987 23.375C18.5668 23.375 21.8243 21.5063 24.1956 19.282C26.5519 17.073 28.1277 14.4375 28.8779 12.6246C29.0441 12.2234 29.0441 11.7766 28.8779 11.3754C28.1277 9.5625 26.5519 6.92188 24.1956 4.71797C21.8243 2.49375 18.5668 0.625 14.4987 0.625ZM7.24874 12C7.24874 10.0606 8.01258 8.20064 9.37222 6.82928C10.7319 5.45792 12.5759 4.6875 14.4987 4.6875C16.4216 4.6875 18.2656 5.45792 19.6253 6.82928C20.9849 8.20064 21.7487 10.0606 21.7487 12C21.7487 13.9394 20.9849 15.7994 19.6253 17.1707C18.2656 18.5421 16.4216 19.3125 14.4987 19.3125C12.5759 19.3125 10.7319 18.5421 9.37222 17.1707C8.01258 15.7994 7.24874 13.9394 7.24874 12ZM14.4987 8.75C14.4987 10.5426 13.0538 12 11.2765 12C10.9191 12 10.5767 11.9391 10.2545 11.8324C9.97756 11.741 9.65534 11.9137 9.66541 12.2082C9.68051 12.5586 9.73086 12.909 9.82652 13.2594C10.5163 15.8594 13.1696 17.4031 15.7474 16.7074C18.3251 16.0117 19.8557 13.3355 19.1659 10.7355C18.6071 8.62813 16.7593 7.21133 14.7052 7.125C14.4132 7.11484 14.242 7.43477 14.3326 7.71914C14.4383 8.04414 14.4987 8.38945 14.4987 8.75Z" fill="#BC8A55"/>
@@ -196,7 +203,7 @@
                                                 <path d="M22.3364 0.648281C21.2991 -0.216094 19.6225 -0.216094 18.5852 0.648281L17.1596 1.83235L21.7964 5.69638L23.2221 4.50836C24.2593 3.64399 24.2593 2.24678 23.2221 1.38241L22.3364 0.648281ZM8.16538 9.33149C7.87646 9.57225 7.65386 9.86827 7.52598 10.1959L6.12403 13.7007C5.98668 14.0402 6.09561 14.4151 6.39874 14.6717C6.70186 14.9282 7.15181 15.015 7.56387 14.9006L11.7697 13.7323C12.1581 13.6257 12.5133 13.4402 12.8069 13.1995L20.7308 6.59233L16.0892 2.72436L8.16538 9.33149ZM4.54685 2.31783C2.03661 2.31783 0 4.015 0 6.10686V16.211C0 18.3028 2.03661 20 4.54685 20H16.6718C19.182 20 21.2186 18.3028 21.2186 16.211V12.4219C21.2186 11.7233 20.5413 11.1589 19.703 11.1589C18.8647 11.1589 18.1874 11.7233 18.1874 12.4219V16.211C18.1874 16.9096 17.5101 17.474 16.6718 17.474H4.54685C3.70852 17.474 3.03123 16.9096 3.03123 16.211V6.10686C3.03123 5.40826 3.70852 4.84385 4.54685 4.84385H9.09369C9.93202 4.84385 10.6093 4.27944 10.6093 3.58084C10.6093 2.88223 9.93202 2.31783 9.09369 2.31783H4.54685Z" fill="black"/>
                                             </svg>
                                         </a>
-                                        <form class="js-horario-delete-form" action="{{ route('control.schedules.destroy', $horario->id) }}" method="POST" style="display:inline;">
+                                        <form action="{{ route('control.schedules.destroy', $horario->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar este horario? Esta acción es irreversible.');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn-delete" title="Eliminar">
@@ -500,8 +507,6 @@
                 }
             });
             dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
-            wrap._scheduleSyncFromInput = syncFromInput;
-            syncFromInput();
         }
         initClockPicker('hora_inicio', 'hora_inicio_display', 'hora_inicio_dropdown');
         initClockPicker('hora_fin', 'hora_fin_display', 'hora_fin_dropdown');

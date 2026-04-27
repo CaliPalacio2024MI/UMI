@@ -243,7 +243,7 @@
                             </select>
                         </div>
                         <div class="clases-filtro-grupo">
-                            <label for="materia_id">Semestre:</label>
+                            <label for="materia_id">Materia:</label>
                             <select name="materia_id" id="materia_id" class="form-control clases-filtro-select {{ !$materiaId ? 'materia-placeholder' : '' }}" {{ !$carreraId ? 'disabled' : '' }}>
                                 <option value="">Seleccione el nombre de la materia</option>
                                 @foreach($materias as $materia)
@@ -254,7 +254,7 @@
                     </div>
                     <div class="clases-filtros-grid__col clases-filtros-grid__col--der">
                         <div class="clases-filtro-grupo">
-                            <label for="semestre_id">Materia:</label>
+                            <label for="semestre_id">Semestre:</label>
                             <select name="semestre" id="semestre_id" class="form-control clases-filtro-select {{ !$semestre ? 'semestre-placeholder' : '' }}" {{ !$materiaId ? 'disabled' : '' }}>
                                 <option value="">Seleccione el número del semestre</option>
                                 @foreach($semestresCarrera ?? [1,2,3,4,5,6,7,8] as $s)

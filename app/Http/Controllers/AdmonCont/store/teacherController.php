@@ -52,7 +52,8 @@ class teacherController extends Controller
         $careerColumns=[
             'official_id',
             'name',
-            'id'
+            'id',
+            'classification_id',
         ];
         // En belongsToMany la pivote también tiene `id`; el SELECT debe calificar columnas de `careers`.
         $teachingCareerColumns = array_map(
@@ -76,8 +77,14 @@ class teacherController extends Controller
             ->with(['academicProfile.career' => function (Relation $query) use ($careerColumns) {
                 $query->select($careerColumns);
             }])
+            ->with(['academicProfile.career.classification' => function (Relation $query) {
+                $query->select(['id', 'name']);
+            }])
             ->with(['teachingCareers' => function (Relation $query) use ($teachingCareerColumns) {
                 $query->select($teachingCareerColumns);
+            }])
+            ->with(['teachingCareers.classification' => function (Relation $query) {
+                $query->select(['id', 'name']);
             }])
             ->get();
 
