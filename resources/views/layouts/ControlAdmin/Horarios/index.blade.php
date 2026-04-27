@@ -35,13 +35,31 @@
                     <div class="alert alert-warning">{{ $message }}</div>
                 @enderror
                 <div class = "schedule-list-select">
+                    <label for="clasificacion_select">Clasificación:</label>
+                    <select id="clasificacion_select" name="clasificacion_id" @if ($modoEdicion) disabled @endif>
+                        <option value="">Seleccione una Clasificación</option>
+                        @foreach ($carreras->filter(fn($c) => $c->classification)->unique('career_classification_id') as $carreraClasificada)
+                            <option
+                                value="{{ $carreraClasificada->career_classification_id }}"
+                                @if ($modoEdicion && isset($horario) && $horario->carrera && $carreraClasificada->career_classification_id == $horario->carrera->career_classification_id) selected @endif
+                            >
+                                {{ $carreraClasificada->classification->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class = "schedule-list-select">
                     <label for = "career_select">Carrera:</label>
                     <select id="carrera_select" name="carrera_id" required>
                         @if ($modoEdicion) disabled @endif
                         <option value="">Seleccione una Carrera</option>
                         {{-- Aquí va el loop para cargar las carreras desde la BD --}}
                         @foreach ($carreras as $carrera)
-                            <option value = "{{$carrera->id}}" @if ($modoEdicion && $carrera->id == $horario->career_id) selected @endif>{{$carrera->name}}</option>
+                            <option
+                                value = "{{$carrera->id}}"
+                                data-classification-id="{{ $carrera->career_classification_id ?? '' }}"
+                                @if ($modoEdicion && $carrera->id == $horario->career_id) selected @endif
+                            >{{$carrera->name}}</option>
                         @endforeach
                     </select>
                     @if ($modoEdicion)
@@ -127,7 +145,7 @@
                 <h3 class="schedule-resume__title">Vista Previa</h3>
                 <div class="schedule-resume schedule-resume--cards">
                     <div id="time_slots_body" class="schedule-preview-cards">
-                        <table class="schedule-preview-empty-table"><tr><th class="schedule-preview-empty" style="color: #ACACAC; font-size: 0.9rem; font-weight: normal; margin: 0; padding: 8px 12px; text-align: left; border: none; background: transparent; text-transform: capitalize; display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span>Lunes – Martes – Miercoles -- 07:00 – 08:00</span><img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" class="schedule-preview-empty__icon" width="18" height="18" alt="Editar" style="flex-shrink: 0;" /></th></tr></table>
+                        <table class="schedule-preview-empty-table"><tr><th class="schedule-preview-empty" style="color: #ACACAC; font-size: 0.9rem; font-weight: normal; margin: 0; padding: 8px 12px; text-align: left; border: none; background: transparent; text-transform: capitalize; display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span>Lunes – Martes – Miercoles -- 07:00 – 08:00</span><img src="{{ asset('images/icons/trash-solid-full.svg') }}" class="schedule-preview-empty__icon" width="18" height="18" alt="Eliminar" style="flex-shrink: 0;" /></th></tr></table>
                     </div>
                 </div>
                 <div class = "schedule-list-select">
@@ -255,8 +273,14 @@
 
         // Filtrar Materia y Docente por carrera: solo mostrar opciones de esa carrera; si no hay, el menú no muestra nada
         const carreraSelect = document.getElementById('carrera_select');
+        const clasificacionSelect = document.getElementById('clasificacion_select');
         const materiaSelect = document.getElementById('materia_select');
         const docenteSelect = document.getElementById('docente_select');
+        const carreraOptions = Array.from(carreraSelect.querySelectorAll('option')).filter(o => o.value !== '').map(o => ({
+            value: o.value,
+            classificationId: String(o.getAttribute('data-classification-id') || ''),
+            text: o.textContent.trim()
+        }));
 
         const materiaOptions = Array.from(materiaSelect.querySelectorAll('option')).filter(o => o.value !== '').map(o => ({
             value: o.value,
@@ -268,6 +292,32 @@
             careerId: String(o.getAttribute('data-career-id') || ''),
             text: o.textContent.trim()
         }));
+
+        function actualizarCarreras(resetValues) {
+            if (!carreraSelect || !clasificacionSelect) return;
+            const classificationId = clasificacionSelect.value ? String(clasificacionSelect.value) : '';
+            const carreraVal = carreraSelect.value;
+            const carrerasFiltradas = classificationId === ''
+                ? carreraOptions
+                : carreraOptions.filter(o => o.classificationId === classificationId);
+
+            carreraSelect.innerHTML = '';
+            const optC0 = document.createElement('option');
+            optC0.value = '';
+            optC0.textContent = 'Seleccione una Carrera';
+            carreraSelect.appendChild(optC0);
+
+            carrerasFiltradas.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                opt.setAttribute('data-classification-id', o.classificationId);
+                opt.textContent = o.text;
+                if (!resetValues && carreraVal === o.value) opt.selected = true;
+                carreraSelect.appendChild(opt);
+            });
+
+            if (resetValues) carreraSelect.value = '';
+        }
 
         function actualizarMateriaYDocente(resetValues) {
             const careerId = (carreraSelect && carreraSelect.value) ? String(carreraSelect.value) : '';
@@ -312,11 +362,30 @@
             }
         }
 
+        if (clasificacionSelect) {
+            clasificacionSelect.addEventListener('change', function() {
+                actualizarCarreras(true);
+                actualizarMateriaYDocente(true);
+                updateClasificacionPlaceholderStyle();
+            });
+        }
+
         if (carreraSelect) {
             carreraSelect.addEventListener('change', function() {
                 actualizarMateriaYDocente(true);
             });
+            actualizarCarreras(false);
             actualizarMateriaYDocente(false);
+        }
+
+        function updateClasificacionPlaceholderStyle() {
+            if (clasificacionSelect) {
+                if (clasificacionSelect.value === '') clasificacionSelect.classList.add('select-placeholder');
+                else clasificacionSelect.classList.remove('select-placeholder');
+            }
+        }
+        if (clasificacionSelect) {
+            updateClasificacionPlaceholderStyle();
         }
 
         // Placeholder gris para "Seleccione Aula" (aula es opcional, sin required)
@@ -381,8 +450,14 @@
             var methodInput = form.querySelector('input[name="_method"]');
             if (methodInput) methodInput.value = 'POST';
             var carreraSelect = document.getElementById('carrera_select');
+            var clasificacionSelect = document.getElementById('clasificacion_select');
             var materiaSelect = document.getElementById('materia_select');
             if (carreraSelect) { carreraSelect.disabled = false; carreraSelect.value = ''; }
+            if (clasificacionSelect) {
+                clasificacionSelect.disabled = false;
+                clasificacionSelect.value = '';
+                clasificacionSelect.classList.add('select-placeholder');
+            }
             if (materiaSelect) { materiaSelect.disabled = false; materiaSelect.value = ''; }
             var hCarrera = form.querySelector('input[name="carrera_id"]');
             var hMateria = form.querySelector('input[name="materia_id"]');
