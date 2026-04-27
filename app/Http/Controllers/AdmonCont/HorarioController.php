@@ -75,7 +75,8 @@ class HorarioController extends Controller
     public function index(Request $request)
     {
         // 1. Obtener los datos necesarios para los desplegables
-        $carreras = Career::all();
+        $carreras = Career::with('classification')->get();
+        $aulas = Facility::orderedForHorarios()->get();
         $query = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas']);
         $search = $request->search_query;
 
@@ -302,7 +303,7 @@ class HorarioController extends Controller
     public function edit(Request $request, HorarioClase $horario)
     {
         $horario->load(['franjas', 'aula']);
-        $carreras = Career::all();
+        $carreras = Career::with('classification')->get();
         $docentes = User::with(['academicProfile', 'teachingCareers'])->whereHas('roles', function ($q) {
             $q->where('name', 'docente');
         })->get();

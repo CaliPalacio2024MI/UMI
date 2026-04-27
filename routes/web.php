@@ -311,7 +311,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
             Route::prefix('crm')
             ->name('crm.')
-            ->middleware(['role:master,coordinador_ctp,ctp'])
+            ->middleware(['role:master,coordinador_ctp,ctp,control_administrativo'])
             ->group(function () {
 
                 // LEADS → todos
@@ -323,14 +323,14 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                 Route::get('/estadisticas', [CRMController::class, 'estadisticas'])->name('estadisticas');
 
 
-                // 🔒 SOLO Master y Coordinador
-                Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+                // SOLO Master y Coordinador
+                Route::middleware(['role:master,coordinador_ctp,control_administrativo'])->group(function () {
 
                     Route::get('/prospectos', [CRMController::class, 'prospectos'])->name('prospectos');
 
                         // Comisiones: solo Master (ya está dentro del middleware master,coordinador_ctp,
                         // pero la vista solo la usa master
-                        Route::middleware(['role:master,coordinador_ctp'])->group(function () {
+                        Route::middleware(['role:master,coordinador_ctp,control_administrativo'])->group(function () {
                             Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
                             Route::post('/comisiones', [CRMController::class, 'storeComision'])->name('comisiones.store');
                             Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');  

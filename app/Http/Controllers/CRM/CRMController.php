@@ -15,7 +15,7 @@ use App\Exports\EstadisticasExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 
-class CrmController extends Controller
+class CRMController extends Controller
 {
     public function leads()
     {
@@ -34,7 +34,7 @@ class CrmController extends Controller
 
         // Solo master y coordinador necesitan la lista de CTPs
         $ctps = [];
-        if (in_array($rol, ['master', 'coordinador_ctp'])) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo'])) {
             $ctps = \App\Models\Users\User::whereHas('roles', function ($q) {
                 $q->where('name', 'ctp');
             })->get();
@@ -63,7 +63,7 @@ class CrmController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -294,7 +294,7 @@ class CrmController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -522,8 +522,8 @@ class CrmController extends Controller
     // Total SIN filtro de estatus NI de fecha (universo real para la dona)
     $queryTotal = Lead::query();
     if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
-    if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
-        $queryTotal->where('ctp_id', $request->ctp_id);
+    if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id'))
+    $queryTotal->where('ctp_id', $request->ctp_id);
     if ($request->filled('carrera_id'))
         $queryTotal->where('carrera_id', $request->carrera_id);
     if ($request->filled('nivel_educativo'))
@@ -696,7 +696,7 @@ class CrmController extends Controller
         
         $lead->save();
 
-        // 👇 Registrar "Prospecto frío" automáticamente si no existe
+        // Registrar "Prospecto frío" automáticamente si no existe
         $yaExiste = $lead->seguimientos()->where('estado', 'Prospecto frío')->exists();
         if (!$yaExiste) {
             $lead->seguimientos()->create([
@@ -741,7 +741,7 @@ class CrmController extends Controller
         ->select('comisiones.*', 'career_classifications.name as clasificacion_nombre')
         ->get();
 
-        $logoPath = public_path('images/logoUMI-Azul.png');
+        $logoPath = public_path('images/LogoUMI-Azul.png');
         $logoBase64 = base64_encode(file_get_contents($logoPath));
         
         return view('crm.comisiones', [
