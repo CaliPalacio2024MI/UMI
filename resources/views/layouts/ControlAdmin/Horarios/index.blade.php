@@ -17,16 +17,13 @@
         <h5 class="content-title" style="font-size: 1.75rem; font-weight: 700; margin: 0;">HORARIOS</h5>
     </div>
     @endif
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
     <div class = "creator-container {{ $modoEdicion ? 'is-editing' : '' }}" id="creator_container">
         <div class = "schedule-lists">
             <div class="schedule-edit-header" id="schedule_edit_header" style="{{ $modoEdicion ? '' : 'display: none;' }}" aria-hidden="{{ $modoEdicion ? 'false' : 'true' }}">
                 <span class="schedule-edit-header__title">Editar horario</span>
                 <button type="button" class="schedule-edit-close" id="schedule_edit_close" title="Salir de edición" aria-label="Salir de edición">✕</button>
             </div>
-            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
+            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($modoEdicion && $horario->aula_id) data-initial-aula-id="{{ $horario->aula_id }}" @endif @if($modoEdicion && $horario->aula_id && $horario->aula) data-initial-aula-label="{{ e(\App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)) }}" @endif @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
                 @csrf
                 @if ($modoEdicion)
                     @method('PUT') 
@@ -152,11 +149,9 @@
                     <label for = "aula_select">Aula</label>
                     <select id="aula_select" name="aula_id">
                         <option value="" class="select-placeholder">Seleccione Aula</option>
-                    {{-- Aquí va el loop para cargar las carreras desde la BD --}}
-                    @foreach ($aulas as $aula)
-                        <option value = "{{$aula->id}}" @if ($modoEdicion && $aula->id == $horario->aula_id) selected @endif>{{$aula->numero_aula}}</option>
-                    @endforeach
-                    
+                        @if ($modoEdicion && isset($horario) && $horario->aula_id && $horario->aula)
+                            <option value="{{ $horario->aula_id }}" selected>{{ \App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula) }}</option>
+                        @endif
                     </select>
                 </div>
                 <div class="schedule-submit">
@@ -183,8 +178,9 @@
                         <tr>
                                 <th>Carrera</th>
                                 <th>Materia</th>
+                                <th>Clasificación</th>
                                 <th>Docentes</th>
-                                <th>Acciones</th>
+                                <th class="schedule-actions-col">Acciones</th>
                         </tr>
                     </theader>
                     <tbody class="cuerpo-tabla" id="horarios-tbody">
@@ -206,9 +202,10 @@
                                 @endphp
                                 <td>{!! $celdaCarrera !!}</td>
                                 <td>{!! str_replace('Orientada a ', 'Orientada a<br>', e($horario->materia?->nombre ?? '')) !!}</td>
+                                <td>{{ $horario->carrera?->classification?->name ?? '—' }}</td>
                                 <td>{{ $horario->user?->nombre ?? '—' }}</td>
-                                <td>
-                                    <div class="carrer-btn-section" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                                <td class="schedule-actions-col">
+                                    <div class="carrer-btn-section" style="display: flex; align-items: center; gap: 4px; flex-wrap: nowrap;">
                                         <a href="{{ route('control.schedules.show', $horario->id) }}" class="btn-view" data-show-url="{{ route('control.schedules.show', $horario->id) }}" title="Ver información">
                                             <svg width="20" height="20" viewBox="0 0 29 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M14.4987 0.625C10.4307 0.625 7.17322 2.49375 4.80187 4.71797C2.44562 6.92188 0.869748 9.5625 0.124609 11.3754C-0.0415365 11.7766 -0.0415365 12.2234 0.124609 12.6246C0.869748 14.4375 2.44562 17.0781 4.80187 19.282C7.17322 21.5063 10.4307 23.375 14.4987 23.375C18.5668 23.375 21.8243 21.5063 24.1956 19.282C26.5519 17.073 28.1277 14.4375 28.8779 12.6246C29.0441 12.2234 29.0441 11.7766 28.8779 11.3754C28.1277 9.5625 26.5519 6.92188 24.1956 4.71797C21.8243 2.49375 18.5668 0.625 14.4987 0.625ZM7.24874 12C7.24874 10.0606 8.01258 8.20064 9.37222 6.82928C10.7319 5.45792 12.5759 4.6875 14.4987 4.6875C16.4216 4.6875 18.2656 5.45792 19.6253 6.82928C20.9849 8.20064 21.7487 10.0606 21.7487 12C21.7487 13.9394 20.9849 15.7994 19.6253 17.1707C18.2656 18.5421 16.4216 19.3125 14.4987 19.3125C12.5759 19.3125 10.7319 18.5421 9.37222 17.1707C8.01258 15.7994 7.24874 13.9394 7.24874 12ZM14.4987 8.75C14.4987 10.5426 13.0538 12 11.2765 12C10.9191 12 10.5767 11.9391 10.2545 11.8324C9.97756 11.741 9.65534 11.9137 9.66541 12.2082C9.68051 12.5586 9.73086 12.909 9.82652 13.2594C10.5163 15.8594 13.1696 17.4031 15.7474 16.7074C18.3251 16.0117 19.8557 13.3355 19.1659 10.7355C18.6071 8.62813 16.7593 7.21133 14.7052 7.125C14.4132 7.11484 14.242 7.43477 14.3326 7.71914C14.4383 8.04414 14.4987 8.38945 14.4987 8.75Z" fill="#BC8A55"/>
@@ -234,7 +231,7 @@
                             @empty
                             {{--  Este bloque se ejecuta cuando $horarios está vacío --}}
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td colspan="5" class="text-center">
                                     No se encontraron horarios
                                 </td>
                             </tr>

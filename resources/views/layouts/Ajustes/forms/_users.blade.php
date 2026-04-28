@@ -34,15 +34,18 @@
         })?->id;
     }
 @endphp
+@if ($isUniversity)
 <p class="form-intro-question" style="font-weight: 600; color: #BC8A55; margin: 0 0 12px 0; font-size: 0.95rem;">
     ¿Qué usuario vas a crear?
 </p>
+@endif
 @if ($errors->any())
     <div style="margin: 0 0 10px 0; padding: 8px 10px; border: 1px solid #dc3545; border-radius: 6px; background: #fff5f5; color: #a61d2a; font-size: 0.9rem;">
         {{ $errors->first() }}
     </div>
 @endif
 <input type="hidden" name="tipo_usuario_creacion" id="tipo_usuario_creacion" value="{{ $tipoCreacion }}">
+@if ($isUniversity)
 <div class="form-group" style="margin-bottom: 14px;">
     <div class="tipo-usuario-inline" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
         <span style="display: inline-flex; align-items: center; gap: 6px;">
@@ -64,6 +67,7 @@
         </span>
     @enderror
 </div>
+@endif
 <div class="form-group" id="nombre-form-group">
     <div class="nombre-row" style="display: flex; align-items: center; gap: 12px; width: 100%;">
         <label class="nombre-label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Nombre(s)</label>
@@ -461,14 +465,14 @@
 
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">{{ $tipoCreacion === 'alumno' ? 'Usuario (RFC o CURP)' : 'Usuario (RFC)' }}</label>
+        <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Usuario (RFC o CURP)</label>
         <div style="flex: 1 1 auto; min-width: 0;">
             <input type="text"
                    id="RFC"
                    name="RFC"
                    required
-                   maxlength="{{ $tipoCreacion === 'alumno' ? 18 : 13 }}"
-                   minlength="{{ $tipoCreacion === 'alumno' ? 12 : 10 }}"
+                   maxlength="18"
+                   minlength="12"
                    class="form-control @error('RFC') is-invalid @enderror"
                    value="{{ old('RFC', $item->RFC ?? '') }}"
                    style="width: 100%; text-transform: uppercase;"
@@ -645,9 +649,9 @@ setTimeout(function() {
 
     function updateRfcFieldForTipo() {
         if (!rfcInput || !rfcLabel || !tipoHidden) return;
-        const esAlumno = tipoHidden.value === 'alumno';
-        rfcLabel.textContent = esAlumno ? 'Usuario (RFC o CURP)' : 'Usuario (RFC)';
-        rfcInput.setAttribute('maxlength', esAlumno ? '18' : '13');
+        rfcLabel.textContent = 'Usuario (RFC o CURP)';
+        rfcInput.setAttribute('maxlength', '18');
+        rfcInput.setAttribute('minlength', '12');
     }
 
     function syncNombreHiddenDesdeSelect() {

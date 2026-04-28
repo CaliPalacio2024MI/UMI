@@ -4,10 +4,18 @@
     {{-- =================================================================== --}}
     @php
         $user = Auth::user();
-        
+
         // --- 1. CONTEXTO ---
         $universityName = 'Universidad Mundo Imperial';
-        $isUniversity   = (session('active_institution_name') == $universityName);
+        $activeInstitutionId = (int) session('active_institution_id', 0);
+        $activeInstitution = $activeInstitutionId > 0
+            ? \App\Models\Users\Institution::query()->find($activeInstitutionId)
+            : null;
+        $isUniversity = (bool) ($activeInstitution?->is_universidad ?? false);
+        // Fallback por compatibilidad con datos antiguos/sesión.
+        if (! $isUniversity) {
+            $isUniversity = (session('active_institution_name') == $universityName);
+        }
 
         // --- 2. ROLES ---
         $isMaster       = $user->hasActiveRole('master');

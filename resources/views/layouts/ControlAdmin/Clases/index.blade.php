@@ -243,22 +243,22 @@
                             </select>
                         </div>
                         <div class="clases-filtro-grupo">
-                            <label for="materia_id">Materia:</label>
-                            <select name="materia_id" id="materia_id" class="form-control clases-filtro-select {{ !$materiaId ? 'materia-placeholder' : '' }}" {{ !$carreraId ? 'disabled' : '' }}>
-                                <option value="">Seleccione el nombre de la materia</option>
-                                @foreach($materias as $materia)
-                                    <option value="{{ $materia->id }}" data-semestre="{{ $materia->semestre }}" {{ $materiaId == $materia->id ? 'selected' : '' }}>{{ $materia->nombre }}</option>
+                            <label for="semestre_id">Semestre:</label>
+                            <select name="semestre" id="semestre_id" class="form-control clases-filtro-select {{ !$semestre ? 'semestre-placeholder' : '' }}">
+                                <option value="">Seleccione el número del semestre</option>
+                                @foreach($semestresCarrera ?? [1,2,3,4,5,6,7,8] as $s)
+                                    <option value="{{ $s }}" {{ (string)$semestre === (string)$s ? 'selected' : '' }}>{{ $s }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
                     <div class="clases-filtros-grid__col clases-filtros-grid__col--der">
                         <div class="clases-filtro-grupo">
-                            <label for="semestre_id">Semestre:</label>
-                            <select name="semestre" id="semestre_id" class="form-control clases-filtro-select {{ !$semestre ? 'semestre-placeholder' : '' }}" {{ !$materiaId ? 'disabled' : '' }}>
-                                <option value="">Seleccione el número del semestre</option>
-                                @foreach($semestresCarrera ?? [1,2,3,4,5,6,7,8] as $s)
-                                    <option value="{{ $s }}" {{ (string)$semestre === (string)$s ? 'selected' : '' }}>{{ $s }}</option>
+                            <label for="materia_id">Materia:</label>
+                            <select name="materia_id" id="materia_id" class="form-control clases-filtro-select {{ !$materiaId ? 'materia-placeholder' : '' }}" {{ !$carreraId ? 'disabled' : '' }}>
+                                <option value="">Seleccione el nombre de la materia</option>
+                                @foreach($materias as $materia)
+                                    <option value="{{ $materia->id }}" data-semestre="{{ $materia->semestre }}" {{ $materiaId == $materia->id ? 'selected' : '' }}>{{ $materia->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -472,7 +472,7 @@
                     if (docSemestre) {
                         currentSemestre.className = docSemestre.className;
                     }
-                    currentSemestre.disabled = !currentMateria || !currentMateria.value;
+                    currentSemestre.disabled = false;
                     currentSemestre.classList.toggle('semestre-placeholder', currentSemestre.value === '');
                 }
                 var docClase = doc.getElementById('clase_id');
@@ -505,7 +505,7 @@
         var materia = document.getElementById('materia_id');
         if (materia) { materia.value = ''; materia.disabled = true; }
         var semestre = document.getElementById('semestre_id');
-        if (semestre) { semestre.value = ''; semestre.disabled = true; }
+        if (semestre) { semestre.value = ''; semestre.disabled = false; }
         var clase = document.getElementById('clase_id');
         if (clase) { clase.value = ''; clase.disabled = true; }
         refrescarSoloTablaClases();

@@ -41,7 +41,15 @@ class AjustesController extends Controller
 
         
         $universityName = 'Universidad Mundo Imperial';
-        $isUniversity = (session('active_institution_name') === $universityName);
+        $activeInstitutionId = (int) session('active_institution_id', 0);
+        $activeInstitution = $activeInstitutionId > 0
+            ? Institution::find($activeInstitutionId)
+            : null;
+        $isUniversity = (bool) ($activeInstitution?->is_universidad ?? false);
+        // Fallback por compatibilidad con registros/sesiones antiguos.
+        if (! $isUniversity) {
+            $isUniversity = (session('active_institution_name') === $universityName);
+        }
 
         
 
@@ -219,8 +227,8 @@ class AjustesController extends Controller
              
            
             $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
-            $rfcMax = $tipoCreacion === 'alumno' ? 18 : 13;
-            $rfcMin = $tipoCreacion === 'alumno' ? 12 : 10;
+            $rfcMax = 18;
+            $rfcMin = 12;
 
             $validatedData = $request->validate([
                 'nombre' => 'required|string|max:255',
@@ -231,18 +239,12 @@ class AjustesController extends Controller
                     'string',
                     'min:'.$rfcMin,
                     'max:'.$rfcMax,
-                    function ($attribute, $value, $fail) use ($tipoCreacion) {
+                    function ($attribute, $value, $fail) {
                         $v = strtoupper(trim((string) $value));
                         $isCurp = (bool) preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $v);
                         $isRfc = (bool) preg_match('/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/', $v);
-                        if ($tipoCreacion === 'alumno') {
-                            if (! $isCurp && ! $isRfc) {
-                                $fail('Para alumno, capture una CURP válida (18) o RFC válido.');
-                            }
-                        } else {
-                            if (! $isRfc) {
-                                $fail('Capture un RFC válido (persona física/moral).');
-                            }
+                        if (! $isCurp && ! $isRfc) {
+                            $fail('Capture un RFC o CURP válido.');
                         }
                     },
                 ],
@@ -354,7 +356,7 @@ class AjustesController extends Controller
                     'apellido_paterno' => $validatedData['apellido_paterno'],
                     'apellido_materno' => $validatedData['apellido_materno'],
                     'RFC' => $u,
-                    'curp' => ($tipoCreacion === 'alumno' && strlen($u) === 18) ? $u : null,
+                    'curp' => preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $u) ? $u : null,
                     'email' => null,
                     'password' => Hash::make($request->password),
                     'department_id' => $validatedData['department_id'],
@@ -499,8 +501,8 @@ public function update(Request $request, $seccion, $id)
 
                 // 2. Validación Principal (QUITAMOS PASSWORD DE AQUÍ)
                 $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
-                $rfcMax = $tipoCreacion === 'alumno' ? 18 : 13;
-                $rfcMin = $tipoCreacion === 'alumno' ? 12 : 10;
+                $rfcMax = 18;
+                $rfcMin = 12;
 
                 $validatedData = $request->validate([
                     'nombre' => 'required|string|max:255',
@@ -511,18 +513,12 @@ public function update(Request $request, $seccion, $id)
                         'string',
                         'min:'.$rfcMin,
                         'max:'.$rfcMax,
-                        function ($attribute, $value, $fail) use ($tipoCreacion) {
+                        function ($attribute, $value, $fail) {
                             $v = strtoupper(trim((string) $value));
                             $isCurp = (bool) preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $v);
                             $isRfc = (bool) preg_match('/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/', $v);
-                            if ($tipoCreacion === 'alumno') {
-                                if (! $isCurp && ! $isRfc) {
-                                    $fail('Para alumno, capture una CURP válida (18) o RFC válido.');
-                                }
-                            } else {
-                                if (! $isRfc) {
-                                    $fail('Capture un RFC válido (persona física/moral).');
-                                }
+                            if (! $isCurp && ! $isRfc) {
+                                $fail('Capture un RFC o CURP válido.');
                             }
                         },
                     ],
@@ -548,11 +544,7 @@ public function update(Request $request, $seccion, $id)
                     ]);
                 }
 
-                if ($tipoCreacion === 'alumno' && strlen($u) === 18) {
-                    $validatedData['curp'] = $u;
-                } elseif ($tipoCreacion !== 'alumno') {
-                    $validatedData['curp'] = null;
-                }
+                $validatedData['curp'] = preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $u) ? $u : null;
 
                 // 3. Validación de Contraseña (AQUÍ SÍ VA)
                 if (!empty($request->password)) {
@@ -815,7 +807,10 @@ public function update(Request $request, $seccion, $id)
         $data['activeInstitutionName'] = $activeInstitution ? $activeInstitution->name : null;
         
         
-        $data['isActiveInstitutionUniversity'] = ($data['activeInstitutionName'] === $data['universityName']);
+        $data['isActiveInstitutionUniversity'] = (bool) ($activeInstitution?->is_universidad ?? false);
+        if (! $data['isActiveInstitutionUniversity']) {
+            $data['isActiveInstitutionUniversity'] = ($data['activeInstitutionName'] === $data['universityName']);
+        }
 
         if ($id) {
             $item = $this->findItem($seccion, $id);
