@@ -225,6 +225,7 @@ class AjustesController extends Controller
 
             case 'users':
              
+            $this->resolveCorporateCatalogIdsFromApiNames($request);
            
             $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
             $rfcMax = 18;
@@ -499,6 +500,8 @@ public function update(Request $request, $seccion, $id)
                 $item = $this->findItem($seccion, $id);
                 if (!$item) return back()->with('error', 'Registro no encontrado.');
 
+                $this->resolveCorporateCatalogIdsFromApiNames($request);
+
                 // 2. Validación Principal (QUITAMOS PASSWORD DE AQUÍ)
                 $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
                 $rfcMax = 18;
@@ -737,6 +740,54 @@ public function update(Request $request, $seccion, $id)
                 break;
         }
         return $query;
+    }
+
+    private function resolveCorporateCatalogIdsFromApiNames(Request $request): void
+    {
+        $institutionId = (int) ($request->input('institution_id') ?: session('active_institution_id'));
+        if ($institutionId <= 0) {
+            return;
+        }
+
+        $departmentId = $request->input('department_id');
+        $workstationId = $request->input('workstation_id');
+        $departmentApiName = trim((string) $request->input('department_api_name', ''));
+        $workstationApiName = trim((string) $request->input('workstation_api_name', ''));
+
+        if (empty($departmentId) && $departmentApiName !== '') {
+            $department = Department::query()
+                ->where('institution_id', $institutionId)
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($departmentApiName, 'UTF-8')])
+                ->first();
+
+            if (! $department) {
+                $department = Department::create([
+                    'name' => $departmentApiName,
+                    'institution_id' => $institutionId,
+                ]);
+            }
+
+            $departmentId = (string) $department->id;
+            $request->merge(['department_id' => $departmentId]);
+        }
+
+        if (empty($workstationId) && ! empty($departmentId) && $workstationApiName !== '') {
+            $workstation = Workstation::query()
+                ->where('institution_id', $institutionId)
+                ->where('department_id', (int) $departmentId)
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($workstationApiName, 'UTF-8')])
+                ->first();
+
+            if (! $workstation) {
+                $workstation = Workstation::create([
+                    'name' => $workstationApiName,
+                    'department_id' => (int) $departmentId,
+                    'institution_id' => $institutionId,
+                ]);
+            }
+
+            $request->merge(['workstation_id' => (string) $workstation->id]);
+        }
     }
 
     /**
