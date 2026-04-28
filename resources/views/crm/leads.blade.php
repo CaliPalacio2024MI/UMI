@@ -51,6 +51,12 @@
             <!-- CUERPO -->
             <div class="leads-body">
                 <div class="cuerpo-tabla">
+                @php
+                    $role = session('active_role_name');
+
+                    $canAssignCTP = in_array($role, ['master', 'coordinador_ctp', 'control_administrativo']);
+                    $canDeleteLead = in_array($role, ['master', 'coordinador_ctp', 'control_administrativo']);
+                @endphp
                     @forelse($leads ?? [] as $lead)
                         <div class="fila-lead"
                             data-id="{{ $lead->id }}"
@@ -87,7 +93,7 @@
                                 <button class="btn btn-icon btn-flecha">
                                     <img src="{{ asset('images/icons/flecha.svg') }}" class="icon">
                                 </button>
-                                @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+                                @if($canAssignCTP)
                                     <button 
                                         class="btn btn-icon btn-asignar-ctp"
                                         data-lead="{{ $lead->id }}"
@@ -97,7 +103,7 @@
                                     </button>
                                 @endif
 
-                                @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+                                @if($canDeleteLead)
                                     <button class="btn btn-icon btn-eliminar" data-id="{{ $lead->id }}">
                                         <img src="{{ asset('images/icons/delete.svg') }}" class="icon">
                                     </button>
@@ -158,7 +164,7 @@
     <p class="modal-asignado-label">Asignado a:</p>
     <p id="modal-ctp-nombre" class="modal-asignado-nombre"></p>
 
-    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp']))
+    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp', 'control_administrativo']))
     <div id="historial-ultimo" class="historial-ultimo-wrapper d-none">
         <span class="historial-ultimo-label">Última reasignación:</span>
         <p id="modal-comentario-actual" class="modal-comentario-actual"></p>
@@ -309,7 +315,7 @@ function puedeEditarSeguimiento() {
     if (!filaActiva) return false;
 
     // Master y coordinador pueden editar cualquier lead
-    if (['master', 'coordinador_ctp'].includes(window.ROLE_ACTIVO)) return true;
+    if (['master', 'coordinador_ctp', 'control_administrativo'].includes(window.ROLE_ACTIVO)) return true;
 
     // CTP solo puede editar sus leads asignados
     if (window.ROLE_ACTIVO === 'ctp') {
@@ -485,8 +491,13 @@ document.querySelectorAll('.btn-asignar-ctp').forEach(btn => {
         const tieneCTP    = fila?.getAttribute('data-tiene-ctp') === '1';
         const ctpActualId = fila?.getAttribute('data-ctp');
         document.querySelectorAll('#ctp-select option').forEach(opt => {
-            opt.style.display = (opt.value && opt.value === ctpActualId) ? 'none' : '';
-        });
+    opt.style.display = '';
+});
+
+if (ctpActualId) {
+    const actual = document.querySelector(`#ctp-select option[value="${ctpActualId}"]`);
+    if (actual) actual.style.display = 'none';
+}
         let nombreActual = '---';
         if (tieneCTP) {
             const opcion = document.querySelector(`#ctp-select option[value="${fila.dataset.ctp}"]`);

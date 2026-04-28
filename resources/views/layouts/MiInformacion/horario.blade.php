@@ -4,7 +4,7 @@
 
 {{-- Inyectamos el CSS --}}
 @push('styles')
-    @vite(['resources/css/MiInformacion/horario.css'])
+    @vite(['resources/css/Mi_Informacion/horario.css'])
 @endpush
 
 @section('content')

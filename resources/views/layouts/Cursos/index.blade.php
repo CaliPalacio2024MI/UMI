@@ -2,7 +2,7 @@
 
 @section('title', 'Cursos - ' . session('active_institution_name'))
 
-@vite(['resources/css/courses.css', 'resources/js/app.js'])
+@vite(['resources/css/Cursos/courses.css', 'resources/js/app.js'])
 
 @section('content')
 <div class="courses-wrapper">

@@ -294,21 +294,21 @@
             </li>
 
             {{-- Prospectos: solo Master y Coordinador --}}
-            @if($isMaster || $isCoordinatorCTP)
+            @if($isMaster || $isCoordinatorCTP || $isControlAdmin)
                 <li class="{{ request()->routeIs('crm.prospectos') ? 'active-submenu' : '' }}">
                     <a href="{{ route('crm.prospectos') }}">Prospectos</a>
                 </li>
             @endif
 
             {{-- Comisiones: Master y Coordinador --}}
-            @if($isMaster || $isCoordinatorCTP)
+            @if($isMaster || $isCoordinatorCTP || $isControlAdmin)
                 <li class="{{ request()->routeIs('crm.comisiones') ? 'active-submenu' : '' }}">
                     <a href="{{ route('crm.comisiones') }}">Comisiones</a>
                 </li>
             @endif
 
             {{-- Estadísticas: Master, Coordinador y CTP --}}
-                @if($isMaster || $isCoordinatorCTP || $isCTP)
+                @if($isMaster || $isCoordinatorCTP || $isCTP || $isControlAdmin)
                     <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
                         <a href="{{ route('crm.estadisticas') }}">Estadísticas</a>
                     </li>
