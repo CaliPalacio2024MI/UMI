@@ -105,6 +105,18 @@
                     @endforeach
                 </select>
             </div>
+            <div id="nombre-wrapper-api-select" style="{{ ! $isUniversity ? '' : 'display: none;' }}">
+                <input type="hidden"
+                       id="nombre_api_submit"
+                       value="{{ $nombreValor }}"
+                       @if (! $isUniversity) name="nombre" required @else disabled @endif>
+                <select class="form-control"
+                        id="nombre_api_select"
+                        style="width: 100%;"
+                        @if (! $isUniversity) required @endif>
+                    <option value="" selected disabled>Seleccione el nombre</option>
+                </select>
+            </div>
         </div>
     </div>
     @error('nombre')
@@ -153,6 +165,7 @@
     <style>
         #modalBody #apellido_paterno.form-control,
         #modalBody #apellido_materno.form-control,
+        #modalBody #nombre_api_select.form-control,
         #modalBody #RFC.form-control,
         #modalBody #password.form-control {
             border: none;
@@ -163,6 +176,7 @@
         }
         #modalBody #apellido_paterno.form-control:focus,
         #modalBody #apellido_materno.form-control:focus,
+        #modalBody #nombre_api_select.form-control:focus,
         #modalBody #RFC.form-control:focus,
         #modalBody #password.form-control:focus {
             border: none;
@@ -642,6 +656,9 @@ setTimeout(function() {
     const nombreText = document.getElementById('nombre_text');
     const nombreSelect = document.getElementById('nombre_select');
     const nombreAlumnoHidden = document.getElementById('nombre_alumno_submit');
+    const nombreWrapperApiSelect = document.getElementById('nombre-wrapper-api-select');
+    const nombreApiSelect = document.getElementById('nombre_api_select');
+    const nombreApiHidden = document.getElementById('nombre_api_submit');
     const rfcInput = document.getElementById('RFC');
     const rfcLabel = document.getElementById('rfc_field_label');
     const apellidoPaternoInput = document.getElementById('apellido_paterno');
@@ -682,12 +699,204 @@ setTimeout(function() {
         }
     }
 
+    function applyAnfitrionFromApiSelect() {
+        if (!nombreApiSelect || !nombreApiHidden) return;
+        const opt = nombreApiSelect.options[nombreApiSelect.selectedIndex];
+        if (!opt || !opt.value) return;
+        const nombre = (opt.dataset.nombre || opt.textContent || '').trim();
+        if (nombre) nombreApiHidden.value = nombre;
+        if (apellidoPaternoInput) apellidoPaternoInput.value = (opt.dataset.paterno || '').trim();
+        if (apellidoMaternoInput) apellidoMaternoInput.value = (opt.dataset.materno || '').trim();
+        if (rfcInput && opt.dataset.rfc) {
+            rfcInput.value = (opt.dataset.rfc || '').toUpperCase();
+        }
+    }
+
+    function keywordForInstitution(instName) {
+        const x = (instName || '').toLowerCase();
+        if (x.includes('palacio')) return 'palacio';
+        if (x.includes('princess')) return 'princess';
+        if (x.includes('pierre')) return 'pierre';
+        if (x.includes('forum')) return 'forum';
+        if (x.includes('arena')) return 'arena';
+        if (x.includes('mundo imperial')) return 'mundo imperial';
+        return '';
+    }
+
+    function extractAnfitrionesList(data) {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.anfitriones)) return data.anfitriones;
+        if (Array.isArray(data?.usuarios)) return data.usuarios;
+        if (Array.isArray(data?.empleados)) return data.empleados;
+        if (Array.isArray(data?.trabajadores)) return data.trabajadores;
+        if (Array.isArray(data?.items)) return data.items;
+        if (Array.isArray(data?.results)) return data.results;
+        if (Array.isArray(data?.data?.anfitriones)) return data.data.anfitriones;
+        if (Array.isArray(data?.data?.usuarios)) return data.data.usuarios;
+        if (Array.isArray(data?.data?.empleados)) return data.data.empleados;
+        if (Array.isArray(data?.data?.trabajadores)) return data.data.trabajadores;
+        if (Array.isArray(data?.data?.items)) return data.data.items;
+        if (Array.isArray(data?.data)) return data.data;
+        return [];
+    }
+
+    async function loadAnfitrionesForBusinessUnit() {
+        if (!nombreApiSelect) return;
+        if (activeInstitutionName === universityName) return;
+        try {
+            nombreApiSelect.innerHTML = '<option value="" selected disabled>Cargando nombres...</option>';
+            const propsRes = await fetch('/external-data?endpoint=/api/external/propiedades', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            });
+            if (!propsRes.ok) throw new Error('Propiedades HTTP ' + propsRes.status);
+            const propsData = await propsRes.json();
+            const props = Array.isArray(propsData) ? propsData : (propsData?.propiedades ?? propsData?.data ?? []);
+            if (!Array.isArray(props) || props.length === 0) throw new Error('Sin propiedades');
+
+            const key = keywordForInstitution(activeInstitutionName);
+            let prop = null;
+            if (key) {
+                prop = props.find(p => {
+                    const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
+                    return n.includes(key);
+                }) || null;
+            }
+            if (!prop) prop = props[0];
+
+            const getPropId = (p) => p?.id ?? p?.id_propiedad ?? p?.property_id ?? p?.propiedad_id ?? null;
+            const propIdsToTry = [];
+            const firstPropId = getPropId(prop);
+            if (firstPropId) propIdsToTry.push(String(firstPropId));
+            props.forEach((p) => {
+                const id = getPropId(p);
+                if (id && !propIdsToTry.includes(String(id))) propIdsToTry.push(String(id));
+            });
+            if (propIdsToTry.length === 0) throw new Error('Sin property id');
+
+            let list = [];
+            let lastErr = null;
+            for (const propId of propIdsToTry) {
+                const endpoints = [
+                    '/api/external/propiedades/' + propId + '/anfitriones',
+                    '/api/external/propiedades/' + propId + '/usuarios',
+                    '/api/external/propiedades/' + propId + '/empleados',
+                    '/api/external/anfitriones?propiedad_id=' + propId,
+                    '/api/external/usuarios?propiedad_id=' + propId,
+                ];
+                for (const ep of endpoints) {
+                    try {
+                        const res = await fetch('/external-data?endpoint=' + ep, {
+                            method: 'GET',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+                        if (!res.ok) {
+                            lastErr = new Error(ep + ' HTTP ' + res.status);
+                            continue;
+                        }
+                        const raw = await res.json();
+                        const extracted = extractAnfitrionesList(raw);
+                        if (Array.isArray(extracted) && extracted.length > 0) {
+                            list = extracted;
+                            break;
+                        }
+                        lastErr = new Error(ep + ' sin datos');
+                    } catch (err) {
+                        lastErr = err;
+                    }
+                }
+                if (list.length > 0) break;
+            }
+            if (!Array.isArray(list) || list.length === 0) throw (lastErr || new Error('Sin anfitriones'));
+
+            nombreApiSelect.innerHTML = '<option value="" selected disabled>Seleccione el nombre</option>';
+            list.forEach((a, i) => {
+                const rfc = (
+                    a?.RFC ??
+                    a?.rfc ??
+                    a?.Rfc ??
+                    a?.curp ??
+                    ''
+                ).toString().trim().toUpperCase();
+                const nombreDirecto = (
+                    a?.Nombre ??
+                    a?.nombre ??
+                    a?.name ??
+                    a?.nombre_completo ??
+                    a?.full_name ??
+                    ''
+                ).toString().trim();
+                const paterno = (
+                    a?.ApellidoPaterno ??
+                    a?.apellido_paterno ??
+                    a?.primer_apellido ??
+                    a?.paterno ??
+                    ''
+                ).toString().trim();
+                const materno = (
+                    a?.ApellidoMaterno ??
+                    a?.apellido_materno ??
+                    a?.segundo_apellido ??
+                    a?.materno ??
+                    ''
+                ).toString().trim();
+                const nombre = nombreDirecto || [
+                    a?.Nombre,
+                    a?.nombre,
+                    a?.primer_nombre,
+                    a?.first_name,
+                    paterno,
+                    materno
+                ].filter(Boolean).join(' ').trim();
+                // Contrato de integración: solo opciones con RFC y Nombre válidos.
+                if (!nombre || !rfc) return;
+                const opt = document.createElement('option');
+                opt.value = String(a?.id ?? i + 1);
+                opt.textContent = nombre;
+                opt.dataset.nombre = nombre;
+                opt.dataset.rfc = rfc;
+                opt.dataset.paterno = paterno;
+                opt.dataset.materno = materno;
+                nombreApiSelect.appendChild(opt);
+            });
+            if (nombreApiSelect.options.length <= 1) {
+                throw new Error('API sin anfitriones válidos (requiere RFC y Nombre)');
+            }
+        } catch (e) {
+            console.error('No se pudieron cargar nombres desde API:', e);
+            nombreApiSelect.innerHTML = '<option value="" selected disabled>No se pudieron cargar nombres</option>';
+        }
+    }
+
     function updateNombreFieldMode() {
         if (!tipoHidden || !nombreText || !nombreSelect || !nombreWrapperText || !nombreWrapperSelect) return;
+        if (activeInstitutionName !== universityName) {
+            nombreWrapperText.style.display = 'none';
+            nombreWrapperSelect.style.display = 'none';
+            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = '';
+            nombreText.removeAttribute('name');
+            nombreText.removeAttribute('required');
+            nombreSelect.removeAttribute('name');
+            nombreSelect.removeAttribute('required');
+            if (nombreAlumnoHidden) {
+                nombreAlumnoHidden.removeAttribute('name');
+                nombreAlumnoHidden.removeAttribute('required');
+                nombreAlumnoHidden.setAttribute('disabled', 'disabled');
+            }
+            if (nombreApiHidden) {
+                nombreApiHidden.removeAttribute('disabled');
+                nombreApiHidden.setAttribute('name', 'nombre');
+                nombreApiHidden.setAttribute('required', 'required');
+            }
+            return;
+        }
         const esAlumno = tipoHidden.value === 'alumno';
         if (esAlumno) {
             nombreWrapperText.style.display = 'none';
             nombreWrapperSelect.style.display = '';
+            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = 'none';
             nombreText.removeAttribute('name');
             nombreText.removeAttribute('required');
             nombreSelect.removeAttribute('name');
@@ -705,6 +914,7 @@ setTimeout(function() {
         } else {
             nombreWrapperSelect.style.display = 'none';
             nombreWrapperText.style.display = '';
+            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = 'none';
             nombreSelect.removeAttribute('name');
             nombreSelect.removeAttribute('required');
             nombreText.setAttribute('name', 'nombre');
@@ -841,6 +1051,11 @@ setTimeout(function() {
             aplicarDatosAspiranteDesdeSelect();
         });
     }
+    if (nombreApiSelect) {
+        nombreApiSelect.addEventListener('change', function () {
+            applyAnfitrionFromApiSelect();
+        });
+    }
 
     updateRolesDropdown();
 
@@ -848,6 +1063,7 @@ setTimeout(function() {
         applyAlumnoRole();
     }
 
+    loadAnfitrionesForBusinessUnit();
     updateNombreFieldMode();
 
     updateWorkstationDropdown();
