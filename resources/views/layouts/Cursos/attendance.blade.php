@@ -45,13 +45,6 @@
         @endif
     </div>
 
-    {{-- Botón Gestionar Períodos --}}
-    <div style="margin-bottom: 20px;">
-        <a href="{{ route('courses.periods.index', $course) }}" style="background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
-            📅 Gestionar Períodos
-        </a>
-    </div>
-
     {{-- Filtros y exportación --}}
     <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-bottom: 20px;">
         {{-- Buscador por nombre --}}

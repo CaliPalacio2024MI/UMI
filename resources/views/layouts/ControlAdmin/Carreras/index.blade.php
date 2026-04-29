@@ -6,40 +6,46 @@
 
 @section('content')
 <div class ="container">
+    @if(session('error'))
+        <div class="alert alert-danger" style="margin-bottom: 1rem; padding: 10px 16px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; color: #721c24;">{{ session('error') }}</div>
+    @endif
     <!-- Header -->
     <div class ="content-header">
         <div class="content-title">
-            <h1>Carreras</h1>
+            <h3>Carreras</h3>
         </div>
         <div class="option-carrer">
             @if(Auth::user()->hasAnyRole(['master']))
-                <button button type="button" id="openCreateCareerBtn">Agregar Carrera</button>
+                <button type="button" id="openCreateClasificacionBtn">+ Agregar clasificación</button>
+                <button type="button" id="openCreateCareerBtn">+ Agregar carrera</button>
             @endif
         </div>
         @include('layouts.ControlAdmin.Carreras.create')
+        @include('layouts.ControlAdmin.Carreras.classification_modal')
     </div>
     <!-- Grid de Carreras -->
     <div class="carrers-container">
         @forelse ($careers as $carrera)
-            <div class="carrer-card">
+            <div class="carrer-card" data-reticula-url="{{ route('control.careers.reticula', $carrera->id) }}" role="button" tabindex="0">
                 <div class="carrer-name">
-                    <a href="#"><h3 class="carrer-title">{{ $carrera->name }}</h3></a>
+                    <a href="{{ route('control.careers.reticula', $carrera->id) }}" class="carrer-card-link"><h3 class="carrer-title">{{ $carrera->name }}</h3></a>
                 </div>
                 <div class="line-separator"></div>
                 <div class="carrer-card-options">
                     <div class="carrer-info">
                         <span>RVOE: Acuerdo número:</span>
-                        <span>{{ $carrera->official_id }}</span>
+                        <span>{{ str_replace('-', '/', $carrera->official_id) }}</span>
                     </div>
                     <div class="carrer-btn-section">
-                        {{-- Mostrar Información --}}
-                        <button class="btn-edit">
+                        {{-- Visualizar carrera --}}
+                        <button type="button" class="btn-view" data-view-career-id="{{ $carrera->id }}" title="Ver información">
                             <svg width="20" height="20" viewBox="0 0 29 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M14.4987 0.625C10.4307 0.625 7.17322 2.49375 4.80187 4.71797C2.44562 6.92188 0.869748 9.5625 0.124609 11.3754C-0.0415365 11.7766 -0.0415365 12.2234 0.124609 12.6246C0.869748 14.4375 2.44562 17.0781 4.80187 19.282C7.17322 21.5063 10.4307 23.375 14.4987 23.375C18.5668 23.375 21.8243 21.5063 24.1956 19.282C26.5519 17.073 28.1277 14.4375 28.8779 12.6246C29.0441 12.2234 29.0441 11.7766 28.8779 11.3754C28.1277 9.5625 26.5519 6.92188 24.1956 4.71797C21.8243 2.49375 18.5668 0.625 14.4987 0.625ZM7.24874 12C7.24874 10.0606 8.01258 8.20064 9.37222 6.82928C10.7319 5.45792 12.5759 4.6875 14.4987 4.6875C16.4216 4.6875 18.2656 5.45792 19.6253 6.82928C20.9849 8.20064 21.7487 10.0606 21.7487 12C21.7487 13.9394 20.9849 15.7994 19.6253 17.1707C18.2656 18.5421 16.4216 19.3125 14.4987 19.3125C12.5759 19.3125 10.7319 18.5421 9.37222 17.1707C8.01258 15.7994 7.24874 13.9394 7.24874 12ZM14.4987 8.75C14.4987 10.5426 13.0538 12 11.2765 12C10.9191 12 10.5767 11.9391 10.2545 11.8324C9.97756 11.741 9.65534 11.9137 9.66541 12.2082C9.68051 12.5586 9.73086 12.909 9.82652 13.2594C10.5163 15.8594 13.1696 17.4031 15.7474 16.7074C18.3251 16.0117 19.8557 13.3355 19.1659 10.7355C18.6071 8.62813 16.7593 7.21133 14.7052 7.125C14.4132 7.11484 14.242 7.43477 14.3326 7.71914C14.4383 8.04414 14.4987 8.38945 14.4987 8.75Z"
                                     fill="#BC8A55" />
                             </svg>
                         </button>
+                        @include('layouts.ControlAdmin.Carreras.show', ['career' => $carrera])
                         {{-- Editar Carrera --}}
                         @if(Auth::user()->hasAnyRole(['master']))
                             <button type="button" id="openEditModalBtn_{{ $carrera->id }}" class="btn-edit" data-career-id="{{ $carrera->id }}">
@@ -67,18 +73,145 @@
                 </div>
             </div>
         @empty
-            <div class="empty-carrers">
-                <div class="emty-text">
-                    <h2>Sin registro de carreras</h2>
-                    <h3>Intentelo mas tarde</h3>
-                </div>
-            </div>
+            <p class="carrers-empty" role="status">No hay carrera.</p>
         @endforelse
     </div>
 </div>
+
+{{-- Modal careerSuccessModal: layouts/components/career-success-modal.blade.php (app.blade.php) --}}
+
 {{-- Script JS para abrir/cerrar (el mismo de antes) --}}
 @push('scripts')
     <script>
+        function careerRenderMonthlyPriceInputs(form) {
+            if (!form) return;
+            var sem = form.querySelector('.js-career-semestres');
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var container = form.querySelector('.js-career-months-fields');
+            if (!sem || !mode || !container) return;
+
+            var totalMonths = parseInt(sem.value, 10) || 1;
+            totalMonths = Math.max(1, totalMonths);
+            var oldData = {};
+            try {
+                oldData = JSON.parse(container.getAttribute('data-old-monthly') || '{}') || {};
+            } catch (e) {
+                oldData = {};
+            }
+            var previousValues = {};
+            container.querySelectorAll('input.js-career-month-price').forEach(function(input) {
+                var month = input.getAttribute('data-month');
+                if (month) previousValues[month] = input.value;
+            });
+            container.innerHTML = '';
+            for (var month = 1; month <= totalMonths; month++) {
+                var row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.gap = '8px';
+                row.style.marginBottom = '6px';
+
+                var label = document.createElement('label');
+                label.textContent = 'Mes ' + month + ':';
+                label.style.minWidth = '60px';
+
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.step = '0.01';
+                input.min = '0';
+                input.placeholder = '0.00';
+                input.name = 'monthly_prices[' + month + ']';
+                input.setAttribute('data-month', String(month));
+                input.className = 'js-career-month-price';
+                input.style.width = '100%';
+                input.value = previousValues[String(month)] || oldData[String(month)] || '';
+
+                row.appendChild(label);
+                row.appendChild(input);
+                container.appendChild(row);
+            }
+            container.setAttribute('data-old-monthly', '{}');
+        }
+
+        function careerTogglePricingSections(form) {
+            if (!form) return;
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var uniformWrap = form.querySelector('.js-career-uniform-wrap');
+            var monthsWrap = form.querySelector('.js-career-months-wrap');
+            if (!mode || !uniformWrap || !monthsWrap) return;
+            var perMonth = mode.value === 'per_month';
+            uniformWrap.style.display = perMonth ? 'none' : '';
+            monthsWrap.style.display = perMonth ? '' : 'none';
+            if (perMonth) careerRenderMonthlyPriceInputs(form);
+        }
+
+        function careerUpdateCargoMonetario(form) {
+            if (!form) return;
+            var monto = form.querySelector('.js-career-monto');
+            var sem = form.querySelector('.js-career-semestres');
+            var mode = form.querySelector('.js-career-pricing-mode');
+            var pct = form.querySelector('.js-career-porcentaje');
+            var out = form.querySelector('.js-career-cargo-out');
+            if (!sem || !out) return;
+            var s = parseInt(sem.value, 10) || 0;
+            var p = pct ? parseFloat(pct.value) : 0;
+            p = isNaN(p) || p < 0 ? 0 : p;
+            if (mode && mode.value === 'per_month') {
+                var total = 0;
+                var hasValue = false;
+                form.querySelectorAll('.js-career-month-price').forEach(function(input) {
+                    var n = parseFloat(input.value);
+                    if (!isNaN(n) && n >= 0) {
+                        total += n;
+                        hasValue = true;
+                    }
+                });
+                out.value = (hasValue && s > 0) ? (total * (p / 100)).toFixed(2) : '';
+                return;
+            }
+            if (!monto) return;
+            var m = parseFloat(monto.value);
+            out.value = (isNaN(m) || s < 1) ? '' : ((m * s) * (p / 100)).toFixed(2);
+        }
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-monto')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+            if (e.target.classList && e.target.classList.contains('js-career-porcentaje')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+        });
+        document.addEventListener('change', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-semestres')) {
+                careerRenderMonthlyPriceInputs(e.target.closest('form'));
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+            if (e.target.classList && e.target.classList.contains('js-career-pricing-mode')) {
+                var form = e.target.closest('form');
+                careerTogglePricingSections(form);
+                careerUpdateCargoMonetario(form);
+            }
+        });
+        document.addEventListener('input', function(e) {
+            if (e.target.classList && e.target.classList.contains('js-career-month-price')) {
+                careerUpdateCargoMonetario(e.target.closest('form'));
+            }
+        });
+
+        function careerInitPricingForms() {
+            document.querySelectorAll('form .js-career-monto').forEach(function(el) {
+                var form = el.closest('form');
+                careerTogglePricingSections(form);
+                careerUpdateCargoMonetario(form);
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', careerInitPricingForms);
+        } else {
+            careerInitPricingForms();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             
             // --- 1. LÓGICA DEL MODAL DE CREACIÓN (Singular) ---
@@ -103,22 +236,39 @@
             if (createModal && hasCreateErrors) {
                  createModal.style.display = 'flex'; 
             }
+
+            const classificationModal = document.getElementById('createClassificationModal');
+            const hasClassificationErrors = @json($errors->has('classification_name'));
+            if (classificationModal && hasClassificationErrors) {
+                classificationModal.style.display = 'flex';
+            }
             
             // ----------------------------------------------------
             
-            // --- 2. LÓGICA DEL MODAL DE EDICIÓN (Múltiple) ---
-            
-            // Selector de clase para TODOS los botones de edición
-            const openEditButtons = document.querySelectorAll('.btn-edit');
+            // --- 2. LÓGICA MODAL VISUALIZAR (Ver información) ---
+            document.querySelectorAll('.btn-view[data-view-career-id]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-view-career-id');
+                    const modal = document.getElementById('viewCareerModal_' + id);
+                    if (modal) modal.style.display = 'flex';
+                });
+            });
 
-            openEditButtons.forEach(button => {
+            // --- Clic en tarjeta: ir a Reticula escolar (no si se hace clic en botones) ---
+            document.querySelectorAll('.carrer-card[data-reticula-url]').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (e.target.closest('.carrer-btn-section') || e.target.closest('form')) return;
+                    const url = this.getAttribute('data-reticula-url');
+                    if (url) window.location.href = url;
+                });
+            });
+
+            // --- 3. LÓGICA DEL MODAL DE EDICIÓN (solo botones con data-career-id) ---
+            document.querySelectorAll('.btn-edit[data-career-id]').forEach(button => {
                 button.addEventListener('click', function() {
                     const careerId = this.getAttribute('data-career-id');
-                    // Abrir el modal específico de esta carrera usando el ID único
                     const modal = document.getElementById('editCareerModal_' + careerId);
-                    if (modal) {
-                        modal.style.display = 'flex';
-                    }
+                    if (modal) modal.style.display = 'flex';
                 });
             });
 
@@ -135,10 +285,10 @@
 
             // ----------------------------------------------------
             
-            // --- 3. LÓGICA UNIFICADA DE CIERRE (para todos los modales) ---
+            // --- 4. LÓGICA UNIFICADA DE CIERRE (para todos los modales) ---
             
-            // Cierre con el botón 'X' (.close-custom) o 'Cancelar' (.btn-secondary)
-            document.querySelectorAll('.close-custom, .btn-secondary').forEach(btn => {
+            // Cierre con el botón 'X' (.close-custom) o 'Cancelar' (.btn-secondary) o 'Cerrar'
+            document.querySelectorAll('.close-custom, .btn-secondary, .btn-close-view').forEach(btn => {
                 btn.addEventListener('click', function() {
                     // Buscar el contenedor de modal más cercano y cerrarlo
                     const modal = btn.closest('.modal-overlay');

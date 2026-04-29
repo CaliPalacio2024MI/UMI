@@ -5,6 +5,19 @@
     --primary: #1f3c88;
     --muted: #6b7280;
     --radius: 16px;
+/* ===== TÍTULO HORARIOS ===== */
+.horarios-title {
+    font-size: 1.5rem;
+    margin-left: 1.1rem;
+}
+
+/* ===== WRAPPER ===== */
+.courses-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #ECF0F1;
+    border-radius: 12px;
 }
 
 /* ================= WRAPPER ================= */
@@ -247,4 +260,147 @@
 /* ================= EXTRA ================= */
 .content-panel {
     display: none;
+}
+/* ===== VISTA PREVIA HORARIOS (días y horas visibles) ===== */
+.schedule-resume__title {
+    color: #6b7280;
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin: 0 0 10px 0;
+}
+
+.schedule-resume--cards {
+    padding: 0;
+    margin: 20px 0;
+    background: transparent;
+    box-shadow: none;
+    min-height: 24px;
+}
+
+.schedule-preview-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.schedule-preview-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background-color: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.schedule-preview-card__text {
+    color: #ACACAC !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    text-transform: capitalize !important;
+    flex: 1;
+}
+
+.schedule-preview-card__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #001f3f;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.schedule-preview-card__action:hover {
+    background-color: rgba(0, 31, 63, 0.08);
+}
+
+.schedule-preview-card__icon {
+    display: block;
+    pointer-events: none;
+}
+
+.schedule-preview-empty-table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    overflow: hidden;
+}
+
+.schedule-preview-empty-table th {
+    border: none;
+    background: transparent;
+    width: 100%;
+    max-width: 100%;
+}
+
+.schedule-preview-empty {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.schedule-preview-empty span {
+    display: block;
+    min-width: 0 !important;
+    max-width: 100%;
+    flex: 1 1 auto;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.schedule-preview-empty__icon {
+    /* Azul marino #001f3f para icono SVG cargado como img */
+    filter: brightness(0) saturate(100%) invert(12%) sepia(40%) saturate(4000%) hue-rotate(195deg);
+}
+
+/* ===== BOTONES DE DÍA (Lun, Mar, Mié...) - Selección y azul marino ===== */
+.day-selection-buttons {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 5px;
+    margin: 10px 0;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.day-selection-buttons button {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background-color: #e0e0e0;
+    color: #333;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    font-size: 0.9em;
+    min-width: 40px;
+    white-space: nowrap;
+}
+
+.day-selection-buttons button.selected {
+    background-color: #001f3f;
+    color: white;
+    border-color: #001f3f;
+}
+
+.day-selection-buttons button:hover:not(.selected) {
+    background-color: #d0d0d0;
+}
 }

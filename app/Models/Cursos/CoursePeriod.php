@@ -9,7 +9,6 @@ class CoursePeriod extends Model
 {
     protected $fillable = [
         'course_id',
-        'name',
         'start_date',
         'end_date',
         'is_active'
@@ -27,6 +26,15 @@ class CoursePeriod extends Model
     }
 
     /**
+     * Usuarios asignados a este período
+     */
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'course_user', 'period_id', 'user_id')
+                    ->wherePivot('course_id', $this->course_id);
+    }
+
+    /**
      * Verificar si el período está activo HOY
      */
     public function isCurrentlyActive()
@@ -38,21 +46,33 @@ class CoursePeriod extends Model
     }
 
     /**
-     * Scope para períodos activos
+     * Obtener estado del período
      */
-    public function scopeActive($query)
+    public function getStatusAttribute()
     {
-        return $query->where('is_active', true);
+        $today = Carbon::today();
+        
+        if ($today->lessThan($this->start_date)) {
+            return 'No iniciado';
+        } elseif ($today->greaterThan($this->end_date)) {
+            return 'Finalizado';
+        } else {
+            return 'Activo';
+        }
     }
 
     /**
-     * Scope para período actual (hoy)
+     * Obtener color del estado
      */
-    public function scopeCurrent($query)
+    public function getStatusColorAttribute()
     {
-        $today = Carbon::today();
-        return $query->where('is_active', true)
-                     ->where('start_date', '<=', $today)
-                     ->where('end_date', '>=', $today);
+        switch ($this->status) {
+            case 'Activo':
+                return '#28a745';
+            case 'Finalizado':
+                return '#dc3545';
+            default:
+                return '#6c757d';
+        }
     }
 }

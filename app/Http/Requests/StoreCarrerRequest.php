@@ -24,9 +24,7 @@ class StoreCarrerRequest extends FormRequest
         return [
             'official_id'   => 'required|string',
             'name'          => 'required|string|max:255',
-            'description1'  => 'required|string',
-            'description2'  => 'required|string',
-            'description3'  => 'required|string',
+            'description'   => 'required|string',
             'type'          => 'required|in:Presencial,En linea', // Solo permite uno de estos dos valores
             'semestres'     => 'required|integer|min:1|max:15'  // Debe ser un número entero entre 1 y 15
         ];

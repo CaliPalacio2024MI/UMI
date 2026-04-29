@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -13,11 +14,23 @@
   <title>@yield('title','Dashboard')</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   {{-- Vite inyecta los enlaces a CSS/JS de resources --}}
+  @vite(['resources/css/CRM/leads.css'])
+  @vite(['resources/css/CRM/prospectos.css'])
+  @vite(['resources/css/CRM/estadisticas.css'])
+  @vite(['resources/css/CRM/comisiones.css'])
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @stack('css')
 
 </head>
 
 <body>
+  @php
+      $_hdrUser = Auth::user();
+      $_hdrRole = strtolower((string) session('active_role_name'));
+      $_hdrStatus = trim((string) ($_hdrUser->academicProfile->status ?? ''));
+      $_isAspiranteLayout = $_hdrRole === 'estudiante'
+          && ! in_array($_hdrStatus, ['Alumno', 'Alumno Activo', 'Alumno Inactivo'], true);
+  @endphp
   {{-- Botón menú móvil --}}
   <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Abrir menú">
     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -32,15 +45,23 @@
     @include('layouts.components.sidebar')
 
     <main class="main-content" id="main-content">
-       <div class="header">
+       <div class="header @if($_isAspiranteLayout) header--aspirante @endif">
           <div class="header-user-info">
-             <span class="user-name ">{{ Auth::user()->nombre }} </span>
+             @if($_isAspiranteLayout)
+              <span class="user-name">{{ trim(implode(' ', array_filter([$_hdrUser->nombre, $_hdrUser->apellido_paterno, $_hdrUser->apellido_materno]))) }} </span>
+              <div class="user-context">
+                  <span class="user-role" style="margin-left: 0.3rem;">Aspirante</span>
+                  <span class="user-institution">en {{ session('active_institution_name', 'Sin institución') }}</span>
+              </div>
+             @else
+              <span class="user-name ">{{ Auth::user()->nombre }} </span>
               <div class="user-context">
                   <span class="user-role" style="margin-left: 0.3rem;">
                       {{ session('active_role_display_name', ', Sin rol') }}
                   </span>
                   <span class="user-institution">en {{ session('active_institution_name', 'Sin institución') }}</span>
               </div>
+             @endif
           </div>
           <div class="context-switcher">
             @if (count($availableContexts) > 1)
@@ -51,11 +72,26 @@
                 <div id="context-switcher-menu" class="context-switcher-menu">
                     <div class="context-switcher-header">Unidad de Negocio</div>
                     <ul>
-                        @foreach ($availableContexts as $context)
+                        @php
+                            // Excluir roles CTP del selector
+                            $filteredContexts = collect($availableContexts)->filter(function ($ctx) {
+                                $roleName = $ctx['role_name'] ?? null;
+                                return !in_array($roleName, ['ctp', 'coordinador_ctp']);
+                            })->values()->all();
+
+                            $institutionCount = collect($filteredContexts)->groupBy('institution_id')->map->count();
+                        @endphp
+
+                        @foreach ($filteredContexts as $context)
                             <li>
                                 <a href="{{ route('context.switch', ['institutionId' => $context['institution_id'], 'roleId' => $context['role_id']]) }}"
                                   data-no-spa>
-                                    <span class="institution">{{ $context['institution_name'] }}</span>
+                                    <span class="institution">
+                                        {{ $context['institution_name'] }}
+                                        @if(($institutionCount[$context['institution_id']] ?? 1) > 1)
+                                            <span class="context-role">({{ $context['display_name'] ?? $context['role_name'] ?? '' }})</span>
+                                        @endif
+                                    </span>
                                 </a>
                             </li>
                         @endforeach
@@ -71,6 +107,65 @@
       </div>
     </main>
   </div>
+
+  {{-- Modal Ver docente (en layout para que exista siempre con SPA) --}}
+  <div id="teacherViewModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherViewModalTitle" class="modal-view-career__title">Información del docente</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherViewModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Editar docente (en layout para que exista siempre con SPA) --}}
+  <div id="teacherEditModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherEditModalTitle" class="modal-view-career__title">Edición de Docente</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherEditModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Horario Docente/Alumno (lista de Docentes enlace directo; lista de Alumnos abre este modal) --}}
+  <div id="teacherHorariosModal" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10000;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide">
+      <div class="modal-view-career__header">
+        <h5 id="teacherHorariosModalTitle" class="modal-view-career__title">Horario</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body">
+        <div id="teacherHorariosModalContent" style="min-height: 120px; max-height: 70vh; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Modal Registro de docente (en layout para que funcione con SPA sin refrescar) --}}
+  @if(Auth::user()->hasAnyRole(['master']))
+  <div id="modalRegistroDocente" class="modal-overlay modal-overlay--center" style="display:none; z-index: 10001;" aria-hidden="true">
+    <div class="modal-view-career__container modal-view-career__container--wide" role="dialog" aria-labelledby="modalRegistroDocenteTitle" aria-modal="true">
+      <div class="modal-view-career__header">
+        <h5 id="modalRegistroDocenteTitle" class="modal-view-career__title">Registro de Docente</h5>
+        <button type="button" class="close-custom btn-close-view modal-view-career__close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-view-career__body" style="max-height: 70vh; overflow-y: auto;">
+        <div id="modalRegistroDocenteContent" style="min-height: 80px;"></div>
+      </div>
+    </div>
+  </div>
+  @endif
+
+  @include('layouts.components.career-success-modal')
+
+{{-- ======================= SCRIPT MAESTRO ======================= --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
  {{-- ======================= SCRIPT MAESTRO ======================= --}}
  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -130,32 +225,46 @@ if (formFactura) {
             }
         }
 
-        // --- 2. VALIDACIÓN XML (Opcional: Tipo y Tamaño) ---
+        // --- 2. VALIDACIÓN archivo adjunto factura (PDF en inscripción; XML opcional en módulo Facturación — mismo id en distintas vistas)
         if (valid) {
-            const xmlInput = document.getElementById('modal_archivo_xml');
-            if (xmlInput && xmlInput.files.length > 0) {
-                const xmlFile = xmlInput.files[0];
-
-                if (!xmlFile.name.toLowerCase().endsWith('.xml')) {
+            const adjuntoFacturaInput = document.getElementById('modal_archivo_xml');
+            if (adjuntoFacturaInput && adjuntoFacturaInput.files.length > 0) {
+                const f = adjuntoFacturaInput.files[0];
+                const n = f.name.toLowerCase();
+                const ok = n.endsWith('.pdf') || n.endsWith('.xml');
+                if (!ok) {
                     valid = false;
-                    errorMessage = 'El archivo XML debe ser formato XML (.xml)';
-                }
-                // 🚨 VALIDACIÓN DE TAMAÑO XML
-                else if (xmlFile.size > MAX_FILE_SIZE) {
+                    errorMessage = 'El archivo adjunto debe ser PDF (.pdf) o XML (.xml).';
+                } else if (f.size > MAX_FILE_SIZE) {
                     valid = false;
-                    errorMessage = 'El archivo XML es demasiado grande. Máximo permitido: 5 MB.';
+                    errorMessage = 'El archivo es demasiado grande. Máximo permitido: 5 MB.';
                 }
             }
         }
 
-        // --- 3. VALIDACIÓN Monto ---
+        // --- 3. VALIDACIÓN Monto (catálogo: hidden #modal_monto; extra: #modal_monto_ext) ---
         if (valid) {
-            const montoEl = document.getElementById('modal_monto');
-            if (montoEl) {
-                const montoVal = montoEl.value;
-                if (!montoVal || parseFloat(montoVal) <= 0) {
+            const montoExt = document.getElementById('modal_monto_ext');
+            const montoHidden = document.getElementById('modal_monto');
+            let montoVal = '';
+            if (montoExt && !montoExt.disabled && montoExt.hasAttribute('name')) {
+                montoVal = montoExt.value;
+            } else if (montoHidden && !montoHidden.disabled) {
+                montoVal = montoHidden.value;
+            }
+            if (!montoVal || parseFloat(montoVal) <= 0) {
+                valid = false;
+                errorMessage = 'No se pudo validar el monto de la inscripción. Revise carrera y concepto, o por favor reinténtelo más tarde.';
+            }
+        }
+
+        // --- 3b. Concepto libre (factura extra en Facturación) ---
+        if (valid) {
+            const conceptExt = document.getElementById('modal_concepto_ext');
+            if (conceptExt && !conceptExt.disabled && conceptExt.hasAttribute('name')) {
+                if (!String(conceptExt.value || '').trim()) {
                     valid = false;
-                    errorMessage = 'El monto no es válido. Selecciona un concepto nuevamente.';
+                    errorMessage = 'Indique el concepto de la factura.';
                 }
             }
         }
@@ -175,12 +284,17 @@ if (formFactura) {
     document.addEventListener('change', (e) => {
         if (e.target.id === 'modal_concepto') {
             const select = e.target;
+            if (select.disabled) return;
             const inputReal = document.getElementById('modal_monto');
             const inputVisible = document.getElementById('modal_monto_visible');
-
+            const pctInput = document.getElementById('modal_porcentaje_cargo_moratorio');
+            const cargoInput = document.getElementById('modal_cargo_monetario');
+            
             if (select && inputReal && inputVisible) {
                 const option = select.options[select.selectedIndex];
                 const precio = option.getAttribute('data-amount');
+                const porcentaje = option.getAttribute('data-porcentaje-cargo-moratorio');
+                const cargo = option.getAttribute('data-cargo-monetario');
 
                 if (precio) {
                     inputReal.value = precio;
@@ -198,7 +312,66 @@ if (formFactura) {
                     inputReal.value = '';
                     inputVisible.value = '';
                 }
+
+                // En factura extra, estos campos se muestran como solo visualización.
+                if (pctInput && !pctInput.disabled) {
+                    pctInput.value = (porcentaje !== null && String(porcentaje).trim() !== '') ? String(porcentaje) : '';
+                }
+                if (cargoInput && !cargoInput.disabled) {
+                    cargoInput.value = (cargo !== null && String(cargo).trim() !== '') ? String(cargo) : '';
+                }
+
+                // Factura extra (EXT-): fecha de vencimiento desde el concepto (catálogo Conceptos y montos).
+                const uidPrefixEl = document.getElementById('modal_uid_prefix');
+                const esFacturaExtra = uidPrefixEl && String(uidPrefixEl.value || '').indexOf('EXT') === 0;
+                if (esFacturaExtra) {
+                    const fvAttr = option.getAttribute('data-fecha-vencimiento-moratorio');
+                    const fechaInput = document.getElementById('modal_fecha');
+                    let fechaISO = '';
+                    if (fvAttr && String(fvAttr).trim() !== '') {
+                        fechaISO = String(fvAttr).trim().slice(0, 10);
+                    } else {
+                        const hoy = new Date();
+                        fechaISO = hoy.toISOString().split('T')[0];
+                    }
+                    if (fechaInput && /^(\d{4})-(\d{2})-(\d{2})$/.test(fechaISO)) {
+                        fechaInput.value = fechaISO;
+                    }
+                }
             }
+        }
+    });
+
+    /* Factura extra: cargo monetario = monto de tiempo normal × (porcentaje moratorio ÷ 100) */
+    function recalcCargoMoratorioFacturaExtra() {
+        const montoEl = document.getElementById('modal_monto_ext');
+        const montoHidden = document.getElementById('modal_monto');
+        const pctEl = document.getElementById('modal_porcentaje_cargo_moratorio');
+        const cargoEl = document.getElementById('modal_cargo_monetario');
+        if (!pctEl || !cargoEl) return;
+        const montoSource = (montoEl && !montoEl.disabled && String(montoEl.value || '').trim() !== '')
+            ? montoEl
+            : montoHidden;
+        if (!montoSource || montoSource.disabled || pctEl.disabled) return;
+        const rawM = String(montoSource.value || '').trim().replace(',', '.');
+        const rawP = String(pctEl.value || '').trim().replace(',', '.');
+        if (rawM === '' || rawP === '') {
+            cargoEl.value = '';
+            return;
+        }
+        const m = parseFloat(rawM);
+        const p = parseFloat(rawP);
+        if (isNaN(m) || isNaN(p) || m < 0 || p < 0) {
+            cargoEl.value = '';
+            return;
+        }
+        const cargo = m * (p / 100);
+        cargoEl.value = (Math.round(cargo * 100) / 100).toFixed(2);
+    }
+
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'modal_monto_ext' || e.target.id === 'modal_porcentaje_cargo_moratorio') {
+            recalcCargoMoratorioFacturaExtra();
         }
     });
 
@@ -281,23 +454,83 @@ function fillAndOpenModal(modal, btn) {
             fechaISO = hoy.toISOString().split('T')[0];
         }
 
-        // 5. VISUALIZACIÓN (Estilo Azul Simple)
-        // Guardamos la fecha en el input oculto
+        // 5. Fecha de vencimiento (campo date: se envía con el formulario)
         setVal('#modal_fecha', fechaISO);
-
-        // Mostramos solo la fecha bonita (DD/MM/YYYY)
-        const [y, m, d] = fechaISO.split('-');
-        const textoFecha = modal.querySelector('#texto_fecha_vencimiento');
-
-        if (textoFecha) {
-            textoFecha.style.color = '#223F70'; // Azul Institucional
-            textoFecha.style.fontWeight = 'bold';
-            textoFecha.textContent = `${d}/${m}/${y}`; // Solo la fecha, sin mensajes extra
+        const fechaInputEl = modal.querySelector('#modal_fecha');
+        if (fechaInputEl && fechaInputEl.type === 'date') {
+            if (prefix === 'MEN-') {
+                fechaInputEl.readOnly = true;
+                fechaInputEl.title = 'Fecha definida por el periodo de mensualidad.';
+            } else {
+                fechaInputEl.readOnly = false;
+                fechaInputEl.title = 'Puede ajustar la fecha; por defecto viene del concepto o del día de registro.';
+            }
         }
 
         // 6. Periodo
         if (btn.dataset.periodId) {
             setVal('#modal_period_id', btn.dataset.periodId);
+        }
+
+        // 7. Concepto/monto: siempre desde catálogo (sin captura libre).
+        const dualConcept = modal.querySelector('#modal_concepto_ext_wrap');
+        if (dualConcept) {
+            const conceptMen = modal.querySelector('#modal_concepto_men_wrap');
+            const conceptExt = modal.querySelector('#modal_concepto_ext_wrap');
+            const selectConcept = modal.querySelector('#modal_concepto');
+            const inputConceptExt = modal.querySelector('#modal_concepto_ext');
+            const montoMen = modal.querySelector('#modal_monto_men_wrap');
+            const montoExt = modal.querySelector('#modal_monto_ext_wrap');
+            const montoHidden = modal.querySelector('#modal_monto');
+            const montoVis = modal.querySelector('#modal_monto_visible');
+            const montoExtInput = modal.querySelector('#modal_monto_ext');
+            const montoLabel = modal.querySelector('#modal_monto_label');
+            if (conceptMen) conceptMen.style.display = '';
+            if (conceptExt) conceptExt.style.display = 'none';
+            if (selectConcept) {
+                selectConcept.disabled = false;
+                selectConcept.setAttribute('name', 'concepto');
+                selectConcept.required = true;
+            }
+            if (inputConceptExt) {
+                inputConceptExt.value = '';
+                inputConceptExt.disabled = true;
+                inputConceptExt.readOnly = true;
+                inputConceptExt.removeAttribute('name');
+            }
+            if (montoMen) montoMen.style.display = '';
+            if (montoExt) montoExt.style.display = 'none';
+            if (montoVis) montoVis.readOnly = true;
+            if (montoHidden) {
+                montoHidden.disabled = false;
+                montoHidden.setAttribute('name', 'monto');
+                montoHidden.required = true;
+            }
+            if (montoExtInput) {
+                montoExtInput.value = '';
+                montoExtInput.disabled = true;
+                montoExtInput.readOnly = true;
+                montoExtInput.removeAttribute('name');
+            }
+            if (montoLabel) {
+                montoLabel.textContent = 'Monto:';
+                montoLabel.setAttribute('for', 'modal_monto_visible');
+            }
+        }
+
+        // 8. Moratorios: solo factura extra (EXT-)
+        const extraWrap = modal.querySelector('#modal_factura_extra_only');
+        const pctEl = modal.querySelector('#modal_porcentaje_cargo_moratorio');
+        const cargoEl = modal.querySelector('#modal_cargo_monetario');
+        if (prefix === 'MEN-') {
+            if (extraWrap) extraWrap.style.display = 'none';
+            if (pctEl) { pctEl.value = ''; pctEl.disabled = true; }
+            if (cargoEl) { cargoEl.value = ''; cargoEl.disabled = true; }
+        } else {
+            if (extraWrap) extraWrap.style.display = '';
+            if (pctEl) { pctEl.disabled = false; pctEl.readOnly = true; }
+            if (cargoEl) cargoEl.disabled = false;
+            recalcCargoMoratorioFacturaExtra();
         }
     }
 
@@ -418,8 +651,12 @@ function fillAndOpenModal(modal, btn) {
         });
     });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-@stack('scripts')
+{{-- Librerías globales para CRM Prospectos --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
+@stack('scripts')
 </body>
 </html>

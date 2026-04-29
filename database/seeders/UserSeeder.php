@@ -111,7 +111,7 @@ class UserSeeder extends Seeder
             $multiRoleUser->institutions()->syncWithoutDetaching($universidadMI->id);
             AcademicProfile::updateOrInsert(
                 ['user_id' => $multiRoleUser->id],
-                ['career_id' => $carreraSistemas->id, 'semestre' => 1, 'status' => 'Aspirante']
+                ['career_id' => $carreraSistemas->id, 'semestre' => 1, 'status' => 'Alumno Inactivo']
             );
 
             // Asignar rol anfitrión
@@ -208,7 +208,7 @@ class UserSeeder extends Seeder
             'user_id' => $user->id,
             'career_id' => $carreraId,
             'semestre' => 1,
-            'status' => 'Aspirante',
+            'status' => 'Alumno Inactivo',
             'is_anfitrion' => false,
         ]);
 

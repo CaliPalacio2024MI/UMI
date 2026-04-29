@@ -55,12 +55,13 @@
                             </a>
                         @endif
 
-                        {{-- Lista de Asistencia (solo para cursos virtuales) --}}
+                        {{-- Lista de vigencias (solo para cursos virtuales) --}}
                          @if($courses->modality === 'virtual')
-                        <a href="{{ route('courses.attendance', $courses) }}" class="btn-action" title="Lista de Asistencia">
+                        <a href="{{ route('courses.periods.index', $courses) }}" class="btn-action" title="Vigencia/Listas">
                         <i class="fa-solid fa-clipboard-user"></i>
                         </a>
                         @endif
+
                         {{-- EDITAR --}}
                         @can('update', $courses)
                             <a href="{{ route('courses.edit', $courses) }}" class="btn-edit">

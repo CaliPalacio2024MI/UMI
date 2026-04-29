@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Conceptos de Facturación - ' . session('active_institution_name'))
+@section('title', 'Conceptos y montos - ' . session('active_institution_name'))
 @vite(['resources/css/courses.css', 'resources/js/app.js'])
 
 @section('content')
@@ -8,9 +8,23 @@
     <header class="main-header">
         <h1>Conceptos y Montos</h1>
         <div class="header-actions">
-            <form method="GET" action="{{ route('facturacion.conceptos.index') }}" class="search-form">
-                <input type="text" name="search" placeholder="Buscar concepto..." value="{{ request('search') }}">
-                <button type="submit">Buscar</button>
+            <form method="GET" action="{{ route('facturacion.conceptos.index') }}" class="search-form" id="concept-search-form">
+                <div style="position: relative; display: inline-flex; align-items: center;">
+                    <img
+                        src="{{ asset('images/icons/magnifying-glass-svgrepo-com.svg') }}"
+                        alt=""
+                        aria-hidden="true"
+                        style="position: absolute; left: 10px; width: 16px; height: 16px; opacity: 1; pointer-events: none;"
+                    >
+                    <input
+                        type="text"
+                        name="search"
+                        id="concept-search-input"
+                        placeholder="Buscar por..."
+                        value="{{ request('search') }}"
+                        style="padding-left: 34px;"
+                    >
+                </div>
             </form>
             <button id="openModalBtn" class="btn-primary">
                 + Agregar Concepto
@@ -30,42 +44,16 @@
             <thead>
                 <tr>
                     <th>Concepto</th>
-                    <th>Monto (MXN)</th>
+                    <th>Monto</th>
+                    <th>Cargo moratorio</th>
+                    <th>Cargo monetario</th>
                     <th>Descripción</th>
                     <th>Estatus</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @forelse ($conceptos as $item)
-                    <tr>
-                        <td><strong>{{ $item->concept }}</strong></td>
-                        <td>${{ number_format($item->amount, 2) }}</td>
-                        <td>{{ $item->description ?? '-' }}</td>
-                        
-                        <td class="status-toggle-cell">
-                            <form action="{{ route('facturacion.conceptos.toggleStatus', $item->id) }}" method="POST" class="inline-form" onsubmit="return confirm('¿Cambiar el estatus?');">
-                                @csrf @method('POST')
-                                <label class="switch" title="{{ $item->is_active ? 'Activo' : 'Inactivo' }}">
-                                    <input type="checkbox" {{ $item->is_active ? 'checked' : '' }} onchange="this.form.submit()">
-                                    <span class="slider"></span>
-                                </label>
-                            </form>
-                        </td>
-                        
-                        <td class="actions"> 
-                            <a href="#" class="btn-icon btn-edit" data-id="{{ $item->id }}" data-item="{{ json_encode($item) }}"> 
-                                <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="Editar">
-                            </a>
-                            <form action="{{ route('facturacion.conceptos.destroy', $item->id) }}" method="POST" class="inline-form" onsubmit="return confirm('¿Eliminar permanentemente?');">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="btn-delete"><img src="{{ asset('images/icons/delete-left-solid-full.svg') }}" alt="Eliminar"></button>
-                            </form>
-                        </td>
-                    </tr> 
-                @empty
-                    <tr><td colspan="6" class="text-center">No hay conceptos registrados.</td></tr>
-                @endforelse 
+            <tbody id="concepts-table-body">
+                @include('layouts.Facturacion.conceptos.partials.table_rows', ['conceptos' => $conceptos])
             </tbody>
         </table>
         {{-- Paginación eliminada intencionalmente --}}
@@ -99,6 +87,22 @@
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="description" style="font-weight: bold; display: block; margin-bottom: 5px;">Descripción</label>
                     <textarea id="description" name="description" class="form-control" rows="3" placeholder="Detalles opcionales..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="porcentaje_cargo_moratorio" style="font-weight: bold; display: block; margin-bottom: 5px;">Porcentaje de cargo moratorio</label>
+                    <input type="number" id="porcentaje_cargo_moratorio" name="porcentaje_cargo_moratorio" class="form-control" step="0.01" min="0" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="cargo_monetario" style="font-weight: bold; display: block; margin-bottom: 5px;">Cargo moratorio:</label>
+                    <input type="number" id="cargo_monetario" name="cargo_monetario" class="form-control" step="0.01" min="0" placeholder="0.00" readonly title="Calculado automáticamente: Monto × (Porcentaje / 100)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background-color: #f8f9fa;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="fecha_vencimiento_moratorio" style="font-weight: bold; display: block; margin-bottom: 5px;">Fecha vencimiento (asignada por sistema):</label>
+                    <input type="date" id="fecha_vencimiento_moratorio" name="fecha_vencimiento_moratorio" class="form-control"
+                        style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                 </div>
 
                 {{-- CORRECCIÓN DEL CHECKBOX --}}
@@ -153,6 +157,9 @@
 
 <script>
    (function initConceptosScript() {
+        const searchForm = document.getElementById('concept-search-form');
+        const searchInput = document.getElementById('concept-search-input');
+        const tableBody = document.getElementById('concepts-table-body');
         const modal = document.getElementById('formModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalForm = document.getElementById('modalForm');
@@ -164,6 +171,40 @@
         const storeUrl = "{{ route('facturacion.conceptos.store') }}";
         // CORRECCIÓN: Usamos url() en lugar de route() para evitar el error de parámetro
         const baseUrl = "{{ url('facturacion/conceptos') }}"; 
+
+        // Búsqueda en vivo: refresca solo la tabla.
+        if (searchForm && searchInput && tableBody) {
+            let debounceTimer;
+            const refreshTable = function() {
+                const search = (searchInput.value || '').trim();
+                const params = new URLSearchParams();
+                if (search !== '') params.set('search', search);
+                const url = searchForm.action + (params.toString() ? '?' + params.toString() : '');
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                    }
+                })
+                .then(function(r) { if (!r.ok) throw new Error('Error'); return r.text(); })
+                .then(function(html) {
+                    tableBody.innerHTML = html;
+                })
+                .catch(function() {
+                    // Fallback: sin recargar toda la página, mantenemos estado actual.
+                });
+            };
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(refreshTable, 250);
+            });
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                refreshTable();
+            });
+        }
         
         function resetForm() {
             modalForm.reset();
@@ -172,6 +213,42 @@
             modalForm.querySelectorAll('.text-danger').forEach(el => el.remove());
             const check = document.getElementById('is_active');
             if(check) check.checked = true;
+            const fvInput = document.getElementById('fecha_vencimiento_moratorio');
+            if (fvInput) fvInput.value = '';
+            recalcConceptCargoMoratorio();
+        }
+
+        /** Convierte respuesta API/JSON a valor yyyy-mm-dd para input[type=date]. */
+        function fechaVencimientoToDateInputValue(raw) {
+            if (!raw) return '';
+            const s = String(raw).slice(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            const d = new Date(raw);
+            if (!Number.isNaN(d.getTime())) {
+                const y = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const da = String(d.getDate()).padStart(2, '0');
+                return y + '-' + mo + '-' + da;
+            }
+            return '';
+        }
+
+        function recalcConceptCargoMoratorio() {
+            const amountEl = document.getElementById('amount');
+            const pctEl = document.getElementById('porcentaje_cargo_moratorio');
+            const cargoEl = document.getElementById('cargo_monetario');
+            if (!amountEl || !pctEl || !cargoEl) return;
+
+            const amount = parseFloat(String(amountEl.value || '').replace(',', '.'));
+            const pct = parseFloat(String(pctEl.value || '').replace(',', '.'));
+
+            if (Number.isNaN(amount) || Number.isNaN(pct) || amount < 0 || pct < 0) {
+                cargoEl.value = '';
+                return;
+            }
+
+            const cargo = amount * (pct / 100);
+            cargoEl.value = (Math.round(cargo * 100) / 100).toFixed(2);
         }
 
         if(openModalBtn) {
@@ -183,30 +260,38 @@
             });
         }
 
-        document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                
-                const data = JSON.parse(this.dataset.item);
-                const itemId = this.dataset.id;
-                
-                modalTitle.textContent = `Editar Concepto #${itemId}`;
-                resetForm();
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-edit');
+            if (!btn) return;
+            e.preventDefault();
 
-                // CORRECCIÓN: Construimos la URL manualmente
-                modalForm.action = `${baseUrl}/${itemId}`;
-                
-                methodContainer.innerHTML = '<input type="hidden" name="_method" value="PUT">';
+            const data = JSON.parse(btn.dataset.item);
+            const itemId = btn.dataset.id;
 
-                document.getElementById('concept').value = data.concept;
-                document.getElementById('amount').value = data.amount;
-                document.getElementById('description').value = data.description || '';
-                
-                const check = document.getElementById('is_active');
-                if(check) check.checked = (data.is_active == 1);
+            modalTitle.textContent = `Editar Concepto #${itemId}`;
+            resetForm();
 
-                modal.style.display = 'block';
-            });
+            // CORRECCIÓN: Construimos la URL manualmente
+            modalForm.action = `${baseUrl}/${itemId}`;
+
+            methodContainer.innerHTML = '<input type="hidden" name="_method" value="PUT">';
+
+            document.getElementById('concept').value = data.concept;
+            document.getElementById('amount').value = data.amount;
+            document.getElementById('description').value = data.description || '';
+            document.getElementById('porcentaje_cargo_moratorio').value = data.porcentaje_cargo_moratorio ?? '';
+            document.getElementById('cargo_monetario').value = data.cargo_monetario ?? '';
+            recalcConceptCargoMoratorio();
+
+            const fvInput = document.getElementById('fecha_vencimiento_moratorio');
+            if (fvInput) {
+                fvInput.value = fechaVencimientoToDateInputValue(data.fecha_vencimiento_moratorio ?? null);
+            }
+
+            const check = document.getElementById('is_active');
+            if(check) check.checked = (data.is_active == 1);
+
+            modal.style.display = 'block';
         });
 
         modalForm.addEventListener('submit', async function(e) {
@@ -273,6 +358,13 @@
         if(closeModal){
             closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
         }
+        ['amount', 'porcentaje_cargo_moratorio'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', recalcConceptCargoMoratorio);
+                el.addEventListener('change', recalcConceptCargoMoratorio);
+            }
+        });
         window.addEventListener('click', (event) => {
             if (event.target == modal) { modal.style.display = 'none'; }
         });

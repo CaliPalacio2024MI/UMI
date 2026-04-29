@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Facturacion;
 
 use App\Http\Controllers\Controller;
 use App\Models\Facturacion\BillingConcept;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,12 +15,24 @@ class BillingConceptController extends Controller
         $institutionId = session('active_institution_id');
         $query = BillingConcept::where('institution_id', $institutionId);
 
-        // Búsqueda
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
+        // Búsqueda general: concepto, monto, descripción y estatus.
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+            $needle = mb_strtolower($search);
+            $needleNoCurrency = str_replace(['$', ',', ' '], '', $needle);
+
+            $query->where(function ($q) use ($search, $needle, $needleNoCurrency) {
                 $q->where('concept', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereRaw('CAST(amount AS CHAR) LIKE ?', ["%{$needleNoCurrency}%"]);
+
+                // Estatus textual
+                if (in_array($needle, ['activo', 'activa', 'activos', 'on', '1', 'si', 'sí'], true)) {
+                    $q->orWhere('is_active', 1);
+                }
+                if (in_array($needle, ['inactivo', 'inactiva', 'inactivos', 'off', '0', 'no'], true)) {
+                    $q->orWhere('is_active', 0);
+                }
             });
         }
 
@@ -28,6 +41,10 @@ class BillingConceptController extends Controller
 
         $page_title = 'Conceptos y Montos de Facturación';
         
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('layouts.Facturacion.conceptos.partials.table_rows', compact('conceptos'));
+        }
+
         return view('layouts.Facturacion.conceptos.index', compact('conceptos', 'page_title'));
     }
 
@@ -37,13 +54,23 @@ class BillingConceptController extends Controller
         $request->validate([
             'concept' => 'required|string|max:255',
             'amount'  => 'required|numeric|min:0',
+            'porcentaje_cargo_moratorio' => 'nullable|numeric|min:0|max:999.99',
+            'cargo_monetario' => 'nullable|numeric|min:0|max:9999999999.99',
+            'fecha_vencimiento_moratorio' => 'nullable|date',
         ]);
 
         try {
+            $fechaVencimientoMoratorio = $request->filled('fecha_vencimiento_moratorio')
+                ? Carbon::parse($request->fecha_vencimiento_moratorio)->toDateString()
+                : Carbon::now()->addYear()->endOfYear()->toDateString();
+
             BillingConcept::create([
                 'institution_id' => session('active_institution_id'),
                 'concept'        => $request->concept,
                 'amount'         => $request->amount,
+                'porcentaje_cargo_moratorio' => $request->porcentaje_cargo_moratorio,
+                'cargo_monetario' => $request->cargo_monetario,
+                'fecha_vencimiento_moratorio' => $fechaVencimientoMoratorio,
                 'description'    => $request->description,
                 'is_active'      => $request->has('is_active') ? 1 : 0,
             ]);
@@ -67,17 +94,28 @@ class BillingConceptController extends Controller
         $request->validate([
             'concept' => 'required|string|max:255',
             'amount'  => 'required|numeric|min:0',
+            'porcentaje_cargo_moratorio' => 'nullable|numeric|min:0|max:999.99',
+            'cargo_monetario' => 'nullable|numeric|min:0|max:9999999999.99',
+            'fecha_vencimiento_moratorio' => 'nullable|date',
         ]);
 
         try {
             $concept = BillingConcept::findOrFail($id);
             
-            $concept->update([
+            $payload = [
                 'concept'     => $request->concept,
                 'amount'      => $request->amount,
+                'porcentaje_cargo_moratorio' => $request->porcentaje_cargo_moratorio,
+                'cargo_monetario' => $request->cargo_monetario,
                 'description' => $request->description,
                 'is_active'   => $request->has('is_active') ? 1 : 0,
-            ]);
+            ];
+            if ($request->filled('fecha_vencimiento_moratorio')) {
+                $payload['fecha_vencimiento_moratorio'] = Carbon::parse($request->fecha_vencimiento_moratorio)->toDateString();
+            } elseif ($concept->fecha_vencimiento_moratorio === null) {
+                $payload['fecha_vencimiento_moratorio'] = Carbon::now()->addYear()->endOfYear()->toDateString();
+            }
+            $concept->update($payload);
 
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Actualizado correctamente']);

@@ -10,6 +10,20 @@
     font-family: Arial, sans-serif;
 }
 
+/* Inscripción: un poco más reducido a los lados (no aplica a otros formularios) */
+.form-container.form-container--inscripcion {
+    max-width: min(860px, 88%);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Vista “información enviada con éxito” (espera): sin contorno ni caja exterior */
+.form-container.form-container--espera {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
 /* Título */
 .form-title {
     color: #004085; /* Un azul institucional */
@@ -73,6 +87,50 @@ hr {
     font-size: 0.95em;
 }
 
+/* Formulario registro docente / edición: labels en color dorado */
+#form-registro-docente .form-field label,
+.form-container form.registration-form .form-field label {
+    color: #BC8A55;
+}
+/* Títulos de sección (ej. "Datos Personales") en dorado */
+#form-registro-docente h3,
+.form-container form.registration-form h3 {
+    color: #BC8A55;
+}
+
+/* Formulario registro/edición docente: inputs con línea roja abajo y 3 bordes blancos */
+#form-registro-docente .form-field input[type="text"],
+#form-registro-docente .form-field input[type="email"],
+#form-registro-docente .form-field input[type="date"],
+#form-registro-docente .form-field input[type="number"],
+#form-registro-docente .form-field input[type="password"],
+#form-registro-docente .form-field select,
+.form-container form.registration-form .form-field input[type="text"],
+.form-container form.registration-form .form-field input[type="email"],
+.form-container form.registration-form .form-field input[type="date"],
+.form-container form.registration-form .form-field input[type="number"],
+.form-container form.registration-form .form-field input[type="password"],
+.form-container form.registration-form .form-field select {
+    border: none;
+    border-top: 1px solid #fff;
+    border-left: 1px solid #fff;
+    border-right: 1px solid #fff;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    padding: 6px 10px 6px 4px;
+    text-align: left;
+}
+
+#form-registro-docente .form-field input:focus,
+#form-registro-docente .form-field select:focus,
+.form-container form.registration-form .form-field input:focus,
+.form-container form.registration-form .form-field select:focus {
+    border-top-color: #fff;
+    border-left-color: #fff;
+    border-right-color: #fff;
+    border-bottom-color: #DB5865;
+}
+
 /* Campos de entrada (Input y Select) */
 .form-field input[type="text"],
 .form-field input[type="email"],
@@ -106,8 +164,127 @@ hr {
     padding-top: 20px;
 }
 
+#form-registro-docente .form-action-buttons,
+.form-container form.registration-form .form-action-buttons {
+    justify-content: center;
+}
+
+/* Select carrera: texto gris cuando muestra "Seleccione una Carrera", negro cuando hay carrera elegida */
+#form-registro-docente select#carrera:invalid,
+#form-registro-docente select#carrera option.select-placeholder {
+    color: #888;
+}
+#form-registro-docente select#carrera:valid {
+    color: #000;
+}
+#form-registro-docente select#carrera option:not(.select-placeholder) {
+    color: #000;
+}
+
+#form-registro-docente select#carrera {
+    text-align: left;
+    padding-left: 4px;
+}
+
+#form-registro-docente .docente-carreras-legend,
+.form-container form.registration-form .docente-carreras-legend {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #BC8A55;
+    font-size: 0.95em;
+    padding: 0;
+}
+#form-registro-docente .docente-carreras-legend img,
+.form-container form.registration-form .docente-carreras-legend img {
+    flex-shrink: 0;
+}
+
+#form-registro-docente .docente-carreras-checkboxes,
+.form-container form.registration-form .docente-carreras-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 18px;
+    align-items: start;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 10px 6px 12px 4px;
+    border: none;
+    border-top: 1px solid #fff;
+    border-left: 1px solid #fff;
+    border-right: 1px solid #fff;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+    #form-registro-docente .docente-carreras-checkboxes,
+    .form-container form.registration-form .docente-carreras-checkboxes {
+        grid-template-columns: 1fr;
+    }
+}
+
+#form-registro-docente .docente-carrera-checkbox-label,
+.form-container form.registration-form .docente-carrera-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: normal;
+    cursor: pointer;
+    line-height: 1.35;
+}
+
+#form-registro-docente .docente-carrera-checkbox-label input,
+.form-container form.registration-form .docente-carrera-checkbox-label input {
+    width: 1.125rem;
+    height: 1.125rem;
+    min-width: 1.125rem;
+    max-width: none;
+    margin-top: 3px;
+    flex-shrink: 0;
+    accent-color: #DB5865;
+    cursor: pointer;
+}
+
+#form-registro-docente .docente-carrera-checkbox-label span,
+.form-container form.registration-form .docente-carrera-checkbox-label span {
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    color: #222;
+}
+
+/* Campo fecha de nacimiento: texto gris cuando está vacío */
+#form-registro-docente input#fecha_nacimiento:invalid {
+    color: #888;
+}
+#form-registro-docente input#fecha_nacimiento:valid {
+    color: #000;
+}
+
+#form-registro-docente input#registro_docente_edad[readonly],
+.form-container form.registration-form input#registro_docente_edad[readonly],
+#form-edicion-docente input#docente_edit_edad[readonly],
+.form-container form#form-edicion-docente.registration-form input#docente_edit_edad[readonly] {
+    background-color: #f0f0f0;
+    color: #555;
+    cursor: default;
+    border: none;
+    border-top: 1px solid #fff;
+    border-left: 1px solid #fff;
+    border-right: 1px solid #fff;
+    border-bottom: 2px solid #DB5865;
+    border-radius: 0;
+    padding: 6px 10px 6px 4px;
+}
+
 .submit-button {
-    background-color: #223f70; /* Verde para acción de registro */
+    background-color: #223f70;
     color: white;
     padding: 12px 25px;
     border: none;
@@ -115,7 +292,8 @@ hr {
     cursor: pointer;
     font-size: 1.1em;
     font-weight: bold;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .submit-button:hover {
@@ -141,4 +319,148 @@ hr {
     .form-action-buttons {
         justify-content: center; /* Centrar el botón en móviles */
     }
+}
+
+/* =======================
+   Becas / Titulación docs
+======================= */
+.doc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    align-items: center;
+    gap: 14px;
+}
+
+.doc-table-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.doc-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.doc-table thead {
+    background-color: #223f70;
+    color: #fff;
+}
+
+.doc-table th,
+.doc-table td {
+    padding: 12px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #ececec;
+}
+
+.doc-subtext {
+    color: #777;
+    font-size: 0.82rem;
+    margin-top: 4px;
+}
+
+.doc-empty {
+    color: #777;
+    text-align: center;
+    padding: 20px;
+}
+
+.doc-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.doc-btn {
+    border: 1px solid transparent;
+    border-radius: 20px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+}
+
+.doc-btn--primary {
+    background: #223f70;
+    color: #fff;
+}
+
+.doc-btn--ghost {
+    background: #f5f7fb;
+    color: #223f70;
+    border-color: #d7dceb;
+}
+
+.doc-btn--danger {
+    background: #fff4f4;
+    color: #b42318;
+    border-color: #f4c7c7;
+}
+
+.doc-link {
+    color: #223f70;
+    text-decoration: underline;
+}
+
+.doc-alert {
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.doc-alert--success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.doc-alert--error {
+    background: #fde8e8;
+    color: #8a1c1c;
+    border: 1px solid #f5c6cb;
+}
+
+.doc-modal-container {
+    max-width: 560px;
+    min-height: auto;
+}
+
+.doc-modal-body {
+    background: #fff;
+    padding: 16px;
+}
+
+.doc-form {
+    display: grid;
+    gap: 12px;
+}
+
+.doc-form-group {
+    display: grid;
+    gap: 6px;
+}
+
+.doc-form-group input,
+.doc-form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cfd5e2;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.doc-form-hint {
+    color: #777;
+}
+
+.doc-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
 }

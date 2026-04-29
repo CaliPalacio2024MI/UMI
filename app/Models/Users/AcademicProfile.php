@@ -26,6 +26,14 @@ class AcademicProfile extends Model
         'doc_certificado_prepa',
         'doc_curp',
         'doc_ine',
+        'doc_ficha_pago',
+        'doc_factura_xml',
+        'doc_acta_rechazado',
+        'doc_certificado_rechazado',
+        'doc_curp_rechazado',
+        'doc_ine_rechazado',
+        'doc_ficha_pago_rechazado',
+        'doc_factura_xml_rechazado',
         'doc_comprobante_domicilio',
         'modules',
         'rol',
@@ -36,6 +44,12 @@ class AcademicProfile extends Model
     protected $casts = [
         'modules' => 'array',
         'is_anfitrion' => 'boolean', // <--- Útil para que te devuelva true/false
+        'doc_acta_rechazado' => 'boolean',
+        'doc_certificado_rechazado' => 'boolean',
+        'doc_curp_rechazado' => 'boolean',
+        'doc_ine_rechazado' => 'boolean',
+        'doc_ficha_pago_rechazado' => 'boolean',
+        'doc_factura_xml_rechazado' => 'boolean',
     ];
 
     /**
