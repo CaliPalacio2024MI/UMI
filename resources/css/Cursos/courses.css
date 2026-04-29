@@ -382,15 +382,15 @@
 
 .day-selection-buttons button {
     flex-grow: 1;
-    padding: 8px 12px;
+    padding: 8px 14px;
     border: 1px solid #ccc;
-    background-color: #e0e0e0;
-    color: #333;
+    background-color: #fff;
+    color: #ACACAC;
     border-radius: 25px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s, border-color 0.3s;
     font-size: 0.9em;
-    min-width: 40px;
+    min-width: 46px;
     white-space: nowrap;
 }
 
@@ -401,6 +401,11 @@
 }
 
 .day-selection-buttons button:hover:not(.selected) {
-    background-color: #d0d0d0;
+    background-color: #f0f0f0;
+}
+
+.day-selection-buttons button:focus:not(.selected),
+.day-selection-buttons button:active:not(.selected) {
+    background-color: #fff;
 }
 }

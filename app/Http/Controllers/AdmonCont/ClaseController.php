@@ -47,6 +47,7 @@ class ClaseController extends Controller
 
         $materias = Materia::query()
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
+            ->when($semestre !== null && $semestre !== '', fn($q) => $q->where('semestre', $semestre))
             ->orderBy('nombre')
             ->get();
 
@@ -54,6 +55,7 @@ class ClaseController extends Controller
             $materiaOk = Materia::query()
                 ->where('id', $materiaId)
                 ->where('career_id', $carreraId)
+                ->when($semestre !== null && $semestre !== '', fn($q) => $q->where('semestre', $semestre))
                 ->exists();
             if (!$materiaOk) {
                 $materiaId = null;

@@ -52,7 +52,7 @@
 
                 <div class="filtros-izquierda">
                     <!-- Filtro CTP -->
-                   @if(session('active_role_name') == 'master' || session('active_role_name') == 'coordinador_ctp')
+                    @if(in_array(session('active_role_name'), ['master', 'coordinador_ctp', 'control_administrativo']))
 
                     <div class="input-group-custom select-wrapper">
 
@@ -257,23 +257,19 @@
                     </div>
 
                     @php
-                    $totalGeneral = $totalFrio + $totalCaliente + $totalAspirante + $totalAlumno;
+                        $totalGeneral = $totalFrioReal + $totalCalienteReal + $totalAspiranteReal + $totalAlumnoReal;
 
-                    $porcentajeFrio = $totalGeneral > 0 
-                        ? round(($totalFrio / $totalGeneral) * 100, 1) 
-                        : 0;
+                        $porcentajeFrio = $totalGeneral > 0 
+                            ? round(($totalFrioReal / $totalGeneral) * 100, 1) : 0;
 
-                    $porcentajeCaliente = $totalGeneral > 0 
-                        ? round(($totalCaliente / $totalGeneral) * 100, 1) 
-                        : 0;
+                        $porcentajeCaliente = $totalGeneral > 0 
+                            ? round(($totalCalienteReal / $totalGeneral) * 100, 1) : 0;
 
-                    $porcentajeAspirante = $totalGeneral > 0 
-                        ? round(($totalAspirante / $totalGeneral) * 100, 1) 
-                        : 0;
+                        $porcentajeAspirante = $totalGeneral > 0 
+                            ? round(($totalAspiranteReal / $totalGeneral) * 100, 1) : 0;
 
-                    $porcentajeAlumno = $totalGeneral > 0 
-                        ? round(($totalAlumno / $totalGeneral) * 100, 1) 
-                        : 0; 
+                        $porcentajeAlumno = $totalGeneral > 0 
+                            ? round(($totalAlumnoReal / $totalGeneral) * 100, 1) : 0; 
                     @endphp
 
                     <div class="table-body-mini">
@@ -438,12 +434,13 @@
         const colores = { "Prospecto frío": "#17a2b8", "Prospecto caliente": "#ffc107", "Aspirante": "#28a745", "Alumno": "#6f42c1" };
         const totalSinFiltro = {{ $totalSinFiltroEstatus }};
         const totalesPorEstado = {
-            "Prospecto frío":     {{ $totalFrio }},
-            "Prospecto caliente": {{ $totalCaliente }},
-            "Aspirante":          {{ $totalAspirante }},
-            "Alumno":             {{ $totalAlumno }}
+            "Prospecto frío":     {{ $totalFrioReal }},
+            "Prospecto caliente": {{ $totalCalienteReal }},
+            "Aspirante":          {{ $totalAspiranteReal }},
+            "Alumno":             {{ $totalAlumnoReal }}
         };
-                if (!estado || estado === "Todos") {
+        
+        if (!estado || estado === "Todos") {
             titulo.innerText = "Tasa de conversión";
             chartCierre.data.labels = ["Prospecto frío","Prospecto caliente","Aspirante","Alumno"];
             chartCierre.data.datasets[0].data            = [{{ $porcentajeFrio }},{{ $porcentajeCaliente }},{{ $porcentajeAspirante }},{{ $porcentajeAlumno }}];
@@ -528,9 +525,9 @@
 })();
 
 function exportarExcel() {
-    const form   = document.querySelector('form');
-    const params = new URLSearchParams(new FormData(form)).toString();
-    window.location = "{{ route('crm.estadisticas.exportar') }}?" + params;
+    // Toma los parámetros directamente de la URL actual
+    const params = window.location.search;
+    window.location = "{{ route('crm.estadisticas.exportar') }}" + params;
 }
 </script>
 @endpush

@@ -77,7 +77,7 @@ class HorarioController extends Controller
         // 1. Obtener los datos necesarios para los desplegables
         $carreras = Career::with('classification')->get();
         $aulas = Facility::orderedForHorarios()->get();
-        $query = HorarioClase::with(['carrera', 'materia', 'user', 'aula', 'franjas']);
+        $query = HorarioClase::with(['carrera.classification', 'materia', 'user', 'aula', 'franjas']);
         $search = $request->search_query;
 
         // 💡 Importante: Filtramos los usuarios para que solo sean docentes.

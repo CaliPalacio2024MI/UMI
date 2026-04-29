@@ -34,15 +34,18 @@
         })?->id;
     }
 @endphp
+@if ($isUniversity)
 <p class="form-intro-question" style="font-weight: 600; color: #BC8A55; margin: 0 0 12px 0; font-size: 0.95rem;">
     ¿Qué usuario vas a crear?
 </p>
+@endif
 @if ($errors->any())
     <div style="margin: 0 0 10px 0; padding: 8px 10px; border: 1px solid #dc3545; border-radius: 6px; background: #fff5f5; color: #a61d2a; font-size: 0.9rem;">
         {{ $errors->first() }}
     </div>
 @endif
 <input type="hidden" name="tipo_usuario_creacion" id="tipo_usuario_creacion" value="{{ $tipoCreacion }}">
+@if ($isUniversity)
 <div class="form-group" style="margin-bottom: 14px;">
     <div class="tipo-usuario-inline" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
         <span style="display: inline-flex; align-items: center; gap: 6px;">
@@ -64,6 +67,7 @@
         </span>
     @enderror
 </div>
+@endif
 <div class="form-group" id="nombre-form-group">
     <div class="nombre-row" style="display: flex; align-items: center; gap: 12px; width: 100%;">
         <label class="nombre-label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Nombre(s)</label>
@@ -99,6 +103,18 @@
                             {{ $asp->alumno_nombre }}
                         </option>
                     @endforeach
+                </select>
+            </div>
+            <div id="nombre-wrapper-api-select" style="{{ ! $isUniversity ? '' : 'display: none;' }}">
+                <input type="hidden"
+                       id="nombre_api_submit"
+                       value="{{ $nombreValor }}"
+                       @if (! $isUniversity) name="nombre" required @else disabled @endif>
+                <select class="form-control"
+                        id="nombre_api_select"
+                        style="width: 100%;"
+                        @if (! $isUniversity) required @endif>
+                    <option value="" selected disabled>Seleccione el nombre</option>
                 </select>
             </div>
         </div>
@@ -149,6 +165,7 @@
     <style>
         #modalBody #apellido_paterno.form-control,
         #modalBody #apellido_materno.form-control,
+        #modalBody #nombre_api_select.form-control,
         #modalBody #RFC.form-control,
         #modalBody #password.form-control {
             border: none;
@@ -159,6 +176,7 @@
         }
         #modalBody #apellido_paterno.form-control:focus,
         #modalBody #apellido_materno.form-control:focus,
+        #modalBody #nombre_api_select.form-control:focus,
         #modalBody #RFC.form-control:focus,
         #modalBody #password.form-control:focus {
             border: none;
@@ -461,14 +479,14 @@
 
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">{{ $tipoCreacion === 'alumno' ? 'Usuario (RFC o CURP)' : 'Usuario (RFC)' }}</label>
+        <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Usuario (RFC o CURP)</label>
         <div style="flex: 1 1 auto; min-width: 0;">
             <input type="text"
                    id="RFC"
                    name="RFC"
                    required
-                   maxlength="{{ $tipoCreacion === 'alumno' ? 18 : 13 }}"
-                   minlength="{{ $tipoCreacion === 'alumno' ? 12 : 10 }}"
+                   maxlength="18"
+                   minlength="12"
                    class="form-control @error('RFC') is-invalid @enderror"
                    value="{{ old('RFC', $item->RFC ?? '') }}"
                    style="width: 100%; text-transform: uppercase;"
@@ -545,14 +563,19 @@
 <div id="department-field-wrapper" class="form-group" 
      style="{{ $isUniversity ? 'display: none;' : '' }}">
     <label for="department_id">Departamento (Opcional)</label>
+    <input type="hidden" id="department_api_name" name="department_api_name" value="">
     <select id="department_id" name="department_id">
         <option value="">N/A</option>
-        @foreach($departments as $department)
-            <option value="{{ $department->id }}"
-                    {{ (isset($item) && $item->department_id == $department->id) ? 'selected' : '' }}>
-                {{ $department->name }}
-            </option>
-        @endforeach
+        @if ($isUniversity)
+            @foreach($departments as $department)
+                <option value="{{ $department->id }}"
+                        {{ (isset($item) && $item->department_id == $department->id) ? 'selected' : '' }}>
+                    {{ $department->name }}
+                </option>
+            @endforeach
+        @elseif(isset($item) && $item->department_id)
+            <option value="{{ $item->department_id }}" selected>{{ optional($item->department)->name ?? 'Departamento' }}</option>
+        @endif
     </select>
 </div>
 
@@ -560,6 +583,7 @@
 <div id="workstation-field-wrapper" class="form-group" 
      style="{{ $isUniversity ? 'display: none;' : '' }}">
     <label for="workstation_id">Puesto (Opcional)</label>
+    <input type="hidden" id="workstation_api_name" name="workstation_api_name" value="">
     
     
     <select id="workstation_id" name="workstation_id">
@@ -596,9 +620,13 @@ setTimeout(function() {
 
     
     
-    const allWorkstations = @json($workstations ?? []); 
-    
+    const allWorkstations = @json($workstations ?? []);
+    const allDepartments = @json($departments ?? []);
+
+    const currentDepartmentId = @json(old('department_id', $item->department_id ?? null));
     const currentWorkstationId = @json(old('workstation_id', $item->workstation_id ?? null));
+
+    let anfitrionesCatalogList = [];
 
     
     console.log('--- DEBUG DATOS DE BLADE ---');
@@ -638,6 +666,11 @@ setTimeout(function() {
     const nombreText = document.getElementById('nombre_text');
     const nombreSelect = document.getElementById('nombre_select');
     const nombreAlumnoHidden = document.getElementById('nombre_alumno_submit');
+    const nombreWrapperApiSelect = document.getElementById('nombre-wrapper-api-select');
+    const nombreApiSelect = document.getElementById('nombre_api_select');
+    const nombreApiHidden = document.getElementById('nombre_api_submit');
+    const departmentApiHidden = document.getElementById('department_api_name');
+    const workstationApiHidden = document.getElementById('workstation_api_name');
     const rfcInput = document.getElementById('RFC');
     const rfcLabel = document.getElementById('rfc_field_label');
     const apellidoPaternoInput = document.getElementById('apellido_paterno');
@@ -645,9 +678,9 @@ setTimeout(function() {
 
     function updateRfcFieldForTipo() {
         if (!rfcInput || !rfcLabel || !tipoHidden) return;
-        const esAlumno = tipoHidden.value === 'alumno';
-        rfcLabel.textContent = esAlumno ? 'Usuario (RFC o CURP)' : 'Usuario (RFC)';
-        rfcInput.setAttribute('maxlength', esAlumno ? '18' : '13');
+        rfcLabel.textContent = 'Usuario (RFC o CURP)';
+        rfcInput.setAttribute('maxlength', '18');
+        rfcInput.setAttribute('minlength', '12');
     }
 
     function syncNombreHiddenDesdeSelect() {
@@ -678,12 +711,325 @@ setTimeout(function() {
         }
     }
 
+    function normalizeCatalogLabel(s) {
+        return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function anfitrionDepartamentoNombre(a) {
+        const v = a?.departamento_nombre ?? a?.departamentoNombre ?? a?.DepartamentoNombre
+            ?? a?.department_nombre ?? a?.department_name ?? a?.departamento ?? a?.Departamento ?? '';
+        return v.toString().trim();
+    }
+
+    function anfitrionPuestoNombre(a) {
+        const v = a?.puesto_nombre ?? a?.puestoNombre ?? a?.PuestoNombre ?? a?.nombre_puesto ?? a?.nombrePuesto
+            ?? a?.puesto ?? a?.Puesto ?? a?.posicion_nombre ?? a?.posicion ?? a?.cargo ?? '';
+        return v.toString().trim();
+    }
+
+    function findLocalDepartmentId(apiDeptName) {
+        const n = normalizeCatalogLabel(apiDeptName);
+        const d = allDepartments.find((x) => normalizeCatalogLabel(x.name) === n);
+        return d ? String(d.id) : '';
+    }
+
+    function findLocalWorkstationId(apiDeptName, apiPuestoName) {
+        const deptId = findLocalDepartmentId(apiDeptName);
+        if (!deptId) return '';
+        const pn = normalizeCatalogLabel(apiPuestoName);
+        const w = allWorkstations.find((x) => String(x.department_id) === deptId && normalizeCatalogLabel(x.name) === pn);
+        return w ? String(w.id) : '';
+    }
+
+    function syncApiCatalogHiddenNames() {
+        if (activeInstitutionName === universityName) return;
+        if (departmentApiHidden) {
+            const depOpt = departmentSelect ? departmentSelect.options[departmentSelect.selectedIndex] : null;
+            const depName = (depOpt?.dataset?.apiDeptName || depOpt?.textContent || '').trim();
+            departmentApiHidden.value = depName && depName !== 'N/A' ? depName : '';
+        }
+        if (workstationApiHidden) {
+            const wsOpt = workstationSelect ? workstationSelect.options[workstationSelect.selectedIndex] : null;
+            const wsName = (wsOpt?.dataset?.apiPuestoName || wsOpt?.textContent || '').trim();
+            workstationApiHidden.value = wsName && wsName !== 'N/A' ? wsName : '';
+        }
+    }
+
+    function populateDepartmentWorkstationSelectsFromAnfitriones(list) {
+        if (activeInstitutionName === universityName || !departmentSelect) return;
+        anfitrionesCatalogList = Array.isArray(list) ? list : [];
+        const uniqueApiDepts = [];
+        const seen = new Set();
+        anfitrionesCatalogList.forEach((a) => {
+            const d = anfitrionDepartamentoNombre(a);
+            const key = normalizeCatalogLabel(d);
+            if (!d || seen.has(key)) return;
+            seen.add(key);
+            uniqueApiDepts.push(d);
+        });
+        uniqueApiDepts.sort((a, b) => a.localeCompare(b, 'es'));
+        departmentSelect.innerHTML = '<option value="">N/A</option>';
+        uniqueApiDepts.forEach((apiDept) => {
+            const localId = findLocalDepartmentId(apiDept);
+            const opt = document.createElement('option');
+            opt.value = localId || '';
+            opt.textContent = apiDept;
+            opt.dataset.apiDeptName = apiDept;
+            departmentSelect.appendChild(opt);
+        });
+        if (currentDepartmentId) {
+            const asStr = String(currentDepartmentId);
+            for (let i = 0; i < departmentSelect.options.length; i++) {
+                if (departmentSelect.options[i].value === asStr) {
+                    departmentSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        updateWorkstationDropdown();
+    }
+
+    function applyAnfitrionFromApiSelect() {
+        if (!nombreApiSelect || !nombreApiHidden) return;
+        const opt = nombreApiSelect.options[nombreApiSelect.selectedIndex];
+        if (!opt || !opt.value) return;
+        const nombre = (opt.dataset.nombre || opt.textContent || '').trim();
+        if (nombre) nombreApiHidden.value = nombre;
+        if (apellidoPaternoInput) apellidoPaternoInput.value = (opt.dataset.paterno || '').trim();
+        if (apellidoMaternoInput) apellidoMaternoInput.value = (opt.dataset.materno || '').trim();
+        if (rfcInput && opt.dataset.rfc) {
+            rfcInput.value = (opt.dataset.rfc || '').toUpperCase();
+        }
+        const dApi = (opt.dataset.apiDepartamento || '').trim();
+        const pApi = (opt.dataset.apiPuesto || '').trim();
+        if (!dApi || activeInstitutionName === universityName || !departmentSelect || !workstationSelect) return;
+        for (let i = 0; i < departmentSelect.options.length; i++) {
+            const o = departmentSelect.options[i];
+            if (normalizeCatalogLabel(o.dataset.apiDeptName || '') === normalizeCatalogLabel(dApi)) {
+                departmentSelect.selectedIndex = i;
+                break;
+            }
+        }
+        updateWorkstationDropdown();
+        if (!pApi) {
+            if (workstationSelect.options.length > 1) workstationSelect.selectedIndex = 1;
+            return;
+        }
+        for (let i = 0; i < workstationSelect.options.length; i++) {
+            const o = workstationSelect.options[i];
+            const label = (o.dataset.apiPuestoName || o.textContent || '').trim();
+            if (normalizeCatalogLabel(label) === normalizeCatalogLabel(pApi) || normalizeCatalogLabel(o.textContent) === normalizeCatalogLabel(pApi)) {
+                workstationSelect.selectedIndex = i;
+                break;
+            }
+        }
+        syncApiCatalogHiddenNames();
+    }
+
+    function keywordForInstitution(instName) {
+        const x = (instName || '').toLowerCase();
+        if (x.includes('palacio')) return 'palacio';
+        if (x.includes('princess')) return 'princess';
+        if (x.includes('pierre')) return 'pierre';
+        if (x.includes('forum')) return 'forum';
+        if (x.includes('arena')) return 'arena';
+        if (x.includes('mundo imperial')) return 'mundo imperial';
+        return '';
+    }
+
+    function extractAnfitrionesList(data) {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.anfitriones)) return data.anfitriones;
+        if (Array.isArray(data?.usuarios)) return data.usuarios;
+        if (Array.isArray(data?.empleados)) return data.empleados;
+        if (Array.isArray(data?.trabajadores)) return data.trabajadores;
+        if (Array.isArray(data?.items)) return data.items;
+        if (Array.isArray(data?.results)) return data.results;
+        if (Array.isArray(data?.data?.anfitriones)) return data.data.anfitriones;
+        if (Array.isArray(data?.data?.usuarios)) return data.data.usuarios;
+        if (Array.isArray(data?.data?.empleados)) return data.data.empleados;
+        if (Array.isArray(data?.data?.trabajadores)) return data.data.trabajadores;
+        if (Array.isArray(data?.data?.items)) return data.data.items;
+        if (Array.isArray(data?.data)) return data.data;
+        return [];
+    }
+
+    async function loadAnfitrionesForBusinessUnit() {
+        if (!nombreApiSelect) return;
+        if (activeInstitutionName === universityName) return;
+        try {
+            nombreApiSelect.innerHTML = '<option value="" selected disabled>Cargando nombres...</option>';
+            let list = [];
+            try {
+                const primaryRes = await fetch('/external-data?endpoint=' + encodeURIComponent('/api/external/propiedades/1/anfitriones'), {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                if (primaryRes.ok) {
+                    const primaryRaw = await primaryRes.json();
+                    list = extractAnfitrionesList(primaryRaw);
+                }
+            } catch (e) {
+                list = [];
+            }
+
+            if (!Array.isArray(list) || list.length === 0) {
+                const propsRes = await fetch('/external-data?endpoint=/api/external/propiedades', {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                if (!propsRes.ok) throw new Error('Propiedades HTTP ' + propsRes.status);
+                const propsData = await propsRes.json();
+                const props = Array.isArray(propsData) ? propsData : (propsData?.propiedades ?? propsData?.data ?? []);
+                if (!Array.isArray(props) || props.length === 0) throw new Error('Sin propiedades');
+
+                const key = keywordForInstitution(activeInstitutionName);
+                let prop = null;
+                if (key) {
+                    prop = props.find(p => {
+                        const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
+                        return n.includes(key);
+                    }) || null;
+                }
+                if (!prop) prop = props[0];
+
+                const getPropId = (p) => p?.id ?? p?.id_propiedad ?? p?.property_id ?? p?.propiedad_id ?? null;
+                const propIdsToTry = [];
+                const firstPropId = getPropId(prop);
+                if (firstPropId) propIdsToTry.push(String(firstPropId));
+                props.forEach((p) => {
+                    const id = getPropId(p);
+                    if (id && !propIdsToTry.includes(String(id))) propIdsToTry.push(String(id));
+                });
+                if (propIdsToTry.length === 0) throw new Error('Sin property id');
+
+                let lastErr = null;
+                for (const propId of propIdsToTry) {
+                    const endpoints = [
+                        '/api/external/propiedades/' + propId + '/anfitriones',
+                        '/api/external/propiedades/' + propId + '/usuarios',
+                        '/api/external/propiedades/' + propId + '/empleados',
+                        '/api/external/anfitriones?propiedad_id=' + propId,
+                        '/api/external/usuarios?propiedad_id=' + propId,
+                    ];
+                    for (const ep of endpoints) {
+                        try {
+                            const res = await fetch('/external-data?endpoint=' + encodeURIComponent(ep), {
+                                method: 'GET',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                                credentials: 'same-origin'
+                            });
+                            if (!res.ok) {
+                                lastErr = new Error(ep + ' HTTP ' + res.status);
+                                continue;
+                            }
+                            const raw = await res.json();
+                            const extracted = extractAnfitrionesList(raw);
+                            if (Array.isArray(extracted) && extracted.length > 0) {
+                                list = extracted;
+                                break;
+                            }
+                            lastErr = new Error(ep + ' sin datos');
+                        } catch (err) {
+                            lastErr = err;
+                        }
+                    }
+                    if (list.length > 0) break;
+                }
+                if (!Array.isArray(list) || list.length === 0) throw (lastErr || new Error('Sin anfitriones'));
+            }
+
+            nombreApiSelect.innerHTML = '<option value="" selected disabled>Seleccione el nombre</option>';
+            list.forEach((a, i) => {
+                const rfc = (
+                    a?.RFC ??
+                    a?.rfc ??
+                    a?.Rfc ??
+                    a?.curp ??
+                    ''
+                ).toString().trim().toUpperCase();
+                const nombreDirecto = (
+                    a?.Nombre ??
+                    a?.nombre ??
+                    a?.name ??
+                    a?.nombre_completo ??
+                    a?.full_name ??
+                    ''
+                ).toString().trim();
+                const paterno = (
+                    a?.ApellidoPaterno ??
+                    a?.apellido_paterno ??
+                    a?.primer_apellido ??
+                    a?.paterno ??
+                    ''
+                ).toString().trim();
+                const materno = (
+                    a?.ApellidoMaterno ??
+                    a?.apellido_materno ??
+                    a?.segundo_apellido ??
+                    a?.materno ??
+                    ''
+                ).toString().trim();
+                const nombre = nombreDirecto || [
+                    a?.Nombre,
+                    a?.nombre,
+                    a?.primer_nombre,
+                    a?.first_name,
+                    paterno,
+                    materno
+                ].filter(Boolean).join(' ').trim();
+                // Contrato de integración: solo opciones con RFC y Nombre válidos.
+                if (!nombre || !rfc) return;
+                const opt = document.createElement('option');
+                opt.value = String(a?.id ?? i + 1);
+                opt.textContent = nombre;
+                opt.dataset.nombre = nombre;
+                opt.dataset.rfc = rfc;
+                opt.dataset.paterno = paterno;
+                opt.dataset.materno = materno;
+                opt.dataset.apiDepartamento = anfitrionDepartamentoNombre(a);
+                opt.dataset.apiPuesto = anfitrionPuestoNombre(a);
+                nombreApiSelect.appendChild(opt);
+            });
+            if (nombreApiSelect.options.length <= 1) {
+                throw new Error('API sin anfitriones válidos (requiere RFC y Nombre)');
+            }
+            populateDepartmentWorkstationSelectsFromAnfitriones(list);
+        } catch (e) {
+            console.error('No se pudieron cargar nombres desde API:', e);
+            nombreApiSelect.innerHTML = '<option value="" selected disabled>No se pudieron cargar nombres</option>';
+        }
+    }
+
     function updateNombreFieldMode() {
         if (!tipoHidden || !nombreText || !nombreSelect || !nombreWrapperText || !nombreWrapperSelect) return;
+        if (activeInstitutionName !== universityName) {
+            nombreWrapperText.style.display = 'none';
+            nombreWrapperSelect.style.display = 'none';
+            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = '';
+            nombreText.removeAttribute('name');
+            nombreText.removeAttribute('required');
+            nombreSelect.removeAttribute('name');
+            nombreSelect.removeAttribute('required');
+            if (nombreAlumnoHidden) {
+                nombreAlumnoHidden.removeAttribute('name');
+                nombreAlumnoHidden.removeAttribute('required');
+                nombreAlumnoHidden.setAttribute('disabled', 'disabled');
+            }
+            if (nombreApiHidden) {
+                nombreApiHidden.removeAttribute('disabled');
+                nombreApiHidden.setAttribute('name', 'nombre');
+                nombreApiHidden.setAttribute('required', 'required');
+            }
+            return;
+        }
         const esAlumno = tipoHidden.value === 'alumno';
         if (esAlumno) {
             nombreWrapperText.style.display = 'none';
             nombreWrapperSelect.style.display = '';
+            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = 'none';
             nombreText.removeAttribute('name');
             nombreText.removeAttribute('required');
             nombreSelect.removeAttribute('name');
@@ -701,6 +1047,7 @@ setTimeout(function() {
         } else {
             nombreWrapperSelect.style.display = 'none';
             nombreWrapperText.style.display = '';
+            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = 'none';
             nombreSelect.removeAttribute('name');
             nombreSelect.removeAttribute('required');
             nombreText.setAttribute('name', 'nombre');
@@ -794,33 +1141,63 @@ setTimeout(function() {
 
     function updateWorkstationDropdown() {
         const selectedDepartmentId = departmentSelect.value;
-        
-        
         workstationSelect.innerHTML = '<option value="">N/A</option>';
 
-      
+        if (activeInstitutionName !== universityName && anfitrionesCatalogList.length > 0) {
+            const selOpt = departmentSelect.selectedOptions[0];
+            let apiDeptName = selOpt && selOpt.dataset ? (selOpt.dataset.apiDeptName || '').trim() : '';
+            if (!apiDeptName && nombreApiSelect) {
+                const selectedNombreOpt = nombreApiSelect.options[nombreApiSelect.selectedIndex];
+                apiDeptName = (selectedNombreOpt?.dataset?.apiDepartamento || '').trim();
+            }
+            if (!apiDeptName) return;
+
+            const puestos = [];
+            const seenP = new Set();
+            anfitrionesCatalogList.forEach((a) => {
+                if (normalizeCatalogLabel(anfitrionDepartamentoNombre(a)) !== normalizeCatalogLabel(apiDeptName)) return;
+                const p = anfitrionPuestoNombre(a);
+                if (!p) return;
+                const k = normalizeCatalogLabel(p);
+                if (seenP.has(k)) return;
+                seenP.add(k);
+                puestos.push(p);
+            });
+            puestos.sort((a, b) => a.localeCompare(b, 'es'));
+            puestos.forEach((apiPuesto) => {
+                const wsId = findLocalWorkstationId(apiDeptName, apiPuesto);
+                const opt = document.createElement('option');
+                opt.value = wsId || '';
+                opt.textContent = apiPuesto;
+                opt.dataset.apiPuestoName = apiPuesto;
+                if (currentWorkstationId && wsId && String(wsId) === String(currentWorkstationId)) {
+                    opt.selected = true;
+                }
+                workstationSelect.appendChild(opt);
+            });
+            syncApiCatalogHiddenNames();
+            return;
+        }
+
         if (selectedDepartmentId) {
-            
             const filteredWorkstations = allWorkstations.filter(workstation => {
-                
-                return workstation.department_id == selectedDepartmentId;
+                return String(workstation.department_id) === String(selectedDepartmentId);
             });
 
             console.log('Puestos filtrados:', filteredWorkstations);
 
-            
             filteredWorkstations.forEach(workstation => {
                 const option = document.createElement('option');
                 option.value = workstation.id;
                 option.textContent = workstation.name;
-                
-               
-                if (currentWorkstationId && workstation.id == currentWorkstationId) {
+
+                if (currentWorkstationId && String(workstation.id) === String(currentWorkstationId)) {
                     option.selected = true;
                 }
                 workstationSelect.appendChild(option);
             });
         }
+        syncApiCatalogHiddenNames();
     }
     
 
@@ -829,12 +1206,19 @@ setTimeout(function() {
     
     
     departmentSelect.addEventListener('change', updateWorkstationDropdown);
+    departmentSelect.addEventListener('change', syncApiCatalogHiddenNames);
+    workstationSelect.addEventListener('change', syncApiCatalogHiddenNames);
 
     wireTipoUsuarioCheckboxes();
 
     if (nombreSelect) {
         nombreSelect.addEventListener('change', function () {
             aplicarDatosAspiranteDesdeSelect();
+        });
+    }
+    if (nombreApiSelect) {
+        nombreApiSelect.addEventListener('change', function () {
+            applyAnfitrionFromApiSelect();
         });
     }
 
@@ -844,9 +1228,13 @@ setTimeout(function() {
         applyAlumnoRole();
     }
 
+    loadAnfitrionesForBusinessUnit();
     updateNombreFieldMode();
 
-    updateWorkstationDropdown();
+    if (activeInstitutionName === universityName) {
+        updateWorkstationDropdown();
+    }
+    syncApiCatalogHiddenNames();
 
 }, 0);
 </script>

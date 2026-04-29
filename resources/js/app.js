@@ -1927,6 +1927,7 @@ function horarioDocenteMatchesCareer(careerIdsCsv, selectedCareerId) {
 }
 
 function initHorariosCareerFilterForContainer(container) {
+    const clasificacionSelect = container.querySelector('#clasificacion_select');
     const carreraSelect = container.querySelector('#carrera_select');
     const materiaSelect = container.querySelector('#materia_select');
     const docenteSelect = container.querySelector('#docente_select');
@@ -1936,6 +1937,15 @@ function initHorariosCareerFilterForContainer(container) {
     form.dataset.careerFilterInit = '1';
     const materiasData = [];
     const docentesData = [];
+    const carrerasData = [];
+    Array.from(carreraSelect.options).forEach((opt, i) => {
+        if (i === 0) return;
+        carrerasData.push({
+            value: opt.value,
+            text: opt.textContent.trim(),
+            classificationId: String(opt.getAttribute('data-classification-id') || ''),
+        });
+    });
     Array.from(materiaSelect.options).forEach((opt, i) => {
         if (i === 0) return;
         materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
@@ -1944,6 +1954,26 @@ function initHorariosCareerFilterForContainer(container) {
         if (i === 0) return;
         docentesData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
     });
+    function filterCarrerasByClassification(resetValues = true) {
+        if (!clasificacionSelect) return;
+        const classificationId = String(clasificacionSelect.value || '');
+        const savedCareerId = carreraSelect.value;
+        const carrerasFiltered = classificationId
+            ? carrerasData.filter((c) => c.classificationId === classificationId)
+            : carrerasData;
+        carreraSelect.innerHTML = '';
+        carreraSelect.appendChild(new Option('Seleccione una Carrera', '', true));
+        carrerasFiltered.forEach((c) => {
+            const o = new Option(c.text, c.value, false);
+            o.setAttribute('data-classification-id', c.classificationId || '');
+            carreraSelect.appendChild(o);
+        });
+        if (!resetValues && savedCareerId && carrerasFiltered.some((c) => c.value === savedCareerId)) {
+            carreraSelect.value = savedCareerId;
+        } else if (resetValues) {
+            carreraSelect.value = '';
+        }
+    }
     function filterByCareer(resetValues = true) {
         const careerId = String(carreraSelect.value || '');
         const savedMateriaId = materiaSelect.value;
@@ -1966,12 +1996,19 @@ function initHorariosCareerFilterForContainer(container) {
             window.refreshScheduleAulaOptionsFromForm(form);
         }
     }
+    if (clasificacionSelect) {
+        clasificacionSelect.addEventListener('change', () => {
+            filterCarrerasByClassification(true);
+            filterByCareer(true);
+        });
+    }
     carreraSelect.addEventListener('change', () => filterByCareer(true));
     materiaSelect.addEventListener('change', () => {
         if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
             window.refreshScheduleAulaOptionsFromForm(form);
         }
     });
+    filterCarrerasByClassification(false);
     filterByCareer(false);
 }
 document.addEventListener('click', (e) => {
@@ -2189,7 +2226,7 @@ function scheduleRenderPreview(form) {
         scheduleUpdatePreviewSelection(form);
         return;
     }
-    const deleteSvg = '<svg class="schedule-preview-card__icon" width="18" height="18" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg"><path d="M535.6 85.7C513.7 63.8 478.3 63.8 456.4 85.7L432 110.1L529.9 208L554.3 183.6C576.2 161.7 576.2 126.3 554.3 104.4L535.6 85.7zM236.4 305.7C230.3 311.8 225.6 319.3 222.9 327.6L193.3 416.4C190.4 425 192.7 434.5 199.1 441C205.5 447.5 215 449.7 223.7 446.8L312.5 417.2C320.7 414.5 328.2 409.8 334.4 403.7L496 241.9L398.1 144L236.4 305.7zM160 128C107 128 64 171 64 224L64 480C64 533 107 576 160 576L416 576C469 576 512 533 512 480L512 384C512 366.3 497.7 352 480 352C462.3 352 448 366.3 448 384L448 480C448 497.7 433.7 512 416 512L160 512C142.3 512 128 497.7 128 480L128 224C128 206.3 142.3 192 160 192L256 192C273.7 192 288 177.7 288 160C288 142.3 273.7 128 256 128L160 128z" fill="currentColor"/></svg>';
+    const deleteSvg = '<img src="/images/icons/trash-solid-full.svg" class="schedule-preview-card__icon" width="18" height="18" alt="Eliminar" />';
     franjas.forEach((franja) => {
         const diaNombres = (franja.dias_semana || []).map(scheduleGetNombreDia).join(' – ');
         const hi = scheduleTimeTo12h(franja.hora_inicio);
@@ -2250,11 +2287,7 @@ document.addEventListener('click', (e) => {
                 .sort((a, b) => a - b)
                 .map(scheduleGetNombreDia)
                 .join(', ');
-            alert(
-                'No puede repetir un día que ya está en otra franja de este horario. Días en conflicto: ' +
-                    nombres +
-                    '. Quite esos días de la selección o elimine la franja que ya los usa en la vista previa.'
-            );
+            alert('No puede repetir un día que ya está en otra franja de este horario.');
             return;
         }
         form._scheduleFranjas = franjas;
@@ -2513,6 +2546,7 @@ window.refreshScheduleAulaOptionsFromForm = function (form) {
 };
 
 function initHorariosCareerFilter() {
+    const clasificacionSelect = document.getElementById('clasificacion_select');
     const carreraSelect = document.getElementById('carrera_select');
     const materiaSelect = document.getElementById('materia_select');
     const docenteSelect = document.getElementById('docente_select');
@@ -2524,6 +2558,15 @@ function initHorariosCareerFilter() {
 
     const materiasData = [];
     const docentesData = [];
+    const carrerasData = [];
+    Array.from(carreraSelect.options).forEach((opt, i) => {
+        if (i === 0) return;
+        carrerasData.push({
+            value: opt.value,
+            text: opt.textContent.trim(),
+            classificationId: String(opt.getAttribute('data-classification-id') || ''),
+        });
+    });
     Array.from(materiaSelect.options).forEach((opt, i) => {
         if (i === 0) return;
         materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
@@ -2532,6 +2575,27 @@ function initHorariosCareerFilter() {
         if (i === 0) return;
         docentesData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
     });
+
+    function filterCarrerasByClassification(resetValues = true) {
+        if (!clasificacionSelect) return;
+        const classificationId = String(clasificacionSelect.value || '');
+        const savedCareerId = carreraSelect.value;
+        const carrerasFiltered = classificationId
+            ? carrerasData.filter((c) => c.classificationId === classificationId)
+            : carrerasData;
+        carreraSelect.innerHTML = '';
+        carreraSelect.appendChild(new Option('Seleccione una Carrera', '', true));
+        carrerasFiltered.forEach((c) => {
+            const o = new Option(c.text, c.value, false);
+            o.setAttribute('data-classification-id', c.classificationId || '');
+            carreraSelect.appendChild(o);
+        });
+        if (!resetValues && savedCareerId && carrerasFiltered.some((c) => c.value === savedCareerId)) {
+            carreraSelect.value = savedCareerId;
+        } else if (resetValues) {
+            carreraSelect.value = '';
+        }
+    }
 
     function filterByCareer(resetValues = true) {
         const careerId = String(carreraSelect.value || '');
@@ -2555,12 +2619,19 @@ function initHorariosCareerFilter() {
             window.refreshScheduleAulaOptionsFromForm(form);
         }
     }
+    if (clasificacionSelect) {
+        clasificacionSelect.addEventListener('change', () => {
+            filterCarrerasByClassification(true);
+            filterByCareer(true);
+        });
+    }
     carreraSelect.addEventListener('change', () => filterByCareer(true));
     materiaSelect.addEventListener('change', () => {
         if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
             window.refreshScheduleAulaOptionsFromForm(form);
         }
     });
+    filterCarrerasByClassification(false);
     filterByCareer(false);
 }
 

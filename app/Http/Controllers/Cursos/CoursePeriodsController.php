@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use App\Services\ExternalApiService;
 
 class CoursePeriodsController extends Controller
 {
@@ -58,138 +60,112 @@ class CoursePeriodsController extends Controller
         return redirect()->back()->with('success', 'Período eliminado exitosamente');
     }
 
-   /**
- * Mostrar usuarios del período (para asignar)
- */
-public function users(Course $course, CoursePeriod $period)
+
+public function users($courseId, $periodId)
 {
     try {
-        // ✅ Test ultra simple
+        $baseUrl = env('EXTERNAL_API_BASE_URL');
+        $endpoint = "/api/external/propiedades/1/anfitriones";
+
+        $service = new ExternalApiService(
+            env('EXTERNAL_API_ACCESS_KEY'),
+            env('EXTERNAL_API_SECRET_KEY')
+        );
+
+        $response = $service->execute($baseUrl . $endpoint);
+
+        if (!isset($response['success']) || !$response['success']) {
+            throw new \Exception($response['message'] ?? 'Error en API');
+        }
+
+        $users = collect($response['data'])->map(function ($u) {
+            return [
+                'id' => $u['no_anfitrion'],
+                'nombre' => trim(
+                    ($u['nombre'] ?? '') . ' ' .
+                    ($u['primer_apellido'] ?? '') . ' ' .
+                    ($u['segundo_apellido'] ?? '')
+                ),
+                'assigned' => false
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'users' => [
-                [
-                    'id' => 1,
-                    'nombre' => 'Usuario de Prueba',
-                    'email' => 'test@test.com',
-                    'assigned' => false
-                ]
-            ],
-            'debug' => [
-                'course_id' => $course->id,
-                'period_id' => $period->id
-            ]
+            'users' => $users->values()
         ]);
-        
+
     } catch (\Exception $e) {
+        \Log::error('Error cargando usuarios:', [
+            'course_id' => $courseId,
+            'period_id' => $periodId,
+            'error' => $e->getMessage()
+        ]);
+
         return response()->json([
             'success' => false,
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
+            'error' => $e->getMessage()
         ], 500);
     }
 }
 
-    /**
-     * Asignar/desasignar usuario al período
-     */
-    public function toggleUser(Request $request, Course $course, CoursePeriod $period)
-    {
-        $this->authorize('update', $course);
-        
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'assigned' => 'required|boolean'
-        ]);
-        
-        if ($validated['assigned']) {
-            // Asignar usuario
-            DB::table('period_user')->insertOrIgnore([
-                'period_id' => $period->id,
-                'user_id' => $validated['user_id'],
-                'course_id' => $course->id,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-        } else {
-            // Desasignar usuario
-            DB::table('period_user')
-                ->where('period_id', $period->id)
-                ->where('user_id', $validated['user_id'])
-                ->where('course_id', $course->id)
-                ->delete();
-        }
-        
-        return response()->json(['success' => true]);
-    }
+public function toggleUser(Request $request, $courseId, $periodId)
+{
+    return response()->json([
+        'success' => true
+    ]);
+}
 
-    /**
-     * Asistencia del período específico
-     */
-    /**
- * Asistencia del período específico
+/**
+ * Asistencia del período específico - CON API EXTERNA
  */
 public function attendance(Course $course, CoursePeriod $period)
 {
     $this->authorize('update', $course);
     
-    // Obtener solo usuarios de este período
-    $attendances = DB::table('period_user')
-        ->where('period_user.period_id', $period->id) // ✅ Especificar tabla
-        ->where('period_user.course_id', $course->id) // ✅ Especificar tabla
-        ->join('users', 'period_user.user_id', '=', 'users.id')
-        ->leftJoin('course_user', function($join) use ($course) {
-            $join->on('users.id', '=', 'course_user.user_id')
-                 ->where('course_user.course_id', '=', $course->id);
-        })
-        ->select(
-            'users.id',
-            'users.nombre',
-            'users.apellido_paterno',
-            'users.apellido_materno',
-            'users.email',
-            'course_user.started_at',
-            'course_user.completed_at',
-            'course_user.progress'
-        )
-        ->get()
-        ->map(function($user) use ($course, $period) {
-            $finalScore = null;
-            $completedAt = null;
-            
-            $finalExam = $course->finalExam;
-            if ($finalExam) {
-                $completion = DB::table('completions')
-                    ->where('user_id', $user->id)
-                    ->where('completable_type', 'App\\Models\\Cursos\\Activities')
-                    ->where('completable_id', $finalExam->id)
-                    ->first();
-                
-                if ($completion) {
-                    $finalScore = $completion->score;
-                    $completedAt = $completion->created_at;
-                }
-            }
-            
-            $progress = $finalScore !== null ? 100 : ($user->progress ?? 0);
-            $status = $finalScore !== null ? 'Completado' : 'En progreso';
-            
-            return [
-                'id' => $user->id,
-                'nombre' => trim(($user->nombre ?? '') . ' ' . ($user->apellido_paterno ?? '') . ' ' . ($user->apellido_materno ?? '')),
-                'email' => $user->email,
-                'started_at' => $user->started_at,
-                'completed_at' => $completedAt,
-                'progress' => $progress,
-                'final_score' => $finalScore,
-                'status' => $status,
-                'period_id' => $period->id,
-                'period_name' => $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y')
-            ];
-        });
+    // ✅ Obtener anfitriones asignados a este período
+    $assignedAnfitriones = DB::table('period_user')
+        ->where('period_user.period_id', $period->id)
+        ->where('period_user.course_id', $course->id)
+        ->pluck('no_anfitrion')
+        ->toArray();
     
-    $periods = collect([$period]); // Solo este período
+    if (empty($assignedAnfitriones)) {
+        $attendances = collect([]);
+    } else {
+        // ✅ Consumir API para obtener datos de anfitriones
+        $propiedadId = 1;
+        $apiUrl = url("/external-data?endpoint=/api/external/propiedades/{$propiedadId}/anfitriones");
+        $response = Http::timeout(30)->get($apiUrl);
+        
+        if ($response->successful()) {
+            $apiData = $response->json();
+            $allAnfitriones = collect($apiData['data'] ?? []);
+            
+            // ✅ Filtrar solo los asignados a este período
+            $filteredAnfitriones = $allAnfitriones->whereIn('no_anfitrion', $assignedAnfitriones);
+            
+            $attendances = $filteredAnfitriones->map(function($anfitrion) use ($course, $period) {
+                // Aquí puedes buscar progreso si lo guardas en alguna tabla
+                return [
+                    'id' => $anfitrion['no_anfitrion'],
+                    'nombre' => trim(($anfitrion['nombre'] ?? '') . ' ' . ($anfitrion['primer_apellido'] ?? '') . ' ' . ($anfitrion['segundo_apellido'] ?? '')),
+                    'email' => $anfitrion['rfc'] ?? 'N/A',
+                    'started_at' => null, // Por definir
+                    'completed_at' => null, // Por definir
+                    'progress' => 0, // Por definir
+                    'final_score' => null, // Por definir
+                    'status' => 'En progreso',
+                    'period_id' => $period->id,
+                    'period_name' => $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y')
+                ];
+            });
+        } else {
+            $attendances = collect([]);
+        }
+    }
+    
+    $periods = collect([$period]);
     
     return view('layouts.Cursos.attendance', compact('course', 'attendances', 'periods', 'period'));
 }

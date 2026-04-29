@@ -15,7 +15,7 @@ use App\Exports\EstadisticasExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 
-class CrmController extends Controller
+class CRMController extends Controller
 {
     public function leads()
     {
@@ -34,7 +34,7 @@ class CrmController extends Controller
 
         // Solo master y coordinador necesitan la lista de CTPs
         $ctps = [];
-        if (in_array($rol, ['master', 'coordinador_ctp'])) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo'])) {
             $ctps = \App\Models\Users\User::whereHas('roles', function ($q) {
                 $q->where('name', 'ctp');
             })->get();
@@ -63,7 +63,7 @@ class CrmController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -71,22 +71,9 @@ class CrmController extends Controller
             $query->where('carrera_id', $request->carrera_id);
         }
 
-        if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
-            $query->whereHas('seguimientos', function ($q) use ($request) {
-
-                $q->whereIn('id', function ($sub) {
-                    $sub->selectRaw('MAX(id)')
-                        ->from('lead_seguimientos')
-                        ->groupBy('lead_id');
-                });
-
-                if ($request->filled('fecha_inicio')) {
-                    $q->whereDate('fecha', '>=', $request->fecha_inicio);
-                }
-
-                if ($request->filled('fecha_fin')) {
-                    $q->whereDate('fecha', '<=', $request->fecha_fin);
-                }
+        if ($request->filled('nivel_educativo')) {
+            $query->whereHas('carrera', function ($q) use ($request) {
+                $q->where('career_classification_id', $request->nivel_educativo);
             });
         }
 
@@ -97,6 +84,20 @@ class CrmController extends Controller
                         ->from('lead_seguimientos')
                         ->groupBy('lead_id');
                 })->where('estado', $request->estatus);
+            });
+        }
+
+        if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
+            $query->whereHas('seguimientos', function ($q) use ($request) {
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                });
+                if ($request->filled('fecha_inicio'))
+                    $q->whereDate('fecha', '>=', $request->fecha_inicio);
+                if ($request->filled('fecha_fin'))
+                    $q->whereDate('fecha', '<=', $request->fecha_fin);
             });
         }
 
@@ -112,7 +113,6 @@ class CrmController extends Controller
 
         foreach ($leads as $lead) {
             $ultimoEstado = $lead->seguimientos->last()?->estado ?? 'Prospecto frío';
-
             match ($ultimoEstado) {
                 'Prospecto frío'     => $totalFrio++,
                 'Prospecto caliente' => $totalCaliente++,
@@ -122,15 +122,62 @@ class CrmController extends Controller
             };
         }
 
-        // ================= PORCENTAJES =================
-        $totalEstados = $totalFrio + $totalCaliente + $totalAspirante + $totalAlumno;
+        // ================= PORCENTAJES REALES =================
+        $queryTotal = Lead::query();
+        if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
+        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
+            $queryTotal->where('ctp_id', $request->ctp_id);
+        if ($request->filled('carrera_id'))
+            $queryTotal->where('carrera_id', $request->carrera_id);
+        if ($request->filled('nivel_educativo'))
+            $queryTotal->whereHas('carrera', function ($q) use ($request) {
+                $q->where('career_classification_id', $request->nivel_educativo);
+            });
+        if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
+            $queryTotal->whereHas('seguimientos', function ($q) use ($request) {
+                $q->whereIn('id', function ($sub) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('lead_seguimientos')
+                        ->groupBy('lead_id');
+                });
+                if ($request->filled('fecha_inicio'))
+                    $q->whereDate('fecha', '>=', $request->fecha_inicio);
+                if ($request->filled('fecha_fin'))
+                    $q->whereDate('fecha', '<=', $request->fecha_fin);
+            });
+        }
 
-        $porcentajeFrio      = $totalEstados > 0 ? round(($totalFrio / $totalEstados) * 100, 1) : 0;
-        $porcentajeCaliente  = $totalEstados > 0 ? round(($totalCaliente / $totalEstados) * 100, 1) : 0;
-        $porcentajeAspirante = $totalEstados > 0 ? round(($totalAspirante / $totalEstados) * 100, 1) : 0;
-        $porcentajeAlumno    = $totalEstados > 0 ? round(($totalAlumno / $totalEstados) * 100, 1) : 0;
+        $leadsReales = $queryTotal->with([
+            'seguimientos' => function ($q) {
+                $q->orderBy('fecha', 'asc')->orderBy('hora', 'asc');
+            }
+        ])->get();
 
-        // ================= TIEMPOS =================
+        $totalFrioReal = 0;
+        $totalCalienteReal = 0;
+        $totalAspiranteReal = 0;
+        $totalAlumnoReal = 0;
+
+        foreach ($leadsReales as $lead) {
+            $ultimoEstado = $lead->seguimientos->last()?->estado ?? null;
+            if (!$ultimoEstado) continue;
+            match ($ultimoEstado) {
+                'Prospecto frío'     => $totalFrioReal++,
+                'Prospecto caliente' => $totalCalienteReal++,
+                'Aspirante'          => $totalAspiranteReal++,
+                'Alumno'             => $totalAlumnoReal++,
+                default              => null,
+            };
+        }
+
+        $totalGeneral = $totalFrioReal + $totalCalienteReal + $totalAspiranteReal + $totalAlumnoReal;
+
+        $porcentajeFrio      = $totalGeneral > 0 ? round(($totalFrioReal / $totalGeneral) * 100, 1) : 0;
+        $porcentajeCaliente  = $totalGeneral > 0 ? round(($totalCalienteReal / $totalGeneral) * 100, 1) : 0;
+        $porcentajeAspirante = $totalGeneral > 0 ? round(($totalAspiranteReal / $totalGeneral) * 100, 1) : 0;
+        $porcentajeAlumno    = $totalGeneral > 0 ? round(($totalAlumnoReal / $totalGeneral) * 100, 1) : 0;
+
+        // ================= TIEMPOS — mismo criterio que estadisticas =================
         $tiempos = [
             'Prospecto frío'     => [],
             'Prospecto caliente' => [],
@@ -139,20 +186,33 @@ class CrmController extends Controller
         ];
 
         foreach ($leads as $lead) {
-
             $seguimientos = $lead->seguimientos;
-
             if ($seguimientos->isEmpty()) continue;
 
-            $ultimoSeg    = $seguimientos->last();
-            $estadoActual = $ultimoSeg->estado;
+            $segs = $seguimientos->values();
 
-            if (!isset($tiempos[$estadoActual])) continue;
+            foreach ($segs as $index => $seg) {
+                $estado = $seg->estado;
+                if (!isset($tiempos[$estado])) continue;
 
-            $fechaEntradaEstado = Carbon::parse($ultimoSeg->fecha . ' ' . $ultimoSeg->hora);
-            $segundos = $fechaEntradaEstado->diffInSeconds($hoy);
+                $fechaEntrada = Carbon::parse($seg->fecha . ' ' . $seg->hora);
+                $siguiente = $segs->get($index + 1);
 
-            $tiempos[$estadoActual][] = $segundos;
+                if ($estado === 'Alumno' && !$siguiente) {
+                    $anterior = $segs->get($index - 1);
+                    $fechaSalida = $fechaEntrada;
+                    $fechaEntrada = $anterior
+                        ? Carbon::parse($anterior->fecha . ' ' . $anterior->hora)
+                        : $fechaEntrada;
+                } else {
+                    $fechaSalida = $siguiente
+                        ? Carbon::parse($siguiente->fecha . ' ' . $siguiente->hora)
+                        : $hoy;
+                }
+
+                $segundos = $fechaEntrada->diffInSeconds($fechaSalida, true);
+                $tiempos[$estado][] = $segundos;
+            }
         }
 
         $convertirSegundos = function (float $segundos): string {
@@ -171,27 +231,22 @@ class CrmController extends Controller
             return implode(', ', $partes) ?: '0 min';
         };
 
-        $promedioFrio = count($tiempos['Prospecto frío']) > 0
-            ? $convertirSegundos(array_sum($tiempos['Prospecto frío']) / count($tiempos['Prospecto frío']))
-            : '0 min';
-
-        $promedioCaliente = count($tiempos['Prospecto caliente']) > 0
-            ? $convertirSegundos(array_sum($tiempos['Prospecto caliente']) / count($tiempos['Prospecto caliente']))
-            : '0 min';
-
+        $promedioFrio      = count($tiempos['Prospecto frío']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Prospecto frío']) / count($tiempos['Prospecto frío'])) : '0 min';
+        $promedioCaliente  = count($tiempos['Prospecto caliente']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Prospecto caliente']) / count($tiempos['Prospecto caliente'])) : '0 min';
         $promedioAspirante = count($tiempos['Aspirante']) > 0
-            ? $convertirSegundos(array_sum($tiempos['Aspirante']) / count($tiempos['Aspirante']))
-            : '0 min';
+            ? $convertirSegundos(array_sum($tiempos['Aspirante']) / count($tiempos['Aspirante'])) : '0 min';
+        $promedioAlumno    = count($tiempos['Alumno']) > 0
+            ? $convertirSegundos(array_sum($tiempos['Alumno']) / count($tiempos['Alumno'])) : '0 min';
 
-        $promedioAlumno = count($tiempos['Alumno']) > 0
-            ? $convertirSegundos(array_sum($tiempos['Alumno']) / count($tiempos['Alumno']))
-            : '0 min';
-
-        // ================= CONVERSIÓN =================
-        $porcentajeConversion = $totalEstados > 0
-            ? round(($totalAlumno / $totalEstados) * 100, 1)
+        // ================= CONVERSIÓN GENERAL =================
+        $porcentajeConversion = $totalGeneral > 0
+            ? round(($totalAlumnoReal / $totalGeneral) * 100, 1)
             : 0;
 
+
+            
         // ================= EXCEL =================
         $data = [
             ['RESUMEN'],
@@ -199,8 +254,7 @@ class CrmController extends Controller
             ['Total Alumnos', $totalAlumno],
             ['Conversión General', $porcentajeConversion.'%'],
 
-            [],
-            [],
+            [], [],
 
             ['DISTRIBUCIÓN DE PROSPECTOS'],
             ['Estado', 'Total'],
@@ -209,15 +263,14 @@ class CrmController extends Controller
             ['Aspirante', $totalAspirante],
             ['Alumno', $totalAlumno],
 
-            [],
-            [],
+            [], [],
 
             ['TASA DE CONVERSIÓN'],
             ['Estado', 'Conversión', 'Tiempo Promedio'],
-            ['Prospecto Frío', $porcentajeFrio.'%', $promedioFrio],
-            ['Prospecto Caliente', $porcentajeCaliente.'%', $promedioCaliente],
-            ['Aspirante', $porcentajeAspirante.'%', $promedioAspirante],
-            ['Alumno', $porcentajeAlumno.'%', $promedioAlumno],
+            ['Prospecto Frío',      $porcentajeFrio.'%',      $promedioFrio],
+            ['Prospecto Caliente',  $porcentajeCaliente.'%',  $promedioCaliente],
+            ['Aspirante',           $porcentajeAspirante.'%', $promedioAspirante],
+            ['Alumno',              $porcentajeAlumno.'%',    $promedioAlumno],
         ];
 
         return Excel::download(new EstadisticasExport($data), 'estadisticas.xlsx');
@@ -241,7 +294,7 @@ class CrmController extends Controller
             $query->where('ctp_id', $userId);
         }
 
-        if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id')) {
+        if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id')) {
             $query->where('ctp_id', $request->ctp_id);
         }
 
@@ -469,8 +522,8 @@ class CrmController extends Controller
     // Total SIN filtro de estatus NI de fecha (universo real para la dona)
     $queryTotal = Lead::query();
     if ($rol === 'ctp') $queryTotal->where('ctp_id', $userId);
-    if (in_array($rol, ['master', 'coordinador_ctp']) && $request->filled('ctp_id'))
-        $queryTotal->where('ctp_id', $request->ctp_id);
+    if (in_array($rol, ['master', 'coordinador_ctp', 'control_administrativo']) && $request->filled('ctp_id'))
+    $queryTotal->where('ctp_id', $request->ctp_id);
     if ($request->filled('carrera_id'))
         $queryTotal->where('carrera_id', $request->carrera_id);
     if ($request->filled('nivel_educativo'))
@@ -478,9 +531,47 @@ class CrmController extends Controller
             $q->where('career_classification_id', $request->nivel_educativo);
         });
 
-    $totalSinFiltroEstatus = $queryTotal->count();
+    // ← AGREGA ESTO
+    if ($request->filled('fecha_inicio') || $request->filled('fecha_fin')) {
+        $queryTotal->whereHas('seguimientos', function ($q) use ($request) {
+            $q->whereIn('id', function ($sub) {
+                $sub->selectRaw('MAX(id)')
+                    ->from('lead_seguimientos')
+                    ->groupBy('lead_id');
+            });
+            if ($request->filled('fecha_inicio'))
+                $q->whereDate('fecha', '>=', $request->fecha_inicio);
+            if ($request->filled('fecha_fin'))
+                $q->whereDate('fecha', '<=', $request->fecha_fin);
+        });
+    }
 
-        $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
+    // ← AGREGA ESTO
+    $leadsReales = $queryTotal->with([
+        'seguimientos' => function ($q) {
+            $q->orderBy('fecha', 'asc')->orderBy('hora', 'asc');
+        }
+    ])->get();
+
+    $totalFrioReal = 0;
+    $totalCalienteReal = 0;
+    $totalAspiranteReal = 0;
+    $totalAlumnoReal = 0;
+
+    foreach ($leadsReales as $lead) {
+        $ultimoEstado = $lead->seguimientos->last()?->estado ?? 'Prospecto frío';
+        match ($ultimoEstado) {
+            'Prospecto frío'     => $totalFrioReal++,
+            'Prospecto caliente' => $totalCalienteReal++,
+            'Aspirante'          => $totalAspiranteReal++,
+            'Alumno'             => $totalAlumnoReal++,
+            default              => null,
+        };
+    }
+
+    $totalSinFiltroEstatus = $totalFrioReal + $totalCalienteReal + $totalAspiranteReal + $totalAlumnoReal;
+
+    $ctps    = User::whereHas('roles', function ($q) { $q->where('name', 'ctp'); })->get();
 
         $carreras = $request->filled('nivel_educativo')
             ? \App\Models\Users\Career::where('career_classification_id', $request->nivel_educativo)->orderBy('name')->get()
@@ -495,7 +586,8 @@ class CrmController extends Controller
             'totalInteresados', 'totalConvertidos', 'porcentajeConversion',
             'frioPorMes', 'calientePorMes', 'aspirantePorMes', 'alumnoPorMes',
             'porcentajeFrio', 'porcentajeCaliente', 'porcentajeAspirante', 'porcentajeAlumno',
-            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus'
+            'promedioFrio', 'promedioCaliente', 'promedioAspirante', 'promedioAlumno','totalSinFiltroEstatus', 
+            'totalFrioReal', 'totalCalienteReal', 'totalAspiranteReal', 'totalAlumnoReal'
         ));
     }
     
@@ -604,7 +696,7 @@ class CrmController extends Controller
         
         $lead->save();
 
-        // 👇 Registrar "Prospecto frío" automáticamente si no existe
+        // Registrar "Prospecto frío" automáticamente si no existe
         $yaExiste = $lead->seguimientos()->where('estado', 'Prospecto frío')->exists();
         if (!$yaExiste) {
             $lead->seguimientos()->create([
@@ -649,7 +741,7 @@ class CrmController extends Controller
         ->select('comisiones.*', 'career_classifications.name as clasificacion_nombre')
         ->get();
 
-        $logoPath = public_path('images/logoUMI-Azul.png');
+        $logoPath = public_path('images/LogoUMI-Azul.png');
         $logoBase64 = base64_encode(file_get_contents($logoPath));
         
         return view('crm.comisiones', [
@@ -741,5 +833,49 @@ class CrmController extends Controller
             'data'  => $resultado,
             'total' => $resultado->sum('comision'),
         ]);
+    }
+
+    public function filtrarComisiones(Request $request)
+    {
+        $inicio = $request->input('fecha_inicio');
+        $fin    = $request->input('fecha_fin');
+        $buscar = strtolower($request->input('ctp', ''));
+
+        $ctps = User::whereHas('roles', function ($q) {
+            $q->where('name', 'ctp');
+        })->get();
+
+        $ctps = $ctps->filter(function ($ctp) use ($buscar) {
+            if (!$buscar) return true;
+            $nombre = strtolower($ctp->nombre . ' ' . $ctp->apellido_paterno);
+            return str_contains($nombre, $buscar);
+        });
+
+        $ctps->each(function ($ctp) use ($inicio, $fin) {
+            $query = Lead::where('ctp_id', $ctp->id)
+                ->whereHas('seguimientos', function ($q) use ($inicio, $fin) {
+                    $q->where('estado', 'Alumno');
+                    if ($inicio) $q->whereDate('fecha', '>=', $inicio);
+                    if ($fin)    $q->whereDate('fecha', '<=', $fin);
+                });
+
+            $ctp->num_conversiones = $query->count();
+
+            $leads = $query->with('carrera')->get();
+
+            $ctp->total_comisiones = $leads->sum(function ($lead) {
+                $comision = Comision::where('producto', $lead->carrera?->name)->first();
+                return $comision?->total ?? 0;
+            });
+        });
+
+        return response()->json(
+            $ctps->values()->map(fn($ctp) => [
+                'id'               => $ctp->id,
+                'nombre'           => $ctp->nombre . ' ' . $ctp->apellido_paterno,
+                'num_conversiones' => $ctp->num_conversiones,
+                'total_comisiones' => $ctp->total_comisiones,
+            ])
+        );
     }
 }

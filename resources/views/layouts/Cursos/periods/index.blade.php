@@ -211,7 +211,7 @@ function renderUsers(filteredUsers = null) {
     const container = document.getElementById('usersList');
     
     if (users.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No hay usuarios disponibles</div>';
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No hay anfitriones disponibles</div>';
         return;
     }
     
@@ -219,7 +219,12 @@ function renderUsers(filteredUsers = null) {
         <div class="user-item" data-user-name="${user.nombre.toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; transition: all 0.2s;">
             <div style="flex: 1;">
                 <div style="font-weight: 600; color: #333; margin-bottom: 3px;">${user.nombre}</div>
-                <div style="font-size: 0.85em; color: #666;">${user.email}</div>
+                <div style="font-size: 0.85em; color: #666; margin-bottom: 2px;">
+                    📋 No. Anfitrión: ${user.no_anfitrion}
+                </div>
+                <div style="font-size: 0.8em; color: #999;">
+                    ${user.departamento} • ${user.posicion}
+                </div>
             </div>
             <label style="cursor: pointer; display: flex; align-items: center;">
                 <input 

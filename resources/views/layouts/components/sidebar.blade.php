@@ -4,10 +4,18 @@
     {{-- =================================================================== --}}
     @php
         $user = Auth::user();
-        
+
         // --- 1. CONTEXTO ---
         $universityName = 'Universidad Mundo Imperial';
-        $isUniversity   = (session('active_institution_name') == $universityName);
+        $activeInstitutionId = (int) session('active_institution_id', 0);
+        $activeInstitution = $activeInstitutionId > 0
+            ? \App\Models\Users\Institution::query()->find($activeInstitutionId)
+            : null;
+        $isUniversity = (bool) ($activeInstitution?->is_universidad ?? false);
+        // Fallback por compatibilidad con datos antiguos/sesión.
+        if (! $isUniversity) {
+            $isUniversity = (session('active_institution_name') == $universityName);
+        }
 
         // --- 2. ROLES ---
         $isMaster       = $user->hasActiveRole('master');
@@ -307,21 +315,21 @@
             </li>
 
             {{-- Prospectos: solo Master y Coordinador --}}
-            @if($isMaster || $isCoordinatorCTP)
+            @if($isMaster || $isCoordinatorCTP || $isControlAdmin)
                 <li class="{{ request()->routeIs('crm.prospectos') ? 'active-submenu' : '' }}">
                     <a href="{{ route('crm.prospectos') }}">Prospectos</a>
                 </li>
             @endif
 
             {{-- Comisiones: Master y Coordinador --}}
-            @if($isMaster || $isCoordinatorCTP)
+            @if($isMaster || $isCoordinatorCTP || $isControlAdmin)
                 <li class="{{ request()->routeIs('crm.comisiones') ? 'active-submenu' : '' }}">
                     <a href="{{ route('crm.comisiones') }}">Comisiones</a>
                 </li>
             @endif
 
             {{-- Estadísticas: Master, Coordinador y CTP --}}
-                @if($isMaster || $isCoordinatorCTP || $isCTP)
+                @if($isMaster || $isCoordinatorCTP || $isCTP || $isControlAdmin)
                     <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
                         <a href="{{ route('crm.estadisticas') }}">Estadísticas</a>
                     </li>

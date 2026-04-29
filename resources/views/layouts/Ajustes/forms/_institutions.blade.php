@@ -62,8 +62,6 @@
 
         // Valor inicial que viene del backend (old('name') o $item->name)
         const currentValue = (@json($currentValue) || '').trim();
-        /** Unidad en la que está logueado el usuario (Palacio / Pierre / Princess / …). */
-        const activeInstitutionName = (@json($activeInstitutionName ?? '') || '').trim();
         let cachedPropiedades = null; // Cacheamos para no consumir la API más de una vez
         let input = null;
 
@@ -135,29 +133,6 @@
             select.style.display = 'none';
         }
 
-        /** Palabra clave según la unidad activa (misma lógica que puestos/departamentos). */
-        function keywordForActiveInstitution(instName) {
-            const x = (instName || '').toLowerCase();
-            if (x.includes('palacio')) return 'palacio';
-            if (x.includes('princess')) return 'princess';
-            if (x.includes('pierre')) return 'pierre';
-            return '';
-        }
-
-        function filterPropiedadesForActiveUnit(list) {
-            if (!Array.isArray(list)) return list;
-            const key = keywordForActiveInstitution(activeInstitutionName);
-            if (!key) return list;
-            const filtered = list.filter(p => {
-                const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
-                return n.includes(key);
-            });
-            if (filtered.length === 0) {
-                console.warn('Ninguna propiedad de la API coincide con la unidad activa:', activeInstitutionName, 'keyword:', key);
-            }
-            return filtered;
-        }
-
         function populateSelectFromPropiedades(propiedades) {
             const raw = Array.isArray(propiedades)
                 ? propiedades
@@ -168,7 +143,7 @@
                 return;
             }
 
-            const list = filterPropiedadesForActiveUnit(raw);
+            const list = raw;
 
             select.innerHTML = '';
             const placeholder = document.createElement('option');

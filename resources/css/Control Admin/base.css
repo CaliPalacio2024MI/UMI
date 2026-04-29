@@ -1408,6 +1408,11 @@
     background-color: #f0f0f0; /* Gris muy claro al pasar el mouse */
 }
 
+.day-selection-buttons button:focus:not(.selected),
+.day-selection-buttons button:active:not(.selected) {
+    background-color: #fff;
+}
+
 .time-inputs {
     /* Mantenemos la alineación horizontal */
     width: fit-content;
@@ -3952,6 +3957,11 @@ select[name="semesters"],
     body.print-teacher-horario-page .teacher-horarios-grilla tbody tr {
         page-break-inside: avoid;
     }
+    /* Forzamos corte para que el horario salga en 2 hojas máximo (bloque 1 y bloque 2). */
+    body.print-teacher-horario-page .teacher-horarios-grilla tbody tr:nth-child(8) {
+        break-after: page;
+        page-break-after: always;
+    }
     body.print-teacher-horario-page .teacher-horarios-grilla {
         width: 100% !important;
         min-width: 0 !important;
@@ -3967,14 +3977,28 @@ select[name="semesters"],
         width: 13.14% !important;
         min-width: 0 !important;
         max-width: none !important;
-        padding: 0.2rem !important;
+        padding: 0.15rem !important;
     }
     body.print-teacher-horario-page .teacher-horarios-grilla {
-        font-size: 0.75rem !important;
+        font-size: 0.68rem !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla tbody td.grilla-cell,
+    body.print-teacher-horario-page .teacher-horarios-grilla tbody td.grilla-col-hora {
+        height: 56px !important;
+        min-height: 56px !important;
+        max-height: 56px !important;
+        line-height: 1.2 !important;
     }
     body.print-teacher-horario-page .teacher-horarios-grilla .grilla-clase-card {
-        margin-bottom: 0.2rem !important;
-        padding: 0.2rem 0.35rem !important;
+        margin-bottom: 0.1rem !important;
+        padding: 0.12rem 0.2rem !important;
+        min-height: 1.2rem !important;
+    }
+    body.print-teacher-horario-page .teacher-horarios-grilla .grilla-clase-nombre {
+        font-size: 0.62rem !important;
+        line-height: 1.05 !important;
+        min-height: 0 !important;
+        max-width: none !important;
     }
 }
 
