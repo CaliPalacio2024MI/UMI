@@ -138,7 +138,7 @@
                                     <img src="{{ asset('images/icons/delete-left-solid-full.svg') }}" alt="Eliminar">
                                 </button>
                             </form>
-                        <div>
+                            </div>
                         </td>
                     </tr> 
                 @empty

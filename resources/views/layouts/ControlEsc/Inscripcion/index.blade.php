@@ -144,7 +144,7 @@
                 @endif
 
                 {{-- DATOS PERSONALES --}}
-                <h3> Datos Personales</h3>
+                <h3 style="font-size: 1.1rem;"> Datos Personales</h3>
                 <hr>
                 <div class="form-group-triple">
                     <div class="form-field">
@@ -192,7 +192,7 @@
                 </div>
 
                 {{-- 3. DIRECCIÓN --}}
-                <h3> Domicilio</h3>
+                <h3 style="font-size: 1.1rem;"> Domicilio</h3>
                 <hr>
                 <div class="form-group-triple">
                     <div class="form-field">
@@ -220,7 +220,7 @@
                 </div>
 
                 {{-- 4. ACADÉMICO Y DOCUMENTOS --}}
-                <h3> Datos Académicos y Documentación</h3>
+                <h3 style="font-size: 1.1rem;"> Datos Académicos y Documentación</h3>
                 <hr>
                 <div class="form-group-double">
                     <div class="form-field">
@@ -255,7 +255,7 @@
 
                 {{-- CARGA DE DOCUMENTOS --}}
                 <div class="docs-container" style="background: #ffffff; padding: 20px; border: 1px dashed #3498db; border-radius: 8px; margin-top: 20px;">
-                    <h4 style="margin-top:0; color: #2980b9;"><i class="fa-solid fa-cloud-arrow-up"></i> Documentación Requerida</h4>
+                    <h4 style="margin-top:0; color: #2980b9; font-size: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Documentación Requerida</h4>
                     @if(isset($alumno) && (!empty($alumno->doc_acta_rechazado) || !empty($alumno->doc_certificado_rechazado) || !empty($alumno->doc_curp_rechazado) || !empty($alumno->doc_ine_rechazado) || !empty($alumno->doc_ficha_pago_rechazado ?? false) || !empty($alumno->doc_factura_xml_rechazado ?? false)))
                         <div class="doc-rechazo-banner" style="background: #fdecea; border: 1px solid #e74c3c; color: #922b21; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem;">
                             <strong>Atención:</strong> Control escolar marcó uno o más documentos como incorrectos. Sube de nuevo los archivos indicados abajo.
@@ -317,7 +317,7 @@
 
                 {{-- 6. FACTURACIÓN DINÁMICA --}}
                 <div class="billing-container" style="background: #fdf2f2; padding: 20px; border: 1px solid #e74c3c; border-radius: 8px; margin-top: 20px;">
-                    <h4 style="margin-top:0; color: #c0392b;"><i class="fa-solid fa-money-bill-wave"></i> Ficha de Pago / Facturación</h4>
+                    <h4 style="margin-top:0; color: #c0392b; font-size: 1rem;"><i class="fa-solid fa-money-bill-wave"></i> Ficha de Pago / Facturación</h4>
                     <hr style="border-top: 1px solid #e74c3c; opacity: 0.3;">
                     
                     <div style="display: flex; gap: 15px; align-items: flex-start;">
@@ -442,7 +442,7 @@
 
                 <div class="form-action-buttons">
                     <button type="submit" class="submit-button">
-                        <i class="fa-solid fa-save"></i> {{ $esReinscripcion ? 'Enviar formulario' : 'Enviar formulario' }}
+                        {{ $esReinscripcion ? 'Enviar formulario' : 'Enviar formulario' }}
                     </button>
                 </div>
                 </form>

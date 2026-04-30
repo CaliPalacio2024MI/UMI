@@ -8,7 +8,7 @@
 <div class="container container--materias">
     <div class ="content-header">
         <div class="content-title">
-            <h3>MATERIAS</h3>
+            <h5>MATERIAS</h5>
         </div>
     </div>
     <div class="list-header-toolbar">

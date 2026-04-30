@@ -26,6 +26,11 @@
     animation: slideDown 0.3s ease-out;
 }
 
+/* courseShow.css aplica .modal-content { text-align: center } globalmente; el modal de Ajustes debe leerse alineado a la izquierda */
+#formModal .modal-content {
+    text-align: left;
+}
+
 
 @keyframes slideDown {
     from {
@@ -156,6 +161,11 @@
     color: #BC8A55;
     font-size: 1em;
     line-height: 1.3;
+}
+
+/* courseShow.css: .modal-content p { color: #666 } gana por especificidad sobre .tipo-unidad-question */
+#formModal .modal-content .tipo-unidad-question {
+    color: #BC8A55;
 }
 
 .tipo-unidad-checkboxes-row {

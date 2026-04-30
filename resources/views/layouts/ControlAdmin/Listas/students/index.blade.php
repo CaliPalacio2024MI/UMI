@@ -118,7 +118,7 @@
                         Académico
                     </button>
                     <button type="button" class="student-details-tab-btn" role="tab" aria-selected="false" aria-controls="studentDetailsTabDocs" id="studentDetailsTabBtnDocs" data-student-tab="docs">
-                        <i class="fa-solid fa-folder-open" style="margin-right:6px;"></i>Documentación
+                        Documentación
                     </button>
                 </div>
 
@@ -154,11 +154,11 @@
 
                 <div id="studentDetailsTabDocs" class="student-details-tab-panel" role="tabpanel" aria-labelledby="studentDetailsTabBtnDocs">
                     <div class="docs-list">
-                        <button id="btnDocActa" class="doc-btn hidden"><i class="fa-solid fa-file-pdf"></i> Acta de Nacimiento</button>
-                        <button id="btnDocCert" class="doc-btn hidden"><i class="fa-solid fa-file-certificate"></i> Certificado Prepa</button>
-                        <button id="btnDocCurp" class="doc-btn hidden"><i class="fa-solid fa-passport"></i> CURP</button>
-                        <button id="btnDocIne" class="doc-btn hidden"><i class="fa-solid fa-id-card"></i> INE</button>
-                        <button id="btnDocFicha" class="doc-btn hidden"><i class="fa-solid fa-file-invoice-dollar"></i> Ficha / comprobante de pago</button>
+                        <button id="btnDocActa" class="doc-btn hidden">Acta de Nacimiento</button>
+                        <button id="btnDocCert" class="doc-btn hidden">Certificado Prepa</button>
+                        <button id="btnDocCurp" class="doc-btn hidden">CURP</button>
+                        <button id="btnDocIne" class="doc-btn hidden">INE</button>
+                        <button id="btnDocFicha" class="doc-btn hidden">Ficha / comprobante de pago</button>
 
                         <div id="noDocsMsg" class="no-docs" style="display:none;">
                             No hay documentos digitales cargados.
@@ -196,7 +196,7 @@
                         <div class="lead-edit-tabs" role="tablist" aria-label="Secciones del expediente">
                             <button type="button" class="lead-edit-tab-btn is-active" role="tab" aria-selected="true" aria-controls="leadEditTabPersonal" id="leadEditTabBtnPersonal" data-lead-tab="personal">Personal</button>
                             <button type="button" class="lead-edit-tab-btn" role="tab" aria-selected="false" aria-controls="leadEditTabAcademico" id="leadEditTabBtnAcademico" data-lead-tab="academico">Académico</button>
-                            <button type="button" class="lead-edit-tab-btn" role="tab" aria-selected="false" aria-controls="leadEditTabDocs" id="leadEditTabBtnDocs" data-lead-tab="docs"><i class="fa-solid fa-folder-open" style="margin-right:6px;"></i>Documentación</button>
+                            <button type="button" class="lead-edit-tab-btn" role="tab" aria-selected="false" aria-controls="leadEditTabDocs" id="leadEditTabBtnDocs" data-lead-tab="docs">Documentación</button>
                         </div>
                         <div id="leadEditTabPersonal" class="lead-edit-tab-panel is-active" role="tabpanel" aria-labelledby="leadEditTabBtnPersonal">
                             <div class="detail-item"><label>Nombre:</label><input type="text" name="alumno_nombre" id="leadAlumnoNombre" required style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;"></div>
@@ -621,6 +621,7 @@
     .doc-btn { display: flex; align-items: center; width: 100%; padding: 12px 15px; margin-bottom: 10px; background: #fbfbfb; color: #2c3e50; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s; }
     .doc-btn:hover { background: #e3f2fd; border-color: #3498db; color: #223F70; transform: translateX(5px); }
     .doc-btn i { margin-right: 12px; font-size: 1.2rem; color: #e74c3c; }
+    #btnDocCert { justify-content: flex-start; text-align: left; }
     .hidden { display: none !important; }
     .no-docs { text-align: center; color: #aaa; padding: 15px; border: none; }
 
@@ -1042,7 +1043,7 @@
                 var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'btn-ver-doc';
-                btn.innerHTML = '<i class="fa-regular fa-file-pdf"></i> Ver documento';
+                btn.textContent = 'Ver documento';
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();

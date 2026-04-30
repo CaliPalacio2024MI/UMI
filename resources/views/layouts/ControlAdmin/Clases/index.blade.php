@@ -2,7 +2,7 @@
 
 @section('title', 'Clases - Control Administrativo - ' . session('active_institution_name'))
 
-@vite(['resources/css/Cursos/courses.css', 'resources/css/Control Admin/base.css', 'resources/js/app.js'])
+{{-- El layout ya carga app.css (incluye courses + Control Admin base) y app.js; duplicar @vite aquí alteraba el orden CSS al refrescar. --}}
 
 @push('css')
 <style>
@@ -132,10 +132,15 @@
     width: 100%;
     border-radius: 20px;
     border: 1px solid #ddd;
+    background-color: #fff !important;
     padding: 8px 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     text-align: center;
     text-align-last: center;
+}
+#form-filtros .clases-filtro-select:disabled {
+    background-color: #fff !important;
+    opacity: 1;
 }
 .caja-materia-abajo { width: 100% !important; max-width: 559px; height: auto !important; display: flex; flex-direction: column; min-height: 0; }
 .caja-materia-abajo #horarios-materia-box { flex: 1 1 auto; min-height: 0; max-height: none !important; }
@@ -587,7 +592,10 @@
         var opt = m.options[m.selectedIndex];
         if (!opt || !opt.dataset || opt.dataset.semestre === undefined || opt.dataset.semestre === '') return;
         s.value = String(opt.dataset.semestre);
-        refrescarSoloTablaClases();
+        // Evitar un fetch inmediato al cargar/refrescar la página.
+        // El servidor ya renderiza el estado inicial; refrescar aquí genera
+        // una segunda carga visual (cursor "ocupado") innecesaria.
+        s.classList.toggle('semestre-placeholder', s.value === '');
     })();
     document.getElementById('form-filtros')?.addEventListener('click', function(e) {
         var btnTodo = e.target.closest('#btn-seleccionar-todo-clases');

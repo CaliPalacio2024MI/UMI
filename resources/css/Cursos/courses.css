@@ -203,15 +203,8 @@
     background: #e5e7eb;
 }
 
-/* Excepción para el botón de borrar */
-.btn-delete {
-    background: #dabac1 !important; /* Rojo */
-    color: white !important;         /* Icono blanco */
-}
-
-.btn-delete:hover {
-    background: #adadad !important;
-}
+/* Botón borrar solo en tarjetas de Cursos (.courses-wrapper). Reglas globales .btn-delete
+   pisaban Ajustes/Facturación al cargar este archivo y causaban parpadeo al refrescar. */
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 1200px) {
@@ -230,15 +223,13 @@
 .content-panel {
     display: none;
 }
-/* ================= CORRECCIÓN PARA EL BOTÓN ROJO ================= */
-
-/* Selector específico para el botón de borrar */
-.btn-delete {
+/* Misma corrección roja, acotada a Cursos (evita conflictos con tablas Ajustes/Facturación) */
+.courses-wrapper .btn-delete {
     background: #fee2e2 !important;
     color: #ef4444 !important;
 }
 
-.btn-delete:hover {
+.courses-wrapper .btn-delete:hover {
     background: #fecaca !important;
     color: #dc2626 !important;
     transform: translateY(-2px) scale(1.08);

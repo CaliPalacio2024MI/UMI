@@ -398,7 +398,7 @@ input:checked + .slider:before {
     transition: transform 0.2s;
 }
 
-/* --- Botón Eliminar (Icono Rojo con Filtro) --- */
+/* --- Botón Eliminar (icono rojo en el SVG; sin filter para no recolorear) --- */
 
 .btn-delete {
     background: transparent;
@@ -417,18 +417,30 @@ input:checked + .slider:before {
 .btn-delete svg {
     width: 25px;
     height: 25px;
-    filter: invert(28%) sepia(51%) saturate(2755%) hue-rotate(340deg) brightness(92%) contrast(93%);
-  transition: none;
+    filter: none;
+    transition: none;
 }
 
 
 .btn-delete:hover img,
 .btn-delete:hover svg {
-  transform: none;
-  filter: invert(28%) sepia(51%) saturate(2755%) hue-rotate(340deg) brightness(92%) contrast(93%);
+    transform: none;
+    filter: none;
 }
 
-/* Asegurar que el botón eliminar no cambie de color al hacer hover en Ajustes */
+/* courses.css define .btn-delete con fondo #fee2e2; en Ajustes solo el icono rojo (SVG), sin caja rosa */
+.main-table .btn-delete {
+    background: transparent !important;
+    color: inherit !important;
+}
+
 .main-table .btn-delete:hover {
     background: transparent !important;
+    color: inherit !important;
+    transform: none;
+}
+
+.main-table .btn-delete:hover img,
+.main-table .btn-delete:hover svg {
+    filter: none;
 }

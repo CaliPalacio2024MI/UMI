@@ -29,11 +29,15 @@
 }
 
 .content-title{
-    font-size: 28px;
+    font-size: 36px;
     font-weight: bold;
 }
 
-.content-title h3 {
+.content-title h3,
+.content-title h4,
+.content-title h5 {
+    font-size: 1em;
+    font-weight: inherit;
     text-transform: uppercase;
     margin: 0.5em 0;
 }
@@ -311,6 +315,8 @@
     min-height: 560px;
     max-width: 100%;
     box-sizing: border-box;
+    /* Separación respecto al bloque superior (título + “Agregar…”) */
+    margin-top: 2rem;
 }
 
 .carrer-card {
@@ -460,6 +466,22 @@
     gap: 8px;
 }
 
+/* Solo iconos Ver / Editar / Eliminar (no modales incluidos en esta sección) */
+.carrer-card .carrer-btn-section > button.btn-view,
+.carrer-card .carrer-btn-section > button.btn-edit,
+.carrer-card .carrer-btn-section > form > button.btn-delete {
+    box-sizing: border-box;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    padding: 0;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 /* Línea roja siempre en el centro vertical de todas las tarjetas */
 .carrer-card .line-separator{
     border-top: 3px solid #db5865;
@@ -604,7 +626,9 @@
 .container--materias .content-header {
     margin-bottom: 0;
 }
-.container--materias .content-title h3 {
+.container--materias .content-title h3,
+.container--materias .content-title h4,
+.container--materias .content-title h5 {
     margin-bottom: 0.25em;
 }
 .container--materias .list-header-toolbar {
@@ -629,14 +653,73 @@
     flex: 1;
     min-width: 0;
 }
-/* Barra de búsqueda en módulo Horarios: menos ancho a los lados y poco espacio hasta la tabla */
+/* Barra de búsqueda en módulo Horarios: mismo ancho máximo que la tabla debajo */
 .schedule-table .toolbar__search {
     margin-left: 19px;
-    margin-right: 19px;
-    margin-bottom: 8px;
+    margin-right: auto;
+    margin-bottom: 12px;
     width: 100%;
     max-width: 680px;
     box-sizing: border-box;
+}
+/* La tabla usa el mismo bloque que el buscador (evita “descuadre” lateral) */
+.schedule-table .table-responsive {
+    width: 100%;
+    max-width: 680px;
+    margin-left: 19px;
+    margin-right: auto;
+    box-sizing: border-box;
+    max-height: min(52vh, 480px);
+    overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-gutter: stable;
+    scrollbar-color: #223f70 #e8eaed;
+    scrollbar-width: thin;
+}
+.schedule-table .table-responsive::-webkit-scrollbar {
+    width: 10px;
+}
+.schedule-table .table-responsive::-webkit-scrollbar-track {
+    background: #e8eaed;
+    border-radius: 10px;
+}
+.schedule-table .table-responsive::-webkit-scrollbar-thumb {
+    background: #223f70;
+    border-radius: 10px;
+}
+.schedule-table .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #1a3360;
+}
+/* Encabezado azul con esquinas más redondeadas (acorde al buscador) */
+.schedule-table .table-custom-sessions {
+    width: 100%;
+}
+/* Cabecera fija al hacer scroll vertical */
+.schedule-table .table-custom-sessions thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #2f4b7c;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+.schedule-table .table-custom-sessions thead th:first-child {
+    border-top-left-radius: 18px;
+}
+.schedule-table .table-custom-sessions thead th:last-child {
+    border-top-right-radius: 18px;
+}
+/* Carrera, Materia, Clasificación, Docentes: bordes rojos solo en filas (tbody), no en el encabezado azul */
+.schedule-table #horarios-tbody td:nth-child(-n+4) {
+    border-left: 3px solid #db5865;
+    border-right: 3px solid #db5865;
+}
+/* Carrera: sin línea roja a la izquierda */
+.schedule-table #horarios-tbody td:nth-child(1) {
+    border-left: none;
+}
+/* Separación entre filas: línea inferior blanca (sustituye el gris claro por defecto) */
+.schedule-table #horarios-tbody td {
+    border-bottom: 1px solid #fff;
 }
 .schedule-table .toolbar__search form,
 .schedule-table .toolbar__search .mb-4 {
@@ -898,7 +981,9 @@
     padding-bottom: 1rem;
     margin-bottom: 1rem;
 }
-.container--materias .content-title h3 {
+.container--materias .content-title h3,
+.container--materias .content-title h4,
+.container--materias .content-title h5 {
     margin-left: 12px;
 }
 
@@ -1769,10 +1854,15 @@
     word-break: normal;
 }
 
-/* Filas de datos: sin líneas horizontales (Carrera, Alumno, Matrícula, Acciones); siguen los bordes rojos verticales globales */
+/* Filas de datos: sin líneas horizontales; bordes verticales fijados aquí (misma especificidad alta → sin saltos al refrescar) */
 #form-filtros #clases-tabla-filtros table.tabla-base tbody td {
     border-top: none !important;
     border-bottom: none !important;
+    border-left: none;
+    border-right: 3px solid #dc3545;
+}
+#form-filtros #clases-tabla-filtros table.tabla-base tbody tr td:last-child {
+    border-right: none;
 }
 
 #form-filtros #clases-tabla-filtros th.col-carrera,
@@ -3479,6 +3569,8 @@ select[name="semesters"],
 }
 #teacherEditModal form h3 {
     color: #BC8A55;
+    font-size: 0.95rem;
+    margin-bottom: 0.35rem;
 }
 /* Título dorado visible (coherente con etiquetas del modal) */
 #teacherEditModal fieldset.docente-carreras-fieldset > legend.docente-carreras-legend {
@@ -3908,6 +4000,12 @@ select[name="semesters"],
 }
 .horario-export-pdf-btn:hover {
     background-color: #2a4365;
+}
+.horario-export-pdf-btn.btn--secondary:hover,
+.horario-export-pdf-btn.btn--secondary:focus,
+.horario-export-pdf-btn.btn--secondary:active {
+    background-color: #2a4365;
+    color: #fff;
 }
 
 /* Imprimir desde la vista completa de Horario de Docente (no modal) */

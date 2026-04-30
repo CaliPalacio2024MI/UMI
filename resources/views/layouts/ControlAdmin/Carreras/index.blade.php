@@ -12,7 +12,7 @@
     <!-- Header -->
     <div class ="content-header">
         <div class="content-title">
-            <h3>Carreras</h3>
+            <h5>Carreras</h5>
         </div>
         <div class="option-carrer">
             @if(Auth::user()->hasAnyRole(['master']))

@@ -359,7 +359,7 @@
             <input type="hidden" id="modal_uid_prefix" name="uid_prefix" value="EXT-">
 
                 {{-- 1. Período Activo --}}
-                <label for="modal_period_id" style="font-weight:bold; display:block; margin-top:10px;">Período Activo:</label>
+                <label for="modal_period_id" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Período Activo:</label>
                 <select id="modal_period_id" name="period_id" required class="filter-select" style="width:100%; background-color: #e9ecef; pointer-events: none;" readonly tabindex="-1">
                     @foreach ($periods as $period)
                         @if($period->is_active == 1)
@@ -369,7 +369,7 @@
                 </select>
 
                 {{-- 2. Concepto: catálogo (MEN-) vs texto libre (EXT-) — controlado por JS --}}
-                <span id="modal_concepto_label" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</span>
+                <span id="modal_concepto_label" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Concepto:</span>
                 <div id="modal_concepto_men_wrap">
                     <select id="modal_concepto" name="concepto" required class="filter-select" style="width: 100%; padding: 8px;">
                         <option value="" data-amount="">   Seleccione un concepto   </option>
@@ -397,7 +397,7 @@
                 </div>
 
                 {{-- 3. Monto: solo lectura desde catálogo (MEN-) vs captura manual (EXT-) --}}
-                <label id="modal_monto_label" for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto de tiempo normal:</label>
+                <label id="modal_monto_label" for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Monto de tiempo normal:</label>
                 <div id="modal_monto_men_wrap">
                     <input type="text"
                            id="modal_monto_visible"
@@ -418,7 +418,7 @@
 
                 {{-- Solo factura extra (EXT-). Mensualidad (MEN-): oculto y no se envía --}}
                 <div id="modal_factura_extra_only">
-                <label for="modal_porcentaje_cargo_moratorio" style="font-weight:bold; display:block; margin-top:10px;">Porcentaje de cargo moratorio:</label>
+                <label for="modal_porcentaje_cargo_moratorio" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Porcentaje de cargo moratorio:</label>
                 <input type="text"
                        id="modal_porcentaje_cargo_moratorio"
                        name="porcentaje_cargo_moratorio"
@@ -428,7 +428,7 @@
                        readonly
                        style="width: 100%; padding: 10px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; color: #333; box-sizing: border-box;">
 
-                <label for="modal_cargo_monetario" style="font-weight:bold; display:block; margin-top:10px;">Cargo monetario:</label>
+                <label for="modal_cargo_monetario" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Cargo monetario:</label>
                 <input type="text"
                        id="modal_cargo_monetario"
                        name="cargo_monetario"
@@ -441,7 +441,7 @@
                 </div>
 
                 {{-- 4. Fecha Vencimiento (valor enviado en el formulario; EXT- editable, MEN- solo lectura vía JS) --}}
-                <label for="modal_fecha" style="font-weight:bold; display:block; margin-top:10px;">Fecha vencimiento (asignada por sistema):</label>
+                <label for="modal_fecha" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Fecha vencimiento (asignada por sistema):</label>
                 <input type="date"
                        id="modal_fecha"
                        name="fecha"
@@ -449,18 +449,18 @@
                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; margin-bottom: 15px;">
 
                 {{-- 5. Estado --}}
-                <label for="modal_status" style="font-weight:bold; display:block; margin-top:10px;">Estado:</label>
+                <label for="modal_status" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Estado:</label>
                 <select id="modal_status" name="status" required style="width: 100%; padding: 8px; margin-bottom: 20px;">
                     <option value="Pendiente">Pendiente</option>
                     <option value="Pagada">Pagada</option>
                 </select>
 
                 {{-- 6. Archivos (OPCIONALES) --}}
-                <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:10px;">Archivo (PDF) (Opcional):</label>
+                <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Archivo (PDF) (Opcional):</label>
                 <input type="file" id="modal_archivo_pdf" name="archivo" accept=".pdf" style="width: 100%;">
                 <small style="color: #666;">Solo archivos .pdf</small>
 
-                <label for="modal_archivo_xml" style="font-weight:bold; display:block; margin-top:10px;">Subir XML (Opcional):</label>
+                <label for="modal_archivo_xml" style="font-weight:bold; display:block; margin-top:10px; text-align:left;">Subir XML (Opcional):</label>
                 <input type="file" id="modal_archivo_xml" name="archivo_xml" accept=".xml,text/xml" style="width: 100%;">
                 <small style="color: #666;">Solo archivos .xml</small>
 

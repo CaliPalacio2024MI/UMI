@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class ="content-header">
         <div class="content-title">
-            <h3>Aulas</h3>
+            <h5>Aulas</h5>
         </div>
         <div class="header-option">
             @if(Auth::user()->hasAnyRole(['master']))
