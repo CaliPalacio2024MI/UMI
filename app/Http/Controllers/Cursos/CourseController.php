@@ -186,6 +186,16 @@ class CourseController extends Controller
             'role' => $activeRoleName
         ]);
 
+        if ($course->modality === 'hibrida') {
+            return redirect()->route('Cursos.index')
+               ->with('success','Curso creado exitosamente.');
+        }
+
+        if ($course->modality === 'presencial') {
+            return redirect()->route('Cursos.index')
+               ->with('success','Curso creado exitosamente,');
+        }
+
         return redirect()->route('course.topic.create', ['course' => $course->id])
             ->with('success', 'Curso creado exitosamente.');
     }

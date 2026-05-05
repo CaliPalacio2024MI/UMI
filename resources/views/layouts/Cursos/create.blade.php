@@ -43,7 +43,7 @@
                 <option value="" disabled selected>Selecciona la modalidad</option>
                 <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
                 <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
-                <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
+                <option value="hibrida" {{ old('modality') == 'hibrida' ? 'selected' : ''}}>Hibrido</option>
             </select>
         </div>
 
