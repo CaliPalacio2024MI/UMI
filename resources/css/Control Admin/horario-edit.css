@@ -1,0 +1,37 @@
+/**
+ * Estilos para la vista Editar horario (solo formulario, se muestra dentro del modal del index).
+ */
+
+html.schedule-edit-page,
+body.schedule-edit-page {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    height: 100%;
+    min-height: 100%;
+}
+
+body.schedule-edit-page .horario-edit-wrap {
+    padding: 1rem 1.25rem;
+    max-width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+body.schedule-edit-page .creator-container {
+    max-width: 100%;
+    min-height: 0;
+}
+
+body.schedule-edit-page .schedule-lists {
+    width: 100%;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    overflow: visible;
+}

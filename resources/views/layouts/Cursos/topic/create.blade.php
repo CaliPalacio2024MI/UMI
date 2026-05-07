@@ -40,7 +40,7 @@
             @endif
             <div id="form-topic" class="form-mode-container" style="display: block;">
                 <div class="header-topic" style="display:flex; justify-content: space-between;">
-                <h3>Añadir Nuevo Tema</h3>
+                 <h3>Añadir Nuevo Tema</h3>
                 </div>
                 <form action="{{route('topics.store') }}" method="POST">
                     @csrf
@@ -89,6 +89,7 @@
                         <label for="file">Adjuntar Archivo (PDF o Video)</label>
                         <input type="file" id="file" name="file" accept=".pdf,.mp4,.webm,.avi,.mov,.wmv">
                     </div> --}}
+
 
                     {{-- OPCIONES DE TORTUGUITA CON SEGMENTOS --}}
 <div id="topic-turtle-options" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;">
@@ -1747,8 +1748,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-{{-- Script para el buscador de temas --}}
 <script>
     document.getElementById('searchTopics').addEventListener('keyup', function(){
 
@@ -1765,10 +1764,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-</script>
+    </script>
 
-{{-- Script para el buscador de subtemas --}}
-<script>
+    <script>
     document.getElementById('searchSubtopics').addEventListener('keyup', function(){
 
         let search = this.value.toLowerCase();
@@ -1780,8 +1778,7 @@ document.addEventListener('DOMContentLoaded', function() {
             options[i].style.display = text.includes(search) ? '' : 'none';
         }
     });
-</script>    
-
+</script>
 
 
 @endpush

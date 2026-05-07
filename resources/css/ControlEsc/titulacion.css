@@ -1,0 +1,166 @@
+.titulacion-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.titulacion-input{width:100%;padding:10px;border:1px solid #cfd5e2;border-radius:6px;box-sizing:border-box}
+.titulacion-search-wrap{
+    position: relative;
+    width: fit-content;
+}
+.titulacion-search-icon{
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    filter: brightness(0) saturate(100%) invert(15%) sepia(56%) saturate(1681%) hue-rotate(196deg) brightness(88%) contrast(96%);
+}
+.titulacion-toolbar .titulacion-input{
+    width: 280px;
+    max-width: 460px;
+    min-height: 34px;
+    padding: 7px 12px 7px 34px;
+    border-radius: 999px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+.titulacion-card{background:#fff;padding:16px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.titulacion-table{width:100%;border-collapse:collapse}
+.titulacion-table th{background:#223f70;color:#fff}
+.titulacion-table th,.titulacion-table td{padding:10px;border-bottom:1px solid #ececec;text-align:center}
+.titulacion-download-link,
+.titulacion-download-link:visited,
+.titulacion-download-link:hover,
+.titulacion-download-link:active,
+.titulacion-download-link:focus{
+    color:#000;
+    text-decoration:none;
+    font-weight:400;
+    outline:none;
+    box-shadow:none;
+}
+.titulacion-btn{border:1px solid #d7dceb;background:#f5f7fb;color:#223f70;border-radius:18px;padding:7px 12px;cursor:pointer}
+.titulacion-btn--primary{background:#223f70;color:#fff;border-color:#223f70}
+.titulacion-btn--danger{background:#fff1f1;color:#b42318;border-color:#f4c7c7}
+.titulacion-btn--icon{
+    width:36px;
+    height:36px;
+    border:none;
+    background:transparent;
+    padding:0;
+    border-radius:6px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+.titulacion-btn--icon img{
+    width:20px;
+    height:20px;
+    display:block;
+}
+.titulacion-btn--icon.titulacion-btn--danger{
+    background:transparent;
+    border:none;
+}
+.titulacion-alert{padding:10px;border-radius:6px;margin-bottom:12px}
+.titulacion-alert--ok{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+
+#titulacionModal .modal-header{
+    position: relative;
+    background: #fff;
+    color: #223f70;
+    justify-content: center;
+    text-align: center;
+}
+
+#titulacionModal .modal-header h3{
+    color: #223f70;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+}
+
+#titulacionModal .modal-header .modal-close{
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    background: transparent;
+    border: none;
+}
+
+#titulacionModal .modal-header .modal-close:hover,
+#titulacionModal .modal-header .modal-close:focus{
+    color: #6b7280;
+    background: transparent;
+}
+
+#titulacionModal .modal-container{
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+#titulacionModal .modal-body{
+    max-height: calc(90vh - 56px);
+    overflow-y: auto;
+}
+
+#titulacionModal #titulacionForm{
+    margin-bottom: 0;
+}
+
+#titulacionModal label{
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #BC8A55;
+}
+
+#titulacionModal #titulacion_archivo{
+    width: 100%;
+    border: 1px solid #fff !important;
+    border-bottom: 2px solid #DB5865 !important;
+    border-top-color: #fff !important;
+    border-left-color: #fff !important;
+    border-right-color: #fff !important;
+    border-radius: 0;
+    padding: 8px 10px;
+    background: #fff;
+    color: #334155;
+    box-sizing: border-box;
+}
+
+#titulacionModal #titulacion_archivo::file-selector-button{
+    border: 1px solid #223f70;
+    background: #223f70;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 12px;
+    margin-right: 10px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#titulacionModal #titulacion_archivo:hover{
+    border-color: #aebbd4;
+    background: #f2f6fd;
+}
+
+#titulacionModal #titulacion_archivo:focus{
+    outline: none;
+    border-color: #223f70;
+    box-shadow: 0 0 0 2px rgba(34,63,112,0.15);
+}
+
+#titulacionModal #titulacion_user_id,
+#titulacionModal #titulacion_nombre_documento,
+#titulacionModal #titulacion_descripcion{
+    border: 1px solid #fff !important;
+    border-bottom: 2px solid #DB5865 !important;
+    border-top-color: #fff !important;
+    border-left-color: #fff !important;
+    border-right-color: #fff !important;
+    border-radius: 0;
+    background: #fff;
+}

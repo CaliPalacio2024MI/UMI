@@ -1,11 +1,35 @@
-@extends('layouts.app')
+{{-- Solo layout mínimo (sin panel) cuando viene embebido en modal del admin (?modal=1). La ruta /inscripcion/nuevo debe usar layouts.app para que el aspirante vea nombre + cerrar sesión. --}}
+@extends(request('modal') ? 'layouts.iframe_content' : 'layouts.app')
 
-@section('title', isset($alumno) ? 'Proceso de Reinscripción' : 'Registro de Aspirante')
+@php
+    // En "Nuevo Registro" (inscripción) el controlador puede pasar $alumno para prellenar datos,
+    // pero sin que sea una reinscripción.
+    $esReinscripcion = (bool) ($modoReinscripcion ?? isset($alumno));
+@endphp
 
+@section('title', $esReinscripcion ? 'Proceso de Reinscripción' : 'Inscripción')
+
+@if(!request('modal'))
 @vite(['resources/css/ControlEsc/base.css','resources/js/app.js'])
+@endif
 
 @section('content')
 
+    {{-- 0. ÉXITO EN MODAL: cerrar modal y refrescar lista en el padre --}}
+    @if(request('modal') && request('success') && session('success'))
+        <div class="form-container form-container--inscripcion" style="padding: 2rem; text-align: center;">
+            <p style="font-size: 1.1rem; color: #27ae60; margin-bottom: 1rem;">{{ session('success') }}</p>
+            <p style="color: #666;">Cerrando ventana...</p>
+        </div>
+        <script>
+            (function() {
+                if (window.parent && window.parent.cerrarModalInscripcion) {
+                    window.parent.cerrarModalInscripcion();
+                    window.parent.location.reload();
+                }
+            })();
+        </script>
+    @else
     {{-- 1. BLOQUE DE ERROR (CANDADO) --}}
     @if(session('error'))
         <div class="umi-error-card">
@@ -28,24 +52,21 @@
     
     {{-- 2. SI NO HAY ERROR, MOSTRAMOS EL FORMULARIO --}}
     @else
-    <div class="form-container">
+    <div class="form-container form-container--inscripcion">
         <div class="header-section">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 class="form-title">
+            <div>
+                <h2 class="form-title" style="text-align: center; margin: 0;">
                     {{-- Título Dinámico --}}
-                    @if(isset($alumno))
+                    @if($esReinscripcion)
                          Reinscripción de Alumno <span style="font-size: 0.8em; opacity: 0.8;">(Al Semestre {{ $alumno->semestre + 1 }})</span>
                     @else
-                         Nuevo Registro de Aspirante
+                         Inscripción
                     @endif
                 </h2>
-                <a href="{{ route('escolar.students.index') }}" class="btn-back" style="text-decoration: none; color: #666;">
-                    <i class="fa-solid fa-arrow-left"></i> Volver a Lista
-                </a>
             </div>
 
             {{-- Badge de Status para Reinscripciones --}}
-            @if(isset($alumno))
+            @if($esReinscripcion)
                 <div class="status-bar" style="margin-top: 10px; background: #fff3cd; padding: 8px 15px; border-left: 4px solid #ffc107; border-radius: 4px;">
                     <strong>Status Actual:</strong> 
                     <span class="badge-status {{ strtolower($alumno->status) }}">{{ $alumno->status ?? 'Inactivo' }}</span>
@@ -57,98 +78,73 @@
         </div>
         
         <div class="form-body">
+            <style>
+                #inscriptionForm .submit-button,
+                #inscriptionForm .submit-button:hover {
+                    box-shadow: none;
+                }
+                #inscriptionForm .submit-button:hover {
+                    background-color: #1a3055;
+                    color: white;
+                }
+            </style>
             {{-- Formulario Único: Maneja tanto STORE (Nuevo) como UPDATE (Reinscripción) --}}
             <form method="POST" 
-                  action="{{ isset($alumno) ? route('escolar.inscripcion.update', $alumno->id) : route('escolar.inscripcion.store') }}" 
+                  action="{{ $esReinscripcion ? route('escolar.inscripcion.update', $alumno->id) : route('escolar.inscripcion.store') }}" 
                   class="registration-form" 
                   id="inscriptionForm"
-                  enctype="multipart/form-data">
-                
+                  enctype="multipart/form-data"
+                  target="_self"
+                  data-es-nuevo-registro="{{ $esReinscripcion ? '0' : '1' }}">
+                @if(request('modal'))
+                <input type="hidden" name="modal" value="1">
+                @endif
                 @csrf
-                @if(isset($alumno))
+                @if($esReinscripcion)
                     @method('PUT')
+                @endif
+
+                {{-- Si ya existe el usuario (ej. el rol activo es "estudiante"), evitamos recrearlo. --}}
+                @if(!$esReinscripcion && isset($alumno))
+                    <input type="hidden" name="existing_user_id" value="{{ $alumno->id }}">
                 @endif
                 
                 {{-- Mensajes de Feedback --}}
                 @if (session('success')) <div class="message-success">{{ session('success') }}</div> @endif
                 @if (session('error')) <div class="message-error">{{ session('error') }}</div> @endif
+
+                @if(!empty($bloqueadoPorAceptacion) && $bloqueadoPorAceptacion)
+                    {{-- Overlay: bloquea edición hasta que Master acepte --}}
+                    <div id="pendingAcceptanceOverlay"
+                         style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 10060; display:flex; align-items:center; justify-content:center; padding: 20px;">
+                        <div style="background:#fff; border-radius: 16px; max-width: 560px; width: 100%; box-shadow: 0 18px 50px rgba(0,0,0,0.35); padding: 22px 20px; text-align:center;">
+                            <div style="width:72px; height:72px; border-radius:50%; background:#eaf7ea; margin: 0 auto 14px; display:flex; align-items:center; justify-content:center; border: 3px solid #cfe6c8; color:#2e7d32; font-size: 38px; font-weight: 800;">
+                                ✓
+                            </div>
+                            <h3 style="margin: 0; color:#223F70; font-size: 1.25rem;">Información enviada con éxito</h3>
+                            <p style="margin: 10px 0 0; color:#666; font-weight: 600; line-height: 1.5;">
+                                Tu registro está en espera de aprobación por Control Escolar.
+                            </p>
+                        </div>
+                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var form = document.getElementById('inscriptionForm');
+                            if (!form) return;
+                            form.querySelectorAll('input, select, textarea, button').forEach(function(el) {
+                                el.disabled = true;
+                            });
+                        });
+                    </script>
+                @endif
                 @if ($errors->any())
                     <div class="message-error">
                         <ul>@foreach ($errors->all() as $e) <li>{{ $e }}</li> @endforeach</ul>
                     </div>
                 @endif
 
-                {{-- 1. TIPO DE REGISTRO --}}
-                <h3> Clasificación del Ingreso</h3>
-                <hr>
-                <div class="form-group-double" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
-                    <div class="form-field" style="flex-direction: row; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="is_anfitrion" name="is_anfitrion" value="1" 
-                               style="width: 20px; height: 20px; cursor: pointer;"
-                               {{ old('is_anfitrion', $alumno->is_anfitrion ?? false) ? 'checked' : '' }}>
-                        <label for="is_anfitrion" style="margin: 0; cursor: pointer; font-weight: 600; color: #2c3e50;">
-                            ¿Es Anfitrión? (Colaborador de Mundo Imperial)
-                        </label>
-                    </div>
-
-                    {{-- SELECTOR DE USUARIOS EXISTENTES (Solo visible si es anfitrión) --}}
-                    <div id="container-buscador-usuarios" class="form-field" style="display: none;">
-                        <label style="color: #2980b9; font-weight: bold;"><i class="fa-solid fa-magnifying-glass"></i> Buscar Anfitrión Existente</label>
-                        <select id="user_selector" class="select2" style="width: 100%; padding: 8px;">
-                            <option value="">-- Seleccionar para Autocompletar --</option>
-                            @if(isset($usuariosAnfitriones))
-                                @foreach($usuariosAnfitriones as $u)
-                                    <option value="{{ $u->id }}" 
-                                        data-nombre="{{ $u->nombre }}" 
-                                        data-apellido_p="{{ $u->apellido_paterno }}" 
-                                        data-apellido_m="{{ $u->apellido_materno }}"
-                                        data-email="{{ $u->email }}"
-                                        data-telefono="{{ $u->telefono }}"
-                                        data-workstation="{{ $u->workstation_id }}"
-                                        data-department="{{ $u->department_id }}"
-                                        data-rfc="{{ $u->RFC }}"> {{ $u->nombre }} {{ $u->apellido_paterno }} - ({{ $u->email }})
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <small style="color: #666;">Selecciona un usuario para cargar sus datos automáticamente y vincularlo.</small>
-                        
-                        {{-- INPUT OCULTO: Aquí guardaremos el ID si seleccionan a alguien --}}
-                        <input type="hidden" name="existing_user_id" id="existing_user_id" value="">
-                    </div>
-                </div>
-
-                {{-- SECCIÓN LABORAL (Dinámica) --}}
-                <div id="seccion-laboral" style="display: none; background-color: #e8f6f3; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 5px solid #27ae60; margin-top: 15px;">
-                    <h4 style="color: #27ae60; margin-top: 0; margin-bottom: 15px;"><i class="fa-solid fa-briefcase"></i> Datos Laborales</h4>
-                    <div class="form-group-double">
-                        <div class="form-field">
-                            <label>Departamento</label>
-                            <select name="department_id" id="department_id">
-                                <option value="">Seleccione Departamento...</option>
-                                @foreach($departamentos as $dep)
-                                    <option value="{{ $dep->id }}" {{ old('department_id', $alumno->department_id ?? '') == $dep->id ? 'selected' : '' }}>
-                                        {{ $dep->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label>Puesto</label>
-                            <select name="workstation_id" id="workstation_id">
-                                <option value="">Seleccione Puesto...</option>
-                                @foreach($puestos as $pto)
-                                    <option value="{{ $pto->id }}" {{ old('workstation_id', $alumno->workstation_id ?? '') == $pto->id ? 'selected' : '' }}>
-                                        {{ $pto->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- 2. DATOS PERSONALES --}}
-                <h3> Datos Personales</h3>
+                {{-- DATOS PERSONALES --}}
+                <h3 style="font-size: 1.1rem;"> Datos Personales</h3>
                 <hr>
                 <div class="form-group-triple">
                     <div class="form-field">
@@ -176,13 +172,10 @@
                         <input type="text" name="telefono" id="telefono" value="{{ old('telefono', $alumno->telefono ?? '') }}" required>
                     </div>
                     <div class="form-field">
-                        <label>RFC <small>(Opcional)</small></label>
-                        <input type="text" name="RFC" id="inputRFC" 
-                            value="{{ old('RFC', $alumno->RFC ?? '') }}" 
-                            placeholder="Generación automática si vacío"
-                            {{-- Agrega 'readonly' si ya existe un RFC para el alumno actual --}}
-                            {{ isset($alumno) && !empty($alumno->RFC) ? 'readonly' : '' }}
-                            style="{{ isset($alumno) && !empty($alumno->RFC) ? 'background-color: #f0f0f0;' : '' }}">
+                        <label>CURP</label>
+                        <input type="text" name="curp" id="inputCurp" 
+                            value="{{ old('curp', $alumno->curp ?? '') }}" 
+                            placeholder="Clave Única de Registro de Población">
                     </div>
                 </div>
 
@@ -199,7 +192,7 @@
                 </div>
 
                 {{-- 3. DIRECCIÓN --}}
-                <h3> Domicilio</h3>
+                <h3 style="font-size: 1.1rem;"> Domicilio</h3>
                 <hr>
                 <div class="form-group-triple">
                     <div class="form-field">
@@ -227,15 +220,23 @@
                 </div>
 
                 {{-- 4. ACADÉMICO Y DOCUMENTOS --}}
-                <h3> Datos Académicos y Documentación</h3>
+                <h3 style="font-size: 1.1rem;"> Datos Académicos y Documentación</h3>
                 <hr>
                 <div class="form-group-double">
                     <div class="form-field">
                         <label>Carrera a Cursar</label>
-                        <select name="carrera_id" required>
+                        <select name="carrera_id" id="carrera_id" required>
                             <option value="">Seleccione una carrera...</option>
                             @foreach ($carreras as $carrera)
-                                <option value="{{ $carrera->id }}" {{ old('carrera_id', $alumno->carrera_id ?? '') == $carrera->id ? 'selected' : '' }}>
+                                @php
+                                    $precioTotalCarrera = (($carrera->pricing_mode ?? 'uniform') === 'per_month')
+                                        ? (float) collect(is_array($carrera->monthly_prices) ? $carrera->monthly_prices : [])->sum()
+                                        : ((float) ($carrera->monto_mensualidad ?? 0) * (int) ($carrera->semesters ?? 0));
+                                @endphp
+                                <option value="{{ $carrera->id }}"
+                                        data-semesters="{{ (int) ($carrera->semesters ?? 1) }}"
+                                        data-cargo-monetario="{{ $precioTotalCarrera > 0 ? $precioTotalCarrera : '' }}"
+                                        {{ old('carrera_id', $alumno->carrera_id ?? '') == $carrera->id ? 'selected' : '' }}>
                                     {{ $carrera->name }}
                                 </option>
                             @endforeach
@@ -243,10 +244,10 @@
                     </div>
                     <div class="form-field">
                         <label>Semestre a Inscribir</label>
-                        <input type="number" name="semestre" 
-                               value="{{ old('semestre', isset($alumno) ? ($alumno->semestre + 1) : 1) }}" 
+                        <input type="number" id="semestre" name="semestre" 
+                               value="{{ old('semestre', $esReinscripcion ? ($alumno->semestre + 1) : 1) }}" 
                                readonly style="background-color: #e9ecef; font-weight: bold; border-color: #ced4da;">
-                        @if(isset($alumno))
+                        @if($esReinscripcion)
                             <small style="color: #666;">(Avanza del semestre {{ $alumno->semestre }} al {{ $alumno->semestre + 1 }})</small>
                         @endif
                     </div>
@@ -254,11 +255,18 @@
 
                 {{-- CARGA DE DOCUMENTOS --}}
                 <div class="docs-container" style="background: #ffffff; padding: 20px; border: 1px dashed #3498db; border-radius: 8px; margin-top: 20px;">
-                    <h4 style="margin-top:0; color: #2980b9;"><i class="fa-solid fa-cloud-arrow-up"></i> Documentación Requerida</h4>
-                    
+                    <h4 style="margin-top:0; color: #2980b9; font-size: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Documentación Requerida</h4>
+                    @if(isset($alumno) && (!empty($alumno->doc_acta_rechazado) || !empty($alumno->doc_certificado_rechazado) || !empty($alumno->doc_curp_rechazado) || !empty($alumno->doc_ine_rechazado) || !empty($alumno->doc_ficha_pago_rechazado ?? false) || !empty($alumno->doc_factura_xml_rechazado ?? false)))
+                        <div class="doc-rechazo-banner" style="background: #fdecea; border: 1px solid #e74c3c; color: #922b21; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem;">
+                            <strong>Atención:</strong> Control escolar marcó uno o más documentos como incorrectos. Sube de nuevo los archivos indicados abajo.
+                        </div>
+                    @endif
                     <div class="form-group-double">
                         <div class="form-field">
                             <label>Acta de Nacimiento (PDF)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_acta_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_acta_nacimiento" accept=".pdf">
                             @if(isset($alumno) && $alumno->doc_acta_nacimiento)
                                 <a href="{{ asset('storage/'.$alumno->doc_acta_nacimiento) }}" target="_blank" class="link-view-doc">
@@ -268,6 +276,9 @@
                         </div>
                         <div class="form-field">
                             <label>Certificado de Preparatoria (PDF)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_certificado_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_certificado_prepa" accept=".pdf">
                             @if(isset($alumno) && $alumno->doc_certificado_prepa)
                                 <a href="{{ asset('storage/'.$alumno->doc_certificado_prepa) }}" target="_blank" class="link-view-doc">
@@ -279,6 +290,9 @@
                     <div class="form-group-double">
                         <div class="form-field">
                             <label>CURP (PDF)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_curp_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_curp" accept=".pdf">
                             @if(isset($alumno) && $alumno->doc_curp)
                                 <a href="{{ asset('storage/'.$alumno->doc_curp) }}" target="_blank" class="link-view-doc">
@@ -288,6 +302,9 @@
                         </div>
                         <div class="form-field">
                             <label>INE (Opcional)</label>
+                            @if(isset($alumno) && !empty($alumno->doc_ine_rechazado))
+                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                            @endif
                             <input type="file" name="doc_ine" accept=".pdf,.jpg,.png">
                             @if(isset($alumno) && $alumno->doc_ine)
                                 <a href="{{ asset('storage/'.$alumno->doc_ine) }}" target="_blank" class="link-view-doc">
@@ -300,7 +317,7 @@
 
                 {{-- 6. FACTURACIÓN DINÁMICA --}}
                 <div class="billing-container" style="background: #fdf2f2; padding: 20px; border: 1px solid #e74c3c; border-radius: 8px; margin-top: 20px;">
-                    <h4 style="margin-top:0; color: #c0392b;"><i class="fa-solid fa-money-bill-wave"></i> Ficha de Pago / Facturación</h4>
+                    <h4 style="margin-top:0; color: #c0392b; font-size: 1rem;"><i class="fa-solid fa-money-bill-wave"></i> Ficha de Pago / Facturación</h4>
                     <hr style="border-top: 1px solid #e74c3c; opacity: 0.3;">
                     
                     <div style="display: flex; gap: 15px; align-items: flex-start;">
@@ -332,19 +349,13 @@
 
                                 {{-- 2. Concepto --}}
                                 <label for="modal_concepto" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</label>
+                                {{-- Solo concepto ligado a la carrera (monto desde data-cargo-monetario); sin catálogo billing_concepts --}}
                                 <select id="modal_concepto" name="concepto" class="filter-select" style="width: 100%; padding: 8px;">
-                                    <option value="" data-amount="">-- Seleccione un concepto --</option>
-                                    @if(isset($conceptosDisponibles))
-                                        @foreach($conceptosDisponibles as $c)
-                                            <option value="{{ $c->concept }}" data-amount="{{ $c->amount }}">
-                                                {{ $c->concept }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    <option value="Inscripción" data-from-career="1" selected>Inscripción</option>
                                 </select>
 
                                 {{-- 3. Monto --}}
-                                <label for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto:</label>
+                                <label for="modal_monto_visible" style="font-weight:bold; display:block; margin-top:10px;">Monto de tiempo normal:</label>
                                 <input type="text" 
                                        id="modal_monto_visible" 
                                        readonly 
@@ -364,15 +375,26 @@
                                     <option value="Pendiente">Pendiente</option>
                                     <option value="Pagada">Pagada</option>
                                 </select>
+                            </div>
 
-                                {{-- 6. Archivos (OPCIONALES) --}}
-                                <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:10px;">Archivo (PDF) (Opcional):</label>
+                            {{-- Archivos de facturación: fuera del bloque colapsable para poder corregir sin volver a marcar la casilla --}}
+                            <div id="billing-files-block" class="billing-files-block" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(231,76,60,0.35);">
+                                <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:6px;">Ficha de pago / comprobante (PDF):</label>
+                                @if(isset($alumno) && !empty($alumno->doc_ficha_pago_rechazado ?? false))
+                                    <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un PDF nuevo.</p>
+                                @endif
                                 <input type="file" id="modal_archivo_pdf" name="archivo" accept=".pdf" style="width: 100%;">
                                 <small style="color: #666;">Solo archivos .pdf</small>
+                                @if(isset($alumno) && $alumno->doc_ficha_pago ?? false)
+                                    <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_ficha_pago) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver ficha actual</a></div>
+                                @endif
 
-                                <label for="modal_archivo_xml" style="font-weight:bold; display:block; margin-top:10px;">Subir XML (Opcional):</label>
-                                <input type="file" id="modal_archivo_xml" name="archivo_xml" accept=".xml,text/xml" style="width: 100%;">
-                                <small style="color: #666;">Solo archivos .xml</small>
+                                @if(isset($alumno) && ($alumno->doc_factura_xml ?? false))
+                                    <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_factura_xml) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver factura actual</a></div>
+                                @endif
+                                <small id="billing-files-help" style="display:block; color:#666; margin-top:8px;">
+                                    Estos archivos solo se adjuntan cuando el estado está en "Pagada".
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -420,7 +442,7 @@
 
                 <div class="form-action-buttons">
                     <button type="submit" class="submit-button">
-                        <i class="fa-solid fa-save"></i> {{ isset($alumno) ? 'Guardar Reinscripción' : 'Registrar Aspirante' }}
+                        {{ $esReinscripcion ? 'Enviar formulario' : 'Enviar formulario' }}
                     </button>
                 </div>
                 </form>
@@ -429,23 +451,8 @@
 
 <script>
     function ejecutarLogicaInscripcion() {
-        // ELEMENTOS GENERALES
-        const checkAnfitrion = document.getElementById('is_anfitrion');
-        const seccionLaboral = document.getElementById('seccion-laboral');
-        const containerBuscador = document.getElementById('container-buscador-usuarios');
-        const selectorUsuario = document.getElementById('user_selector');
-        const hiddenUserId = document.getElementById('existing_user_id');
+        // ELEMENTOS PERSONALES
         const emailHelper = document.getElementById('email_helper');
-        
-        // ELEMENTOS PERSONALES Y LABORALES
-        const inputNombre = document.getElementById('nombre');
-        const inputPat = document.getElementById('apellido_paterno');
-        const inputMat = document.getElementById('apellido_materno');
-        const inputEmail = document.getElementById('email');
-        const inputTel = document.getElementById('telefono');
-        const inputRFC = document.getElementById('inputRFC');
-        const inputDepto = document.getElementById('department_id');
-        const inputPuesto = document.getElementById('workstation_id');
         const inputFechaNac = document.getElementById('fecha_nacimiento');
         const inputEdad = document.getElementById('edad');
 
@@ -455,52 +462,9 @@
         const conceptoSelect = document.getElementById('modal_concepto');
         const montoVisible = document.getElementById('modal_monto_visible');
         const montoHidden = document.getElementById('modal_monto');
-
-
-        // --- FUNCIONES AUXILIARES ---
-
-        // 1. CONTROL DE SOLO LECTURA/BLOQUEO
-        const setReadOnly = (inputElement, isReadOnly) => {
-            if (inputElement) {
-                if (inputElement.tagName === 'SELECT') {
-                    inputElement.disabled = isReadOnly;
-                } else {
-                    inputElement.readOnly = isReadOnly;
-                }
-                inputElement.style.backgroundColor = isReadOnly ? "#e9ecef" : "";
-            }
-        };
-
-        // 2. LIMPIEZA DE CAMPOS PERSONALES Y LABORALES
-        function limpiarCamposPersonales() {
-            // Aplicar desbloqueo a todos los campos
-            setReadOnly(inputNombre, false);
-            setReadOnly(inputPat, false);
-            setReadOnly(inputMat, false);
-            setReadOnly(inputRFC, false);
-            setReadOnly(inputEmail, false);
-            setReadOnly(inputDepto, false);
-            setReadOnly(inputPuesto, false);
-            
-            // Limpiar valores (solo si no estamos en modo edición o si no hay old data)
-            if(!checkAnfitrion.checked || (checkAnfitrion.checked && selectorUsuario.value === "")) {
-                if(inputNombre) inputNombre.value = "";
-                if(inputPat) inputPat.value = "";
-                if(inputMat) inputMat.value = "";
-                if(inputDepto) inputDepto.value = "";
-                if(inputPuesto) inputPuesto.value = "";
-                if(inputRFC) inputRFC.value = "";
-                if(inputEmail) inputEmail.value = "";
-            }
-
-            if(inputEmail && emailHelper) emailHelper.style.display = 'none';
-            if(hiddenUserId) hiddenUserId.value = "";
-
-            // Limpiar campos laborales si se oculta la sección
-            if(inputDepto) inputDepto.value = "";
-            if(inputPuesto) inputPuesto.value = "";
-        }
-
+        const carreraSelect = document.getElementById('carrera_id');
+        const statusSelect = document.getElementById('modal_status');
+        const billingFilesBlock = document.getElementById('billing-files-block');
 
         // --- LÓGICA DE FACTURACIÓN (DESPLIEGUE DEL MENÚ) ---
         // Esta función ahora muestra/oculta el bloque de detalles de la factura.
@@ -512,6 +476,18 @@
                     billingDetails.style.display = 'none';
                 }
             }
+            toggleBillingFilesByStatus();
+        }
+
+        function toggleBillingFilesByStatus() {
+            if (!billingFilesBlock || !statusSelect || !checkFactura) return;
+            const estado = (statusSelect.value || '').trim().toLowerCase();
+            const debeMostrar = checkFactura.checked && estado === 'pagada';
+            billingFilesBlock.style.display = debeMostrar ? 'block' : 'none';
+            billingFilesBlock.querySelectorAll('input[type="file"]').forEach(function(inp) {
+                inp.disabled = !debeMostrar;
+                if (!debeMostrar) inp.value = '';
+            });
         }
         
         // Listener para el checkbox de Factura: establece que el usuario lo ha cambiado
@@ -521,131 +497,73 @@
                 toggleFactura();
             });
         }
-
-        // Listener para el selector de concepto: actualiza el monto
-        if (conceptoSelect) {
-            conceptoSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const amount = selectedOption.getAttribute('data-amount');
-                
-                if (montoVisible && montoHidden) {
-                    if (amount) {
-                        // Formatear el monto para visualización
-                        montoVisible.value = '$ ' + parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                        montoHidden.value = amount; // Valor limpio para el backend
-                    } else {
-                        montoVisible.value = '$ 0.00';
-                        montoHidden.value = '';
-                    }
-                }
-            });
+        if (statusSelect) {
+            statusSelect.addEventListener('change', toggleBillingFilesByStatus);
         }
 
+        function obtenerCargoMonetarioCarreraSeleccionada() {
+            if (!carreraSelect || carreraSelect.selectedIndex < 0) return null;
+            const opt = carreraSelect.options[carreraSelect.selectedIndex];
+            const raw = opt && opt.getAttribute('data-cargo-monetario');
+            if (raw === null || raw === '') return null;
+            const n = parseFloat(raw);
+            return isNaN(n) ? null : n;
+        }
 
-        // --- LÓGICA ANFITRION (TOGGLE PRINCIPAL) ---
-        if (checkAnfitrion && seccionLaboral) {
-            function toggleAnfitrion() {
-                if (checkAnfitrion.checked) {
-                    // Caso Anfitrión: Mostrar datos laborales y buscador
-                    seccionLaboral.style.display = 'block';
-                    if (containerBuscador) containerBuscador.style.display = 'block';
-                    
-                    // Si es trabajador, desmarcamos factura por defecto y la habilitamos
-                    if (checkFactura) {
-                        checkFactura.disabled = false; // Habilitar para que pueda desmarcarla
-                        
-                        // Si el usuario no la ha cambiado manualmente, la desmarcamos (por defecto)
-                        if (!checkFactura.dataset.userChanged) {
-                            checkFactura.checked = false;
-                            toggleFactura(); 
-                        }
-                    }
-                    
-                } else {
-                    // Caso Estudiante Regular: Ocultar y Forzar Factura OBLIGATORIA
-                    seccionLaboral.style.display = 'none';
-                    if (containerBuscador) containerBuscador.style.display = 'none';
-                    
-                    //  FORZAR FACTURA OBLIGATORIA Y BLOQUEAR 
-                    if (checkFactura) {
-                        checkFactura.checked = true; // Se marca obligatoriamente
-                        checkFactura.dataset.userChanged = 'false'; // Reseteamos, esto no es cambio de usuario
-                        toggleFactura(); //  Esto despliega el menú de detalles de facturación 🚨
-                    }
-
-                    // Limpieza y desbloqueo de campos personales/laborales
-                    limpiarCamposPersonales();
+        function aplicarMontoFacturacion() {
+            if (!conceptoSelect || !montoVisible || !montoHidden) return;
+            const selectedOption = conceptoSelect.options[conceptoSelect.selectedIndex];
+            const usaCarrera = selectedOption && selectedOption.getAttribute('data-from-career') === '1';
+            let amount = null;
+            if (usaCarrera) {
+                amount = obtenerCargoMonetarioCarreraSeleccionada();
+            } else {
+                const a = selectedOption && selectedOption.getAttribute('data-amount');
+                if (a !== null && a !== '') {
+                    const n = parseFloat(a);
+                    amount = isNaN(n) ? null : n;
                 }
             }
-
-            // Listener Anfitrión
-            checkAnfitrion.addEventListener('change', toggleAnfitrion);
-            
-            // Ejecución inicial para aplicar el estado al cargar la página
-            toggleAnfitrion();
+            if (amount !== null && amount >= 0) {
+                montoVisible.value = '$ ' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                montoHidden.value = String(amount);
+            } else {
+                montoVisible.value = '$ 0.00';
+                montoHidden.value = '';
+            }
         }
 
-
-        // --- LÓGICA AUTOCOMPLETADO (Solo si es Anfitrión y selecciona) ---
-        if (selectorUsuario) {
-            selectorUsuario.addEventListener('change', function() {
-                const opt = this.options[this.selectedIndex];
-                const rfcValue = opt.getAttribute('data-rfc'); 
-                
-                if (this.value) {
-                    // 1. APLICACIÓN DE VALORES
-                    hiddenUserId.value = this.value;
-                    if(inputNombre) inputNombre.value = opt.getAttribute('data-nombre');
-                    if(inputPat) inputPat.value = opt.getAttribute('data-apellido_p');
-                    if(inputMat) inputMat.value = opt.getAttribute('data-apellido_m');
-                    if(inputTel) inputTel.value = opt.getAttribute('data-telefono');
-                    if(inputDepto) inputDepto.value = opt.getAttribute('data-department');
-                    if(inputPuesto) inputPuesto.value = opt.getAttribute('data-workstation');
-
-                    // RFC
-                    if (inputRFC) { 
-                        inputRFC.value = rfcValue || ""; 
-                    }
-                    
-                    // Email y Helper
-                    if(inputEmail) {
-                        inputEmail.value = opt.getAttribute('data-email');
-                        if(emailHelper) emailHelper.style.display = 'block';
-                    }
-                    
-                    // 2. APLICAR BLOQUEO
-                    setReadOnly(inputNombre, true);
-                    setReadOnly(inputPat, true);
-                    setReadOnly(inputMat, true);
-                    setReadOnly(inputRFC, true);
-                    setReadOnly(inputEmail, true);
-                    setReadOnly(inputDepto, true);
-                    setReadOnly(inputPuesto, true);
-
-                } else {
-                    // Deselección: Limpia y desbloquea
-                    limpiarCamposPersonales(); 
-                    // Necesitamos re-aplicar el toggleAnfitrion para asegurar que los campos laborales se oculten/muestren correctamente.
-                    toggleAnfitrion();
-                }
-            });
+        if (conceptoSelect) {
+            conceptoSelect.addEventListener('change', aplicarMontoFacturacion);
         }
 
+        // Factura obligatoria por defecto al cargar
+        if (checkFactura && billingDetails) {
+            checkFactura.checked = true;
+            billingDetails.style.display = 'block';
+        }
+        toggleBillingFilesByStatus();
 
         // --- LÓGICA CÁLCULO DE EDAD ---
         if (inputFechaNac && inputEdad) {
             function calcularEdad() {
                 const fechaNac = inputFechaNac.value;
                 if (fechaNac) {
-                    const birthDate = new Date(fechaNac);
+                    // Parseo LOCAL para evitar desfase por zona horaria (YYYY-MM-DD)
+                    const parts = fechaNac.split('-').map(Number);
+                    const birthDate = (parts.length === 3) ? new Date(parts[0], parts[1] - 1, parts[2]) : null;
+                    if (!birthDate || Number.isNaN(birthDate.getTime())) {
+                        inputEdad.value = '';
+                        return;
+                    }
+
                     const today = new Date();
                     let age = today.getFullYear() - birthDate.getFullYear();
-                    const monthDifference = today.getMonth() - birthDate.getMonth();
-                    
-                    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-                        age--;
-                    }
-                    inputEdad.value = age;
+                    const hasHadBirthday =
+                        (today.getMonth() > birthDate.getMonth()) ||
+                        (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+                    if (!hasHadBirthday) age--;
+                    inputEdad.value = age >= 0 ? age : 0;
                 } else {
                     inputEdad.value = '';
                 }
@@ -656,10 +574,44 @@
             calcularEdad();
         }
 
+        // --- LÓGICA: semestre a inscribir ---
+        // En nuevo registro de aspirante siempre semestre 1; en reinscripción se mantiene el valor del servidor
+        const inputSemestre = document.getElementById('semestre');
+        const formInscripcion = document.getElementById('inscriptionForm');
+        const esNuevoRegistro = formInscripcion && formInscripcion.getAttribute('data-es-nuevo-registro') === '1';
+
+        function actualizarSemestreSegunCarrera() {
+            if (!inputSemestre) return;
+            if (esNuevoRegistro) {
+                inputSemestre.value = '1';
+                return;
+            }
+            // Reinscripción: mantener valor actual (viene del servidor)
+            const opt = carreraSelect && carreraSelect.options[carreraSelect.selectedIndex];
+            const totalSemestres = opt ? parseInt(opt.getAttribute('data-semesters') || '0', 10) : 0;
+            if (totalSemestres > 0) {
+                const actual = parseInt(inputSemestre.value || '1', 10) || 1;
+                inputSemestre.value = Math.min(actual, totalSemestres);
+            }
+        }
+
+        if (carreraSelect && inputSemestre) {
+            carreraSelect.addEventListener('change', function() {
+                actualizarSemestreSegunCarrera();
+                aplicarMontoFacturacion();
+            });
+            actualizarSemestreSegunCarrera();
+        } else if (carreraSelect) {
+            carreraSelect.addEventListener('change', aplicarMontoFacturacion);
+        }
+
+        aplicarMontoFacturacion();
+
     }
     ejecutarLogicaInscripcion();
 
 </script>
     
+@endif
 @endif
 @endsection

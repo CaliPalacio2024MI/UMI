@@ -225,9 +225,18 @@ class BillingController extends Controller
         $user = Auth::user();
         if (!$user->hasActiveRole('master') && !$user->hasActiveRole('control_administrativo')) abort(403);
 
+        if ($request->input('porcentaje_cargo_moratorio') === '' || $request->input('porcentaje_cargo_moratorio') === null) {
+            $request->merge(['porcentaje_cargo_moratorio' => null]);
+        }
+        if ($request->input('cargo_monetario') === '' || $request->input('cargo_monetario') === null) {
+            $request->merge(['cargo_monetario' => null]);
+        }
+
         $validated = $request->validate([
             'concepto'    => 'required|string|max:255',
             'monto'       => 'required|numeric|min:0',
+            'porcentaje_cargo_moratorio' => 'nullable|numeric|min:0|max:100',
+            'cargo_monetario' => 'nullable|numeric|min:0',
             'fecha'       => 'required|date', 
             'archivo'     => 'nullable|file|mimes:pdf|max:5120',
             'status'      => 'required|in:Pendiente,Pagada',
@@ -259,6 +268,8 @@ class BillingController extends Controller
         
         $uidFinal = $baseUid . str_pad($consecutivo, 6, '0', STR_PAD_LEFT);
 
+        $esMensualidad = str_starts_with((string) $prefix, 'MEN-');
+
         // C. GUARDAR
         $filePath = $request->hasFile('archivo') ? $request->file('archivo')->store('facturas', 'public') : null;
         $xmlPath = $request->hasFile('archivo_xml') ? $request->file('archivo_xml')->store('facturas_xml', 'public') : null;
@@ -269,6 +280,8 @@ class BillingController extends Controller
             'period_id'         => $validated['period_id'],
             'concepto'          => $validated['concepto'],
             'monto'             => $validated['monto'],
+            'porcentaje_cargo_moratorio' => $esMensualidad ? null : ($validated['porcentaje_cargo_moratorio'] ?? null),
+            'cargo_monetario' => $esMensualidad ? null : ($validated['cargo_monetario'] ?? null),
             'fecha_vencimiento' => $validated['fecha'], // <--- RESPETAMOS LA FECHA DEL INPUT (NO "NOW")
             'archivo_path'      => $filePath,
             'xml_path'          => $xmlPath,

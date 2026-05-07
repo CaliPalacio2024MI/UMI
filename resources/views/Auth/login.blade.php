@@ -56,7 +56,7 @@
                                placeholder="Ingrese su contraseña"
                                required autocomplete="current-password">
                         <span class="toggle-password" onclick="togglePassword()">
-                        <span class="icon" ><img src="{{ asset('/images/icons/eye-solid-full.svg') }}" alt="" style="width:18px;height:18px"></span>
+                        <span class="icon"><img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="" class="toggle-password-icon" width="18" height="18"></span>
                         </span>
                     </div>
                     @error('password')

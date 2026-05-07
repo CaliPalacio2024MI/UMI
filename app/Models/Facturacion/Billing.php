@@ -25,13 +25,20 @@ class Billing extends Model
         'period_id',
         'concepto',
         'monto',
+        'porcentaje_cargo_moratorio',
+        'cargo_monetario',
         'fecha_vencimiento',
         'archivo_path',
         'status',
         'xml_path',
     ];
 
-    protected $dates = ['deleted_at']; 
+    protected $dates = ['deleted_at'];
+
+    protected $casts = [
+        'porcentaje_cargo_moratorio' => 'decimal:2',
+        'cargo_monetario' => 'decimal:2',
+    ];
 
     // Relaciones
     public function user() { return $this->belongsTo(User::class); }

@@ -58,6 +58,13 @@
     background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Encabezado aspirante: misma posición que el resto, tipografía normal (sin negrita) */
+.header--aspirante .user-name,
+.header--aspirante .user-role,
+.header--aspirante .user-institution {
+  font-weight: 400;
+}
+
 .context-switcher-button img {
     width: 24px;
     height: 24px;
@@ -122,6 +129,8 @@
 
 .main-content {
   flex: 1;
+  /* Permite que la columna central encoja por debajo del min-content de vistas anchas (p. ej. Horarios + tabla); evita “ensanchar” todo el layout. */
+  min-width: 0;
   min-height: 100vh;
   background: var(--page-bg);
   padding: 10px;

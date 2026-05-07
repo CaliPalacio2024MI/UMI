@@ -51,7 +51,22 @@ class Career extends Model
         'type',
         'semesters', // <--- ✅ CORRECTO: Plural, como en tu BD
         'institution_id', // Agregado por seguridad ya que está en tu BD
-        'credits'         // Agregado por seguridad
+        'career_classification_id',
+        'credits',         // Agregado por seguridad
+        'pricing_mode',
+        'monthly_prices',
+        'porcentaje_cargo_moratorio',
+        'monto_mensualidad',
+        'cargo_monetario',
+        'fecha_vencimiento_moratorio',
+    ];
+
+    protected $casts = [
+        'monthly_prices' => 'array',
+        'porcentaje_cargo_moratorio' => 'decimal:2',
+        'monto_mensualidad' => 'decimal:2',
+        'cargo_monetario' => 'decimal:2',
+        'fecha_vencimiento_moratorio' => 'date',
     ];
 
     // --- RELACIONES ---
@@ -59,6 +74,11 @@ class Career extends Model
     public function institution(): BelongsTo 
     { 
         return $this->belongsTo(Institution::class); 
+    }
+
+    public function classification(): BelongsTo
+    {
+        return $this->belongsTo(CareerClassification::class, 'career_classification_id');
     }
 
     public function materias(): HasMany
@@ -74,5 +94,10 @@ class Career extends Model
     public function academicProfiles(): HasMany
     {
         return $this->hasMany(AcademicProfile::class);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
     }
 }

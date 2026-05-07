@@ -278,14 +278,20 @@ body {
     border-radius: 50%;
     border: 1px solid transparent;
     background-color: transparent;
-    color: #555;
-    padding: 0;
-    transition: all 0.2s;
+    color: #555; 
+    padding: 0; 
+    transition: none;
     cursor: pointer;
 }
-.btn-icon:hover { background-color: #e0e0e0; color: var(--umi-blue-dark); } /* Hover ajustado para fondo gris */
+.btn-icon:hover { 
+    background-color: transparent; 
+    color: #555; 
+}
 .btn-icon--danger { color: var(--umi-red-danger); }
-.btn-icon--danger:hover { background-color: #FDECEA; color: #C0392B; }
+.btn-icon--danger:hover { 
+    background-color: transparent; 
+    color: var(--umi-red-danger); 
+}
 .btn-icon img { width: 16px; height: 16px; }
 
 /* Utilidades */

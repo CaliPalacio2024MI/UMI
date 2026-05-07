@@ -216,6 +216,18 @@ class ActivitiesController extends Controller
             }
         }
 
+        // 4. Validar "Ahorcado"
+elseif ($activity->type === 'Ahorcado') {
+    $validated = $request->validate(['completed' => 'required|boolean']);
+    
+    if ($validated['completed']) {
+        $score = 100.00;
+        $message = '¡Ahorcado completado!';
+    } else {
+        return response()->json(['success' => false, 'message' => 'No completaste el ahorcado.'], 422);
+    }
+}
+
         // 4. Marcar como completado usando el sistema polimórfico
         $completion = $user->completions()->updateOrCreate(
             [
@@ -249,6 +261,27 @@ class ActivitiesController extends Controller
             'score'   => $score,
             'message' => $message
         ]);
+
+        // ✅ Si es examen final y lo completó, registrar fecha de finalización
+if ($activity->is_final_exam && $course) {
+    $user->courses()->updateExistingPivot($course->id, [
+        'completed_at' => now(),
+        'progress' => 100
+    ]);
+    
+    Log::info('Curso completado', [
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'final_score' => $score
+    ]);
+}
+
+return response()->json([
+    'success' => true,
+    'created' => $completion->wasRecentlyCreated,
+    'score'   => $score,
+    'message' => $message
+]);
     }
     
     /**

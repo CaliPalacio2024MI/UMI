@@ -1,25 +1,28 @@
 @extends('layouts.app')
 @section('title', 'Ajustes - ' . session('active_institution_name'))
-@vite(['resources/css/courses.css', 'resources/js/app.js'])
+@vite(['resources/css/Cursos/courses.css', 'resources/js/app.js'])
 @section('content')
 <div class="main-content-area">
     
     {{-- Cabecera con título y botones --}}
     <header class="main-header">
-        <h1>{{ $page_title }}</h1>
+        <h3>{{ strtoupper($page_title) }}</h3>
         <div class="header-actions">
-            <form method="GET" action="{{ route('ajustes.show', ['seccion' => $seccion]) }}" class="search-form">
-                <input type="text" name="search" placeholder="Buscar..." value="{{ request('search') }}">
-                <button type="submit">Buscar</button>
+            <form method="GET" action="{{ route('ajustes.show', ['seccion' => $seccion]) }}" class="search-form" id="searchForm">
+                <span class="search-form-icon">
+                    <img src="{{ asset('images/icons/magnifying-glass-svgrepo-com.svg') }}" alt="Buscar" width="18" height="18">
+                </span>
+                <input type="text" name="search" placeholder="Buscar por..." value="{{ request('search') }}" id="searchInput" autocomplete="off">
             </form>
             <button id="openModalBtn" class="btn-primary">
                 + Agregar {{ $singular_title }}
             </button>
         </div>
     </header>
-    {{-- Contenedor de la tabla --}}
+    {{-- Contenedor de la tabla (scroll interno + responsive) --}}
     <div class="table-container">
-        <table class="main-table">
+        <div class="ajustes-table-scroll">
+        <table class="main-table @if($seccion === 'users') main-table--users-wide @endif">
             <thead>
                 <tr>
                     @if ($seccion === 'institutions')
@@ -41,17 +44,17 @@
                         <th>Mensualidades</th>
                         <th>Estatus</th>
                     @elseif ($seccion === 'users')
+                        <th>Usuario</th>
                         <th>Unidad de Negocio</th>
                         <th>Nombre</th>
                         <th>A. Paterno</th>
                         <th>A. Materno</th>
-                        <th>Usuario</th>
                         <th>Rol</th>
                     @endif
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="ajustes-table-body">
                 @forelse ($data as $item)
                     <tr>
                         @if ($seccion === 'institutions')
@@ -102,12 +105,12 @@
                                 </div> 
                             </td>
                         @elseif ($seccion === 'users')
+                            <td>{{ $item->RFC }}</td>
                             <td>{{ $item->institutions->first()->name ?? 'N/A' }}</td>
                             <td>{{ $item->nombre }}</td>
                             <td>{{ $item->apellido_paterno }}</td>
                             <td>{{ $item->apellido_materno }}</td>
-                            <td>{{ $item->RFC }}</td>
-                            <td>{{ $item->roles->first()->display_name ?? 'Sin Rol' }}</td>
+                            <td>{{ $item->roleDisplayNameForAjustes() }}</td>
                             
                         @endif
                         
@@ -116,15 +119,7 @@
                         {{-- =================================================== --}}
                         <td> 
                             <div class="actions">
-                            {{-- 1. Botón "Ver" --}}
-                            <a href="#" 
-                                title="Ver" 
-                                class="btn-icon btn-view"
-                                data-id="{{ $item->id }}">
-                                <img src="{{ asset('images/icons/eye-solid-full.svg') }}" alt="Ver"> 
-                            </a>
-
-                            {{-- 2. Botón "Editar" --}}
+                            {{-- 1. Botón "Editar" --}}
                             <a href="#" 
                                 title="Editar" 
                                 class="btn-icon btn-edit"
@@ -132,40 +127,7 @@
                                 <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="Editar">
                             </a>
                             
-                            {{-- 3. FORMULARIO DE HABILITAR/DESHABILITAR --}}
-                          @if ($seccion === 'users')
-                            @php
-                                
-                                $activeRoleForInstitution = $item->roles->first();
-                                
-                                
-                                $isActiveForInstitution = @$activeRoleForInstitution->pivot->is_active ?? false;
-                            @endphp
-
-                            <form action="{{ route('ajustes.users.toggleStatus', $item->id) }}" 
-                                method="POST" 
-                                class="inline-form"
-                                onsubmit="
-                                    const isActive = {{ $isActiveForInstitution ? 'true' : 'false' }};
-                                    const message = isActive 
-                                        ? '¿Estás seguro de DESHABILITAR a este usuario? Ya no tendrá acceso a esta institución.' 
-                                        : '¿Estás seguro de HABILITAR a este usuario para esta institución?';
-                                    return confirm(message); ">
-                                @csrf
-                                @method('POST') 
-                                
-                                <label class="switch" title="{{ $isActiveForInstitution ? 'Activo' : 'Inactivo' }} (en esta Inst.)">
-                                    <input 
-                                        type="checkbox" 
-                                        {{ $isActiveForInstitution ? 'checked' : '' }}
-                                        onchange="this.form.submit()" 
-                                    >
-                                    <span class="slider"></span>
-                                </label>
-                            </form>
-                        @endif
-
-                            {{-- 4. Botón "Eliminar" --}}
+                            {{-- 2. Botón "Eliminar" --}}
                             <form action="{{ route('ajustes.destroy', ['seccion' => $seccion, 'id' => $item->id]) }}" 
                                 method="POST" 
                                 class="inline-form"
@@ -176,7 +138,7 @@
                                     <img src="{{ asset('images/icons/delete-left-solid-full.svg') }}" alt="Eliminar">
                                 </button>
                             </form>
-                        <div>
+                            </div>
                         </td>
                     </tr> 
                 @empty
@@ -188,6 +150,7 @@
                 @endforelse 
             </tbody>
         </table>
+        </div>
         @if($data instanceof \Illuminate\Pagination\LengthAwarePaginator && $data->hasPages())
             <div class="pagination-container">
                 {{ $data->links() }}
@@ -196,6 +159,12 @@
     </div>
 </div>
 
+<style>
+    #formModal #modalTitle {
+        color: #0d2240;
+        font-weight: 700;
+    }
+</style>
 <div id="formModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
@@ -296,8 +265,6 @@
                             errorDiv.style.color = '#dc3545';
                             errorDiv.style.marginTop = '10px';
                             errorDiv.innerHTML = `<strong>${data.errors.modules_enabled[0]}</strong>`;
-                            
-                          r
                             modulesWrapper.appendChild(errorDiv);
                         } else {
                          
@@ -354,47 +321,41 @@
         });
 
       
-        document.querySelectorAll('.btn-edit, .btn-view').forEach(btn => {
-            btn.addEventListener('click', async function (e) {
-                e.preventDefault();
-                const itemId = e.currentTarget.dataset.id;
-                
-                const isViewButton = e.currentTarget.classList.contains('btn-view');
-                modalTitle.textContent = isViewButton 
-                    ? `Ver ${singularName} #${itemId}` 
-                    : `Editar ${singularName} #${itemId}`;
-
-                modalForm.action = `${baseUrl}/${seccion}/${itemId}`;
-                
-                clearMethodInput(); 
-                const methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'PUT';
-                modalForm.prepend(methodInput); 
-                
-                try {
-                    const response = await fetch(`${baseUrl}/${seccion}/${itemId}/edit-form`);
-                    if (!response.ok) throw new Error('Error al cargar formulario');
-                    modalBody.innerHTML = await response.text();
-                    
-                    if (isViewButton) {
-                        modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
-                        const submitBtn = modalForm.querySelector('button[type="submit"]');
-                        if(submitBtn) submitBtn.style.display = 'none';
-                    } else {
-                         modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
-                         const submitBtn = modalForm.querySelector('button[type="submit"]');
-                         if(submitBtn) submitBtn.style.display = 'block';
-                    }
-                    
-                    executeScriptsIn(modalBody); 
-                    modal.style.display = 'block';
-                } catch (error) {
-                    console.error(error);
-                    alert('No se pudo cargar el formulario.');
+        document.addEventListener('click', async function (e) {
+            const btn = e.target.closest('.btn-edit, .btn-view');
+            if (!btn) return;
+            e.preventDefault();
+            const itemId = btn.dataset.id;
+            const isViewButton = btn.classList.contains('btn-view');
+            modalTitle.textContent = isViewButton
+                ? `Ver ${singularName} #${itemId}`
+                : `Editar ${singularName} #${itemId}`;
+            modalForm.action = `${baseUrl}/${seccion}/${itemId}`;
+            clearMethodInput();
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'PUT';
+            modalForm.prepend(methodInput);
+            try {
+                const response = await fetch(`${baseUrl}/${seccion}/${itemId}/edit-form`);
+                if (!response.ok) throw new Error('Error al cargar formulario');
+                modalBody.innerHTML = await response.text();
+                if (isViewButton) {
+                    modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+                    const submitBtn = modalForm.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.style.display = 'none';
+                } else {
+                    modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+                    const submitBtn = modalForm.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.style.display = 'block';
                 }
-            });
+                executeScriptsIn(modalBody);
+                modal.style.display = 'block';
+            } catch (error) {
+                console.error(error);
+                alert('No se pudo cargar el formulario.');
+            }
         });
 
        
@@ -408,6 +369,42 @@
                 modal.style.display = 'none';
                 modalBody.innerHTML = ''; 
             }
+        });
+    })();
+
+    (function searchFormAjax() {
+        const seccion = @json($seccion);
+        if (seccion !== 'users') return;
+        const form = document.getElementById('searchForm');
+        const input = document.getElementById('searchInput');
+        const tbody = document.getElementById('ajustes-table-body');
+        if (!form || !input || !tbody) return;
+
+        function fetchTable() {
+            const url = form.action + (input.value.trim() ? '?' + new URLSearchParams({ search: input.value.trim() }) : '');
+            fetch(url, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
+            })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                tbody.innerHTML = html;
+            })
+            .catch(function(err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center">Error al buscar. Recarga la página.</td></tr>';
+            });
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetchTable();
+        });
+
+        let debounceTimer;
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchTable, 400);
         });
     })();
 </script>

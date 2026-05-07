@@ -10,53 +10,72 @@
 /* --- Cabecera (Título, Buscador, Botón Agregar) --- */
 .main-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
   margin-bottom: 25px;
   padding-bottom: 15px;
  /*  border-bottom: 1px solid #e0e0e0; */
 }
 
-.main-header h1 {
+.main-header h3 {
   margin: 0;
-  font-size: 1.8em;
+  font-size: 1.7em;
   font-weight: 600;
-  color: #333;
+  color: #000;
+  text-transform: uppercase;
+  text-align: left;
+  align-self: flex-start;
 }
 
 .header-actions {
   display: flex;
   gap: 15px;
   align-items: center;
+  justify-content: space-between; /* input a la izquierda, botón a la derecha */
+  width: 100%;
+  margin-top: 10px; /* separa el input del título */
 }
 
 /* --- Formulario de Búsqueda --- */
 .search-form {
   display: flex;
+  position: relative;
+  align-items: center;
+}
+
+.search-form-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-form-icon img {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) saturate(100%) invert(15%) sepia(55%) saturate(3500%) hue-rotate(210deg) brightness(85%) contrast(95%);
 }
 
 .search-form input[type="text"] {
-  padding: 8px 15px;
+  padding: 8px 15px 8px 42px;
   border: 1px solid #ced4da;
-  border-radius: 20px 0 0 20px;
+  border-radius: 20px;
   outline: none;
   font-size: 0.9em;
   min-width: 250px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(34, 63, 112, 0.06);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.search-form button {
-  padding: 8px 15px;
-  border: none;
-  background-color: #223F70;
-  color: white;
-  border-radius: 0 20px 20px 0;
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.2s ease;
-}
-
-.search-form button:hover {
-  background-color: #1a3258;
+.search-form input[type="text"]:focus {
+  border-color: #adb5bd;
+  box-shadow: 0 4px 14px rgba(34, 63, 112, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* --- Botón Principal (Agregar) --- */
@@ -81,11 +100,24 @@
 /* --- Contenedor de la Tabla --- */
 .table-container {
   width: 100%;
-  overflow-x: auto;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #dee2e6;
+  overflow: hidden;
+  background-color: #ffffff; 
+  border-radius: 12px; 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+  border: 1px solid #dee2e6; 
+}
+
+/* Área con scroll (vertical + horizontal en pantallas chicas) */
+.ajustes-table-scroll {
+  width: 100%;
+  max-height: min(70vh, 720px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tabla usuarios: ancho mínimo para que en móvil se vea scroll horizontal en lugar de aplastar columnas */
+.main-table.main-table--users-wide {
+  min-width: 720px;
 }
 
 /* --- Tabla Principal --- */
@@ -100,9 +132,18 @@
 .main-table td {
   padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
-  vertical-align: middle;
+  border: 1px solid transparent;
+  vertical-align: middle; 
   text-align: center;
+}
+
+.main-table tbody td {
+  font-size: 0.9em;
+  border-right: 2px solid #DB5865;
+}
+
+.main-table tbody td:last-child {
+  border-right: 1px solid transparent;
 }
 
 /* --- Cabecera de la Tabla (th) --- */
@@ -113,8 +154,9 @@
   font-size: 0.85em;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #1a3258;
-  position: sticky;
+  border-bottom: 2px solid #1a3258; 
+  border-right: 1px solid transparent;
+  position: sticky; 
   top: 0;
   z-index: 10;
 }
@@ -130,10 +172,6 @@
 /* --- Cuerpo de la Tabla (tbody) --- */
 .main-table tbody tr:hover {
   background-color: #f1f3f5;
-}
-
-.main-table tbody td {
-  font-size: 0.9em;
 }
 
 /* --- Celdas Específicas --- */
@@ -185,8 +223,8 @@
   border: none;
   padding: 5px;
   cursor: pointer;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
+  border-radius: 50%; 
+  transition: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -197,12 +235,10 @@
   height: 20px;
 }
 
-/* Hover de botones de acción */
-.btn-icon[title="Editar"]:hover {
-  background-color: #fff3cd;
-}
+/* Desactivar efectos hover específicos de Editar/Eliminar */
+.btn-icon[title="Editar"]:hover,
 .btn-icon[title="Eliminar"]:hover {
-  background-color: #f8d7da;
+  background-color: transparent;
 }
 
 .inline-form {
@@ -356,16 +392,13 @@ input:checked + .slider:before {
 
 
 .btn-view img {
-
     width: 20px;
     height: 20px;
-
-    filter: invert(66%) sepia(35%) saturate(695%) hue-rotate(348deg) brightness(89%) contrast(87%);
-
+    filter: none;
     transition: transform 0.2s;
 }
 
-/* --- Botón Eliminar (Icono Rojo con Filtro) --- */
+/* --- Botón Eliminar (icono rojo en el SVG; sin filter para no recolorear) --- */
 
 .btn-delete {
     background: transparent;
@@ -384,17 +417,30 @@ input:checked + .slider:before {
 .btn-delete svg {
     width: 25px;
     height: 25px;
-
-
-    filter: invert(28%) sepia(51%) saturate(2755%) hue-rotate(340deg) brightness(92%) contrast(93%);
-
-    transition: transform 0.2s ease, filter 0.2s ease;
+    filter: none;
+    transition: none;
 }
 
 
 .btn-delete:hover img,
 .btn-delete:hover svg {
-    transform: scale(1.2);
+    transform: none;
+    filter: none;
+}
 
-    filter: invert(16%) sepia(98%) saturate(7431%) hue-rotate(358deg) brightness(92%) contrast(116%);
+/* courses.css define .btn-delete con fondo #fee2e2; en Ajustes solo el icono rojo (SVG), sin caja rosa */
+.main-table .btn-delete {
+    background: transparent !important;
+    color: inherit !important;
+}
+
+.main-table .btn-delete:hover {
+    background: transparent !important;
+    color: inherit !important;
+    transform: none;
+}
+
+.main-table .btn-delete:hover img,
+.main-table .btn-delete:hover svg {
+    filter: none;
 }

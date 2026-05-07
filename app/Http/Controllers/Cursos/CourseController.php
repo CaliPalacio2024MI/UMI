@@ -22,7 +22,8 @@ use Illuminate\Support\Str;
 use App\Models\TopicTemplate;
 use App\Models\SubtopicTemplate;
 use App\Models\Cursos\Topics;
-use App\Models\Cursos\Subtopic;;
+use App\Models\Cursos\Subtopic;
+use App\Models\Cursos\CoursePeriod;
 
 class CourseController extends Controller
 {
@@ -64,6 +65,7 @@ class CourseController extends Controller
                 return [$department->id => $department->workstations->toArray()];
             });
         }
+
         //Para traer los temas de la biblioteca
         $templates = TopicTemplate::orderBy('title')->get();
         // Pasamos solo la institución actual a la vista.
@@ -151,10 +153,10 @@ class CourseController extends Controller
         //Copiar plantillas de subtema
         if ($request->has('template_subtopics')) {
 
-            $selectedSubtopics_templates = SubtopicTemplate::whereIn('id', $request->template_subtopics)->get();
+            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
 
-            foreach ($selectedSubtopics_templates as $subtopics_template){
-                Subtopic::create(['course_id' => $course->id, 'title' => $subtopics_template->title, 'description' => $subtopics_template->description,]);
+            foreach ($selectedTemplates as $template){
+                Subtopic::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
             }
         }
 
@@ -186,14 +188,14 @@ class CourseController extends Controller
             'role' => $activeRoleName
         ]);
 
-        if ($course->modality === 'hibrida') {
-            return redirect()->route('Cursos.index')
-               ->with('success','Curso creado exitosamente.');
-        }
-
         if ($course->modality === 'presencial') {
             return redirect()->route('Cursos.index')
-               ->with('success','Curso creado exitosamente,');
+                ->with('success', 'Curso creado exitosamente.');
+        }
+
+        if ($course->modality === 'hibrida') {
+            return redirect()->route('Cursos.index')
+                ->with('success', 'Curso creado exitosamente.');
         }
 
         return redirect()->route('course.topic.create', ['course' => $course->id])
@@ -210,50 +212,77 @@ public function show(Course $course)
     $user = Auth::user();
     $departments = Department::with('workstations')->get();
 
-    // ✅ Contar SOLO actividades (no PDFs/videos)
-$totalItems = 0;
-foreach ($course->topics as $topic) {
-    $totalItems += $topic->activities->where('is_final_exam', false)->count();
-    foreach ($topic->subtopics as $sub) {
-        $totalItems += $sub->activities->count();
-    }
-}
-
-// ✅ Contar actividades independientes (no finales)
-$totalItems += \App\Models\Cursos\Activities::where('course_id', $course->id)
-    ->whereNull('topic_id')
-    ->whereNull('subtopic_id')
-    ->where('is_final_exam', false)
-    ->count();
-
     $progress = 0;
     $isEnrolled = false;
     $finalExamData = null;
+    $finalExamActivity = null;
     $userCompletions = collect();
+    $totalItems = 0;
 
     if ($user) {
-        $isEnrolled = $user->courses->contains($course->id);
+
+        $isEnrolled = $user->courses()
+    ->where('course_id', $course->id)
+    ->exists();
 
         if (!$isEnrolled) {
-            // ✅ Registrar INICIO del curso (primera vez)
-            $user->courses()->attach($course->id, [
-                'progress' => 0,
-                'started_at' => now() // ✅ Registrar fecha/hora de inicio
+    // ✅ Buscar período activo HOY
+    $currentPeriod = $course->periods()
+        ->whereDate('start_date', '<=', now())
+        ->whereDate('end_date', '>=', now())
+        ->first();
+    
+    \Log::info('🔍 Período encontrado para inscripción:', [
+        'course_id' => $course->id,
+        'period_id' => $currentPeriod?->id,
+        'period_name' => $currentPeriod?->name,
+        'today' => now()->format('Y-m-d')
+    ]);
+    
+    // ✅ Primera vez - inscribir con período actual
+    $user->courses()->attach($course->id, [
+        'progress' => 0,
+        'started_at' => now(),
+        'period_id' => $currentPeriod ? $currentPeriod->id : null
+    ]);
+    
+    $progress = 0;
+    
+} else {
+    // ✅ Ya inscrito - SOLO leer el progreso guardado
+    $pivotRow = $user->courses()->where('course_id', $course->id)->first();
+    if ($pivotRow && $pivotRow->pivot) {
+        $progress = $pivotRow->pivot->progress;
+        
+        // ✅ Si no tiene started_at, agregarlo UNA VEZ
+        if (!$pivotRow->pivot->started_at) {
+            $user->courses()->updateExistingPivot($course->id, [
+                'started_at' => now()
             ]);
-        } else {
-            $pivotRow = $user->courses()->where('course_id', $course->id)->first();
-            if ($pivotRow && $pivotRow->pivot) {
-                $progress = $pivotRow->pivot->progress;
+        }
+        
+        // ✅ Si no tiene period_id pero existe un período activo, asignarlo
+        if (!$pivotRow->pivot->period_id) {
+            $currentPeriod = $course->periods()
+                ->whereDate('start_date', '<=', now())
+                ->whereDate('end_date', '>=', now())
+                ->first();
+            
+            if ($currentPeriod) {
+                $user->courses()->updateExistingPivot($course->id, [
+                    'period_id' => $currentPeriod->id
+                ]);
                 
-                // ✅ Si no tiene started_at (usuarios antiguos), registrarlo ahora
-                if (!$pivotRow->pivot->started_at) {
-                    $user->courses()->updateExistingPivot($course->id, [
-                        'started_at' => now()
-                    ]);
-                }
+                \Log::info('✅ Período asignado a usuario existente:', [
+                    'user_id' => $user->id,
+                    'course_id' => $course->id,
+                    'period_id' => $currentPeriod->id
+                ]);
             }
         }
-
+    }
+}
+        // completions del usuario
         $userCompletions = $user->completions->map(function ($item) {
             return [
                 'type' => class_basename($item->completable_type),
@@ -261,37 +290,17 @@ $totalItems += \App\Models\Cursos\Activities::where('course_id', $course->id)
             ];
         });
 
-        // ✅ Calcular progreso basado en actividades completadas
-$completedActivities = $user->completions()
-    ->where('completable_type', Activities::class)
-    ->whereIn('completable_id', function($query) use ($course) {
-        $query->select('id')
-              ->from('activities')
-              ->where('course_id', $course->id)
-              ->where('is_final_exam', false);
-    })
-    ->count();
-
-if ($totalItems > 0) {
-    $progress = round(($completedActivities / $totalItems) * 100, 2);
-} else {
-    $progress = 0;
-}
-
-// ✅ Actualizar progreso en la tabla pivot
-$user->courses()->updateExistingPivot($course->id, [
-    'progress' => $progress
-]);
-
+        // examen final
         $finalExamActivity = $course->finalExam;
+
         if ($finalExamActivity) {
             $finalExamData = $user->completions()
                 ->where('completable_type', Activities::class)
                 ->where('completable_id', $finalExamActivity->id)
                 ->first();
+                
+                
         }
-    } else {
-        $finalExamActivity = $course->finalExam;
     }
 
     $topics = $course->topics;
@@ -299,7 +308,7 @@ $user->courses()->updateExistingPivot($course->id, [
     return view('layouts.Cursos.show', compact(
         'departments',
         'course',
-        'topics',        
+        'topics',
         'progress',
         'totalItems',
         'isEnrolled',
@@ -668,4 +677,216 @@ $user->courses()->updateExistingPivot($course->id, [
 
         return view('layouts.Cursos.certificates_list', compact('certificates'));
     }
+
+    /**
+ * Mostrar lista de asistencia del curso
+ */
+/**
+ * Mostrar lista de asistencia
+ */
+public function attendance(Course $course)
+{
+    $activeInstitutionId = session('active_institution_id');
+
+    if ($course->institution_id != $activeInstitutionId) {
+        abort(403, 'No puedes ver la asistencia de cursos de otra institución.');
+    }
+
+    $this->authorize('update', $course);
+
+    // ✅ Obtener todos los períodos del curso
+    $periods = $course->periods()->orderBy('start_date', 'desc')->get();
+
+    // Obtener asistencias con información del período
+    $attendances = $course->users()
+        ->withPivot(['started_at', 'completed_at', 'progress', 'period_id'])
+        ->orderBy('course_user.started_at', 'desc')
+        ->get()
+        ->map(function ($user) use ($course) {
+            $finalExam = $course->finalExam;
+            $finalScore = null;
+            $completedAt = null;
+            
+            if ($finalExam) {
+                $completion = $user->completions()
+                    ->where('completable_type', Activities::class)
+                    ->where('completable_id', $finalExam->id)
+                    ->first();
+                
+                if ($completion) {
+                    $finalScore = $completion->score;
+                    $completedAt = $completion->created_at;
+                }
+            }
+            
+            // ✅ Si completó el examen final, progreso = 100%
+            $progress = $finalScore !== null ? 100 : $user->pivot->progress;
+            $status = $finalScore !== null ? 'Completado' : 'En progreso';
+            
+            // ✅ Obtener nombre del período
+            $periodName = null;
+            if ($user->pivot->period_id) {
+                $period = CoursePeriod::find($user->pivot->period_id);
+                $periodName = $period ? $period->name : null;
+            }
+            
+            return [
+                'id' => $user->id,
+                'nombre' => $user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno,
+                'email' => $user->email,
+                'started_at' => $user->pivot->started_at,
+                'completed_at' => $completedAt,
+                'progress' => $progress,
+                'final_score' => $finalScore,
+                'status' => $status,
+                'period_id' => $user->pivot->period_id,
+                'period_name' => $periodName
+            ];
+        });
+
+    return view('layouts.Cursos.attendance', compact('course', 'attendances', 'periods'));
+}
+/**
+ * Guardar progreso del usuario en el curso
+ */
+public function saveProgress(Request $request, Course $course)
+{
+    $user = Auth::user();
+    
+    if (!$user) {
+        return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
+    }
+    
+    $validated = $request->validate([
+        'progress' => 'required|numeric|min:0|max:100'
+    ]);
+    
+    // Obtener progreso actual
+    $pivotRow = $user->courses()->where('course_id', $course->id)->first();
+    $currentProgress = $pivotRow ? $pivotRow->pivot->progress : 0;
+    
+    if ($validated['progress'] > $currentProgress) {
+    $user->courses()->updateExistingPivot($course->id, [
+        'progress' => $validated['progress'] // ✅ SOLO progreso, nada más
+    ]);
+        
+        return response()->json([
+            'success' => true,
+            'progress' => $validated['progress']
+        ]);
+    }
+    
+    return response()->json([
+        'success' => true,
+        'progress' => $currentProgress,
+        'message' => 'Progreso no actualizado (ya estaba más avanzado)'
+    ]);
+}
+
+/**
+ * Exportar lista de asistencia a PDF
+ */
+/**
+ * Exportar lista de asistencia a PDF
+ */
+/**
+ * Exportar lista de asistencia a PDF con filtros
+ */
+public function exportAttendancePDF(Request $request, Course $course)
+{
+    $activeInstitutionId = session('active_institution_id');
+
+    if ($course->institution_id != $activeInstitutionId) {
+        abort(403, 'No puedes ver la asistencia de cursos de otra institución.');
+    }
+
+    $this->authorize('update', $course);
+
+    // ✅ Obtener filtros de la URL
+    $searchName = $request->input('search');
+    $filterDate = $request->input('date');
+    $filterPeriod = $request->input('period');
+
+    // Obtener asistencias
+    $attendances = $course->users()
+        ->withPivot(['started_at', 'completed_at', 'progress', 'period_id'])
+        ->orderBy('course_user.started_at', 'desc')
+        ->get()
+        ->map(function ($user) use ($course) {
+            $finalExam = $course->finalExam;
+            $finalScore = null;
+            $fechaFin = null;
+            
+            if ($finalExam) {
+                $completion = $user->completions()
+                    ->where('completable_type', Activities::class)
+                    ->where('completable_id', $finalExam->id)
+                    ->first();
+                
+                if ($completion) {
+                    $finalScore = $completion->score;
+                    $fechaFin = $completion->created_at->format('d/m/Y H:i');
+                }
+            }
+            
+            $progress = $finalScore !== null ? 100 : $user->pivot->progress;
+            $status = $finalScore !== null ? 'Completado' : 'En progreso';
+            
+            return [
+                'nombre' => $user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno,
+                'puesto' => $user->workstation?->name ?? 'N/A',
+                'rfc' => $user->RFC ?? 'N/A',
+                'inicio' => $user->pivot->started_at ? \Carbon\Carbon::parse($user->pivot->started_at)->format('d/m/Y H:i') : null,
+                'fin' => $fechaFin,
+                'started_at' => $user->pivot->started_at,
+                'progress' => $progress,
+                'final_score' => $finalScore,
+                'status' => $status,
+                'period_id' => $user->pivot->period_id
+            ];
+        });
+
+    // ✅ APLICAR FILTROS
+    if ($searchName) {
+        $attendances = $attendances->filter(function ($attendance) use ($searchName) {
+            return stripos($attendance['nombre'], $searchName) !== false;
+        });
+    }
+
+    if ($filterDate) {
+        $attendances = $attendances->filter(function ($attendance) use ($filterDate) {
+            if (!$attendance['started_at']) return false;
+            $startDate = \Carbon\Carbon::parse($attendance['started_at'])->format('Y-m-d');
+            return $startDate === $filterDate;
+        });
+    }
+
+    if ($filterPeriod) {
+        $attendances = $attendances->filter(function ($attendance) use ($filterPeriod) {
+            return $attendance['period_id'] == $filterPeriod;
+        });
+    }
+
+    // ✅ Reindexar después de filtrar
+    $attendances = $attendances->values();
+
+    $data = [
+        'course' => $course,
+        'attendances' => $attendances,
+        'instructor' => $course->instructor->nombre . ' ' . $course->instructor->apellido_paterno,
+        'institution_logo' => session('active_institution_logo'),
+        'institution_name' => session('active_institution_name'),
+        'fecha_inicio' => $attendances->whereNotNull('started_at')->min('started_at') ? \Carbon\Carbon::parse($attendances->whereNotNull('started_at')->min('started_at'))->format('d/m/Y') : 'N/A',
+        'hora_inicio' => $attendances->whereNotNull('started_at')->min('started_at') ? \Carbon\Carbon::parse($attendances->whereNotNull('started_at')->min('started_at'))->format('H:i') : 'N/A',
+        'fecha_fin' => now()->format('d/m/Y'),
+        'hora_fin' => now()->format('H:i')
+    ];
+
+    $pdf = Pdf::loadView('layouts.Cursos.attendance_pdf', $data);
+    $pdf->setPaper('a4', 'portrait');
+
+    $filename = 'Lista_Asistencia_' . str_replace(' ', '_', $course->title) . '.pdf';
+    return $pdf->download($filename);
+}
+
 }

@@ -190,3 +190,10 @@
         margin-top: 10px;
     }
 }
+
+/* Al exportar/imprimir desde Mi Información > Horario: ocultar solo el botón Exportar */
+@media print {
+    .horario-export-btn {
+        display: none !important;
+    }
+}

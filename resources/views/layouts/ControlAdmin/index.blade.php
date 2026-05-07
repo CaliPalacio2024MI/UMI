@@ -2,7 +2,7 @@
 
 @section('title', 'Control Administrativo - ' . session('active_institution_name'))
 
-@vite(['resources/css/courses.css', 'resources/js/app.js'])
+@vite(['resources/css/Cursos/courses.css', 'resources/js/app.js'])
 
 @section('content')
 <div class ="container">
@@ -11,7 +11,7 @@
     <a href="{{ route('Listas.students.index') }}">Lista de Alumnos</a>
     <a href="{{ route('Listas.members.index') }}">Lista de Docentes</a>
     <a href="{{ route('Inscripción.index') }}">Registro de Alumnos</a>
-    <a href="{{ route('Listas.materias.index') }}">Lista de materias</a>
-    <a href="{{ route("Horarios.index") }}">Horarios</a>
+    <a href="{{ route('control.subjects.index') }}">Lista de materias</a>
+    <a href="{{ route('control.schedules.index') }}">Horarios</a>
 </div>
 @endsection

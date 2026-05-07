@@ -39,16 +39,28 @@
             <textarea name="description" rows="4" required>{{ old('description', $course->description) }}</textarea>
         </div>
 
-        {{-- MODALIDAD --}}
-        <div class="form-group">
-            <label for="modality">Modalidad</label>
-            <select id="modality" name="modality" required>
-                <option value="" disabled selected>Selecciona la modalidad</option>
-                <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
-                <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
-                <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
-            </select>
-        </div>
+        {{-- Modalidad --}}
+<div class="form-group">
+    <label for="modality">Modalidad</label>
+    <select id="modality" name="modality" required>
+        <option value="" disabled>Selecciona la modalidad</option>
+
+        <option value="presencial"
+            {{ old('modality', $course->modality) == 'presencial' ? 'selected' : '' }}>
+            Presencial
+        </option>
+
+        <option value="virtual"
+            {{ old('modality', $course->modality) == 'virtual' ? 'selected' : '' }}>
+            Virtual
+        </option>
+
+        <option value="hibrida"
+            {{ old('modality', $course->modality) == 'hibrida' ? 'selected' : '' }}>
+            Híbrido
+        </option>
+    </select>
+</div>
 
         {{-- UNIVERSIDAD --}}
         @if ($currentInstitution->name === 'Universidad Mundo Imperial')
@@ -57,13 +69,13 @@
                 <div class="form-group">
                     <label>Horas</label>
                     <input type="number" name="hours"
-                        value="{{ old('hours', $course->hours) }}" required>
+                           value="{{ old('hours', $course->hours) }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Créditos</label>
                     <input type="number" name="credits"
-                        value="{{ old('credits', $course->credits) }}" required>
+                           value="{{ old('credits', $course->credits) }}" required>
                 </div>
             </div>
 
@@ -89,22 +101,7 @@
 
             <input type="hidden" name="credits" value="0">
 
-            {{-- MULTI DEPARTAMENTOS
-            <div class="form-group">
-                <label>Dirigido a Departamentos</label>
-
-                <select name="department_ids[]" multiple required>
-                    @foreach($currentInstitution->departments as $department)
-                        <option value="{{ $department->id }}"
-                            {{ collect(old('department_ids', $course->departments->pluck('id')))
-                                ->contains($department->id) ? 'selected' : '' }}>
-                            {{ $department->name }}
-                        </option>
-                    @endforeach
-                </select>
-
-                <small style="color:#666">Puedes seleccionar uno o varios departamentos</small>
-            </div> --}}
+           
         @endif
 
         {{-- IMAGEN --}}

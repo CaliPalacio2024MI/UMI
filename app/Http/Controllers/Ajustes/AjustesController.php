@@ -8,7 +8,6 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +22,7 @@ use App\Models\Users\Role;
 use App\Models\Users\Period;
 use App\Models\Users\AcademicProfile;
 use App\Models\Users\CorporateProfile;
+use App\Models\Lead;
 
 class AjustesController extends Controller
 {
@@ -41,7 +41,15 @@ class AjustesController extends Controller
 
         
         $universityName = 'Universidad Mundo Imperial';
-        $isUniversity = (session('active_institution_name') === $universityName);
+        $activeInstitutionId = (int) session('active_institution_id', 0);
+        $activeInstitution = $activeInstitutionId > 0
+            ? Institution::find($activeInstitutionId)
+            : null;
+        $isUniversity = (bool) ($activeInstitution?->is_universidad ?? false);
+        // Fallback por compatibilidad con registros/sesiones antiguos.
+        if (! $isUniversity) {
+            $isUniversity = (session('active_institution_name') === $universityName);
+        }
 
         
 
@@ -59,15 +67,23 @@ class AjustesController extends Controller
         
         
         $this->applyAuthFilters($query, $seccion);
-        
-        
-        $data = $query->paginate(15)->withQueryString(); 
+
+        // Usuarios: sin paginación; lista completa con scroll en la vista (tabla responsiva).
+        if ($seccion === 'users') {
+            $data = $query->get();
+        } else {
+            $data = $query->paginate(15)->withQueryString();
+        } 
         
         $titles = $this->getSectionTitles($seccion);
-        $page_title = $titles['plural']; 
-        $singular_title = $titles['singular']; 
-       
-       return view('layouts.Ajustes.index', compact('data', 'seccion', 'page_title', 'singular_title'));
+        $page_title = $titles['plural'];
+        $singular_title = $titles['singular'];
+
+        if ($request->ajax() && $seccion === 'users') {
+            return response()->view('layouts.Ajustes.partials.users_table_body', compact('data', 'seccion', 'page_title'));
+        }
+
+        return view('layouts.Ajustes.index', compact('data', 'seccion', 'page_title', 'singular_title'));
     }
 
   
@@ -128,7 +144,9 @@ class AjustesController extends Controller
         switch ($seccion) {
             case 'institutions':
                 $request->validate(['name' => 'required|string|max:255|unique:institutions']);
-                $data = $request->all(); 
+                $data = $request->all();
+                $data['is_administrativo'] = $request->boolean('is_administrativo');
+                $data['is_universidad'] = $request->boolean('is_universidad');
 
                 if ($request->hasFile('logo_path')) {
                     $data['logo_path'] = $request->file('logo_path')->store('logos/institutions', 'public');
@@ -207,21 +225,50 @@ class AjustesController extends Controller
 
             case 'users':
              
+            $this->resolveCorporateCatalogIdsFromApiNames($request);
            
+            $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
+            $rfcMax = 18;
+            $rfcMin = 12;
+
             $validatedData = $request->validate([
                 'nombre' => 'required|string|max:255',
                 'apellido_paterno' => 'required|string|max:255',
                 'apellido_materno' => 'nullable|string|max:255',
-                'RFC' => ['required', 'string', 'max:13'],
-                'email' => ['required', 'email'],          
+                'RFC' => [
+                    'required',
+                    'string',
+                    'min:'.$rfcMin,
+                    'max:'.$rfcMax,
+                    function ($attribute, $value, $fail) {
+                        $v = strtoupper(trim((string) $value));
+                        $isCurp = (bool) preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $v);
+                        $isRfc = (bool) preg_match('/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/', $v);
+                        if (! $isCurp && ! $isRfc) {
+                            $fail('Capture un RFC o CURP válido.');
+                        }
+                    },
+                ],
                 'role_id' => 'required|exists:roles,id',
                 'institution_id' => 'required|exists:institutions,id',
                 'department_id' => 'nullable|exists:departments,id',
                 'workstation_id' => 'nullable|exists:workstations,id',
+                'tipo_usuario_creacion' => 'nullable|in:normal,alumno',
                
             ]);
+            $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
+
+            // Se permite crear usuarios en la unidad seleccionada desde el formulario.
  
             $selectedRole = Role::find($validatedData['role_id']);
+            if ($tipoCreacion === 'alumno') {
+                $rolEstudiante = Role::where('name', 'estudiante')->first();
+                if (! $rolEstudiante || (int) $validatedData['role_id'] !== (int) $rolEstudiante->id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'role_id' => 'Si marcas Alumno, el rol principal debe ser Alumno.',
+                    ]);
+                }
+            }
  
            
            
@@ -249,7 +296,12 @@ class AjustesController extends Controller
             }
  
            
-            $existingUser = User::withTrashed()->where('RFC', $validatedData['RFC'])->first();
+            $u = $validatedData['RFC'];
+            $existingUser = User::withTrashed()
+                ->where(function ($q) use ($u) {
+                    $q->where('RFC', $u)->orWhere('curp', $u);
+                })
+                ->first();
  
             if ($existingUser) {
                
@@ -278,16 +330,25 @@ class AjustesController extends Controller
                
  
             } else {
-               
+                if (User::where('RFC', $u)->orWhere('curp', $u)->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'RFC' => 'Este RFC o CURP ya está registrado.',
+                    ]);
+                }
+
                 $request->validate([
-                    'RFC' => 'unique:users,RFC',
-                    'email' => 'unique:users,email',
-                    'password' => 'required|string|min:8|confirmed',
+                    'password' => [
+                        'required',
+                        'string',
+                        'min:8',
+                        'regex:/[a-z]/',
+                        'regex:/[A-Z]/',
+                        'regex:/[0-9]/',
+                        'regex:/[^A-Za-z0-9]/',
+                    ],
                 ], [
-                    'RFC.unique' => 'Este RFC ya está registrado.',
-                    'email.unique' => 'Este correo ya está registrado.',
-                    'password.confirmed' => 'Las contraseñas no coinciden.',
                     'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                    'password.regex' => 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
                 ]);
  
                
@@ -295,8 +356,9 @@ class AjustesController extends Controller
                     'nombre' => $validatedData['nombre'],
                     'apellido_paterno' => $validatedData['apellido_paterno'],
                     'apellido_materno' => $validatedData['apellido_materno'],
-                    'RFC' => $validatedData['RFC'],
-                    'email' => $validatedData['email'],
+                    'RFC' => $u,
+                    'curp' => preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $u) ? $u : null,
+                    'email' => null,
                     'password' => Hash::make($request->password),
                     'department_id' => $validatedData['department_id'],
                     'workstation_id' => $validatedData['workstation_id'],
@@ -318,9 +380,14 @@ class AjustesController extends Controller
  
          
             $user->roles()->syncWithoutDetaching([
-                $role_id_to_add => ['institution_id' => $institution_id_to_add]
+                $role_id_to_add => ['institution_id' => $institution_id_to_add, 'is_active' => true],
             ]);
- 
+
+            $user->update([
+                'role_id' => $role_id_to_add,
+                'institution_id' => $institution_id_to_add,
+            ]);
+
             $message .= ' y asignado correctamente.';
  
            
@@ -368,6 +435,8 @@ public function update(Request $request, $seccion, $id)
         switch ($seccion) {
             case 'institutions':
                 $data = $request->all();
+                $data['is_administrativo'] = $request->boolean('is_administrativo');
+                $data['is_universidad'] = $request->boolean('is_universidad');
                 $request->validate(['name' => 'required|string|max:255|unique:institutions,name,' . $id]);
                 if ($request->hasFile('logo_path')) {
                     if ($item->logo_path) Storage::disk('public')->delete($item->logo_path);
@@ -431,33 +500,69 @@ public function update(Request $request, $seccion, $id)
                 $item = $this->findItem($seccion, $id);
                 if (!$item) return back()->with('error', 'Registro no encontrado.');
 
+                $this->resolveCorporateCatalogIdsFromApiNames($request);
+
                 // 2. Validación Principal (QUITAMOS PASSWORD DE AQUÍ)
+                $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
+                $rfcMax = 18;
+                $rfcMin = 12;
+
                 $validatedData = $request->validate([
                     'nombre' => 'required|string|max:255',
                     'apellido_paterno' => 'required|string|max:255',
                     'apellido_materno' => 'nullable|string|max:255',
-                    'RFC' => ['required', 'string', 'max:13', Rule::unique('users', 'RFC')->ignore($item->id)],
-                    'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($item->id)],
-                    
-                    // 'password' => '...', // <--- ¡¡BORRA ESTA LÍNEA!!
-                    
+                    'RFC' => [
+                        'required',
+                        'string',
+                        'min:'.$rfcMin,
+                        'max:'.$rfcMax,
+                        function ($attribute, $value, $fail) {
+                            $v = strtoupper(trim((string) $value));
+                            $isCurp = (bool) preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $v);
+                            $isRfc = (bool) preg_match('/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/', $v);
+                            if (! $isCurp && ! $isRfc) {
+                                $fail('Capture un RFC o CURP válido.');
+                            }
+                        },
+                    ],
                     'role_id' => 'required|exists:roles,id',
                     'institution_id' => 'required|exists:institutions,id',
                     'department_id' => 'nullable|exists:departments,id',
                     'workstation_id' => 'nullable|exists:workstations,id',
-                ], [
-                    'RFC.unique' => 'Este RFC ya pertenece a otro usuario.',
-                    'email.unique' => 'Este correo ya está siendo usado por otra persona.',
+                    'tipo_usuario_creacion' => 'nullable|in:normal,alumno',
                 ]);
+
+                $validatedData['RFC'] = strtoupper(trim($validatedData['RFC']));
+                $u = $validatedData['RFC'];
+
+                // Se permite asignar usuarios a la unidad seleccionada desde el formulario.
+
+                if (User::where('id', '!=', $item->id)
+                    ->where(function ($q) use ($u) {
+                        $q->where('RFC', $u)->orWhere('curp', $u);
+                    })
+                    ->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'RFC' => 'Este RFC o CURP ya pertenece a otro usuario.',
+                    ]);
+                }
+
+                $validatedData['curp'] = preg_match('/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/', $u) ? $u : null;
 
                 // 3. Validación de Contraseña (AQUÍ SÍ VA)
                 if (!empty($request->password)) {
                     $request->validate([
-                        'password' => 'string|min:8|confirmed'
+                        'password' => [
+                            'string',
+                            'min:8',
+                            'regex:/[a-z]/',
+                            'regex:/[A-Z]/',
+                            'regex:/[0-9]/',
+                            'regex:/[^A-Za-z0-9]/',
+                        ]
                     ], [
-                        // Aquí están tus mensajes en español
-                        'password.confirmed' => 'Las contraseñas no coinciden.',
                         'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                        'password.regex' => 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.',
                     ]);
                     
                     $validatedData['password'] = Hash::make($request->password);
@@ -467,6 +572,16 @@ public function update(Request $request, $seccion, $id)
                 
                 // 4. Validación Extra (Módulos de Admin)
                 $selectedRole = Role::find($validatedData['role_id']);
+
+                if ($tipoCreacion === 'alumno') {
+                    $rolEstudiante = Role::where('name', 'estudiante')->first();
+                    if (! $rolEstudiante || (int) $validatedData['role_id'] !== (int) $rolEstudiante->id) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'role_id' => 'Si marcas Alumno, el rol principal debe ser Alumno.',
+                        ]);
+                    }
+                }
+
                 if ($selectedRole && $selectedRole->name === 'control_administrativo') {
                     if (!$request->has('modules_enabled') || empty($request->input('modules_enabled'))) {
                         throw \Illuminate\Validation\ValidationException::withMessages([
@@ -604,23 +719,75 @@ public function update(Request $request, $seccion, $id)
             case 'users':
                 $query = User::with([
                     'institutions',
-                    'roles'=> function($query) use ($activeInstitutionId){
-                        $query->where('user_roles_institution.institution_id', $activeInstitutionId);
-                    }
+                    'roles'
                 ]); 
                 if ($search) {
-                    $query->where(function($q) use ($search) {
-                        $q->where('nombre', 'like', "%{$search}%")
-                          ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                          ->orWhere('apellido_materno', 'like', "%{$search}%")
-                          ->orWhere('RFC', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%");
+                    $term = "%{$search}%";
+                    $query->where(function($q) use ($term) {
+                        $q->where('nombre', 'like', $term)
+                          ->orWhere('apellido_paterno', 'like', $term)
+                          ->orWhere('apellido_materno', 'like', $term)
+                          ->orWhere('RFC', 'like', $term)
+                          ->orWhereHas('institutions', function($sub) use ($term) {
+                              $sub->where('institutions.name', 'like', $term);
+                          })
+                          ->orWhereHas('roles', function($sub) use ($term) {
+                              $sub->where('roles.display_name', 'like', $term);
+                          });
                     });
                 }
                 $query->orderBy('id', 'desc');
                 break;
         }
         return $query;
+    }
+
+    private function resolveCorporateCatalogIdsFromApiNames(Request $request): void
+    {
+        $institutionId = (int) ($request->input('institution_id') ?: session('active_institution_id'));
+        if ($institutionId <= 0) {
+            return;
+        }
+
+        $departmentId = $request->input('department_id');
+        $workstationId = $request->input('workstation_id');
+        $departmentApiName = trim((string) $request->input('department_api_name', ''));
+        $workstationApiName = trim((string) $request->input('workstation_api_name', ''));
+
+        if (empty($departmentId) && $departmentApiName !== '') {
+            $department = Department::query()
+                ->where('institution_id', $institutionId)
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($departmentApiName, 'UTF-8')])
+                ->first();
+
+            if (! $department) {
+                $department = Department::create([
+                    'name' => $departmentApiName,
+                    'institution_id' => $institutionId,
+                ]);
+            }
+
+            $departmentId = (string) $department->id;
+            $request->merge(['department_id' => $departmentId]);
+        }
+
+        if (empty($workstationId) && ! empty($departmentId) && $workstationApiName !== '') {
+            $workstation = Workstation::query()
+                ->where('institution_id', $institutionId)
+                ->where('department_id', (int) $departmentId)
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($workstationApiName, 'UTF-8')])
+                ->first();
+
+            if (! $workstation) {
+                $workstation = Workstation::create([
+                    'name' => $workstationApiName,
+                    'department_id' => (int) $departmentId,
+                    'institution_id' => $institutionId,
+                ]);
+            }
+
+            $request->merge(['workstation_id' => (string) $workstation->id]);
+        }
     }
 
     /**
@@ -647,9 +814,13 @@ public function update(Request $request, $seccion, $id)
         $activeInstitutionId = session('active_institution_id');
 
         if ($seccion === 'users') {
-            $query->whereHas('institutions', function($q) use ($activeInstitutionId) {
-                $q->where('institutions.id', $activeInstitutionId);
-            });
+            // Master puede ver usuarios de todas las unidades.
+            // El resto de perfiles se mantiene filtrado por unidad activa.
+            if (! $user->hasActiveRole('master')) {
+                $query->whereHas('institutions', function($q) use ($activeInstitutionId) {
+                    $q->where('institutions.id', $activeInstitutionId);
+                });
+            }
         } elseif ($seccion !== 'institutions') {
             $query->where('institution_id', $activeInstitutionId);
         }
@@ -687,7 +858,10 @@ public function update(Request $request, $seccion, $id)
         $data['activeInstitutionName'] = $activeInstitution ? $activeInstitution->name : null;
         
         
-        $data['isActiveInstitutionUniversity'] = ($data['activeInstitutionName'] === $data['universityName']);
+        $data['isActiveInstitutionUniversity'] = (bool) ($activeInstitution?->is_universidad ?? false);
+        if (! $data['isActiveInstitutionUniversity']) {
+            $data['isActiveInstitutionUniversity'] = ($data['activeInstitutionName'] === $data['universityName']);
+        }
 
         if ($id) {
             $item = $this->findItem($seccion, $id);
@@ -718,9 +892,12 @@ public function update(Request $request, $seccion, $id)
                 break;
                 
             case 'users':
-                
-                
-                $data['institutions'] = Institution::where('id', $activeInstitutionId)->get(); 
+                $data['all_institutions'] = Institution::orderBy('name')->get();
+                if ($user->hasActiveRole('master') && $data['isActiveInstitutionUniversity']) {
+                    $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
+                } else {
+                    $data['institutions'] = Institution::orderBy('name')->get();
+                }
                 
                
                 $data['all_roles'] = Role::orderBy('display_name')->get(); 
@@ -728,6 +905,14 @@ public function update(Request $request, $seccion, $id)
                 
                 $data['departments'] = Department::where('institution_id', $activeInstitutionId)->orderBy('name')->get();
                 $data['workstations'] = Workstation::where('institution_id', $activeInstitutionId)->orderBy('name')->get();
+
+                // Aspirantes CRM (id + datos para autocompletar apellidos y CURP en el modal de usuario)
+                $data['aspirantes_crm_list'] = Lead::queryBaseAspirantesControlEscolar()
+                    ->whereNotNull('alumno_nombre')
+                    ->where('alumno_nombre', '!=', '')
+                    ->orderBy('alumno_nombre')
+                    ->orderBy('alumno_paterno')
+                    ->get(['id', 'alumno_nombre', 'alumno_paterno', 'alumno_materno', 'alumno_curp']);
 
                 
                 if ($user->hasActiveRole('master')) {

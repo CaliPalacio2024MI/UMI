@@ -2,7 +2,7 @@
 
 @section('title', 'Cursos - ' . session('active_institution_name'))
 
-@vite(['resources/css/courses.css', 'resources/js/app.js'])
+@vite(['resources/css/Cursos/courses.css', 'resources/js/app.js'])
 
 @section('content')
 <div class="courses-wrapper">
@@ -54,6 +54,14 @@
                                 <i class="fa-regular fa-clock"></i>
                             </a>
                         @endif
+
+                        {{-- Lista de vigencias (solo para cursos virtuales) --}}
+                         @if($courses->modality === 'virtual')
+                        <a href="{{ route('courses.periods.index', $courses) }}" class="btn-action" title="Vigencia/Listas">
+                        <i class="fa-solid fa-clipboard-user"></i>
+                        </a>
+                        @endif
+
                         {{-- EDITAR --}}
                         @can('update', $courses)
                             <a href="{{ route('courses.edit', $courses) }}" class="btn-edit">

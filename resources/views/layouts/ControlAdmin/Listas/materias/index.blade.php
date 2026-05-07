@@ -2,36 +2,38 @@
 
 @section('title', 'Control Administrativo - ' . session('active_institution_name'))
 
-@vite(['resources/css/control_admin/base.css', 'resources/js/app.js'])
+@vite(['resources/css/Control Admin/base.css', 'resources/js/app.js'])
 
 @section('content')
-<div class ="container">
+<div class="container container--materias">
     <div class ="content-header">
         <div class="content-title">
-            <h1>Lista de Materias</h1>
+            <h5>MATERIAS</h5>
         </div>
     </div>
     <div class="list-header-toolbar">
         <div class="toolbar__section toolbar__section--left">
-            <div class="toolbar__search">
-                <input type="text" placeholder="Buscar por...">
-            </div>      
-            <div class="toolbar__section toolbar__section--right">
-                <div class="toolbar__actions">
-                    @if(Auth::user()->hasAnyRole(['master']))
-                        <button type="button" id="openCreateMateriaBtn" class="btn btn--primary">Agregar Materia</button>
-                    @endif
-                </div>
-                @include('layouts.ControlAdmin.Listas.materias.create')
+            <div class="toolbar__search toolbar__search--materias">
+                <img src="{{ asset('images/icons/magnifying-glass-svgrepo-com.svg') }}" alt="" class="toolbar__search-icon" aria-hidden="true">
+                <input type="text" id="materiasSearchNombre" placeholder="Buscar por..." autocomplete="off">
             </div>
+        </div>
+        <div class="toolbar__section toolbar__section--right">
+            <div class="toolbar__actions">
+                @if(Auth::user()->hasAnyRole(['master']))
+                    <button type="button" id="openCreateMateriaBtn" class="btn btn--primary">+ Agregar Materia</button>
+                @endif
+            </div>
+            @include('layouts.ControlAdmin.Listas.materias.create')
         </div>
     </div>
     <div class="Table-view">
-        <table class="tabla-base tabla-rayas tabla-bordes">
+        <table class="tabla-base tabla-rayas tabla-bordes tabla-materias">
             <thead class="encabezado-tabla">
                 <tr>
+                    <th>Materia</th>
                     <th>Carrera</th>
-                    <th>Nombre</th>
+                    <th>Clasificación</th>
                     <th>No. Créditos</th>
                     <th>Semestre</th>
                     <th>Modalidad</th>
@@ -41,23 +43,24 @@
             <tbody class="cuerpo-tabla">
                 @foreach ($dataList as $registro)
                     <tr> {{-- ¡NOTA: Agregué la etiqueta <tr> faltante! --}}
-                        <td>{{ $registro->career?->name ?? 'Sin datos'}}</td>
                         <td>{{ $registro->nombre ?? 'Sin datos'}}</td>
+                        <td><span class="materia-career-name">{{ $registro->career?->name ?? 'Sin datos'}}</span></td>
+                        <td>{{ $registro->career?->classification?->name ?? '—' }}</td>
                         <td>{{ $registro->creditos ?? 'Sin datos'}}</td>
                         <td>{{ $registro->semestre ?? 'Sin datos'}}</td>
                         <td>{{ $registro->type ?? 'Sin datos'}}</td>
                         <td>
                             {{-- Botón VER --}}
-                            <a href="{{-- {{ route('ruta.ver', $registro->id) }} --}}" class="data-action-btn data-btn-view"><img src="{{asset('images/icons/eye-solid-full.svg')}}" alt="" style="width:27;height:27px" loading="lazy"></a>
-                            
+                            <button type="button" class="data-action-btn data-btn-view" data-view-materia-id="{{ $registro->id }}"><img src="{{ asset('images/icons/eye-solid-full-gold.svg') }}" alt="" style="width:22px;height:22px" loading="lazy"></button>
+                            @include('layouts.ControlAdmin.Listas.materias.show', ['registro' => $registro])
                             {{-- Botón EDITAR --}}
-                            <button type="button" class="data-action-btn data-btn-edit" data-materia-id="{{ $registro->id }}"><img src="{{asset('images/icons/pen-to-square-solid-full.svg')}}" alt="" style="width:27;height:27px" loading="lazy"></button>
+                            <button type="button" class="data-action-btn data-btn-edit" data-materia-id="{{ $registro->id }}"><img src="{{asset('images/icons/pen-to-square-solid-full.svg')}}" alt="" style="width:22px;height:22px" loading="lazy"></button>
                             @include('layouts.ControlAdmin.Listas.materias.edit', ['registro' => $registro, 'carreras' => $carreras])
                             {{-- Botón ELIMINAR --}}
-                            <form action="{{-- {{ route('ruta.eliminar', $registro->id) }} --}}" method="POST" style="display: inline;">
+                            <form class="js-materia-delete-form" action="{{ route('control.subjects.destroy', $registro) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="data-action-btn data-btn-delete" onclick="return confirm('¿Estás seguro de eliminar este registro?')"><img src="{{asset('images/icons/Vector.svg')}}" alt="" style="width:38;height:25px" loading="lazy"></button>
+                                <button type="submit" class="data-action-btn data-btn-delete" aria-label="Eliminar materia"><img src="{{asset('images/icons/Vector.svg')}}" alt="" style="width:22px;height:22px" loading="lazy"></button>
                             </form>
                         </td>
                     </tr>
@@ -87,7 +90,7 @@
 
             // Detectar errores de Creación (Asumiendo que no hay ID en old input, solo el campo 'name')
             // CAMBIO 1: Se ajusta la verificación de la ruta a 'materias.update'
-            const hasCreateErrors = @json($errors->hasAny() && old('name') && !request()->routeIs('materias.update')); 
+            const hasCreateErrors = @json($errors->hasAny() && old('nombre') !== null && !request()->routeIs('control.subjects.update')); 
 
             if (createModal && hasCreateErrors) {
                  createModal.style.display = 'flex'; 
@@ -112,15 +115,12 @@
                 });
             });
 
-            // Detectar errores de Edición (Asumiendo que un modal con error tiene .alert-danger)
-            document.querySelectorAll('.modal-overlay').forEach(modal => {
-                const errorElement = modal.querySelector('.alert-danger'); 
-                
-                // CAMBIO 2: Se ajusta el prefijo del ID del modal de edición
-                if (errorElement && modal.id.startsWith('editMateriaModal_')) {
-                     modal.style.display = 'flex';
-                }
-            });
+            // Detectar errores de Edición: reabrir el modal que falló (edit_materia_id en sesión)
+            const editMateriaIdConError = @json(session('edit_materia_id'));
+            if (editMateriaIdConError) {
+                const modalEdit = document.getElementById('editMateriaModal_' + editMateriaIdConError);
+                if (modalEdit) modalEdit.style.display = 'flex';
+            }
 
 
             // ----------------------------------------------------

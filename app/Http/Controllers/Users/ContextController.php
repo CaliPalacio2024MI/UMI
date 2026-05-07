@@ -112,7 +112,7 @@ class ContextController extends Controller
        
         $request->session()->put('active_institution_id', $activeContext['institution_id']);
         $request->session()->put('active_role_id', $activeContext['role_id']);
-        $request->session()->put('active_role_name', $activeContext['role_name']);
+        $request->session()->put('active_role_name', strtolower($activeContext['role_name']));
         $request->session()->put('active_institution_name', $activeContext['institution_name']);
         $request->session()->put('active_role_display_name', $activeContext['display_name']);
         $request->session()->put('active_institution_logo', $activeContext['logo_path']);
@@ -128,6 +128,12 @@ class ContextController extends Controller
         ]);
         
         
+        // Para estudiantes: la primera vista debe ser el formulario de inscripción
+        // con sus datos precargados (sin entrar a reinscripción).
+        if (strtolower($activeContext['role_name'] ?? '') === 'estudiante') {
+            return redirect()->route('escolar.inscripcion.create');
+        }
+
         return redirect()->route('dashboard');
     }
 }

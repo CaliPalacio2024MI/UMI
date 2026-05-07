@@ -4,11 +4,47 @@
 
 {{-- Inyectamos el CSS --}}
 @push('styles')
-    @vite(['resources/css/MiInformacion/horario.css'])
+    @vite(['resources/css/Mi_Informacion/horario.css'])
 @endpush
 
 @section('content')
 <div class="main-content">
+    @php
+        $days = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+        $startHour = 7;
+        $endHour = 20;
+        $slots = [];
+        foreach (range($startHour, $endHour) as $h) {
+            foreach (range(1, 7) as $d) {
+                $slots[$h][$d] = [];
+            }
+        }
+
+        foreach (($clases ?? collect()) as $clase) {
+            foreach (($clase->franjas ?? collect()) as $franja) {
+                $dias = $franja->dias_semana;
+                if (is_string($dias)) { $dias = json_decode($dias, true); }
+                if (!is_array($dias)) { $dias = $dias !== null && $dias !== '' ? [(int)$dias] : []; }
+
+                $hInicio = (int) \Carbon\Carbon::parse($franja->hora_inicio)->format('H');
+                $hFin = (int) \Carbon\Carbon::parse($franja->hora_fin)->format('H');
+                if ($hFin <= $hInicio) { $hFin = $hInicio + 1; }
+
+                foreach ($dias as $dia) {
+                    $dia = (int) $dia;
+                    if ($dia < 1 || $dia > 7) { continue; }
+                    for ($h = $hInicio; $h < $hFin; $h++) {
+                        if ($h < $startHour || $h > $endHour) { continue; }
+                        $slots[$h][$dia][] = [
+                            'materia' => $clase->materia->nombre ?? 'Materia',
+                            'aula' => $clase->aula?->nombre_aula ?? 'Sin aula',
+                            'docente' => $clase->user->nombre ?? 'Sin docente',
+                        ];
+                    }
+                }
+            }
+        }
+    @endphp
     
     <div class="horario-header">
         <div>
@@ -49,46 +85,18 @@
                     @endfor
                 </div>
 
-                {{-- Celdas del Horario (Ejemplo Estático) --}}
-                {{-- NOTA: Aquí tendrás que hacer un bucle inteligente con PHP cuando tengas datos reales --}}
-                
-                {{-- Fila 7:00 - 8:00 --}}
-                <div class="schedule-cell"></div> {{-- Lunes --}}
-                <div class="schedule-cell">
-                    <div class="class-item">
-                        <div class="class-name">Base de Datos II</div>
-                        <div class="class-room">Sala A</div>
-                    </div>
-                </div> {{-- Martes --}}
-                <div class="schedule-cell"></div> {{-- Miércoles --}}
-                <div class="schedule-cell">
-                    <div class="class-item">
-                        <div class="class-name">Base de Datos II</div>
-                        <div class="class-room">Sala A</div>
-                    </div>
-                </div> {{-- Jueves --}}
-                <div class="schedule-cell"></div> {{-- Viernes --}}
-                <div class="schedule-cell"></div> {{-- Sábado --}}
-                <div class="schedule-cell"></div> {{-- Domingo --}}
-
-                {{-- Fila 8:00 - 9:00 --}}
-                <div class="schedule-cell">
-                    <div class="class-item">
-                        <div class="class-name">Ing. Software</div>
-                        <div class="class-room">Lab 3</div>
-                    </div>
-                </div>
-                <div class="schedule-cell"></div>
-                <div class="schedule-cell">
-                    <div class="class-item">
-                        <div class="class-name">Ing. Software</div>
-                        <div class="class-room">Lab 3</div>
-                    </div>
-                </div>
-                {{-- ... (rellena el resto de celdas vacías para completar la fila) ... --}}
-                 <div class="schedule-cell"></div><div class="schedule-cell"></div><div class="schedule-cell"></div><div class="schedule-cell"></div>
-
-                {{-- ... (Repite para las demás horas) ... --}}
+                @for ($hour = $startHour; $hour <= $endHour; $hour++)
+                    @for ($day = 1; $day <= 7; $day++)
+                        <div class="schedule-cell">
+                            @foreach (($slots[$hour][$day] ?? []) as $entry)
+                                <div class="class-item">
+                                    <div class="class-name">{{ $entry['materia'] }}</div>
+                                    <div class="class-room">{{ $entry['aula'] }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endfor
+                @endfor
 
             </div>
         </div>
