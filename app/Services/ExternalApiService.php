@@ -19,7 +19,7 @@ class ExternalApiService
 
     /**
      * Genera un token JWT firmado.
-     * 
+     *
      * @return string
      */
     public function generateToken(): string
@@ -52,19 +52,27 @@ class ExternalApiService
 
     /**
      * Realiza una petición a la API externa usando un token firmado.
-     * 
+     *
      * @param string $url La URL completa de la API
      * @param string $method GET, POST, etc.
      * @param array $data Parámetros del cuerpo
      * @return array
      * @throws \Exception
      */
+
     public function execute(string $url, string $method = 'GET', array $data = [])
     {
         $token = $this->generateToken();
 
-        $response = Http::withToken($token)->$method($url, $data);
-
+$response = Http::withToken($token)
+    ->withoutVerifying()
+    ->withHeaders([
+        'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
+    ])
+    ->send($method, $url, [
+        'json' => $data
+    ]);
         if ($response->successful()) {
             return $response->json();
         }

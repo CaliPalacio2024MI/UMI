@@ -52,8 +52,11 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\Cursos\CourseSessionController;
 
 
+Route::get('/sync-properties', [ExternalDataController::class, 'syncProperties']);
 
+Route::get('/sync-departments/{id}', [ExternalDataController::class, 'syncDepartments']);
 
+Route::get('/sync-positions/{property}/{department}', [ExternalDataController::class, 'syncPositions']);
 // ==========================================================================
 // 1. ACCESO PÚBLICO
 // ==========================================================================
