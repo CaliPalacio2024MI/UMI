@@ -1,6 +1,6 @@
 import './bootstrap';
 import axios from 'axios';
-import '@fortawesome/fontawesome-free/css/all.min.css'
+//import '@fortawesome/fontawesome-free/css/all.min.css'
 
 window.axios = axios;
 

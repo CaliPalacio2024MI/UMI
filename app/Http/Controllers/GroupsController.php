@@ -10,12 +10,14 @@ use App\Models\Cursos\CourseSession;
 class GroupsController extends Controller
 {
     public function index()
+
 {
     $groups = Group::all();
     $departments = Department::with('workstations')->get();
 
     return view('groups.index', compact('groups', 'departments'));
 }
+
     public function store(Request $request)
     {
         $session = CourseSession::findOrFail($request->session_id);

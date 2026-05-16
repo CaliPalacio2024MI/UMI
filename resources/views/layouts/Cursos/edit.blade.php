@@ -179,9 +179,11 @@
                 Guardar Cambios
             </button>
 
-            <button class="btn-submit" type="submit" name="action" value="save_and_continue">
-                Guardar y Editar Temas →
-            </button>
+            @if(strtolower($course->modality) == 'virtual')
+                <button class="btn-submit" type="submit" name="action" value="save_and_continue">
+                    Guardar y Editar Temas →
+                </button>
+            @endif
         </div>
 
     </form>

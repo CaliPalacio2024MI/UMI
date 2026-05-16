@@ -49,7 +49,7 @@
                     <div class="btn-display">
 
                        {{-- Gestionar Horarios --}}
-                        @if(in_array($courses->modality, ['presencial', 'hibrida']))
+                        @if(in_array($courses->modality, ['presencial']))
                             <a href="{{ route('courses.sessions.index', $courses) }}" class="btn-action">
                                 <i class="fa-regular fa-clock"></i>
                             </a>
@@ -58,7 +58,7 @@
                         {{-- Lista de vigencias (solo para cursos virtuales) --}}
                          @if($courses->modality === 'virtual')
                         <a href="{{ route('courses.periods.index', $courses) }}" class="btn-action" title="Vigencia/Listas">
-                        <i class="fa-solid fa-clipboard-user"></i>
+                        <i class="fa-regular fa-clock"></i>
                         </a>
                         @endif
 

@@ -20,7 +20,7 @@ use App\Http\Controllers\Cursos\CoursePeriodsController;
 
 // --- Controladores de Facturación ---
 use App\Http\Controllers\Facturacion\BillingController;
-use App\Http\Controllers\Facturacion\PaymentController; 
+use App\Http\Controllers\Facturacion\PaymentController;
 use App\Http\Controllers\Facturacion\BillingConceptController;
 
 // --- Controladores Administrativos y Escolares ---
@@ -34,7 +34,7 @@ use App\Http\Controllers\AdmonCont\MateriaController;
 use App\Http\Controllers\AdmonCont\store\teacherController;
 use App\Http\Controllers\SchoolarCont\InscripcionController;
 use App\Http\Controllers\SchoolarCont\MatriculaController;
-use App\Http\Controllers\SchoolarCont\BoletaCalificacionController; 
+use App\Http\Controllers\SchoolarCont\BoletaCalificacionController;
 use App\Http\Controllers\SchoolarCont\BecasController;
 use App\Http\Controllers\SchoolarCont\TitulacionController;
 
@@ -51,12 +51,12 @@ use App\Http\Controllers\WorkstationController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\Cursos\CourseSessionController;
 
-Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
-//Filtrado de practicantes
-Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
-//Lector QR
-Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
 
+Route::get('/sync-properties', [ExternalDataController::class, 'syncProperties']);
+
+Route::get('/sync-departments/{id}', [ExternalDataController::class, 'syncDepartments']);
+
+Route::get('/sync-positions/{property}/{department}', [ExternalDataController::class, 'syncPositions']);
 // ==========================================================================
 // 1. ACCESO PÚBLICO
 // ==========================================================================
@@ -73,13 +73,13 @@ Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('
 Route::post('/registro-publico', [LeadPublicController::class, 'store'])
     ->middleware('throttle:3,15')
     ->name('public.inscripcion.store');
-    
+
 
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
 // ==========================================================================
 Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
-    
+
     // --- Contexto (Cambio de Rol/Institución) ---
     Route::match(['get', 'post'], '/set-context', [ContextController::class, 'setContext'])->name('context.set');
     Route::match(['get', 'post'], '/context/switch/{institutionId}/{roleId}', [ContextController::class, 'setContext'])->name('context.switch');
@@ -111,7 +111,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     // ======================================================================
     Route::middleware(['role:master,docente'])->group(function () {
         // Gestión de Cursos
-        Route::get('/cursos/crear', [CourseController::class, 'create'])->name('courses.create'); 
+        Route::get('/cursos/crear', [CourseController::class, 'create'])->name('courses.create');
         Route::post('/cursos', [CourseController::class, 'store'])->name('courses.store');
         Route::get('/cursos/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/cursos/{course}', [CourseController::class, 'update'])->name('courses.update');
@@ -126,11 +126,11 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/', [CoursePeriodsController::class, 'index'])->name('index');
         Route::post('/', [CoursePeriodsController::class, 'store'])->name('store');
         Route::delete('/{period}', [CoursePeriodsController::class, 'destroy'])->name('destroy');
-    
+
         // Gestión de usuarios del período
         Route::get('/{period}/usuarios', [CoursePeriodsController::class, 'users'])->name('users');
         Route::post('/{period}/usuarios/toggle', [CoursePeriodsController::class, 'toggleUser'])->name('toggleUser');
-    
+
         // Asistencia del período
         Route::get('/{period}/asistencia', [CoursePeriodsController::class, 'attendance'])->name('attendance');})->middleware(['role:master,docente,gerente_capacitacion']);
 
@@ -160,23 +160,25 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         // Temas y Subtemas
         Route::get('/cursos/{course}/temas/crear', [TopicsController::class, 'create'])->name('course.topic.create');
         Route::post('/temas', [TopicsController::class, 'store'])->name('topics.store');
-        Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit'); 
+        Route::get('/temas/{topic}/edit', [TopicsController::class, 'edit'])->name('topics.edit');
         Route::put('/temas/{topic}', [TopicsController::class, 'update'])->name('topics.update');
         Route::delete('/temas/{topic}', [TopicsController::class, 'destroy'])->name('topics.destroy');
-        
+
         // routes/web.php
         Route::post('/cursos/{course}/welcome', [CourseController::class, 'updateWelcome'])->name('course.update.welcome')->middleware('auth');
-        
+
         Route::resource('topics.subtopics', SubtopicsController::class);
         Route::delete('/subtopics/{subtopic}', [SubtopicsController::class, 'destroy'])->name('subtopics.destroy');
         Route::post('/topics/update-order', [TopicsController::class, 'updateOrder'])->name('topics.updateOrder');
         Route::post('/activities/update-order', [ActivitiesController::class, 'updateOrder'])->name('activities.updateOrder');
-        
+
         // Actividades (Gestión)
         Route::post('/actividades', [ActivitiesController::class, 'store'])->name('activities.store');
         Route::delete('/actividades/{activity}', [ActivitiesController::class, 'destroy'])->name('activities.destroy');
-        
-        
+
+        //Lector QR
+        Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
+
         // Grupos
         Route::post('/api/workstations-by-departments', [WorkstationController::class, 'byDepartments']);
         Route::post('/groups', [GroupsController::class, 'store'])->name('groups.store');
@@ -195,6 +197,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
         Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
         Route::get('/sessions/{id}/group-data', [CourseSessionController::class, 'getGroupData']);
+        Route::get('/sessions/{session}/groups', [CourseSessionController::class, 'groups'])->name('sessions.groups');
 
     });
     // ===============================
@@ -205,6 +208,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     Route::delete('/courses/{course}/sessions/{session}',[CourseSessionController::class, 'destroy'])->name('courses.sessions.destroy');
     Route::patch('/cursos/{course}/horarios/{session}/toggle',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'toggle'])->name('courses.sessions.toggle');
     Route::put('/cursos/{course}/horarios/{session}',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'update'])->name('courses.sessions.update');
+    Route::resource('courses', CourseController::class);
+
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
     // Estas rutas atrapan {course}, por eso van AL FINAL de la sección de cursos
     Route::get('/cursos', [CourseController::class, 'index'])->name('Cursos.index');
@@ -214,16 +219,16 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
     // Guardar progreso
     Route::post('/cursos/{course}/save-progress', [CourseController::class, 'saveProgress'])->name('courses.saveProgress');
     Route::post('/activities/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
-    
-    
 
-    
+
+
+
     // Acciones del Alumno
     Route::post('/cursos/{course}/inscribir', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/cursos/{course}/desinscribir', [CourseController::class, 'unenroll'])->name('courses.unenroll');
     Route::post('/completions/mark', [CompletionController::class, 'mark'])->name('completions.mark');
     Route::post('/actividades/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
-    
+
 
 
     // ======================================================================
@@ -250,13 +255,13 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         // A. CONTROL ESCOLAR (Flujo de Ingreso)
         // ------------------------------------------------------------
         Route::prefix('control-escolar')->name('escolar.')->group(function () {
-            
+
             Route::get('/inicio', [ControlAdministrativoController::class, 'showEscolar'])->name('dashboard');
 
             // 1. Inscripción / Reinscripción
             // NOTA: Las rutas de Inscripción están registradas abajo en un grupo aparte
             // para permitir también el rol activo "estudiante".
-            
+
             // 2. Lista de Alumnos (Gestión y Contraseña)
             Route::get('/lista-alumnos', [studentController::class, 'index'])->name('students.index');
             Route::get('/lista-alumnos/export', [studentController::class, 'export'])->name('students.export');
@@ -275,7 +280,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::put('/matriculas/{id}', [MatriculaController::class, 'update'])->name('matriculas.update');
             Route::delete('/matriculas/{id}', [MatriculaController::class, 'destroy'])->name('matriculas.destroy');
             Route::post('/Matriculas/{id}/upload', [MatriculaController::class, 'uploadDocumento'])->name('documentacion.upload');
-            
+
             // 4. Futuros Módulos (Becas, Titulación...)
             Route::get('/becas', [BecasController::class, 'index'])->name('becas.index');
             Route::post('/becas/documentos', [BecasController::class, 'store'])->name('becas.store');
@@ -300,7 +305,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         // B. CONTROL ADMINISTRATIVO / ACADÉMICO (Infraestructura)
         // ------------------------------------------------------------
         Route::prefix('control-administrativo')->name('control.')->group(function () {
-            
+
             Route::get('/academico', [ControlAdministrativoController::class, 'showAcademico'])->name('academico');
             Route::get('/planeacion', [ControlAdministrativoController::class, 'showPlaneacion'])->name('planeacion');
 
@@ -317,7 +322,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::delete('/lista-docentes/{id}', [teacherController::class, 'destroy'])->name('teachers.destroy');
 
             // Carreras y Materias
-            Route::get('/carreras', [careerController::class, 'index'])->name('careers.index'); 
+            Route::get('/carreras', [careerController::class, 'index'])->name('careers.index');
             Route::get('/carreras/create',[careerController::class,'create'])->name('careers.create');
             Route::get('/carreras/{carrera}/reticula', [careerController::class, 'reticula'])->name('careers.reticula');
             Route::post('/carreras', [careerController::class, 'store'])->name('careers.store');
@@ -340,7 +345,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::put('/aulas/{facility}', [FacilityController::class, 'update'])->name('facilities.update');
             Route::get('/aulas/{facility}', [FacilityController::class, 'show'])->name('facilities.show');
             Route::delete('/aulas/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
-            
+
             Route::get('/horarios/{horario}/edit-data', [HorarioController::class, 'editData'])->name('schedules.editData');
             Route::get('/horarios/aulas-disponibles', [HorarioController::class, 'aulasDisponibles'])->name('schedules.aulasDisponibles');
             Route::resource('horarios', HorarioController::class)->names('schedules');
@@ -355,7 +360,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::put('/clases/{clase}', [ClaseController::class, 'update'])->name('classes.update');
             Route::delete('/clases/{clase}', [ClaseController::class, 'destroy'])->name('classes.destroy');
             Route::post('/clases/{clase}/inscribir-todos', [ClaseController::class, 'inscribirTodos'])->name('classes.inscribir-todos');
-            
+
             // Espejo de Alumnos para Admin
             Route::get('/lista-estudiantes', [studentController::class, 'index'])->name('students.index');
             Route::get('/lista-estudiantes/export', [studentController::class, 'export'])->name('students.export');
@@ -366,8 +371,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::post('/lista-estudiantes/leads/{lead}/alumno-email', [studentController::class, 'syncAlumnoEmailFromModal'])->name('students.syncAlumnoEmailControl');
             Route::post('/lista-estudiantes/leads/{lead}/expediente', [studentController::class, 'updateLeadExpediente'])->name('students.updateLeadExpedienteControl');
         });
-    
-        
+
+
 
 
         // ------------------------------------------------------------
@@ -377,14 +382,14 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             // Acciones Específicas (Toggles)
             Route::post('users/{id}/toggle-status', [AjustesController::class, 'toggleUserStatus'])->name('users.toggleStatus');
             Route::post('periods/{id}/toggle-status', [AjustesController::class, 'togglePeriodStatus'])->name('periods.toggleStatus');
-            
+
             // CRUD Dinámico (Usuarios, Periodos, Departamentos, Puestos)
             Route::get('/{seccion}/create-form', [AjustesController::class, 'getCreateForm'])->name('getCreateForm');
             Route::get('/{seccion}/{id}/edit-form', [AjustesController::class, 'getEditForm'])->name('getEditForm');
             Route::post('/{seccion}', [AjustesController::class, 'store'])->name('store');
             Route::put('/{seccion}/{id}', [AjustesController::class, 'update'])->name('update');
             Route::delete('/{seccion}/{id}', [AjustesController::class, 'destroy'])->name('destroy');
-            
+
             // Vista General (Al final por el comodín {seccion})
             Route::get('/{seccion}', [AjustesController::class, 'show'])->name('show');
         });
@@ -436,7 +441,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
                         Route::middleware(['role:master,coordinador_ctp,control_administrativo'])->group(function () {
                             Route::get('/comisiones', [CRMController::class, 'comisiones'])->name('comisiones');
                             Route::post('/comisiones', [CRMController::class, 'storeComision'])->name('comisiones.store');
-                            Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');  
+                            Route::put('/comisiones/{id}', [CRMController::class, 'updateComision'])->name('comisiones.update');
                             Route::delete('/comisiones/{id}', [CRMController::class, 'destroyComision'])->name('comisiones.destroy');
                             Route::get('/comisiones/filtrar', [CRMController::class, 'filtrarComisiones'])->name('comisiones.filtrar');
                             Route::get('/comisiones/{ctpId}/detalle', [CRMController::class, 'detalleComision'])->name('comisiones.detalle');

@@ -1,41 +1,197 @@
-.group-card-ui {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.799);
-    transition: .2s;
+/* ===== groups.css ===== */
+
+/* ===== CONTENEDOR GENERAL ===== */
+.groups-wrapper {
+    padding: 30px;
+    background: #f1f5f9;
+    min-height: 100vh;
 }
 
-.group-card-ui:hover {
-    transform: translateY(-3px);
-}
-
-.group-actions {
+/* ===== HEADER ===== */
+.header-groups {
     display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-.modal,
-.modal-dialog,
-.modal-content {
-    pointer-events: auto !important;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
 }
 
-.modal-backdrop {
-    pointer-events: none !important;
+.header-groups h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
 }
 
-.turtle-container {
-    z-index: 1 !important;
-}
-.btn-danger {
-    background-color: #cf8989;
-    border: none;
+/* BOTÓN VOLVER */
+.btn-back {
+    background: #1e293b;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 10px;
+    text-decoration: none;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: 0.2s;
 }
 
-.btn-danger:hover {
-    background-color: #b68282;
-    transform: scale(1.05);
+.btn-back:hover {
+    background: #0f172a;
+}
+
+/* ===== LAYOUT PRINCIPAL ===== */
+.tables-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    width: 100%;
+}
+
+/* ===== TARJETAS ===== */
+.table-box {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 500px;
+}
+
+/* ===== TITULOS ===== */
+.table-box h3 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 15px;
+    color: #1e293b;
+}
+
+.table-box h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 18px 0 10px;
+    color: #64748b;
+}
+
+/* ===== CHECKLIST ===== */
+.checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ITEM CHECK */
+.check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.check-item:hover {
+    background: #e2e8f0;
+}
+
+/* CHECK ACTIVO */
+.check-item input:checked + span {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+/* ===== CAJAS CON SCROLL ===== */
+.checklist-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #ffffff;
+}
+
+/* ===== USUARIOS ===== */
+.users-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.users-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.user-item {
+    background: #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+.user-item:hover {
+    background: #1d4ed8;
+    color: white;
+}
+
+.user-item.active {
+    background: #2563eb;
+    color: white;
+}
+
+/* ===== BOTÓN GUARDAR ===== */
+.btn-save {
+    margin-top: auto;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-save:hover {
+    background: #1e40af;
+}
+
+/* ===== MENSAJES ===== */
+.empty {
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+}
+
+/* ===== SCROLL BONITO ===== */
+.checklist-box::-webkit-scrollbar,
+.users-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.checklist-box::-webkit-scrollbar-thumb,
+.users-box::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.checklist-box::-webkit-scrollbar-thumb:hover,
+.users-box::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ===== RESPONSIVE SOLO MÓVIL ===== */
+@media (max-width: 768px) {
+    .tables-layout {
+        grid-template-columns: 1fr;
+    }
 }

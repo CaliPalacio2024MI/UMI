@@ -18,6 +18,7 @@
         </div>
     </div>
 
+    
     {{-- Formulario crear período --}}
     <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
         <h3 style="margin: 0 0 20px 0;">➕ Crear Nueva Vigencia</h3>

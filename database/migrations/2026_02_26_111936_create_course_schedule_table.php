@@ -7,16 +7,16 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
    public function up(): void
-{
-    Schema::create('course_schedule', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('course_id')->constrained()->onDelete('cascade');
-        $table->foreignId('schedule_id')->constrained()->onDelete('cascade');
-        $table->timestamps();
-    });
-}
+   {
+        Schema::create('course_schedule', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('course_id')->constrained()->onDelete('cascade');
+            $table->foreignId('schedule_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+        });
+    }
 
-public function down(): void{
-    Schema::dropIfExists('course_schedule');
-}
+   public function down(): void{
+        Schema::dropIfExists('course_schedule');
+   }
 };

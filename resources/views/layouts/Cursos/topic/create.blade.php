@@ -20,7 +20,7 @@
             <h1>Añadir Temas y Actividades</h1>
             <h2>Curso: {{ $course->title }}</h2>
         </div>
-        <a href="{{ route('Cursos.index') }}" class="btn-secondary">
+        <a href="{{ route('courses.periods.index', $course) }}" class="btn-secondary">
             Finalizar
         </a>
     </div>
@@ -610,7 +610,7 @@
                             </div>
 
                             <div class="topic-actions"> 
-                                {{-- BOTÓN DE EDITAR --}}
+                                {{-- BOTÓN DE EDITAR 
                                 <button type="button" class="btn-edit-topic"
                                         data-id="{{ $topic->id }}"
                                         data-title="{{ $topic->title }}"
@@ -624,7 +624,7 @@
                                         title="Editar Tema">
                                     <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" 
                                         alt="Editar" style="width:24px;height:24px" loading="lazy">
-                                </button>
+                                </button> --}}
 
 
                                 {{-- Botón eliminar tema --}}
