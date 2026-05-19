@@ -52,11 +52,11 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\Cursos\CourseSessionController;
 
 
-Route::get('/sync-properties', [ExternalDataController::class, 'syncProperties']);
 
-Route::get('/sync-departments/{id}', [ExternalDataController::class, 'syncDepartments']);
 
-Route::get('/sync-positions/{property}/{department}', [ExternalDataController::class, 'syncPositions']);
+
+
+
 // ==========================================================================
 // 1. ACCESO PÚBLICO
 // ==========================================================================
@@ -188,8 +188,29 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/session/{id}/participants', function ($id) {$group = \App\Models\Group::whereHas('sessions', function ($q) use ($id) {$q->where('course_session_id', $id);})->with('participants')->first();return response()->json($group ? $group->participants : []);});
         Route::post('/groups/add-participants', [App\Http\Controllers\GroupsController::class, 'addParticipants'])->name('groups.addParticipants');
         Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
+        Route::post('/groups/participants-by-filters', [GroupsController::class, 'getParticipantsByFilters'])->name('get.participants.by.filters');
+        Route::get('/sync-properties', [ExternalDataController::class, 'syncProperties']);
+        Route::get('/sync-departments/{id}', [ExternalDataController::class, 'syncDepartments']);
+        Route::get('/sync-positions/{property}/{department}', [ExternalDataController::class, 'syncPositions']);
+        Route::get('/groups/{session}/export-pdf',[GroupsController::class, 'exportPdf'])->name('groups.export.pdf');
+
+
+        // Ruta para mostrar el formulario de creación de grupos
+        Route::get('/sessions/{sessionId}/groups/create', [GroupsController::class, 'create'])->name('groups.create');
+        Route::get('/sync-properties', [ExternalDataController::class, 'syncProperties']);
+        Route::get('/sync-departments/{id}', [ExternalDataController::class, 'syncDepartments']);
+        Route::get('/sync-positions/{property}/{department}', [ExternalDataController::class, 'syncPositions']);
+
         // Vista principal
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
+        // Ruta para obtener participantes filtrados (AJAX)
+        Route::post('/get-participants-by-filters', [GroupsController::class, 'getParticipantsByFilters'])->name('get.participants.by.filters');
+
+        // Ruta para ver los detalles del grupo
+        Route::get('/groups/{group}/session/{sessionId}', [GroupsController::class, 'show'])->name('groups.show');
+
+        // Ruta alternativa para ver grupo sin especificar sesión
+        Route::get('/groups/{group}/details', [GroupsController::class, 'show'])->name('groups.details');
 
         //  AJAX
         Route::get('/departments/{id}/workstations', [GroupDataController::class, 'workstations']);
@@ -398,6 +419,13 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
 }); // Fin Middleware Auth + Ajax + SPA
 
+
+    // Endpoint para consumir la API externa
+    Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
+
+        Route::get('/external-data',[ExternalDataController::class, 'index'])->name('external-data.index');
+
+    });
     // ------------------------------------------------------------
     // Rutas de Inscripción accesibles también para Estudiante
     // (para que al entrar a su cuenta vea primero "Nuevo Registro de Aspirante")
@@ -409,10 +437,6 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::post('/inscripcion/nuevo', [InscripcionController::class, 'store'])->name('inscripcion.store');
         });
 
-    // Endpoint para consumir la API externa (devuelve JSON).
-    // Nota: está dentro del middleware ['auth', 'ajax', 'spa'], así que idealmente llámalo como AJAX
-    // (por ejemplo desde fetch) o asegurando el header 'X-Requested-With: XMLHttpRequest'.
-    Route::get('/external-data', [ExternalDataController::class, 'index'])->name('external-data.index');
             // =======================
             // MÓDULO CRM (INDEPENDIENTE)
             // =======================

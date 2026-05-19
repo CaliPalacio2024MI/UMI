@@ -9,14 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('institutions', function (Blueprint $table) {
+        Schema::create('group_host', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('logo_path')->nullable();
+            $table->foreignId('group_id')->constrained()->onDelete('cascade');
+            $table->foreignId('host_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
-
         });
     }
 
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('institutions');
+        Schema::dropIfExists('group_host');
     }
 };

@@ -10,8 +10,7 @@ use App\Models\Users\Department;
 use Carbon\Carbon;
 use App\Models\Group;
 use App\Models\Users\User;
-
-
+use App\Services\ExternalApiService;
 
 class CourseSessionController extends Controller
 {
@@ -21,14 +20,10 @@ class CourseSessionController extends Controller
             abort(403, 'Este curso no permite gestión de horarios');
         }
 
-        // sesiones
         $sessions = $course->sessions()->orderBy('date')->get();
-        // departamentos
         $departments = Department::where('institution_id', session('active_institution_id'))->get();
-        // GRUPOS DEL CURSO
         $groups = $course->groups;
         $users = User::where('institution_id', session('active_institution_id'))->get();
-
 
         return view('layouts.Cursos.sessions.index', compact(
             'course',
@@ -38,15 +33,13 @@ class CourseSessionController extends Controller
             'users'
         ));
     }
+
     public function assignGroup(Request $request)
     {
         $session = CourseSession::findOrFail($request->session_id);
         $session->groups()->syncWithoutDetaching([$request->group_id]);
 
-        return back()->with(
-        'success',
-        'Grupo asignado'
-        );
+        return back()->with('success', 'Grupo asignado');
     }
 
     public function destroy($courseId, $sessionId)
@@ -91,21 +84,14 @@ class CourseSessionController extends Controller
         $end = Carbon::parse($request->end_time);
 
         if ($end <= $start) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser mayor a la hora inicio'
-            ]);
+            return back()->withErrors(['error' => 'La hora fin debe ser mayor a la hora inicio']);
         }
 
-
-        // VALIDACIÓN EXACTA
         $expectedEnd = $start->copy()->addHours($course->hours);
 
         if (!$end->equalTo($expectedEnd)) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
-            ]);
+            return back()->withErrors(['error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')]);
         }
-
 
         $session->update([
             'date' => $request->date,
@@ -128,19 +114,13 @@ class CourseSessionController extends Controller
         $end = Carbon::parse($request->end_time);
 
         if ($end <= $start) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser mayor a la hora inicio'
-            ]);
+            return back()->withErrors(['error' => 'La hora fin debe ser mayor a la hora inicio']);
         }
 
-
-        // VALIDACIÓN EXACTA
         $expectedEnd = $start->copy()->addHours($course->hours);
 
         if (!$end->equalTo($expectedEnd)) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')
-            ]);
+            return back()->withErrors(['error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')]);
         }
 
         CourseSession::create([
@@ -180,12 +160,10 @@ class CourseSessionController extends Controller
 
         return back()->with('success', 'Grupo asignado correctamente al horario');
     }
+
     public function getGroupData($id)
     {
-        $session = CourseSession::with([
-            'groups.departments',
-            'groups.workstations'
-        ])->find($id);
+        $session = CourseSession::with(['groups.departments', 'groups.workstations'])->find($id);
 
         if (!$session || $session->groups->isEmpty()) {
             return response()->json([]);
@@ -198,27 +176,57 @@ class CourseSessionController extends Controller
             'workstations' => $group->workstations,
         ]);
     }
-    public function groups($session)
+
+public function groups($session)
 {
     $session = CourseSession::findOrFail($session);
 
+    $institutionId = session('active_institution_id');
+
+    // =========================
+    // DEPARTAMENTOS SOLO
+    // DE LA UNIDAD ACTIVA
+    // =========================
     $departments = Department::with('workstations')
-        ->where('institution_id', session('active_institution_id'))
+
+        ->where('institution_id', $institutionId)
+
         ->get();
 
-    $users = User::where('institution_id', session('active_institution_id'))
+    // =========================
+    // ANFITRIONES
+    // SOLO DE ESA UNIDAD
+    // =========================
+    $hosts = User::where('institution_id', $institutionId)
+
+        ->whereHas('roles', function($q) {
+
+            $q->where('name', 'anfitrion');
+        })
+
         ->get();
 
     $group = $session->groups()->first();
 
     return view('groups.index', [
+
         'session' => $session,
+
         'departments' => $departments,
-        'users' => $users,
-        'selectedDepartments' => $group ? $group->departments->pluck('id')->toArray() : [],
-        'selectedWorkstations' => $group ? $group->workstations->pluck('id')->toArray() : [],
-        'selectedUsers' => $group ? $group->users->pluck('id')->toArray() : [],
+
+        'hosts' => $hosts,
+
+        'selectedDepartments' => $group
+            ? $group->departments->pluck('id')->toArray()
+            : [],
+
+        'selectedWorkstations' => $group
+            ? $group->workstations->pluck('id')->toArray()
+            : [],
+
+        'selectedHosts' => $group && method_exists($group, 'hosts')
+            ? $group->hosts->pluck('id')->toArray()
+            : [],
     ]);
 }
-
 }

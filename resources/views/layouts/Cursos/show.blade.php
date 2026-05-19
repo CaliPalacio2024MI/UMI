@@ -246,14 +246,19 @@
             </div>
         @endif
     @endforeach
+
+
 @if($course->modality === 'presencial')
 
     <div class="course-sessions-box">
 
         @foreach($course->sessions as $session)
-            <div class="course-session-item">
+
+            <div class="course-session-item"
+                 onclick="showSessionTable('{{ $session->id }}')">
 
                 <div class="course-session-info">
+
                     <div class="course-session-date">
                         📅 {{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}
                     </div>
@@ -263,6 +268,7 @@
                         -
                         {{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}
                     </div>
+
                 </div>
 
                 <span class="session-status {{ $session->attendance_enabled ? 'active' : 'inactive' }}">
@@ -270,7 +276,11 @@
                 </span>
 
             </div>
+
         @endforeach
+
+    </div>
+
 
         {{-- BOTÓN QR --}}
         <div class="qr-container">
@@ -279,7 +289,6 @@
             </button>
         </div>
 
-    </div>
 
     {{-- MODAL QR --}}
     <div class="modal fade qr-modal" id="qrModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -329,6 +338,115 @@
 
 {{-- ===== VIEWER ===== --}}
 <main class="course-viewer">
+    @if($course->modality === 'presencial')
+<div class="course-controls" style="justify-content: flex-end; gap: 10px;">
+
+    <a id="btn-download-session-pdf"
+       href="#"
+       class="btn-export-pdf"
+       style="display: none;">
+        <i class="fa-solid fa-download"></i>
+        Descargar PDF
+    </a>
+
+    <button class="exit" onclick="window.location.href='{{ route('courses.index') }}'">
+        Salir
+    </button>
+
+</div>
+    <div id="session-table-container" class="presencial-table-viewer">
+
+        <div class="empty-session-message">
+            Selecciona un horario para ver el grupo
+        </div>
+
+    </div>
+
+    @foreach($course->sessions as $session)
+
+        @php
+            $group = $session->groups->first();
+            $hosts = collect([]);
+
+            if ($group) {
+                if (method_exists($group, 'hosts')) {
+                    $hosts = $group->hosts;
+                } elseif ($group->hosts_json) {
+                    $hostIds = json_decode($group->hosts_json, true) ?? [];
+
+                    $hosts = \App\Models\Users\User::whereIn('id', $hostIds)
+                        ->with(['department', 'workstation'])
+                        ->get();
+                }
+            }
+        @endphp
+
+        <div id="session-table-data-{{ $session->id }}"
+             style="display:none;">
+
+            @if($hosts->count())
+
+                <table class="selected-users-table presencial-users-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Departamento</th>
+                            <th>Puesto</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach($hosts as $host)
+                            <tr>
+                                <td>
+                                    {{ $host->nombre }}
+                                    {{ $host->apellido_paterno }}
+                                    {{ $host->apellido_materno }}
+                                </td>
+
+                                <td>
+                                    {{ optional($host->department)->name ?? 'Sin departamento' }}
+                                </td>
+
+                                <td>
+                                    {{ optional($host->workstation)->name ?? 'Sin puesto' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+            @else
+
+                <p class="empty">
+                    No hay usuarios asignados a este horario.
+                </p>
+
+            @endif
+
+        </div>
+
+    @endforeach
+
+<script>
+function showSessionTable(sessionId) {
+
+    const source = document.getElementById('session-table-data-' + sessionId);
+    const container = document.getElementById('session-table-container');
+    const btnPdf = document.getElementById('btn-download-session-pdf');
+
+    if (!source || !container) return;
+
+    container.innerHTML = source.innerHTML;
+
+    if (btnPdf) {
+        btnPdf.href = `/groups/${sessionId}/export-pdf`;
+        btnPdf.style.display = 'inline-flex';
+    }
+}
+</script>
+
+@endif
 
     {{-- ===== CONTROLES SOLO VIRTUAL ===== --}}
     @if($course->modality === 'virtual')
@@ -355,16 +473,6 @@
             </div>
         </div>
     @endif
-
-    {{-- ===== PRESENCIAL ===== --}}
-    @if(in_array($course->modality, ['presencial']))
-        <div class="course-controls" style="justify-content: flex-end;">
-            <button class="exit" onclick="window.location.href='{{ route('courses.index') }}'">
-                Salir
-            </button>
-        </div>
-    @endif
-
 
 
         <div class="course-progress">

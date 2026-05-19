@@ -94,6 +94,7 @@
 
 .check-item:hover {
     background: #e2e8f0;
+    border-color: #cbd5e1;
 }
 
 /* CHECK ACTIVO */
@@ -102,22 +103,30 @@
     color: #2563eb;
 }
 
+/* Checkbox personalizado */
+.check-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
 /* ===== CAJAS CON SCROLL ===== */
 .checklist-box {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 10px;
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
     background: #ffffff;
 }
 
-/* ===== USUARIOS ===== */
+/* ===== USUARIOS (Anfitriones) ===== */
 .users-box {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 10px;
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
 }
 
@@ -146,52 +155,403 @@
     color: white;
 }
 
+/* ===== INPUT DE BÚSQUEDA ===== */
+.search-input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ===== ELEMENTOS SELECCIONADOS (Muestra en bloque derecho) ===== */
+.selected-items-display {
+    min-height: 70px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background: #f8fafc;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.selected-tag {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 6px;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.selected-tag::before {
+    content: "✓";
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.selected-tag:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-1px);
+}
+
+/* ===== PARTICIPANTES ===== */
+.participant-check {
+    margin-right: 10px;
+}
+
+.participant-check:checked + span {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+/* Estilo para los detalles de participantes */
+.check-item small {
+    font-size: 11px;
+    color: #64748b;
+    margin-left: auto;
+}
+
 /* ===== BOTÓN GUARDAR ===== */
 .btn-save {
     margin-top: auto;
     padding: 14px;
     border-radius: 12px;
     border: none;
-    background: #2563eb;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
     font-weight: 700;
     font-size: 15px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-save:hover {
-    background: #1e40af;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-/* ===== MENSAJES ===== */
+.btn-save:active {
+    transform: translateY(0);
+}
+
+/* ===== MENSAJES VACÍOS ===== */
 .empty {
     color: #94a3b8;
     text-align: center;
-    margin-top: 20px;
+    padding: 15px;
     font-size: 13px;
+    margin: 0;
 }
 
-/* ===== SCROLL BONITO ===== */
+/* ===== ANIMACIONES ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.check-item, .selected-tag, .user-item {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* ===== SCROLL PERSONALIZADO ===== */
 .checklist-box::-webkit-scrollbar,
-.users-box::-webkit-scrollbar {
+.users-box::-webkit-scrollbar,
+.selected-items-display::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
+}
+
+.checklist-box::-webkit-scrollbar-track,
+.users-box::-webkit-scrollbar-track,
+.selected-items-display::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
 }
 
 .checklist-box::-webkit-scrollbar-thumb,
-.users-box::-webkit-scrollbar-thumb {
+.users-box::-webkit-scrollbar-thumb,
+.selected-items-display::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 10px;
 }
 
 .checklist-box::-webkit-scrollbar-thumb:hover,
-.users-box::-webkit-scrollbar-thumb:hover {
+.users-box::-webkit-scrollbar-thumb:hover,
+.selected-items-display::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
 
-/* ===== RESPONSIVE SOLO MÓVIL ===== */
+/* ===== ESTADOS DE CARGA ===== */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+}
+
+.loading::after {
+    content: "...";
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: "."; }
+    40% { content: ".."; }
+    60%, 100% { content: "..."; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .groups-wrapper {
+        padding: 20px;
+    }
+
+    .table-box {
+        padding: 20px;
+    }
+}
+
 @media (max-width: 768px) {
     .tables-layout {
         grid-template-columns: 1fr;
+        gap: 20px;
     }
+
+    .groups-wrapper {
+        padding: 15px;
+    }
+
+    .header-groups {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .header-groups h2 {
+        font-size: 22px;
+    }
+
+    .table-box {
+        min-height: auto;
+    }
+
+    .selected-tag {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+
+    .check-item {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .checklist-box, .users-box {
+        max-height: 200px;
+    }
+
+    .btn-save {
+        padding: 12px;
+        font-size: 14px;
+    }
+}
+
+/* ===== UTILIDADES ===== */
+.text-muted {
+    color: #64748b;
+}
+
+.text-success {
+    color: #10b981;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-primary {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* ===== MEJORAS VISUALES ===== */
+.checklist-box .check-item:last-child {
+    border-bottom: none;
+}
+
+/* Hover effect para elementos seleccionados */
+.selected-items-display .selected-tag {
+    cursor: default;
+}
+
+/* Espaciado entre secciones */
+.table-box > * + * {
+    margin-top: 0;
+}
+
+/* Estilo para checkbox groups */
+.checklist-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+/* =========================
+   FIX OVERFLOW LISTAS
+========================= */
+
+.groups-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.tables-layout {
+    display: flex;
+    gap: 24px;
+    width: 100%;
+    max-width: 100%;
+    align-items: flex-start;
+    box-sizing: border-box;
+}
+
+.table-box {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.checklist-box {
+    width: 100%;
+    max-width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.check-item {
+    width: 100%;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+}
+
+.selected-users-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.selected-users-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.selected-users-table th,
+.selected-users-table td {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    padding: 10px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+
+    .tables-layout {
+        flex-direction: column;
+    }
+
+    .table-box {
+        width: 100%;
+    }
+
+}
+/* ===== ARREGLO TABLA SELECCIÓN FINAL ===== */
+
+.selected-users-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.selected-users-table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.selected-users-table th,
+.selected-users-table td {
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+.selected-users-table th {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.selected-users-table td {
+    font-size: 14px;
+}
+
+.selected-users-table th:nth-child(1),
+.selected-users-table td:nth-child(1) {
+    width: 34%;
+}
+
+.selected-users-table th:nth-child(2),
+.selected-users-table td:nth-child(2) {
+    width: 33%;
+}
+
+.selected-users-table th:nth-child(3),
+.selected-users-table td:nth-child(3) {
+    width: 33%;
+}
+
+.btn-save {
+    margin-top: 18px;
 }

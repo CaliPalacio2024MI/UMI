@@ -1865,3 +1865,155 @@ body.modal-open .turtle-container {
 .course-session-item {
     position: relative;
 }
+/* ===== LAYOUT HORARIOS ===== */
+
+.sessions-layout {
+    display: flex;
+    gap: 24px;
+    width: 100%;
+    height: 100%;
+}
+
+.sessions-sidebar {
+    width: 380px;
+    flex-shrink: 0;
+}
+
+.sessions-content {
+    flex: 1;
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    min-height: 600px;
+    overflow: auto;
+}
+
+.empty-session-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+    color: #888;
+    font-size: 18px;
+    text-align: center;
+}
+/* =========================
+   PRESENCIAL: TABLA EN VIEWER
+========================= */
+
+.presencial-table-viewer {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 24px;
+    overflow-x: auto;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Tabla de usuarios del horario */
+.presencial-users-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    background: #ffffff;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.presencial-users-table thead {
+    background: #284878;
+    color: #ffffff;
+}
+
+.presencial-users-table th {
+    padding: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    letter-spacing: 0.5px;
+}
+
+.presencial-users-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.presencial-users-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.presencial-users-table tbody tr:hover {
+    background: #eef2ff;
+}
+
+/* Mensaje vacío dentro del viewer */
+.empty-session-message {
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8b95a7;
+    font-size: 18px;
+    text-align: center;
+}
+
+/* Oculta el progress en presencial si no lo quieres */
+.course-viewer .course-progress {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .presencial-table-viewer {
+        padding: 14px;
+    }
+
+    .presencial-users-table {
+        min-width: 650px;
+    }
+}
+.course-menu {
+    flex: 2;
+    min-width: 0;
+    min-height: 520px;
+    padding: 18px;
+    border-radius: 10px;
+}
+
+.course-viewer {
+    flex: 4;
+    min-width: 0;
+    padding-top: 10px;
+}
+.btn-export-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    background: linear-gradient(135deg,#1d4ed8,#2563eb);
+    color: white;
+
+    padding: 14px 22px;
+
+    border-radius: 14px;
+
+    text-decoration: none;
+
+    font-weight: 700;
+
+    transition: .2s ease;
+
+    box-shadow: 0 8px 20px rgba(37,99,235,.25);
+}
+
+.btn-export-pdf:hover {
+    transform: translateY(-2px);
+    color: white;
+}

@@ -9,7 +9,7 @@
     <div class="tipo-unidad-checkboxes-row" role="group" aria-labelledby="tipoUnidadQuestion">
         <div class="checkbox-inline">
             <input type="checkbox" id="flag_administrativo" name="is_administrativo" value="1" @checked(old('is_administrativo', isset($item) && $item->is_administrativo ? '1' : '0') === '1')>
-            <label for="flag_administrativo">Propiedades</label>
+            <label for="flag_administrativo">Propiedad</label>
         </div>
         <span class="tipo-unidad-separator" aria-hidden="true">/</span>
         <div class="checkbox-inline">
@@ -37,8 +37,8 @@
 <div class="form-group">
     <label for="logo_path">Logo</label>
     <input type="file" id="logo_path" name="logo_path" accept="image/*">
-   
-   
+
+
     @if(isset($item) && $item->logo_path)
         <div style="margin-top: 10px;">
             <img src="{{ asset('storage/' . $item->logo_path) }}" alt="Logo actual" style="max-width: 100px; max-height: 50px; border-radius: 4px;">
@@ -46,187 +46,262 @@
         </div>
     @endif
 </div>
-
 <script>
-    (function () {
-        const select = document.getElementById('nameSelect');
-        const flagAdministrativo = document.getElementById('flag_administrativo');
-        const flagUniversidad = document.getElementById('flag_universidad');
-        const inputContainer = document.getElementById('nameInputContainer');
-        const nameInputLabel = document.getElementById('nameInputLabel');
-        if (!select || !flagAdministrativo || !flagUniversidad || !inputContainer || !nameInputLabel) return;
+(function () {
 
-        if (flagAdministrativo.checked && flagUniversidad.checked) {
-            flagUniversidad.checked = false;
-        }
+    const select = document.getElementById('nameSelect');
+    const flagAdministrativo = document.getElementById('flag_administrativo');
+    const flagUniversidad = document.getElementById('flag_universidad');
+    const inputContainer = document.getElementById('nameInputContainer');
+    const nameInputLabel = document.getElementById('nameInputLabel');
 
-        // Valor inicial que viene del backend (old('name') o $item->name)
-        const currentValue = (@json($currentValue) || '').trim();
-        let cachedPropiedades = null; // Cacheamos para no consumir la API más de una vez
-        let input = null;
+    if (
+        !select ||
+        !flagAdministrativo ||
+        !flagUniversidad ||
+        !inputContainer ||
+        !nameInputLabel
+    ) {
+        return;
+    }
 
-        function isUniversidadFlagOn() {
-            return flagUniversidad.checked;
-        }
+    const currentValue =
+        (@json($currentValue) || '').trim();
 
-        function isAdministrativoFlagOn() {
-            return flagAdministrativo.checked;
-        }
+    const activeInstitutionId =
+        @json(session('active_institution_id'));
 
-        function ensureInputElement() {
-            if (input) return input;
+    let cachedPropiedades = null;
+    let input = null;
 
-            input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'nameInput';
-            input.name = 'name';
-            input.autocomplete = 'off';
-            input.required = true;
-            input.disabled = false;
+    function isUniversidadFlagOn() {
+        return flagUniversidad.checked;
+    }
 
-            inputContainer.innerHTML = '';
-            inputContainer.appendChild(input);
-            inputContainer.style.display = 'block';
+    function isAdministrativoFlagOn() {
+        return flagAdministrativo.checked;
+    }
 
-            // Si venías editando una institución, preservamos el valor actual.
-            if (currentValue && !input.value) input.value = currentValue;
+    function ensureInputElement() {
 
+        if (input) {
             return input;
         }
 
-        function setMode() {
-            if (isUniversidadFlagOn()) {
-                // Universidad: crear input escribible, sin consumir API
-                const uniInput = ensureInputElement();
-                uniInput.disabled = false;
-                uniInput.required = true;
+        input = document.createElement('input');
 
-                select.disabled = true;
-                select.required = false;
-                select.style.display = 'none';
+        input.type = 'text';
+        input.id = 'nameInput';
+        input.name = 'name';
+        input.required = true;
+        input.autocomplete = 'off';
 
-                nameInputLabel.style.display = 'block';
+        if (currentValue) {
+            input.value = currentValue;
+        }
 
-                // No tocamos el select; solo deshabilitamos para que no se envíe.
-                return;
-            }
+        inputContainer.innerHTML = '';
+        inputContainer.appendChild(input);
 
-            // Si no es universidad, removemos input manual.
-            if (input) {
-                input.remove();
-                input = null;
-            }
-            inputContainer.style.display = 'none';
-            nameInputLabel.style.display = 'none';
+        return input;
+    }
 
-            // Propiedades (administrativo): mostrar select.
-            if (isAdministrativoFlagOn()) {
-                select.disabled = false;
-                select.required = true;
-                select.style.display = 'block';
-                return;
-            }
+    function setMode() {
 
-            // Ninguna opción seleccionada: ocultar select.
-            select.disabled = true;
-            select.required = false;
+        if (isUniversidadFlagOn()) {
+
+            ensureInputElement();
+
+            inputContainer.style.display = 'block';
+            nameInputLabel.style.display = 'block';
+
             select.style.display = 'none';
+            select.disabled = true;
+
+            return;
         }
 
-        function populateSelectFromPropiedades(propiedades) {
-            const raw = Array.isArray(propiedades)
-                ? propiedades
-                : (propiedades?.propiedades ?? propiedades?.data ?? propiedades);
+        inputContainer.style.display = 'none';
+        nameInputLabel.style.display = 'none';
 
-            if (!Array.isArray(raw)) {
-                console.warn('Respuesta inesperada al cargar propiedades:', propiedades);
+        if (input) {
+            input.remove();
+            input = null;
+        }
+
+        if (isAdministrativoFlagOn()) {
+
+            select.style.display = 'block';
+            select.disabled = false;
+
+            return;
+        }
+
+        select.style.display = 'none';
+        select.disabled = true;
+    }
+
+    function populateSelect(propiedades) {
+
+        select.innerHTML = '';
+
+        const placeholder =
+            document.createElement('option');
+
+        placeholder.value = '';
+        placeholder.textContent =
+            '-- Seleccione Unidad de Negocio --';
+
+        select.appendChild(placeholder);
+
+        propiedades.forEach(propiedad => {
+
+            const optionValue =
+                (
+                    propiedad?.nombre ??
+                    propiedad?.name ??
+                    ''
+                ).toString().trim();
+
+            if (!optionValue) {
                 return;
             }
 
-            const list = raw;
+            const option =
+                document.createElement('option');
 
-            select.innerHTML = '';
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = '-- Seleccione Unidad de Negocio --';
-            select.appendChild(placeholder);
+            option.value = optionValue;
+            option.textContent = optionValue;
 
-            list.forEach(p => {
-                const optionValue = (p?.nombre ?? p?.name ?? p?.descripcion ?? String(p?.id ?? '')).trim();
-                const optionText = (p?.nombre ?? p?.name ?? p?.descripcion ?? `ID ${p?.id ?? ''}`).toString();
-                if (!optionValue) return;
+            select.appendChild(option);
+        });
 
-                const opt = document.createElement('option');
-                opt.value = optionValue;
-                opt.textContent = optionText;
-                select.appendChild(opt);
-            });
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    }
 
-            if (currentValue) {
-                // Si el valor actual existe en el select, lo re-seleccionamos.
-                const found = Array.from(select.options).some(o => o.value === currentValue);
-                if (found) select.value = currentValue;
-            }
+    async function loadPropiedades() {
+
+        if (
+            !isAdministrativoFlagOn() ||
+            isUniversidadFlagOn()
+        ) {
+            return;
         }
 
-        async function loadPropiedadesIfNeeded() {
-            if (!isAdministrativoFlagOn() || isUniversidadFlagOn()) return;
-            if (cachedPropiedades) {
-                populateSelectFromPropiedades(cachedPropiedades);
-                return;
-            }
+        if (cachedPropiedades) {
 
-            const r = await fetch('/external-data?endpoint=/api/external/propiedades', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                credentials: 'same-origin'
-            });
+            populateSelect(cachedPropiedades);
 
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-            const data = await r.json();
-            const list = data?.propiedades ?? data?.data ?? data;
-            cachedPropiedades = list;
-
-            populateSelectFromPropiedades(cachedPropiedades);
+            return;
         }
 
-        async function applyModeFromFlags() {
-            setMode();
-            if (isAdministrativoFlagOn() && !isUniversidadFlagOn()) {
-                try {
-                    await loadPropiedadesIfNeeded();
-                } catch (e) {
-                    console.error('No se pudo cargar propiedades para el select:', e);
+        try {
+
+            const response = await fetch(
+                '/external-data?endpoint=/api/external/propiedades',
+                {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 }
-            }
-        }
+            );
 
-        flagAdministrativo.addEventListener('change', () => {
+            if (!response.ok) {
+                throw new Error(
+                    'HTTP ' + response.status
+                );
+            }
+
+            const json = await response.json();
+
+            let propiedades =
+                json?.data ??
+                json?.propiedades ??
+                json;
+
+            if (!Array.isArray(propiedades)) {
+                throw new Error(
+                    'La API no devolvió un arreglo'
+                );
+            }
+
+            /*
+            FILTRAR SOLO LA PROPIEDAD
+            RELACIONADA A LA INSTITUCIÓN ACTUAL
+            */
+
+            propiedades = propiedades.filter(p => {
+
+                return Number(
+                    p.id_propiedad
+                ) === Number(
+                    @json(
+                        \App\Models\Users\Institution::find(
+                            session('active_institution_id')
+                        )->external_property_id ?? 0
+                    )
+                );
+
+            });
+
+            cachedPropiedades = propiedades;
+
+            populateSelect(propiedades);
+
+        } catch (error) {
+
+            console.error(
+                'Error cargando propiedades:',
+                error
+            );
+
+            select.innerHTML =
+                '<option>Error cargando datos</option>';
+        }
+    }
+
+    async function applyMode() {
+
+        setMode();
+
+        if (
+            isAdministrativoFlagOn() &&
+            !isUniversidadFlagOn()
+        ) {
+            await loadPropiedades();
+        }
+    }
+
+    flagAdministrativo.addEventListener(
+        'change',
+        () => {
+
             if (flagAdministrativo.checked) {
                 flagUniversidad.checked = false;
             }
-            applyModeFromFlags();
-        });
 
-        flagUniversidad.addEventListener('change', () => {
+            applyMode();
+        }
+    );
+
+    flagUniversidad.addEventListener(
+        'change',
+        () => {
+
             if (flagUniversidad.checked) {
                 flagAdministrativo.checked = false;
             }
-            applyModeFromFlags();
-        });
 
-        // Inicializar:
-        // - Universidad: input manual
-        // - Propiedades: select desde API
-        // - Ninguna: ocultar ambos campos
-        setMode();
-        if (isAdministrativoFlagOn() && !isUniversidadFlagOn()) {
-            loadPropiedadesIfNeeded().catch(e => {
-                console.error('No se pudo cargar propiedades al inicializar:', e);
-            });
+            applyMode();
         }
-    })();
+    );
+
+    applyMode();
+
+})();
 </script>

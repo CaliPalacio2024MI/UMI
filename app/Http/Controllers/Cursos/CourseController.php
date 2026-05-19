@@ -268,6 +268,7 @@ public function store(StoreCourseRequest $request): RedirectResponse
 
     return redirect()->route('course.topic.create', ['course' => $course->id])
         ->with('success', 'Curso virtual creado exitosamente. Ahora puedes agregar los temas y actividades.');
+
 }
 
     /**
@@ -280,6 +281,10 @@ public function show(Course $course)
     $user = Auth::user();
     $departments = Department::with('workstations')->get();
 
+    $course->load([
+        'sessions.groups.hosts.department',
+        'sessions.groups.hosts.workstation'
+    ]);
 
     $hybridCourses = $course->hybridCourses()->get();
 
@@ -393,147 +398,211 @@ public function show(Course $course)
     /**
      * Mostrar formulario de edición
      */
-    public function edit(Course $course): View
-    {
-        $activeInstitutionId = session('active_institution_id');
+ public function edit(Course $course): View
+{
+    $activeInstitutionId = session('active_institution_id');
 
-        // VALIDACIÓN DE SEGURIDAD: Verificar institución
-        if ($course->institution_id != $activeInstitutionId) {
-            Log::warning('Intento de editar curso de otra institución', [
-                'user_id' => Auth::id(),
-                'course_id' => $course->id,
-                'course_institution_id' => $course->institution_id,
-                'user_active_institution_id' => $activeInstitutionId
-            ]);
+    // VALIDACIÓN DE SEGURIDAD
+    if ($course->institution_id != $activeInstitutionId) {
 
-            abort(403, 'No puedes editar cursos de otra institución.');
-        }
+        Log::warning('Intento de editar curso de otra institución', [
+            'user_id' => Auth::id(),
+            'course_id' => $course->id,
+            'course_institution_id' => $course->institution_id,
+            'user_active_institution_id' => $activeInstitutionId
+        ]);
 
-        // Autorización adicional: Verificar que el usuario es el instructor o master
-        $this->authorize('update', $course);
-        $course->load('institution');
-
-        // 1. Cargar la institución actual y sus relaciones
-        $currentInstitution = Institution::with(['careers', 'departments.workstations'])
-                                ->find($activeInstitutionId);
-
-        // 2. Crear el mapa para el JS de departamentos/puestos
-        $departmentWorkstationsMap = [];
-        if ($currentInstitution->departments) {
-            $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
-                return [$department->id => $department->workstations->toArray()];
-            });
-        }
-
-        // 3. Cargar los filtros que el curso YA tiene seleccionados
-        //    Usamos pluck('id') para obtener un array simple de IDs [1, 3]
-        $course->load('careers', 'departments', 'workstations');
-
-        $selectedFilters = [
-            'career_id' => $course->careers->pluck('id')->first(), // Asumimos que solo es una carrera
-            'department_id' => $course->departments->pluck('id')->first(), // Asumimos que solo es un depto
-            'workstation_id' => $course->workstations->pluck('id')->first(), // Asumimos que solo es un puesto
-        ];
-
-        return view('layouts.Cursos.edit', compact(
-            'course',
-            'currentInstitution', // Necesario para los filtros
-            'departmentWorkstationsMap', // Necesario para el JS
-            'selectedFilters' // Necesario para pre-seleccionar
-        ));
+        abort(403, 'No puedes editar cursos de otra institución.');
     }
 
+    // AUTORIZACIÓN
+    $this->authorize('update', $course);
+
+    // CARGAR RELACIONES
+    $course->load(
+        'institution',
+        'careers',
+        'departments',
+        'workstations',
+        'hybridCourses'
+    );
+
+    // INSTITUCIÓN ACTUAL
+    $currentInstitution = Institution::with([
+        'careers',
+        'departments.workstations'
+    ])->find($activeInstitutionId);
+
+    // MAPA DE DEPARTAMENTOS -> PUESTOS
+    $departmentWorkstationsMap = [];
+
+    if ($currentInstitution && $currentInstitution->departments) {
+
+        $departmentWorkstationsMap =
+            $currentInstitution->departments->mapWithKeys(function ($department) {
+
+                return [
+                    $department->id => $department->workstations->toArray()
+                ];
+
+            });
+
+    }
+
+    // FILTROS SELECCIONADOS
+    $selectedFilters = [
+
+        'career_id' =>
+            $course->careers->pluck('id')->first(),
+
+        'department_id' =>
+            $course->departments->pluck('id')->first(),
+
+        'workstation_id' =>
+            $course->workstations->pluck('id')->first(),
+
+    ];
+
+    // CURSOS DISPONIBLES PARA HÍBRIDO
+    $courses = Course::where('institution_id', $activeInstitutionId)
+        ->where('id', '!=', $course->id)
+        ->get();
+
+    // CURSOS YA SELECCIONADOS
+    $selectedCourses = $course->hybridCourses
+        ->pluck('id')
+        ->toArray();
+
+    // RETORNAR VISTA
+    return view('layouts.Cursos.edit', compact(
+        'course',
+        'currentInstitution',
+        'departmentWorkstationsMap',
+        'selectedFilters',
+        'courses',
+        'selectedCourses'
+    ));
+}
     /**
      * Actualizar curso
      */
-    public function update(Request $request, Course $course): RedirectResponse
-    {
-        $activeInstitutionId = session('active_institution_id');
+public function update(Request $request, Course $course): RedirectResponse
+{
+    $activeInstitutionId = session('active_institution_id');
 
-        // VALIDACIÓN DE SEGURIDAD: Verificar institución
-        if ($course->institution_id != $activeInstitutionId) {
-            Log::warning('Intento de actualizar curso de otra institución', [
-                'user_id' => Auth::id(),
-                'course_id' => $course->id,
-                'course_institution_id' => $course->institution_id,
-                'user_active_institution_id' => $activeInstitutionId
-            ]);
-
-            abort(403, 'No puedes actualizar cursos de otra institución.');
-        }
-
-        // Autorización: Policy
-        $this->authorize('update', $course);
-
-        $institution = Institution::find($course->institution_id);
-        $creditsRule = 'nullable|integer|min:0';
-        if ($institution && $institution->name === 'Universidad Mundo Imperial') {
-            $creditsRule = 'required|integer|min:0';
-        }
-
-        // Validación
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'credits' => $creditsRule,
-            'modality' => 'required|in:presencial,virtual,hibrida',
-            'hours' => 'required|integer|min:0|max:1000',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960',
-            'institution_id' => 'required|exists:institutions,id', // Lo usamos pero no lo actualizamos
-            'career_id' => 'nullable|exists:careers,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'workstation_id' => 'nullable|exists:workstations,id',
+    // VALIDACIÓN DE SEGURIDAD
+    if ($course->institution_id != $activeInstitutionId) {
+        Log::warning('Intento de actualizar curso de otra institución', [
+            'user_id' => Auth::id(),
+            'course_id' => $course->id,
+            'course_institution_id' => $course->institution_id,
+            'user_active_institution_id' => $activeInstitutionId
         ]);
 
-        // Manejo de imagen
-        if ($request->hasFile('image')) {
-            if ($course->image) {
-                Storage::disk('public')->delete($course->image);
-            }
-            $validatedData['image'] = $request->file('image')->store('courses', 'public');
+        abort(403, 'No puedes actualizar cursos de otra institución.');
+    }
+
+    // AUTORIZACIÓN
+    $this->authorize('update', $course);
+
+    $institution = Institution::find($course->institution_id);
+
+    $creditsRule = 'nullable|integer|min:0';
+
+    if ($institution && $institution->name === 'Universidad Mundo Imperial') {
+        $creditsRule = 'required|integer|min:0';
+    }
+
+    // VALIDACIÓN
+    $validatedData = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'credits' => $creditsRule,
+        'modality' => 'required|in:presencial,virtual,hibrida',
+        'hours' => 'required|integer|min:0|max:1000',
+
+        'virtual_percentage' => 'nullable|integer|min:0|max:100',
+        'presencial_percentage' => 'nullable|integer|min:0|max:100',
+        'selected_courses' => 'nullable|array',
+        'selected_courses.*' => 'exists:courses,id',
+
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960',
+
+        'institution_id' => 'required|exists:institutions,id',
+        'career_id' => 'nullable|exists:careers,id',
+        'department_id' => 'nullable|exists:departments,id',
+        'workstation_id' => 'nullable|exists:workstations,id',
+    ]);
+
+    // NO actualizar institution_id desde el request
+    unset($validatedData['institution_id']);
+
+    // NO guardar selected_courses directo en courses
+    unset($validatedData['selected_courses']);
+
+    // MANEJO DE IMAGEN
+    if ($request->hasFile('image')) {
+        if ($course->image) {
+            Storage::disk('public')->delete($course->image);
         }
 
-        // Manejo de material de guía
-        if ($request->hasFile('guide_material')) {
-            // Eliminar archivo anterior si existe
-            if ($course->guide_material_path) {
-                Storage::disk('public')->delete($course->guide_material_path);
-            }
-            // Guardar el nuevo archivo
-            $validatedData['guide_material_path'] = $request->file('guide_material')->store('courses/guides', 'public');
+        $validatedData['image'] = $request->file('image')->store('courses', 'public');
+    }
+
+    // MANEJO DE MATERIAL DE GUÍA
+    if ($request->hasFile('guide_material')) {
+        if ($course->guide_material_path) {
+            Storage::disk('public')->delete($course->guide_material_path);
         }
 
-        $course->update($validatedData);
+        $validatedData['guide_material_path'] =
+            $request->file('guide_material')->store('courses/guides', 'public');
+    }
 
-        if ($request->filled('career_id')) {
-            $course->careers()->sync([$request->career_id]);
-            $course->departments()->sync([]); // Limpiar el otro filtro
+    // ACTUALIZAR CURSO
+    $course->update($validatedData);
+
+    // ACTUALIZAR CURSOS HÍBRIDOS
+    if ($request->modality === 'hibrida') {
+        $course->hybridCourses()->sync($request->selected_courses ?? []);
+    } else {
+        $course->hybridCourses()->detach();
+    }
+
+    // FILTROS
+    if ($request->filled('career_id')) {
+        $course->careers()->sync([$request->career_id]);
+        $course->departments()->sync([]);
+        $course->workstations()->sync([]);
+    } elseif ($request->filled('department_id')) {
+        $course->departments()->sync([$request->department_id]);
+        $course->careers()->sync([]);
+
+        if ($request->filled('workstation_id')) {
+            $course->workstations()->sync([$request->workstation_id]);
+        } else {
             $course->workstations()->sync([]);
         }
-        elseif ($request->filled('department_id')) {
-            $course->departments()->sync([$request->department_id]);
-            $course->careers()->sync([]); // Limpiar el otro filtro
-
-            // Si se especificó un puesto, guardarlo. Si no, limpiarlo.
-            if ($request->filled('workstation_id')) {
-                $course->workstations()->sync([$request->workstation_id]);
-            } else {
-                $course->workstations()->sync([]);
-            }
-        }
-
-        Log::info('Curso actualizado', ['course_id' => $course->id, 'user_id' => Auth::id()]);
-
-        // Redirigir según la acción solicitada
-        if ($request->input('action') == 'save_and_continue') {
-            return redirect()->route('course.topic.create', ['course' => $course->id])
-                ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
-        }
-
-        return redirect()->route('Cursos.index')
-            ->with('success', 'Curso actualizado exitosamente.');
     }
+
+    Log::info('Curso actualizado', [
+        'course_id' => $course->id,
+        'user_id' => Auth::id()
+    ]);
+
+    // REDIRECCIÓN
+if (
+    $request->input('action') == 'save_and_continue' &&
+    in_array(strtolower($course->modality), ['virtual', 'hibrida'])
+) {
+    return redirect()->route('course.topic.create', ['course' => $course->id])
+        ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
+}
+
+    return redirect()->route('Cursos.index')
+        ->with('success', 'Curso actualizado exitosamente.');
+}
 
     public function updateWelcome(Request $request, Course $course)
 {

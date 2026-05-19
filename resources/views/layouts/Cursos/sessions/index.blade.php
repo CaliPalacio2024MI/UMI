@@ -42,6 +42,52 @@
     {{-- LAYOUT PRINCIPAL --}}
     <div class="horarios-layout">
 
+        {{-- ================= FORMULARIO ================= --}}
+        <div class="horarios-form-section">
+            <div class="card-custom">
+
+                {{-- HEADER --}}
+                <div class="header-accent-blue">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Nuevo Horario</span>
+                </div>
+
+                {{-- BODY --}}
+                <div style="padding:20px;">
+
+                    <form action="{{ route('courses.sessions.store', $course) }}" method="POST">
+                        @csrf
+
+                        <div class="form-group-custom">
+                            <label class="label-custom">Fecha de la sesión</label>
+                            <input type="date" name="date" class="form-control-custom" required>
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <div class="form-group-custom" style="flex:1;">
+                                <label class="label-custom">Hora inicio</label>
+                                <input type="time" name="start_time" id="start_time" class="form-control-custom" required>
+                            </div>
+
+                            <div class="form-group-custom" style="flex:1;">
+                                <label class="label-custom">Hora fin</label>
+                                <input type="time" name="end_time" id="end_time" class="form-control-custom" readonly>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary-custom">
+                            <i class="fas fa-save"></i>
+                            Registrar Horario
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+
+
         {{-- ================= TABLA ================= --}}
         <div class="horarios-tabla-section">
 
@@ -143,58 +189,9 @@
                 </tbody>
 
                 </table>
-            </div>
-
-        </div>
-    </div>
-
-        {{-- ================= FORMULARIO ================= --}}
-
-        <div class="horarios-form-section">
-
-            <div class="card-custom">
-
-                {{-- HEADER --}}
-                <div class="header-accent-blue">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Nuevo Horario</span>
                 </div>
-
-                {{-- BODY --}}
-                <div style="padding:20px;">
-
-                    <form action="{{ route('courses.sessions.store', $course) }}" method="POST">
-                        @csrf
-
-                        <div class="form-group-custom">
-                            <label class="label-custom">Fecha de la sesión</label>
-                            <input type="date" name="date" class="form-control-custom" required>
-                        </div>
-
-                        <div style="display:flex; gap:10px;">
-                            <div class="form-group-custom" style="flex:1;">
-                                <label class="label-custom">Hora inicio</label>
-                                <input type="time" name="start_time" id="start_time" class="form-control-custom" required>
-                            </div>
-
-                            <div class="form-group-custom" style="flex:1;">
-                                <label class="label-custom">Hora fin</label>
-                                <input type="time" name="end_time" id="end_time" class="form-control-custom" readonly>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-primary-custom">
-                            <i class="fas fa-save"></i>
-                            Registrar Horario
-                        </button>
-
-                    </form>
-
-                </div>
-
             </div>
         </div>
-
     </div>
 </div>
 
@@ -251,3 +248,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 @endsection
+

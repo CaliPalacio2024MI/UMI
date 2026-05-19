@@ -334,13 +334,19 @@ class User extends Authenticatable
         return $chosen ? (string) $chosen->display_name : 'Sin Rol';
     }
 
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class, 'department_id');
-    }
+public function department()
+{
+    return $this->belongsTo(
+        \App\Models\Users\Department::class
+    );
+}
 
-    public function workstation(): BelongsTo
-    {
-        return $this->belongsTo(Workstation::class, 'workstation_id');
-    }
+public function workstation()
+{
+    return $this->belongsTo(
+        \App\Models\Users\Workstation::class
+    );
+}
+
+
 }

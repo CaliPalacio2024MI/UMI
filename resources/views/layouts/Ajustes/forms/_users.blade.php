@@ -301,182 +301,242 @@
     <div id="institution-access-list" style="display: grid; gap: 8px;"></div>
 </div>
 <script>
-    (function () {
-        const roleSwitch = document.getElementById('role_switch_ui');
-        const roleSwitchState = document.getElementById('role_switch_state');
-        const institutionSelect = document.getElementById('institution_id');
-        const institutionHidden = document.getElementById('institution_id_hidden');
-        const institutionDisplay = document.getElementById('institution_id_display');
-        const institutionAccessWrapper = document.getElementById('institution-access-wrapper');
-        const institutionAccessList = document.getElementById('institution-access-list');
-        const selectedInstitutionIdFromServer = @json((string) ($selectedInstitutionId ?? ''));
-        const allInstitutions = @json($all_institutions ?? []);
+(function () {
+    const roleSwitch = document.getElementById('role_switch_ui');
+    const roleSwitchState = document.getElementById('role_switch_state');
+    const institutionSelect = document.getElementById('institution_id');
+    const institutionHidden = document.getElementById('institution_id_hidden');
+    const institutionDisplay = document.getElementById('institution_id_display');
+    const institutionAccessWrapper = document.getElementById('institution-access-wrapper');
+    const institutionAccessList = document.getElementById('institution-access-list');
 
-        if (!roleSwitch || !roleSwitchState) return;
+    const selectedInstitutionIdFromServer = @json((string) ($selectedInstitutionId ?? ''));
+    const allInstitutions = @json($all_institutions ?? []);
 
-        const defaultInstitutionOptions = institutionSelect
-            ? Array.from(institutionSelect.options).map(option => ({
-                value: option.value,
-                text: option.textContent
+    if (!roleSwitch || !roleSwitchState) return;
+
+    const defaultInstitutionOptions = institutionSelect
+        ? Array.from(institutionSelect.options).map(option => ({
+            value: option.value,
+            text: option.textContent
+        }))
+        : [];
+
+    function normalizeInstitutionList(sourceList) {
+        return (sourceList || [])
+            .map(item => ({
+                value: String(item.value ?? item.id ?? ''),
+                text: String(item.text ?? item.name ?? '')
             }))
-            : [];
+            .filter(item => item.value !== '' && item.text.trim() !== '');
+    }
 
-        function normalizeInstitutionList(sourceList) {
-            return (sourceList || [])
-                .map(item => ({
-                    value: String(item.value ?? item.id ?? ''),
-                    text: String(item.text ?? item.name ?? '')
-                }))
-                .filter(item => item.value !== '' && item.text.trim() !== '');
-        }
+    function populateInstitutionOptions(sourceList, selectedValue) {
+        if (!institutionSelect) return;
 
-        function populateInstitutionOptions(sourceList, selectedValue) {
-            if (!institutionSelect) return;
-            institutionSelect.innerHTML = '';
+        institutionSelect.innerHTML = '';
 
-            normalizeInstitutionList(sourceList).forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.value;
-                option.textContent = item.text;
-                if (String(selectedValue) !== '' && String(selectedValue) === option.value) {
-                    option.selected = true;
-                }
-                institutionSelect.appendChild(option);
-            });
+        normalizeInstitutionList(sourceList).forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.value;
+            option.textContent = item.text;
 
-            if (!institutionSelect.value && institutionSelect.options.length > 0) {
-                institutionSelect.selectedIndex = 0;
+            if (String(selectedValue) !== '' && String(selectedValue) === option.value) {
+                option.selected = true;
             }
+
+            institutionSelect.appendChild(option);
+        });
+
+        if (!institutionSelect.value && institutionSelect.options.length > 0) {
+            institutionSelect.selectedIndex = 0;
         }
+    }
 
-        function renderInstitutionAccessList(sourceList) {
-            if (!institutionAccessList || !institutionSelect) return;
-            institutionAccessList.innerHTML = '';
+    function renderInstitutionAccessList(sourceList) {
+        if (!institutionAccessList || !institutionSelect) return;
 
-            const normalized = normalizeInstitutionList(sourceList);
-            const selectedValue = String(institutionSelect.value || selectedInstitutionIdFromServer || '');
+        institutionAccessList.innerHTML = '';
 
-            normalized.forEach(item => {
-                const row = document.createElement('label');
-                row.style.display = 'inline-flex';
-                row.style.alignItems = 'center';
-                row.style.gap = '10px';
-                row.style.cursor = 'pointer';
-                row.style.margin = '0';
+        const normalized = normalizeInstitutionList(sourceList);
+        const selectedValue = String(
+            institutionSelect.value ||
+            selectedInstitutionIdFromServer ||
+            ''
+        );
 
-                const input = document.createElement('input');
-                input.type = 'checkbox';
-                input.name = 'institution_access_ui';
-                input.value = item.value;
-                input.checked = selectedValue !== '' && selectedValue === item.value;
-                input.style.width = '16px';
-                input.style.height = '16px';
+        normalized.forEach(item => {
+            const row = document.createElement('label');
+            row.style.display = 'inline-flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '10px';
+            row.style.cursor = 'pointer';
+            row.style.margin = '0';
 
-                const text = document.createElement('span');
-                text.textContent = item.text;
-                text.style.fontSize = '0.98rem';
-                text.style.color = '#444';
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.name = 'institution_access[]';
+            input.value = item.value;
 
-                input.addEventListener('change', function () {
-                    const allChecks = institutionAccessList.querySelectorAll('input[name="institution_access_ui"]');
-                    allChecks.forEach(chk => {
-                        if (chk !== input) chk.checked = false;
-                    });
-                    // Se comporta como radio: siempre deja una unidad seleccionada.
+            // Marca por defecto la institución actual
+            input.checked = selectedValue !== '' && selectedValue === item.value;
+
+            input.style.width = '16px';
+            input.style.height = '16px';
+
+            const text = document.createElement('span');
+            text.textContent = item.text;
+            text.style.fontSize = '0.98rem';
+            text.style.color = '#444';
+
+            input.addEventListener('change', function () {
+                const checked = institutionAccessList.querySelectorAll(
+                    'input[name="institution_access[]"]:checked'
+                );
+
+                // Siempre debe quedar al menos una unidad seleccionada
+                if (checked.length === 0) {
                     input.checked = true;
+                    return;
+                }
+
+                // La última unidad marcada queda como unidad principal visible
+                if (input.checked) {
                     institutionSelect.value = input.value;
                     syncInstitutionFields();
-                });
-
-                row.appendChild(input);
-                row.appendChild(text);
-                institutionAccessList.appendChild(row);
-            });
-
-            if (!institutionSelect.value && normalized.length > 0) {
-                institutionSelect.value = normalized[0].value;
-            }
-        }
-
-        function ensureInstitutionSelection() {
-            if (!institutionSelect) return;
-            if (institutionSelect.value) return;
-            const firstValid = Array.from(institutionSelect.options).find(opt => String(opt.value || '').trim() !== '');
-            if (firstValid) {
-                institutionSelect.value = firstValid.value;
-            }
-        }
-
-        function syncInstitutionFields() {
-            const selectedOption = institutionSelect?.options[institutionSelect.selectedIndex];
-            if (institutionHidden) {
-                institutionHidden.value = institutionSelect?.value || '';
-            }
-            if (institutionDisplay) {
-                institutionDisplay.value = selectedOption ? (selectedOption.textContent || '').trim() : '';
-            }
-        }
-
-        function paintSwitch() {
-            const container = roleSwitch.nextElementSibling;
-            const knob = container?.nextElementSibling;
-            if (!container || !knob) return;
-
-            container.style.backgroundColor = roleSwitch.checked ? '#e0b84f' : '#c6c6c6';
-            knob.style.transform = roleSwitch.checked ? 'translateX(22px)' : 'translateX(0)';
-            roleSwitchState.textContent = 'Accesos';
-
-            if (!institutionSelect) return;
-            if (roleSwitch.checked) {
-                if (institutionAccessWrapper) institutionAccessWrapper.style.display = 'block';
-                // Activo: mostrar todas las unidades dadas de alta en el sistema.
-                populateInstitutionOptions(allInstitutions, institutionSelect.value || selectedInstitutionIdFromServer);
-                ensureInstitutionSelection();
-                renderInstitutionAccessList(allInstitutions);
-                syncInstitutionFields();
-            } else {
-                if (institutionAccessWrapper) institutionAccessWrapper.style.display = 'none';
-                // Inactivo: volver al set original (contexto permitido) y cerrar menú de accesos.
-                populateInstitutionOptions(defaultInstitutionOptions, institutionSelect.value || selectedInstitutionIdFromServer);
-                ensureInstitutionSelection();
-                renderInstitutionAccessList(defaultInstitutionOptions);
-                syncInstitutionFields();
-            }
-        }
-
-        const modalForm = document.getElementById('modalForm');
-        if (modalForm) {
-            modalForm.addEventListener('submit', function () {
-                // Evita bloqueo HTML5 por campos required ocultos (display:none, etc.)
-                const requiredFields = modalForm.querySelectorAll('[required]');
-                requiredFields.forEach(field => {
-                    const isVisible = field.offsetParent !== null;
-                    if (!isVisible) {
-                        field.dataset.wasRequired = '1';
-                        field.removeAttribute('required');
-                    }
-                });
-
-                ensureInstitutionSelection();
-                syncInstitutionFields();
-                // Mensaje útil para detectar qué campo HTML5 está bloqueando el submit.
-                const invalidField = modalForm.querySelector(':invalid');
-                if (invalidField) {
-                    const fieldName = invalidField.getAttribute('name') || invalidField.getAttribute('id') || 'campo desconocido';
-                    alert('No se puede guardar. Falta completar o corregir el campo: ' + fieldName);
-                    invalidField.focus();
                 }
             });
-        }
-        if (institutionSelect) {
-            institutionSelect.addEventListener('change', syncInstitutionFields);
-        }
-        roleSwitch.addEventListener('change', paintSwitch);
-        paintSwitch();
-        syncInstitutionFields();
-    })();
-</script>
 
+            row.appendChild(input);
+            row.appendChild(text);
+            institutionAccessList.appendChild(row);
+        });
+    }
+
+    function ensureInstitutionSelection() {
+        if (!institutionSelect) return;
+        if (institutionSelect.value) return;
+
+        const firstValid = Array.from(institutionSelect.options).find(opt =>
+            String(opt.value || '').trim() !== ''
+        );
+
+        if (firstValid) {
+            institutionSelect.value = firstValid.value;
+        }
+    }
+
+    function syncInstitutionFields() {
+        const selectedOption = institutionSelect?.options[institutionSelect.selectedIndex];
+
+        if (institutionHidden) {
+            institutionHidden.value = institutionSelect?.value || '';
+        }
+
+        if (institutionDisplay) {
+            institutionDisplay.value = selectedOption
+                ? (selectedOption.textContent || '').trim()
+                : '';
+        }
+    }
+
+    function paintSwitch() {
+        const container = roleSwitch.nextElementSibling;
+        const knob = container?.nextElementSibling;
+
+        if (!container || !knob) return;
+
+        container.style.backgroundColor = roleSwitch.checked ? '#e0b84f' : '#c6c6c6';
+        knob.style.transform = roleSwitch.checked ? 'translateX(22px)' : 'translateX(0)';
+        roleSwitchState.textContent = 'Accesos';
+
+        if (!institutionSelect) return;
+
+        if (roleSwitch.checked) {
+            if (institutionAccessWrapper) {
+                institutionAccessWrapper.style.display = 'block';
+            }
+
+            populateInstitutionOptions(
+                allInstitutions,
+                institutionSelect.value || selectedInstitutionIdFromServer
+            );
+
+            ensureInstitutionSelection();
+            renderInstitutionAccessList(allInstitutions);
+            syncInstitutionFields();
+
+        } else {
+            if (institutionAccessWrapper) {
+                institutionAccessWrapper.style.display = 'none';
+            }
+
+            populateInstitutionOptions(
+                defaultInstitutionOptions,
+                institutionSelect.value || selectedInstitutionIdFromServer
+            );
+
+            ensureInstitutionSelection();
+            renderInstitutionAccessList(defaultInstitutionOptions);
+            syncInstitutionFields();
+        }
+    }
+
+    const modalForm = document.getElementById('modalForm');
+
+    if (modalForm) {
+        modalForm.addEventListener('submit', function () {
+            const requiredFields = modalForm.querySelectorAll('[required]');
+
+            requiredFields.forEach(field => {
+                const isVisible = field.offsetParent !== null;
+
+                if (!isVisible) {
+                    field.dataset.wasRequired = '1';
+                    field.removeAttribute('required');
+                }
+            });
+
+            ensureInstitutionSelection();
+            syncInstitutionFields();
+
+            // Si no activó accesos, manda al menos la unidad principal
+            const checkedAccess = modalForm.querySelectorAll(
+                'input[name="institution_access[]"]:checked'
+            );
+
+            if (checkedAccess.length === 0 && institutionHidden?.value) {
+                const hiddenAccess = document.createElement('input');
+                hiddenAccess.type = 'hidden';
+                hiddenAccess.name = 'institution_access[]';
+                hiddenAccess.value = institutionHidden.value;
+                modalForm.appendChild(hiddenAccess);
+            }
+
+            const invalidField = modalForm.querySelector(':invalid');
+
+            if (invalidField) {
+                const fieldName =
+                    invalidField.getAttribute('name') ||
+                    invalidField.getAttribute('id') ||
+                    'campo desconocido';
+
+                alert('No se puede guardar. Falta completar o corregir el campo: ' + fieldName);
+                invalidField.focus();
+            }
+        });
+    }
+
+    if (institutionSelect) {
+        institutionSelect.addEventListener('change', syncInstitutionFields);
+    }
+
+    roleSwitch.addEventListener('change', paintSwitch);
+
+    paintSwitch();
+    syncInstitutionFields();
+})();
+</script>
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
         <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Usuario (RFC o CURP)</label>
@@ -521,7 +581,7 @@
             <strong>{{ $message }}</strong>
         </span>
     @enderror
-    
+
     @if(isset($item))
         <small style="display: block; color: #555; margin-top: 6px;">Dejar en blanco para no cambiar la contraseña. Si capturas una nueva: mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
     @else
@@ -560,7 +620,7 @@
     @enderror
 </div>
 
-<div id="department-field-wrapper" class="form-group" 
+<div id="department-field-wrapper" class="form-group"
      style="{{ $isUniversity ? 'display: none;' : '' }}">
     <label for="department_id">Departamento (Opcional)</label>
     <input type="hidden" id="department_api_name" name="department_api_name" value="">
@@ -580,46 +640,58 @@
 </div>
 
 
-<div id="workstation-field-wrapper" class="form-group" 
+<div id="workstation-field-wrapper" class="form-group"
      style="{{ $isUniversity ? 'display: none;' : '' }}">
     <label for="workstation_id">Puesto (Opcional)</label>
     <input type="hidden" id="workstation_api_name" name="workstation_api_name" value="">
-    
-    
+
+
     <select id="workstation_id" name="workstation_id">
         <option value="">N/A</option>
-        
-     
-        
+
+
+
     </select>
 </div>
 
 
 <script>
 setTimeout(function() {
-    
+
     const roleSelect = document.getElementById('role_id_select');
     const adminModulesWrapper = document.getElementById('admin-modules-wrapper');
-    
-   
+
+
     const departmentSelect = document.getElementById('department_id');
     const workstationSelect = document.getElementById('workstation_id');
 
-    
+
     if (!roleSelect || !adminModulesWrapper || !departmentSelect || !workstationSelect) {
         console.error("Error inicializando script: Faltan elementos (roleSelect, adminModulesWrapper, departmentSelect, o workstationSelect).");
         return;
     }
 
-  
+
     const allRoles = @json($all_roles ?? []);
     const currentRoleId = @json(old('role_id', $item->role_id ?? null));
-    const universityName = @json($universityName); 
-    const adminRoleName = @json($adminRoleName);   
+    const universityName = @json($universityName);
+    const adminRoleName = @json($adminRoleName);
     const activeInstitutionName = @json($activeInstitutionName);
+const externalPropertyId = @json(
+    optional(
+        \App\Models\Users\Institution::find(
+            session('active_institution_id')
+        )
+    )->external_property_id
+);
 
-    
-    
+console.log(
+    'externalPropertyId:',
+    externalPropertyId
+);
+
+
+
     const allWorkstations = @json($workstations ?? []);
     const allDepartments = @json($departments ?? []);
 
@@ -628,11 +700,11 @@ setTimeout(function() {
 
     let anfitrionesCatalogList = [];
 
-    
+
     console.log('--- DEBUG DATOS DE BLADE ---');
     console.log('Todos los Roles:', allRoles);
     console.log('Todos los Puestos:', allWorkstations);
-   
+
 
 
     if (!Array.isArray(allRoles) || !universityName || !adminRoleName || !activeInstitutionName || !Array.isArray(allWorkstations)) {
@@ -640,17 +712,17 @@ setTimeout(function() {
         return;
     }
 
-   
+
     function getSelectedRoleName() {
         const selectedRoleId = roleSelect.value;
         if (!selectedRoleId) return null;
         const selectedRole = allRoles.find(role => role.id == selectedRoleId);
-        return selectedRole ? selectedRole.name : null; 
+        return selectedRole ? selectedRole.name : null;
     }
 
-   
+
     function updateModuleVisibility() {
-        const selectedRoleName = getSelectedRoleName(); 
+        const selectedRoleName = getSelectedRoleName();
         if (activeInstitutionName === universityName && selectedRoleName === adminRoleName) {
             adminModulesWrapper.style.display = 'block';
         } else {
@@ -854,154 +926,109 @@ setTimeout(function() {
         return [];
     }
 
-    async function loadAnfitrionesForBusinessUnit() {
-        if (!nombreApiSelect) return;
-        if (activeInstitutionName === universityName) return;
-        try {
-            nombreApiSelect.innerHTML = '<option value="" selected disabled>Cargando nombres...</option>';
-            let list = [];
-            try {
-                const primaryRes = await fetch('/external-data?endpoint=' + encodeURIComponent('/api/external/propiedades/1/anfitriones'), {
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    credentials: 'same-origin'
-                });
-                if (primaryRes.ok) {
-                    const primaryRaw = await primaryRes.json();
-                    list = extractAnfitrionesList(primaryRaw);
-                }
-            } catch (e) {
-                list = [];
-            }
+   async function loadAnfitrionesForBusinessUnit() {
+    if (!nombreApiSelect) return;
+    if (activeInstitutionName === universityName) return;
 
-            if (!Array.isArray(list) || list.length === 0) {
-                const propsRes = await fetch('/external-data?endpoint=/api/external/propiedades', {
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                    credentials: 'same-origin'
-                });
-                if (!propsRes.ok) throw new Error('Propiedades HTTP ' + propsRes.status);
-                const propsData = await propsRes.json();
-                const props = Array.isArray(propsData) ? propsData : (propsData?.propiedades ?? propsData?.data ?? []);
-                if (!Array.isArray(props) || props.length === 0) throw new Error('Sin propiedades');
+    try {
+        nombreApiSelect.innerHTML = '<option value="" selected disabled>Cargando nombres...</option>';
 
-                const key = keywordForInstitution(activeInstitutionName);
-                let prop = null;
-                if (key) {
-                    prop = props.find(p => {
-                        const n = (p?.nombre ?? p?.name ?? p?.descripcion ?? '').toString().toLowerCase();
-                        return n.includes(key);
-                    }) || null;
-                }
-                if (!prop) prop = props[0];
-
-                const getPropId = (p) => p?.id ?? p?.id_propiedad ?? p?.property_id ?? p?.propiedad_id ?? null;
-                const propIdsToTry = [];
-                const firstPropId = getPropId(prop);
-                if (firstPropId) propIdsToTry.push(String(firstPropId));
-                props.forEach((p) => {
-                    const id = getPropId(p);
-                    if (id && !propIdsToTry.includes(String(id))) propIdsToTry.push(String(id));
-                });
-                if (propIdsToTry.length === 0) throw new Error('Sin property id');
-
-                let lastErr = null;
-                for (const propId of propIdsToTry) {
-                    const endpoints = [
-                        '/api/external/propiedades/' + propId + '/anfitriones',
-                        '/api/external/propiedades/' + propId + '/usuarios',
-                        '/api/external/propiedades/' + propId + '/empleados',
-                        '/api/external/anfitriones?propiedad_id=' + propId,
-                        '/api/external/usuarios?propiedad_id=' + propId,
-                    ];
-                    for (const ep of endpoints) {
-                        try {
-                            const res = await fetch('/external-data?endpoint=' + encodeURIComponent(ep), {
-                                method: 'GET',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                                credentials: 'same-origin'
-                            });
-                            if (!res.ok) {
-                                lastErr = new Error(ep + ' HTTP ' + res.status);
-                                continue;
-                            }
-                            const raw = await res.json();
-                            const extracted = extractAnfitrionesList(raw);
-                            if (Array.isArray(extracted) && extracted.length > 0) {
-                                list = extracted;
-                                break;
-                            }
-                            lastErr = new Error(ep + ' sin datos');
-                        } catch (err) {
-                            lastErr = err;
-                        }
-                    }
-                    if (list.length > 0) break;
-                }
-                if (!Array.isArray(list) || list.length === 0) throw (lastErr || new Error('Sin anfitriones'));
-            }
-
-            nombreApiSelect.innerHTML = '<option value="" selected disabled>Seleccione el nombre</option>';
-            list.forEach((a, i) => {
-                const rfc = (
-                    a?.RFC ??
-                    a?.rfc ??
-                    a?.Rfc ??
-                    a?.curp ??
-                    ''
-                ).toString().trim().toUpperCase();
-                const nombreDirecto = (
-                    a?.Nombre ??
-                    a?.nombre ??
-                    a?.name ??
-                    a?.nombre_completo ??
-                    a?.full_name ??
-                    ''
-                ).toString().trim();
-                const paterno = (
-                    a?.ApellidoPaterno ??
-                    a?.apellido_paterno ??
-                    a?.primer_apellido ??
-                    a?.paterno ??
-                    ''
-                ).toString().trim();
-                const materno = (
-                    a?.ApellidoMaterno ??
-                    a?.apellido_materno ??
-                    a?.segundo_apellido ??
-                    a?.materno ??
-                    ''
-                ).toString().trim();
-                const nombre = nombreDirecto || [
-                    a?.Nombre,
-                    a?.nombre,
-                    a?.primer_nombre,
-                    a?.first_name,
-                    paterno,
-                    materno
-                ].filter(Boolean).join(' ').trim();
-                // Contrato de integración: solo opciones con RFC y Nombre válidos.
-                if (!nombre || !rfc) return;
-                const opt = document.createElement('option');
-                opt.value = String(a?.id ?? i + 1);
-                opt.textContent = nombre;
-                opt.dataset.nombre = nombre;
-                opt.dataset.rfc = rfc;
-                opt.dataset.paterno = paterno;
-                opt.dataset.materno = materno;
-                opt.dataset.apiDepartamento = anfitrionDepartamentoNombre(a);
-                opt.dataset.apiPuesto = anfitrionPuestoNombre(a);
-                nombreApiSelect.appendChild(opt);
-            });
-            if (nombreApiSelect.options.length <= 1) {
-                throw new Error('API sin anfitriones válidos (requiere RFC y Nombre)');
-            }
-            populateDepartmentWorkstationSelectsFromAnfitriones(list);
-        } catch (e) {
-            console.error('No se pudieron cargar nombres desde API:', e);
-            nombreApiSelect.innerHTML = '<option value="" selected disabled>No se pudieron cargar nombres</option>';
+        if (!externalPropertyId) {
+            throw new Error('La institución activa no tiene external_property_id');
         }
+
+        const res = await fetch(
+            '/external-data?endpoint=' + encodeURIComponent('/api/external/propiedades/' + externalPropertyId + '/anfitriones'),
+            {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            }
+        );
+
+        if (!res.ok) {
+            throw new Error('Usuarios HTTP ' + res.status);
+        }
+
+        const raw = await res.json();
+        const list = extractAnfitrionesList(raw);
+
+        if (!Array.isArray(list) || list.length === 0) {
+            throw new Error('Sin usuarios para esta propiedad');
+        }
+
+        nombreApiSelect.innerHTML = '<option value="" selected disabled>Seleccione el nombre</option>';
+
+        list.forEach((a, i) => {
+            const rfc = (
+                a?.RFC ??
+                a?.rfc ??
+                a?.Rfc ??
+                a?.curp ??
+                'XAXX010101000'
+            ).toString().trim().toUpperCase();
+
+            const nombreDirecto = (
+                a?.Nombre ??
+                a?.nombre ??
+                a?.name ??
+                a?.nombre_completo ??
+                a?.full_name ??
+                ''
+            ).toString().trim();
+
+            const paterno = (
+                a?.ApellidoPaterno ??
+                a?.apellido_paterno ??
+                a?.primer_apellido ??
+                a?.paterno ??
+                ''
+            ).toString().trim();
+
+            const materno = (
+                a?.ApellidoMaterno ??
+                a?.apellido_materno ??
+                a?.segundo_apellido ??
+                a?.materno ??
+                ''
+            ).toString().trim();
+
+            const nombre = nombreDirecto || [
+                a?.primer_nombre,
+                a?.first_name,
+                paterno,
+                materno
+            ].filter(Boolean).join(' ').trim();
+
+            if (!nombre || !rfc) return;
+
+            const opt = document.createElement('option');
+            opt.value = String(a?.id ?? i + 1);
+            opt.textContent = nombre;
+            opt.dataset.nombre = nombre;
+            opt.dataset.rfc = rfc;
+            opt.dataset.paterno = paterno;
+            opt.dataset.materno = materno;
+            opt.dataset.apiDepartamento = anfitrionDepartamentoNombre(a);
+            opt.dataset.apiPuesto = anfitrionPuestoNombre(a);
+
+            nombreApiSelect.appendChild(opt);
+        });
+
+        if (nombreApiSelect.options.length <= 1) {
+            throw new Error('API sin usuarios válidos');
+        }
+
+        populateDepartmentWorkstationSelectsFromAnfitriones(list);
+
+    } catch (e) {
+        console.error('No se pudieron cargar usuarios desde API:', e);
+        nombreApiSelect.innerHTML = '<option value="" selected disabled>No se pudieron cargar usuarios</option>';
     }
+}
 
     function updateNombreFieldMode() {
         if (!tipoHidden || !nombreText || !nombreSelect || !nombreWrapperText || !nombreWrapperSelect) return;
@@ -1100,8 +1127,8 @@ setTimeout(function() {
             });
         }
     }
-    
-  
+
+
     function updateRolesDropdown() {
         let filteredRoles = [];
         roleSelect.innerHTML = '<option value="">Seleccione el rol</option>';
@@ -1199,12 +1226,12 @@ setTimeout(function() {
         }
         syncApiCatalogHiddenNames();
     }
-    
 
-    
+
+
     roleSelect.addEventListener('change', updateModuleVisibility);
-    
-    
+
+
     departmentSelect.addEventListener('change', updateWorkstationDropdown);
     departmentSelect.addEventListener('change', syncApiCatalogHiddenNames);
     workstationSelect.addEventListener('change', syncApiCatalogHiddenNames);
