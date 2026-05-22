@@ -122,7 +122,11 @@ public function store(StoreCourseRequest $request): RedirectResponse
     }
 
     $courseData = $validatedData;
+    if ($request->modality !== 'presencial') {
+        $courseData['instructor_name'] = null;
+    }
     $courseData['instructor_id'] = Auth::id();
+
 
     //  Para cursos híbridos, calcular horas totales de los cursos seleccionados
     if ($request->modality === 'hibrida' && $request->has('selected_courses')) {
@@ -380,6 +384,8 @@ public function show(Course $course)
 
     $topics = $course->topics;
 
+    $periods = $course->periods;
+
     // Retornar vista con TODAS las variables
     return view('layouts.Cursos.show', compact(
         'departments',
@@ -391,7 +397,8 @@ public function show(Course $course)
         'finalExamActivity',
         'finalExamData',
         'userCompletions',
-        'hybridCourses'
+        'hybridCourses',
+        'periods'
     ));
 }
 
@@ -533,6 +540,7 @@ public function update(Request $request, Course $course): RedirectResponse
         'career_id' => 'nullable|exists:careers,id',
         'department_id' => 'nullable|exists:departments,id',
         'workstation_id' => 'nullable|exists:workstations,id',
+
     ]);
 
     // NO actualizar institution_id desde el request
@@ -559,6 +567,7 @@ public function update(Request $request, Course $course): RedirectResponse
         $validatedData['guide_material_path'] =
             $request->file('guide_material')->store('courses/guides', 'public');
     }
+
 
     // ACTUALIZAR CURSO
     $course->update($validatedData);

@@ -37,6 +37,7 @@ class StoreCourseRequest extends FormRequest
         $rules = [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'instructor_name' => 'nullable|string|max:255',
             'institution_id' => 'required|exists:institutions,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:20480',
             'credits' => $creditsRule,

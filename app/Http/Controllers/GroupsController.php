@@ -111,6 +111,8 @@ public function getParticipantsByFilters(Request $request)
                     ($user->apellido_materno ?? '')
                 ),
 
+                'RFC' => $user->RFC ?? null,
+
                 'department_name' =>
                     optional($user->department)->name
                     ?? 'Sin departamento',

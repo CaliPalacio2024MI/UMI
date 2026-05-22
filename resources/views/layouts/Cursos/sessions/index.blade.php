@@ -20,9 +20,9 @@
             </p>
         </div>
         {{-- DERECHA (BOTÓN SALIR) --}}
-        <a href="{{ route('courses.index') }}" class="btn-back">
+        <a href="{{ route('courses.index') }}" class="btn-salir">
             <i class="fas fa-arrow-left"></i>
-                Salir
+            Salir
         </a>
     </div>
 
@@ -64,6 +64,7 @@
                         </div>
 
                         <div style="display:flex; gap:10px;">
+
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora inicio</label>
                                 <input type="time" name="start_time" id="start_time" class="form-control-custom" required>
@@ -73,7 +74,19 @@
                                 <label class="label-custom">Hora fin</label>
                                 <input type="time" name="end_time" id="end_time" class="form-control-custom" readonly>
                             </div>
+
                         </div>
+
+                        <div class="form-group-custom">
+                            <label class="label-custom">Instructor</label>
+
+                            <input type="text"
+                                name="instructor_name"
+                                class="form-control-custom"
+                                placeholder="Nombre del instructor"
+                                required>
+                        </div>
+
 
                         <button type="submit" class="btn-primary-custom">
                             <i class="fas fa-save"></i>
@@ -179,7 +192,7 @@
                                     <input type="date" name="date" class="form-control-custom" value="{{ $session->date }}">
                                     <input type="time" name="start_time" class="form-control-custom" value="{{ $session->start_time }}">
                                     <input type="time" name="end_time" class="form-control-custom" value="{{ $session->end_time }}">
-
+                                    <input type="text" name="instructor_name" class="form-control-custom" value="{{ $session->instructor_name }}"placeholder="Instructor">
                                     <button class="btn btn-primary btn-sm">OK</button>
                                 </form>
                             </td>

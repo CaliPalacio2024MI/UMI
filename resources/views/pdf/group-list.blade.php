@@ -219,18 +219,27 @@
 
 <table class="info-table">
 
-    <tr>
+<tr>
 
-        <td class="label">
-            Nombre del curso:
-        </td>
+    <td class="label">
+        Nombre del curso:
+    </td>
 
-        <td class="value" colspan="7">
-            {{ $session->course->title }}
-        </td>
+    <td class="value" colspan="6">
+        {{ $session->course->title }}
+    </td>
 
-    </tr>
+    <td class="icon-cell" colspan="2">
 
+        <img
+            src="file://{{ public_path('images/icons/user-solid-full.svg') }}"
+            width="36"
+            height="36"
+        >
+
+    </td>
+
+</tr>
     <tr>
 
         <td class="label-small">
@@ -257,15 +266,6 @@
             {{ \Carbon\Carbon::parse($session->start_time)->format('h:i a') }}
         </td>
 
-        <td class="icon-cell">
-
-            <img
-                src="file://{{ public_path('images/icons/user-solid-full.svg') }}"
-                width="42"
-                height="42"
-            >
-
-        </td>
 
         <td class="label-small">
             Hora<br>Fin:
@@ -285,8 +285,7 @@
 
         <td class="value" colspan="3">
 
-            {{ optional($session->course->instructor)->nombre ?? 'N/A' }}
-            {{ optional($session->course->instructor)->apellido_paterno ?? '' }}
+            {{ $session->instructor_name ?? 'N/A' }}
 
         </td>
 

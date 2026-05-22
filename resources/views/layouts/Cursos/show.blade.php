@@ -63,6 +63,32 @@
         <button onclick="closeGameModal()" class="modal-btn">¡Entendido!</button>
     </div>
 </div>
+{{-- MODAL QR --}}
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content qr-modal-content">
+
+            <div class="qr-header">
+                <h5>Escanear código QR</h5>
+            </div>
+<div class="qr-body">
+    <video id="camera-preview"
+           autoplay
+           playsinline
+           muted
+           style="width:100%; max-width:480px; height:360px; background:#000; object-fit:cover;">
+    </video>
+</div>
+
+            <div class="qr-footer">
+                <button type="button" class="btn-cancel-qr" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 
 {{-- ===== SOLO HÍBRIDA ===== --}}
@@ -255,7 +281,13 @@
         @foreach($course->sessions as $session)
 
             <div class="course-session-item"
-                 onclick="showSessionTable('{{ $session->id }}')">
+                 onclick="showSessionTable(
+                    '{{ $session->id }}',
+                    '{{ $session->date }}',
+                    '{{ $session->start_time }}',
+                    '{{ $session->end_time }}',
+                    '{{ $session->attendance_enabled ? 1 : 0 }}'
+                    )">
 
                 <div class="course-session-info">
 
@@ -279,39 +311,6 @@
 
         @endforeach
 
-    </div>
-
-
-        {{-- BOTÓN QR --}}
-        <div class="qr-container">
-            <button class="btn-qr" data-bs-toggle="modal" data-bs-target="#qrModal">
-                <i class="fa-solid fa-qrcode"></i> Escanear QR
-            </button>
-        </div>
-
-
-    {{-- MODAL QR --}}
-    <div class="modal fade qr-modal" id="qrModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content qr-modal-content">
-
-                <div class="qr-header">
-                    <h5>Escanear código QR</h5>
-                </div>
-
-                <div class="qr-body">
-                    <div id="reader"></div>
-                    <div class="qr-frame"></div>
-                </div>
-
-                <div class="qr-footer">
-                    <button type="button" class="btn-cancel-qr" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                </div>
-
-            </div>
-        </div>
     </div>
 
 @endif
@@ -339,18 +338,29 @@
 {{-- ===== VIEWER ===== --}}
 <main class="course-viewer">
     @if($course->modality === 'presencial')
-<div class="course-controls" style="justify-content: flex-end; gap: 10px;">
+<div class="course-controls presencial-actions">
 
     <a id="btn-download-session-pdf"
        href="#"
-       class="btn-export-pdf"
+       class="btn-presencial-action"
        style="display: none;">
         <i class="fa-solid fa-download"></i>
         Descargar PDF
     </a>
 
-    <button class="exit" onclick="window.location.href='{{ route('courses.index') }}'">
+    <button type="button"
+            id="btn-scan-qr"
+            class="btn-presencial-action"
+            style="display: none;"
+            onclick="abrirModalQR()">
+        <i class="fa-solid fa-qrcode"></i>
+        Escanear QR
+    </button>
+    <button class="btn-presencial-action"
+            onclick="window.location.href='{{ route('courses.index') }}'">
+
         Salir
+
     </button>
 
 </div>
@@ -380,99 +390,129 @@
                 }
             }
         @endphp
+<div id="session-table-data-{{ $session->id }}"
+     style="display:none;">
 
-        <div id="session-table-data-{{ $session->id }}"
-             style="display:none;">
+    @if($hosts->count())
 
-            @if($hosts->count())
+        <table class="selected-users-table presencial-users-table">
 
-                <table class="selected-users-table presencial-users-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Departamento</th>
-                            <th>Puesto</th>
-                        </tr>
-                    </thead>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Apellido Paterno</th>
+                    <th>Apellido Materno</th>
+                    <th>RFC</th>
+                    <th>Departamento</th>
+                    <th>Puesto</th>
+                    <th>Asistencia</th>
+                </tr>
+            </thead>
 
-                    <tbody>
-                        @foreach($hosts as $host)
-                            <tr>
-                                <td>
-                                    {{ $host->nombre }}
-                                    {{ $host->apellido_paterno }}
-                                    {{ $host->apellido_materno }}
-                                </td>
+            <tbody>
 
-                                <td>
-                                    {{ optional($host->department)->name ?? 'Sin departamento' }}
-                                </td>
+                @foreach($hosts as $index => $host)
 
-                                <td>
-                                    {{ optional($host->workstation)->name ?? 'Sin puesto' }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                    <tr data-rfc="{{ strtoupper($host->RFC ?? '') }}">
 
-            @else
+                        {{-- NÚMERO DE LISTA --}}
+                        <td>
+                            {{ $index + 1 }}
+                        </td>
 
-                <p class="empty">
-                    No hay usuarios asignados a este horario.
-                </p>
+                        {{-- NOMBRE --}}
+                        <td>
+                            {{ $host->nombre }}
+                        </td>
 
-            @endif
+                        {{-- APELLIDO PATERNO --}}
+                        <td>
+                            {{ $host->apellido_paterno }}
+                        </td>
 
-        </div>
+                        {{-- APELLIDO MATERNO --}}
+                        <td>
+                            {{ $host->apellido_materno }}
+                        </td>
+
+                        {{-- RFC --}}
+                        <td>
+                            {{ $host->RFC ?? 'Sin RFC' }}
+                        </td>
+
+                        {{-- DEPARTAMENTO --}}
+                        <td>
+                            {{ optional($host->department)->name ?? 'Sin departamento' }}
+                        </td>
+
+                        {{-- PUESTO --}}
+                        <td>
+                            {{ optional($host->workstation)->name ?? 'Sin puesto' }}
+                        </td>
+
+                        {{-- ASISTENCIA --}}
+                        <td class="attendance-status">
+                            <span class="attendance-badge pending">
+                                Pendiente
+                            </span>
+                        </td>
+
+                    </tr>
+
+                @endforeach
+
+            </tbody>
+
+        </table>
+
+    @else
+
+        <p class="empty">
+            No hay usuarios asignados a este horario.
+        </p>
+
+    @endif
+
+</div>
 
     @endforeach
 
-<script>
-function showSessionTable(sessionId) {
-
-    const source = document.getElementById('session-table-data-' + sessionId);
-    const container = document.getElementById('session-table-container');
-    const btnPdf = document.getElementById('btn-download-session-pdf');
-
-    if (!source || !container) return;
-
-    container.innerHTML = source.innerHTML;
-
-    if (btnPdf) {
-        btnPdf.href = `/groups/${sessionId}/export-pdf`;
-        btnPdf.style.display = 'inline-flex';
-    }
-}
-</script>
 
 @endif
 
     {{-- ===== CONTROLES SOLO VIRTUAL ===== --}}
-    @if($course->modality === 'virtual')
-        <div class="course-controls">
-            <button id="btnPrev">⏮ Anterior</button>
-            <button id="btnAutoplay">▶️ Autoplay</button>
-            <button id="btnNext">⏭ Siguiente</button>
+   @if($course->modality === 'virtual')
+    <div class="course-controls">
 
-            <div class="right-controls">
+        <button id="btnPrev">⏮<br>Anterior</button>
+        <button id="btnAutoplay">▶️<br>Autoplay</button>
+        <button id="btnNext">⏭<br>Siguiente</button>
 
-                {{-- GUÍA --}}
-                @if($course->guide_material_path)
-                    <button class="btn-guide" onclick="openGuide('{{ asset('storage/' . $course->guide_material_path) }}')">
-                        📘 Guía del curso
-                    </button>
-                @else
-                    <button class="btn-guide" onclick="showNoGuideMessage()">
-                        📘 Guía del curso
-                    </button>
-                @endif
+        <div class="right-controls">
 
-                <button class="exit" onclick="window.history.back()">Salir</button>
+            @if(isset($periods) && $periods->count() > 0)
+                <button class="btn-guide"
+                    onclick="window.location.href='{{ route('courses.periods.attendance', [$course, $periods->first()]) }}'">
+                    📊 Asistencia
+                </button>
+            @endif
 
-            </div>
+            @if($course->guide_material_path)
+                <button class="btn-guide" onclick="openGuide('{{ asset('storage/' . $course->guide_material_path) }}')">
+                    📘 Guía del curso
+                </button>
+            @else
+                <button class="btn-guide" onclick="showNoGuideMessage()">
+                    📘 Guía del curso
+                </button>
+            @endif
+
+            <button class="exit" onclick="window.history.back()">Salir</button>
+
         </div>
-    @endif
+    </div>
+@endif
 
 
         <div class="course-progress">
@@ -1395,116 +1435,259 @@ function showSessionTable(sessionId) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+let selectedSessionData = {
+    id: null,
+    date: null,
+    start: null,
+    end: null,
+    active: false
+};
 
-    let html5QrCode = null;
+let cameraStream = null;
+let scanning = false;
+
+function showSessionTable(sessionId, sessionDate, startTime, endTime, isActive) {
+    const source = document.getElementById('session-table-data-' + sessionId);
+    const container = document.getElementById('session-table-container');
+
+    const btnPdf = document.getElementById('btn-download-session-pdf');
+    const btnQr = document.getElementById('btn-scan-qr');
+
+    if (!source || !container) return;
+
+    container.innerHTML = source.innerHTML;
+
+    selectedSessionData = {
+        id: sessionId,
+        date: sessionDate,
+        start: startTime,
+        end: endTime,
+        active: Number(isActive) === 1
+    };
+
+    if (btnPdf) {
+        btnPdf.href = `/groups/${sessionId}/export-pdf`;
+        btnPdf.style.display = 'inline-flex';
+    }
+
+    if (btnQr) {
+        btnQr.style.display = 'inline-flex';
+    }
+}
+
+function abrirModalQR() {
     const qrModal = document.getElementById('qrModal');
-    const readerId = "reader";
+
+    if (!selectedSessionData.id) {
+        alert('Selecciona primero un horario.');
+        return;
+    }
+
+    if (!qrModal) {
+        alert('No se encontró el modal QR.');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(qrModal);
+    modal.show();
+}
+
+function extraerRFC(valorQR) {
+    return String(valorQR || '')
+        .trim()
+        .toUpperCase()
+        .replace('RFC:', '')
+        .replace(/[^A-Z0-9Ñ&]/g, '');
+}
+
+function validarAsistenciaPorRFC(valorQR) {
+    const rfc = extraerRFC(valorQR);
+
+    if (!rfc) {
+        alert('QR inválido. No contiene RFC.');
+        return false;
+    }
+
+    if (!selectedSessionData.id) {
+        alert('Selecciona primero un horario.');
+        return false;
+    }
+
+    if (!selectedSessionData.active) {
+        alert('No cumple: este horario no está activo.');
+        return false;
+    }
+
+    const ahora = new Date();
+    const fechaHoy = ahora.toLocaleDateString('en-CA');
+
+    if (fechaHoy !== selectedSessionData.date) {
+        alert('No cumple: este horario no corresponde a la fecha de hoy.');
+        return false;
+    }
+
+    const inicio = new Date(`${selectedSessionData.date}T${selectedSessionData.start}`);
+    const fin = new Date(`${selectedSessionData.date}T${selectedSessionData.end}`);
+
+    if (ahora < inicio) {
+        alert('No cumple: aún no inicia el horario.');
+        return false;
+    }
+
+    if (ahora > fin) {
+        alert('No cumple: el horario ya terminó.');
+        return false;
+    }
+
+    const fila = document.querySelector(
+        `#session-table-container tr[data-rfc="${rfc}"]`
+    );
+
+    if (!fila) {
+        alert('No cumple: el RFC no está en la lista de este horario.');
+        return false;
+    }
+
+    const badge = fila.querySelector('.attendance-badge');
+
+    if (badge && badge.classList.contains('present')) {
+        alert('Este RFC ya tiene asistencia registrada.');
+        return false;
+    }
+
+    if (badge) {
+        badge.textContent = 'Asistió';
+        badge.classList.remove('pending');
+        badge.classList.add('present');
+    }
+
+    fila.classList.add('attendance-row-present');
+
+    alert('Asistencia registrada correctamente.');
+    return true;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const qrModal = document.getElementById('qrModal');
 
     if (!qrModal) return;
 
-    // =========================
-    // ABRIR MODAL → INICIAR CÁMARA
-    // =========================
-    qrModal.addEventListener('shown.bs.modal', async () => {
+    qrModal.addEventListener('shown.bs.modal', async function () {
+        const video = document.getElementById('camera-preview');
 
-        const reader = document.getElementById(readerId);
+        if (!video) {
+            alert('No se encontró el video de cámara.');
+            return;
+        }
 
-        // limpiar contenedor
-        reader.innerHTML = "";
-
-        html5QrCode = new Html5Qrcode(readerId);
+        if (typeof jsQR === 'undefined') {
+            alert('No se cargó la librería jsQR.');
+            return;
+        }
 
         try {
-            const cameras = await Html5Qrcode.getCameras();
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false
+            });
 
-            if (!cameras || cameras.length === 0) {
-                alert("No se detectó ninguna cámara");
-                return;
+            video.srcObject = cameraStream;
+            await video.play();
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d', {
+                willReadFrequently: true
+            });
+
+            scanning = true;
+
+            function scanLoop() {
+                if (!scanning) return;
+
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const imageData = context.getImageData(
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    );
+
+                    const code = jsQR(
+                        imageData.data,
+                        imageData.width,
+                        imageData.height
+                    );
+
+                    if (code && code.data) {
+                        scanning = false;
+
+                        const registrado = validarAsistenciaPorRFC(code.data);
+
+                        if (registrado) {
+                            cerrarCamaraYModal();
+                            return;
+                        }
+
+                        setTimeout(() => {
+                            scanning = true;
+                            requestAnimationFrame(scanLoop);
+                        }, 1200);
+
+                        return;
+                    }
+                }
+
+                requestAnimationFrame(scanLoop);
             }
 
-            // usar cámara trasera si existe
-            const cameraId = cameras[cameras.length - 1].id;
-
-            await html5QrCode.start(
-                cameraId,
-                {
-                    fps: 10,
-                    qrbox: { width: 260, height: 260 },
-                    aspectRatio: 1.0
-                },
-
-                (decodedText) => {
-
-                    console.log("QR detectado:", decodedText);
-                    window.location.href = decodedText;
-                },
-
-                // errores de escaneo (silenciosos)
-                (errorMessage) => {
-                    // console.log(errorMessage);
-                }
-            );
+            scanLoop();
 
         } catch (error) {
-            console.error("Error al iniciar cámara:", error);
-            alert("Error al acceder a la cámara. Revisa permisos.");
-        }
+            console.error("ERROR CÁMARA:", error);
 
-    });
-
-
-    // =========================
-    // FUNCIÓN PARA CERRAR
-    // =========================
-    async function cerrarQR() {
-
-        if (html5QrCode) {
-            try {
-                await html5QrCode.stop();
-                await html5QrCode.clear();
-                html5QrCode = null;
-            } catch (e) {
-                console.warn("Error al cerrar cámara:", e);
-            }
-        }
-
-        const modal = bootstrap.Modal.getInstance(qrModal);
-        if (modal) modal.hide();
-    }
-
-
-    // =========================
-    // BOTÓN CANCELAR
-    // =========================
-    document.addEventListener("click", function(e) {
-        if (e.target.closest("[data-bs-dismiss='modal']")) {
-            cerrarQR();
+            alert(
+                "Error cámara:\n" +
+                error.name + "\n" +
+                error.message
+            );
         }
     });
 
-
-    // =========================
-    // AL CERRAR MODAL
-    // =========================
-    qrModal.addEventListener('hidden.bs.modal', async () => {
-
-        if (html5QrCode) {
-            try {
-                await html5QrCode.stop();
-                await html5QrCode.clear();
-                html5QrCode = null;
-            } catch (e) {}
-        }
-
+    qrModal.addEventListener('hidden.bs.modal', function () {
+        cerrarCamara();
     });
-
 });
+
+function cerrarCamara() {
+    scanning = false;
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+}
+
+function cerrarCamaraYModal() {
+    cerrarCamara();
+
+    const qrModal = document.getElementById('qrModal');
+    const modal = bootstrap.Modal.getInstance(qrModal);
+
+    if (modal) {
+        modal.hide();
+    }
+}
 </script>
-
-
 {{-- ========== FUNCIONES DE LA TORTUGUITA ========== --}}
 <script>
 function showTurtle() {

@@ -555,3 +555,18 @@
 .btn-save {
     margin-top: 18px;
 }
+.section-title-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.select-all-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2f4b7c;
+    cursor: pointer;
+}

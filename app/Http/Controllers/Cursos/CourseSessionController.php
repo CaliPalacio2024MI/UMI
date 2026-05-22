@@ -78,6 +78,7 @@ class CourseSessionController extends Controller
             'date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required',
+            'instructor_name' => 'required|string|max:255',
         ]);
 
         $start = Carbon::parse($request->start_time);
@@ -97,6 +98,7 @@ class CourseSessionController extends Controller
             'date' => $request->date,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
+            'instructor_name' => $request->instructor_name,
         ]);
 
         return back()->with('success', 'Horario actualizado correctamente');
@@ -108,6 +110,7 @@ class CourseSessionController extends Controller
             'date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required',
+            'instructor_name' => 'required|string|max:255',
         ]);
 
         $start = Carbon::parse($request->start_time);
@@ -128,7 +131,9 @@ class CourseSessionController extends Controller
             'date' => $request->date,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
+            'instructor_name' => $request->instructor_name,
             'attendance_enabled' => false,
+
         ]);
 
         return back()->with('success', 'Horario creado correctamente');

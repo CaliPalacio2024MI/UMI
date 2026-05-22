@@ -20,9 +20,9 @@ class CoursePeriodsController extends Controller
     public function index(Course $course)
     {
         $this->authorize('update', $course);
-        
+
         $periods = $course->periods()->orderBy('start_date', 'desc')->get();
-        
+
         return view('layouts.Cursos.periods.index', compact('course', 'periods'));
     }
 
@@ -32,7 +32,7 @@ class CoursePeriodsController extends Controller
     public function store(Request $request, Course $course)
     {
         $this->authorize('update', $course);
-        
+
         $validated = $request->validate([
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -40,12 +40,27 @@ class CoursePeriodsController extends Controller
             'start_date.after_or_equal' => 'La fecha de inicio no puede ser anterior a hoy.',
             'end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
         ]);
-        
+
         $validated['is_active'] = true;
-        
+        $validated['attendance_enabled'] = true;
+
         $course->periods()->create($validated);
-        
+
         return redirect()->back()->with('success', 'Período creado exitosamente');
+    }
+
+    public function update(Request $request, Course $course, CoursePeriod $period)
+    {
+        $this->authorize('update', $course);
+
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $period->update($validated);
+
+        return redirect()->back()->with('success', 'Vigencia actualizada correctamente');
     }
 
     /**
@@ -54,9 +69,9 @@ class CoursePeriodsController extends Controller
     public function destroy(Course $course, CoursePeriod $period)
     {
         $this->authorize('update', $course);
-        
+
         $period->delete();
-        
+
         return redirect()->back()->with('success', 'Período eliminado exitosamente');
     }
 
@@ -122,14 +137,14 @@ public function toggleUser(Request $request, $courseId, $periodId)
 public function attendance(Course $course, CoursePeriod $period)
 {
     $this->authorize('update', $course);
-    
+
     // ✅ Obtener anfitriones asignados a este período
     $assignedAnfitriones = DB::table('period_user')
         ->where('period_user.period_id', $period->id)
         ->where('period_user.course_id', $course->id)
         ->pluck('no_anfitrion')
         ->toArray();
-    
+
     if (empty($assignedAnfitriones)) {
         $attendances = collect([]);
     } else {
@@ -137,14 +152,14 @@ public function attendance(Course $course, CoursePeriod $period)
         $propiedadId = 1;
         $apiUrl = url("/external-data?endpoint=/api/external/propiedades/{$propiedadId}/anfitriones");
         $response = Http::timeout(30)->get($apiUrl);
-        
+
         if ($response->successful()) {
             $apiData = $response->json();
             $allAnfitriones = collect($apiData['data'] ?? []);
-            
+
             // ✅ Filtrar solo los asignados a este período
             $filteredAnfitriones = $allAnfitriones->whereIn('no_anfitrion', $assignedAnfitriones);
-            
+
             $attendances = $filteredAnfitriones->map(function($anfitrion) use ($course, $period) {
                 // Aquí puedes buscar progreso si lo guardas en alguna tabla
                 return [
@@ -164,9 +179,20 @@ public function attendance(Course $course, CoursePeriod $period)
             $attendances = collect([]);
         }
     }
-    
+
     $periods = collect([$period]);
-    
+
     return view('layouts.Cursos.attendance', compact('course', 'attendances', 'periods', 'period'));
+}
+
+public function toggle($courseId, $periodId)
+{
+    $period = \App\Models\Cursos\CoursePeriod::findOrFail($periodId);
+
+    $period->attendance_enabled = !$period->attendance_enabled;
+
+    $period->save();
+
+    return back()->with('success', 'Estado actualizado correctamente');
 }
 }

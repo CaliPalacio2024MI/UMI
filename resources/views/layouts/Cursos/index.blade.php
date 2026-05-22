@@ -36,14 +36,14 @@
                         <h3 class="course-title">{{ $courses->title }}</h3>
                         <p class="course-description">{{ $courses->description }}</p>
                         <div class="course-meta">
-                            @if (session('active_institution_name') == 'Universidad Mundo Imperial')
-                                <span>Créditos: {{ $courses->credits }}</span>
-                                <span>Horas: {{ $courses->hours }}</span>
-                            @else
-                                <span>Horas: {{ $courses->hours }}</span>
-                            @endif
+                        @if (session('active_institution_name') == 'Universidad Mundo Imperial')
+                            <span>Créditos: {{ $courses->credits }}</span>
+                            <span>Horas: {{ $courses->hours }}</span>
+                        @else
+                            <span>Horas: {{ $courses->hours }}</span>
+                        @endif
 
-                        </div>
+                    </div>
                 </a>
 
                     <div class="btn-display">
@@ -56,10 +56,10 @@
                         @endif
 
                         {{-- Lista de vigencias (solo para cursos virtuales) --}}
-                         @if($courses->modality === 'virtual')
-                        <a href="{{ route('courses.periods.index', $courses) }}" class="btn-action" title="Vigencia/Listas">
-                        <i class="fa-solid fa-clipboard-user"></i>
-                        </a>
+                        @if($courses->modality === 'virtual')
+                           <a href="{{ route('courses.periods.index', $courses) }}" class="btn-action" title="Vigencia/Listas">
+                                <i class="fa-regular fa-clock"></i>
+                            </a>
                         @endif
 
                         {{-- EDITAR --}}

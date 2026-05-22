@@ -62,6 +62,8 @@
             </select>
         </div>
 
+</div>
+
         {{-- PONDERACIÓN --}}
         <div id="ponderacionContainer" style="display:none; margin-top:15px;">
             <h3>Ponderación del curso</h3>
@@ -268,14 +270,14 @@
                     value="save_and_exit">
                 Guardar Cambios
             </button>
-@if(strtolower($course->modality) == 'virtual')
-    <button class="btn-submit"
-            type="submit"
-            name="action"
-            value="save_and_continue">
-        Guardar y Editar Temas →
-    </button>
-@endif
+            @if(strtolower($course->modality) == 'virtual')
+                <button class="btn-submit"
+                    type="submit"
+                    name="action"
+                    value="save_and_continue">
+                    Guardar y Editar Temas →
+                </button>
+            @endif
         </div>
 
     </form>
@@ -310,6 +312,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const ponderacion = document.getElementById('ponderacionContainer');
     const hibridoSection = document.getElementById('hibrido_section');
+    const instructorPresencialContainer =
+    document.getElementById('instructor_presencial_container');
 
     const hoursContainer =
         document.getElementById('hours_container')
@@ -319,19 +323,58 @@ document.addEventListener('DOMContentLoaded', function () {
     const coursesSelect = document.getElementById('courses_select');
     const totalHoursInput = document.getElementById('total_hours');
 
-    function toggleHibrido() {
-        if (!modalitySelect) return;
+function toggleHibrido() {
 
-        if (modalitySelect.value === 'hibrida') {
-            if (ponderacion) ponderacion.style.display = 'block';
-            if (hibridoSection) hibridoSection.style.display = 'block';
-            if (hoursContainer) hoursContainer.style.display = 'none';
-        } else {
-            if (ponderacion) ponderacion.style.display = 'none';
-            if (hibridoSection) hibridoSection.style.display = 'none';
-            if (hoursContainer) hoursContainer.style.display = 'block';
+    if (!modalitySelect) return;
+
+    // =========================
+    // HÍBRIDA
+    // =========================
+    if (modalitySelect.value === 'hibrida') {
+
+        if (ponderacion) {
+            ponderacion.style.display = 'block';
+        }
+
+        if (hibridoSection) {
+            hibridoSection.style.display = 'block';
+        }
+
+        if (hoursContainer) {
+            hoursContainer.style.display = 'none';
+        }
+
+    } else {
+
+        if (ponderacion) {
+            ponderacion.style.display = 'none';
+        }
+
+        if (hibridoSection) {
+            hibridoSection.style.display = 'none';
+        }
+
+        if (hoursContainer) {
+            hoursContainer.style.display = 'block';
         }
     }
+
+    // =========================
+    // INSTRUCTOR PRESENCIAL
+    // =========================
+    if (instructorPresencialContainer) {
+
+        if (modalitySelect.value === 'presencial') {
+
+            instructorPresencialContainer.style.display = 'block';
+
+        } else {
+
+            instructorPresencialContainer.style.display = 'none';
+
+        }
+    }
+}
 
     function calcularHorasHibridas() {
         if (!coursesSelect) return;

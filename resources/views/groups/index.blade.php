@@ -29,6 +29,10 @@
                 <h3>CONFIGURACIÓN</h3>
 
                 <h4>Departamentos</h4>
+                    <label class="select-all-label">
+                        <input type="checkbox" id="select-all-departments">
+                        Seleccionar todo
+                    </label>
 
                 <input type="text"
                        id="department-search"
@@ -49,12 +53,20 @@
                 </div>
 
                 <h4>Puestos</h4>
+                    <label class="select-all-label">
+                        <input type="checkbox" id="select-all-workstations">
+                        Seleccionar todo
+                    </label>
 
                 <div id="workstations-list" class="checklist checklist-box">
                     <p class="empty">Selecciona departamentos</p>
                 </div>
 
                 <h4>Anfitriones</h4>
+                    <label class="select-all-label">
+                        <input type="checkbox" id="select-all-hosts">
+                        Seleccionar todo
+                    </label>
 
                 <div id="hosts-list" class="checklist checklist-box">
                     <p class="empty">Selecciona departamentos y puestos</p>
@@ -104,7 +116,6 @@
     </form>
 
 </div>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -114,50 +125,109 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const departmentSearch = document.getElementById('department-search');
 
+    const selectAllDepartments =
+        document.getElementById('select-all-departments');
+
+    const selectAllWorkstations =
+        document.getElementById('select-all-workstations');
+
+    const selectAllHosts =
+        document.getElementById('select-all-hosts');
+
+
+    // ==========================
+    // BUSCADOR DE DEPARTAMENTOS
+    // ==========================
     if (departmentSearch) {
+
         departmentSearch.addEventListener('keyup', function () {
+
             const value = this.value.toLowerCase();
 
-            document.querySelectorAll('#departments-list .check-item').forEach(item => {
+            document.querySelectorAll(
+                '#departments-list .check-item'
+            ).forEach(item => {
+
                 const text = item.innerText.toLowerCase();
-                item.style.display = text.includes(value) ? 'flex' : 'none';
+
+                item.style.display =
+                    text.includes(value)
+                    ? 'flex'
+                    : 'none';
             });
         });
     }
 
+
+    // ==========================
+    // DEPARTAMENTOS
+    // ==========================
     function syncDepartments() {
-        const container = document.getElementById('hidden-departments');
+
+        const container =
+            document.getElementById('hidden-departments');
+
         container.innerHTML = '';
 
-        document.querySelectorAll('#departments-list input:checked').forEach(dept => {
+        document.querySelectorAll(
+            '#departments-list input:checked'
+        ).forEach(dept => {
+
             container.innerHTML += `
-                <input type="hidden" name="departments[]" value="${dept.value}">
+                <input
+                    type="hidden"
+                    name="departments[]"
+                    value="${dept.value}">
             `;
         });
     }
 
+
+    // ==========================
+    // PUESTOS
+    // ==========================
     function syncWorkstations() {
-        const container = document.getElementById('hidden-workstations');
+
+        const container =
+            document.getElementById('hidden-workstations');
+
         container.innerHTML = '';
 
-        document.querySelectorAll('#workstations-list input:checked').forEach(ws => {
+        document.querySelectorAll(
+            '#workstations-list input:checked'
+        ).forEach(ws => {
+
             container.innerHTML += `
-                <input type="hidden" name="workstations[]" value="${ws.value}">
+                <input
+                    type="hidden"
+                    name="workstations[]"
+                    value="${ws.value}">
             `;
         });
 
         loadHosts();
     }
 
+
+    // ==========================
+    // ANFITRIONES
+    // ==========================
     function syncHosts() {
-        const container = document.getElementById('hidden-hosts');
-        const display = document.getElementById('selected-hosts-display');
+
+        const container =
+            document.getElementById('hidden-hosts');
+
+        const display =
+            document.getElementById('selected-hosts-display');
 
         container.innerHTML = '';
 
-        const checkedHosts = Array.from(document.querySelectorAll('.host-check:checked'));
+        const checkedHosts = Array.from(
+            document.querySelectorAll('.host-check:checked')
+        );
 
         if (checkedHosts.length === 0) {
+
             display.innerHTML = `
                 <tr>
                     <td colspan="3" class="empty">
@@ -165,51 +235,80 @@ document.addEventListener("DOMContentLoaded", () => {
                     </td>
                 </tr>
             `;
+
             return;
         }
 
         display.innerHTML = '';
 
         checkedHosts.forEach(host => {
+
             container.innerHTML += `
-                <input type="hidden" name="hosts[]" value="${host.value}">
+                <input
+                    type="hidden"
+                    name="hosts[]"
+                    value="${host.value}">
             `;
 
             display.innerHTML += `
                 <tr>
-                    <td>${host.getAttribute('data-name')}</td>
-                    <td>${host.getAttribute('data-department')}</td>
-                    <td>${host.getAttribute('data-workstation')}</td>
+                    <td>${host.dataset.name}</td>
+                    <td>${host.dataset.department}</td>
+                    <td>${host.dataset.workstation}</td>
                 </tr>
             `;
         });
     }
 
+
+    // ==========================
+    // CARGAR PUESTOS
+    // ==========================
     function loadWorkstations() {
+
         let html = '';
 
         const selectedDepartmentsList = Array.from(
-            document.querySelectorAll('#departments-list input:checked')
+            document.querySelectorAll(
+                '#departments-list input:checked'
+            )
         ).map(c => parseInt(c.value));
 
         if (selectedDepartmentsList.length === 0) {
-            html = `<p class="empty">Selecciona departamentos</p>`;
+
+            html = `
+                <p class="empty">
+                    Selecciona departamentos
+                </p>
+            `;
+
         } else {
+
             selectedDepartmentsList.forEach(id => {
-                const dept = departments.find(d => d.id == id);
+
+                const dept =
+                    departments.find(d => d.id == id);
 
                 if (dept && dept.workstations) {
+
                     dept.workstations.forEach(w => {
-                        const checked = selectedWorkstations.includes(w.id) ? 'checked' : '';
+
+                        const checked =
+                            selectedWorkstations.includes(w.id)
+                            ? 'checked'
+                            : '';
 
                         html += `
                             <label class="check-item">
-                                <input type="checkbox"
-                                       value="${w.id}"
-                                       data-name="${w.name}"
-                                       ${checked}>
+
+                                <input
+                                    type="checkbox"
+                                    value="${w.id}"
+                                    data-name="${w.name}"
+                                    ${checked}>
 
                                 <span>${w.name}</span>
+
                             </label>
                         `;
                     });
@@ -217,26 +316,48 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        const workstationsList = document.getElementById('workstations-list');
+        const workstationsList =
+            document.getElementById('workstations-list');
+
         workstationsList.innerHTML = html;
 
-        document.querySelectorAll('#workstations-list input').forEach(check => {
-            check.addEventListener('change', syncWorkstations);
+        if (selectAllWorkstations) {
+            selectAllWorkstations.checked = false;
+        }
+
+        document.querySelectorAll(
+            '#workstations-list input'
+        ).forEach(check => {
+
+            check.addEventListener(
+                'change',
+                syncWorkstations
+            );
         });
 
         syncWorkstations();
     }
 
+
+    // ==========================
+    // CARGAR ANFITRIONES
+    // ==========================
     async function loadHosts() {
+
         const selectedDepartmentsList = Array.from(
-            document.querySelectorAll('#departments-list input:checked')
+            document.querySelectorAll(
+                '#departments-list input:checked'
+            )
         ).map(c => parseInt(c.value));
 
         const selectedWorkstationsList = Array.from(
-            document.querySelectorAll('#workstations-list input:checked')
+            document.querySelectorAll(
+                '#workstations-list input:checked'
+            )
         ).map(c => parseInt(c.value));
 
-        const hostsList = document.getElementById('hosts-list');
+        const hostsList =
+            document.getElementById('hosts-list');
 
         if (selectedDepartmentsList.length === 0) {
 
@@ -247,38 +368,37 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             syncHosts();
-            return;
 
+            return;
         }
 
         try {
-            const response = await fetch('{{ route("get.participants.by.filters") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    departments: selectedDepartmentsList,
-                    workstations: selectedWorkstationsList
-                })
-            });
+
+            const response = await fetch(
+                '{{ route("get.participants.by.filters") }}',
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+
+                    body: JSON.stringify({
+                        departments: selectedDepartmentsList,
+                        workstations: selectedWorkstationsList
+                    })
+                }
+            );
 
             const result = await response.json();
 
-            if (!response.ok) {
-                hostsList.innerHTML = `
-                    <p class="empty">
-                        Error ${response.status} al cargar anfitriones
-                    </p>
-                `;
-                return;
-            }
-
-            const hosts = result.anfitriones || [];
+            const hosts =
+                result.anfitriones || [];
 
             if (hosts.length === 0) {
+
                 hostsList.innerHTML = `
                     <p class="empty">
                         No hay anfitriones disponibles
@@ -286,42 +406,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
 
                 syncHosts();
+
                 return;
             }
 
             let html = '';
 
             hosts.forEach(host => {
-                const checked = selectedHosts.includes(host.id) ? 'checked' : '';
+
+                const checked =
+                    selectedHosts.includes(host.id)
+                    ? 'checked'
+                    : '';
 
                 html += `
                     <label class="check-item">
-                        <input type="checkbox"
-                               class="host-check"
-                               value="${host.id}"
-                               data-name="${host.name}"
-                               data-department="${host.department_name || 'Sin departamento'}"
-                               data-workstation="${host.workstation_name || 'Sin puesto'}"
-                               ${checked}>
+
+                        <input
+                            type="checkbox"
+                            class="host-check"
+                            value="${host.id}"
+
+                            data-name="${host.name}"
+
+                            data-department="${host.department_name || 'Sin departamento'}"
+
+                            data-workstation="${host.workstation_name || 'Sin puesto'}"
+
+                            ${checked}>
 
                         <span>${host.name}</span>
 
-                        <small style="color:#666; margin-left:8px;">
-                            (${host.department_name || 'Sin departamento'} - ${host.workstation_name || 'Sin puesto'})
-                        </small>
                     </label>
                 `;
             });
 
             hostsList.innerHTML = html;
 
-            document.querySelectorAll('.host-check').forEach(check => {
-                check.addEventListener('change', syncHosts);
+            if (selectAllHosts) {
+                selectAllHosts.checked = false;
+            }
+
+            document.querySelectorAll(
+                '.host-check'
+            ).forEach(check => {
+
+                check.addEventListener(
+                    'change',
+                    syncHosts
+                );
             });
 
             syncHosts();
 
         } catch (error) {
+
             console.error(error);
 
             hostsList.innerHTML = `
@@ -332,12 +471,94 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    document.querySelectorAll('#departments-list input').forEach(check => {
-        check.addEventListener('change', () => {
-            syncDepartments();
-            loadWorkstations();
-            loadHosts();
-        });
+
+    // ==========================
+    // SELECCIONAR TODOS
+    // DEPARTAMENTOS
+    // ==========================
+    if (selectAllDepartments) {
+
+        selectAllDepartments.addEventListener(
+            'change',
+            function () {
+
+                document.querySelectorAll(
+                    '#departments-list input'
+                ).forEach(input => {
+
+                    input.checked = this.checked;
+                });
+
+                syncDepartments();
+                loadWorkstations();
+                loadHosts();
+            }
+        );
+    }
+
+
+    // ==========================
+    // SELECCIONAR TODOS
+    // PUESTOS
+    // ==========================
+    if (selectAllWorkstations) {
+
+        selectAllWorkstations.addEventListener(
+            'change',
+            function () {
+
+                document.querySelectorAll(
+                    '#workstations-list input'
+                ).forEach(input => {
+
+                    input.checked = this.checked;
+                });
+
+                syncWorkstations();
+            }
+        );
+    }
+
+
+    // ==========================
+    // SELECCIONAR TODOS
+    // ANFITRIONES
+    // ==========================
+    if (selectAllHosts) {
+
+        selectAllHosts.addEventListener(
+            'change',
+            function () {
+
+                document.querySelectorAll(
+                    '.host-check'
+                ).forEach(input => {
+
+                    input.checked = this.checked;
+                });
+
+                syncHosts();
+            }
+        );
+    }
+
+
+    // ==========================
+    // EVENTOS DEPARTAMENTOS
+    // ==========================
+    document.querySelectorAll(
+        '#departments-list input'
+    ).forEach(check => {
+
+        check.addEventListener(
+            'change',
+            () => {
+
+                syncDepartments();
+                loadWorkstations();
+                loadHosts();
+            }
+        );
     });
 
     syncDepartments();

@@ -87,11 +87,11 @@
     @if ($currentInstitution->name == 'Universidad Mundo Imperial')
 
     <div class="form-row">
-        <div class="form-group flex-1" id="hours_manual_container">
-            <label id="hours_label" for="hours">Horas</label>
-            <input type="number" id="hours" class="form-control" value="{{ old('hours') }}">
-        </div>
-
+        <input type="number"
+            name="hours"
+            id="hours"
+            class="form-control"
+            value="{{ old('hours') }}">
         <div class="form-group flex-1">
             <label for="credits">Créditos</label>
             <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
@@ -156,40 +156,6 @@
                 <p id="image-name-sig2" class="file-name"></p>
             </div>
         </div>
-
-
-        {{--Seleccion de Temas
-        <div class="form-group m-3">
-            <label for="template_topics">Temas desde biblioteca</label>
-
-            <select name="template_topics[]" id="template_topics" class="form-control" multiple>
-                @foreach($templates as $template)
-                <option value="{{ $template->id }}">
-                    {{ $template->title }}
-                </option>
-                @endforeach
-            </select>
-
-            <small class="text-muted">
-                Puedes seleccionar varios manteniendo presionada la tecla CTRL.
-            </small>
-        </div>
-
-        <div class="form-group m-3">
-            <label for="template_subtopics">Subtemas desde biblioteca</label>
-
-            <select name="template_subtopics[]" id="template_subtopics" class="form-control" multiple>
-                @foreach($subtopicTemplates as $subtopics)
-                <option value="{{ $subtopics->id }}">
-                    {{ $subtopics->title }}
-                </option>
-                @endforeach
-            </select>
-
-            <small class="text-muted">
-                Puedes seleccionar varios manteniendo presionada la tecla CTRL.
-            </small>
-        </div> --}}
 
         <button type="submit" class="btn-submit">
             Guardar Curso
@@ -300,26 +266,26 @@
     function toggleHibrido() {
 
         if (!modalitySelect) return;
+if (modalitySelect.value === 'hibrida') {
 
-        if (modalitySelect.value === 'hibrida') {
+    if (ponderacion)    ponderacion.style.display = 'block';
+    if (hibridoSection) hibridoSection.style.display = 'block';
 
-            if (ponderacion)    ponderacion.style.display = 'block';
-            if (hibridoSection) hibridoSection.style.display = 'block';
+    if (hoursContainer) hoursContainer.style.display = 'block';
+    if (hoursInput) hoursInput.readOnly = true;
 
-            if (hoursContainer) hoursContainer.style.display = 'none';
+} else {
 
-        } else {
+    if (ponderacion)    ponderacion.style.display = 'none';
+    if (hibridoSection) hibridoSection.style.display = 'none';
 
-            if (ponderacion)    ponderacion.style.display = 'none';
-            if (hibridoSection) hibridoSection.style.display = 'none';
+    if (hoursContainer) hoursContainer.style.display = 'block';
+    if (hoursInput) hoursInput.readOnly = false;
 
-            if (hoursContainer) hoursContainer.style.display = 'block';
-
-            // limpiar selección
-            if (coursesSelect) coursesSelect.selectedIndex = -1;
-            if (totalHoursInput) totalHoursInput.value = '';
-            if (hoursInput) hoursInput.value = '';
-        }
+    if (coursesSelect) coursesSelect.selectedIndex = -1;
+    if (totalHoursInput) totalHoursInput.value = '';
+    if (hoursInput) hoursInput.value = '';
+}
     }
 
     if (modalitySelect) {
@@ -331,22 +297,27 @@
        6. SUMA AUTOMÁTICA DE HORAS
     ============================ */
     if (coursesSelect) {
+    coursesSelect.addEventListener('change', function () {
 
-        coursesSelect.addEventListener('change', function () {
+        let total = 0;
 
-            let total = 0;
-
-            Array.from(this.selectedOptions).forEach(option => {
-                total += parseInt(option.dataset.hours || 0);
-            });
-
-            // mostrar total
-            if (totalHoursInput) totalHoursInput.value = total;
-
-            // guardar en BD
-            if (hoursInput) hoursInput.value = total;
+        Array.from(this.selectedOptions).forEach(option => {
+            total += Number(option.dataset.hours || 0);
         });
-    }
+
+        // Mostrar total visible
+        if (totalHoursInput) {
+            totalHoursInput.value = total;
+        }
+
+        // Guardar en el campo real
+        if (hoursInput) {
+            hoursInput.value = total;
+        }
+
+        console.log('Horas calculadas:', total);
+    });
+}
 
 })();
 </script>

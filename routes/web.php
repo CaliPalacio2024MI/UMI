@@ -125,7 +125,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::prefix('cursos/{course}/periodos')->name('courses.periods.')->group(function () {
         Route::get('/', [CoursePeriodsController::class, 'index'])->name('index');
         Route::post('/', [CoursePeriodsController::class, 'store'])->name('store');
+        Route::put('/{period}', [CoursePeriodsController::class, 'update'])->name('update');
         Route::delete('/{period}', [CoursePeriodsController::class, 'destroy'])->name('destroy');
+        Route::patch('/{period}/toggle', [CoursePeriodsController::class, 'toggle'])->name('toggle');
 
         // Gestión de usuarios del período
         Route::get('/{period}/usuarios', [CoursePeriodsController::class, 'users'])->name('users');
