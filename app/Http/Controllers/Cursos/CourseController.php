@@ -375,9 +375,12 @@ public function show(Course $course)
 
     $topics = $course->topics;
 
+    $periods = $course->periods;
+
     // Retornar vista con TODAS las variables
     return view('layouts.Cursos.show', compact(
         'departments',
+        'periods',
         'course',
         'topics',
         'progress',

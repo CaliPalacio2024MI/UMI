@@ -339,6 +339,14 @@
 
             <div class="right-controls">
 
+                {{-- Asistencia --}}
+                @if(isset($periods) && $periods->count() > 0)
+                    <button class="btn-guide"
+                    onclick="window.location.href='{{ route('courses.periods.attendance', [$course, $periods->first()]) }}' ">
+                        📊 Asistencia
+                    </button>
+                @endif        
+
                 {{-- GUÍA --}}
                 @if($course->guide_material_path)
                     <button class="btn-guide" onclick="openGuide('{{ asset('storage/' . $course->guide_material_path) }}')">

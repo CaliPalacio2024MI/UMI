@@ -42,10 +42,25 @@ class CoursePeriodsController extends Controller
         ]);
         
         $validated['is_active'] = true;
+        $validated['attendance_enabled'] = true;
         
         $course->periods()->create($validated);
         
         return redirect()->back()->with('success', 'Período creado exitosamente');
+    }
+
+    public function update(Request $request, Course $course, CoursePeriod $period)
+    {
+        $this->authorize('update', $course);
+        
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+            
+        $period->update($validated);
+            
+        return redirect()->back()->with('success', 'Vigencia actualizada correctamente');
     }
 
     /**
@@ -168,5 +183,16 @@ public function attendance(Course $course, CoursePeriod $period)
     $periods = collect([$period]);
     
     return view('layouts.Cursos.attendance', compact('course', 'attendances', 'periods', 'period'));
+}
+
+public function toggle($courseId, $periodId)
+{
+    $period = \App\Models\Cursos\CoursePeriod::findOrFail($periodId);
+
+    $period->attendance_enabled = !$period->attendance_enabled;
+
+    $period->save();
+
+    return back()->with('success', 'Estado actualizado correctamente');
 }
 }

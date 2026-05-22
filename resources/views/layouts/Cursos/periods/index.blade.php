@@ -1,122 +1,225 @@
 @extends('layouts.app')
 
+@vite('resources/css/Cursos/periods.css')
+@vite('resources/css/Cursos/horarios.css')
+
 @section('title', 'Períodos - ' . $course->title)
 
 @section('content')
-<div style="max-width: 1400px; margin: 0 auto; padding: 30px;">
-    
-    {{-- Header --}}
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 30px; color: white; margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="margin: 0 0 10px 0; font-size: 2em;">📅 Gestión de Vigencia</h1>
-                <p style="margin: 0; opacity: 0.9;">{{ $course->title }}</p>
-            </div>
-            <a href="{{ route('Cursos.index') }}" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                ← Volver a Cursos
-            </a>
+<div class="periods-container">
+
+    {{-- Encabezado --}}
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+
+        {{-- Izquierda --}}
+        <div>
+            <h1 style="font-size: 28px; font-weight: 800; color: #1e293b;">
+                Vigencias: {{ $course->title }}
+            </h1>
+
+            <p style="color: #64748b;">
+                Gestion de periodos y acceso del curso virtual
+            </p>
         </div>
+
+        {{-- Derecha --}}
+        <a href="{{ route('Cursos.index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Salir
+        </a>
     </div>
 
-    
+    <div class="horarios-layout">
     {{-- Formulario crear período --}}
-    <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
-        <h3 style="margin: 0 0 20px 0;">➕ Crear Nueva Vigencia</h3>
-        <form action="{{ route('courses.periods.store', $course) }}" method="POST" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: end;">
+    <div class="horarios-form-section">
+    <div class="card-custom">
+
+        <div class="header-accent-blue">
+            <i class="fas fa-calendar-plus"></i>
+            <span>Nueva Periodo</span>
+        </div>
+
+        <div style="padding:20px;">
+
+        <form action="{{ route('courses.periods.store',$course) }}" method="POST">
+
             @csrf
-            <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Fecha Inicio</label>
-                <input type="date" name="start_date" min="{{ now()->format('Y-m-d') }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+
+            <div style="display:flex; flex-direction:column; gap:15px;">
+
+                {{-- Fecha de inicio --}}
+                <div class="form-group">
+                    <label class="label-custom">
+                        Fecha inicio
+                    </label>
+                    
+                    <input type="date"
+                            name="start_date"
+                            min="{{ now()->format('Y-m-d') }}"
+                            required
+                            class="form-control-custom">
+                </div>
+
+                {{-- Fecha fin --}}
+                <div class="form-group">
+                    <label class="label-custom">
+                        Fecha fin
+                    </label>
+
+                    <input  type="date"
+                            name="end_date"
+                            min="{{ now()->format('Y-m-d') }}"
+                            required
+                            class="form-control-custom">
+                </div>
+
+                {{-- Boton --}}
+                <button type="submit" class="btn-primary-custom">
+                    <i class="fas fa-save"></i>
+                    Registrar Vigencia
+                </button>
             </div>
-            <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Fecha Fin</label>
-                <input type="date" name="end_date" min="{{ now()->format('Y-m-d') }}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            </div>
-            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">
-                ✓ Crear vigencia
-            </button>
         </form>
+        
+    </div>
+    </div>
     </div>
 
-    {{-- Lista de períodos --}}
-    <div style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead style="background: #f8f9fa;">
-                <tr>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Fecha Inicio</th>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Fecha Fin</th>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Estado</th>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333;">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($periods as $period)
-                @php
-                    $today = \Carbon\Carbon::today();
-                    $estado = 'No iniciado';
-                    $color = '#6c757d';
-                    $icon = '⏳';
-                    
-                    if ($today->lessThan($period->start_date)) {
+
+    <div class="horarios-tabla-section">
+
+        <div class="card-custom">
+
+            <div class="card-header-custom">
+                <i class="fas fa-list-ul"></i>
+                <strong>Periodos Registrados</strong>
+            </div>
+
+            {{-- Lista de períodos --}}
+            <div class="table-responsive">
+                <table class="table-custom-sessions">
+                    <thead>
+                        <tr>
+                            <th style="padding: 18px; text-align: center; font-weight: 700; color: white;">Fecha Inicio</th>
+                            <th style="padding: 18px; text-align: center; font-weight: 700; color: white;">Fecha Fin</th>
+                            <th style="padding: 18px; text-align: center; font-weight: 700; color: white;">Asist.</th>
+                            <th style="padding: 18px; text-align: center; font-weight: 700; color: white;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($periods as $period)
+                        @php
+                        $today = \Carbon\Carbon::today();
                         $estado = 'No iniciado';
                         $color = '#6c757d';
                         $icon = '⏳';
-                    } elseif ($today->greaterThan($period->end_date)) {
+                        
+                        if ($today->lessThan($period->start_date)) {
+                        $estado = 'No iniciado';
+                        $color = '#6c757d';
+                        $icon = '⏳';
+                        } elseif ($today->greaterThan($period->end_date)) {
                         $estado = 'Finalizado';
                         $color = '#dc3545';
                         $icon = '✓';
-                    } else {
+                        } else {
                         $estado = 'Activo';
                         $color = '#28a745';
                         $icon = '🟢';
-                    }
-                @endphp
-                <tr style="border-bottom: 1px solid #dee2e6;">
-                    <td style="padding: 15px; text-align: center; font-weight: 500;">{{ $period->start_date->format('d/m/Y') }}</td>
-                    <td style="padding: 15px; text-align: center; font-weight: 500;">{{ $period->end_date->format('d/m/Y') }}</td>
-                    <td style="padding: 15px; text-align: center;">
-                        <span style="background: {{ $color }}20; color: {{ $color }}; padding: 6px 14px; border-radius: 5px; font-size: 0.9em; font-weight: 600;">
-                            {{ $icon }} {{ $estado }}
-                        </span>
-                    </td>
-                    <td style="padding: 15px; text-align: center;">
-                        <div style="display: flex; gap: 8px; justify-content: center;">
-                            {{-- Botón Ver Asistencia --}}
-                            <a href="{{ route('courses.periods.attendance', [$course, $period]) }}" 
-                               style="background: #667eea; color: white; border: none; padding: 8px 14px; border-radius: 5px; text-decoration: none; font-size: 0.9em; display: inline-flex; align-items: center; gap: 5px;">
+                        }
+                        @endphp
+                        <tr style="border-bottom: 1px solid #f0f0f0; transition:0.2s">
+                            <td style="padding: 18px; text-align: center; font-weight: 500;">{{ $period->start_date->format('d/m/Y') }}</td>
+                            <td style="padding: 18px; text-align: center; font-weight: 500;">{{ $period->end_date->format('d/m/Y') }}</td>
+                            <td class="text-center">
+
+                                <form action="{{ route('courses.periods.toggle', [$course, $period]) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+
+                                    <button type="submit" style="background:none; border:none; cursor:pointer;">
+
+                                        <i class="fas 
+                                            {{ $period->attendance_enabled
+                                            ? 'fa-toggle-on text-success'
+                                            : 'fa-toggle-off text-muted'
+                                            }}"
+                                            style="font-size:22px;">
+                                        </i>
+
+                                    </button>
+                                </form>
+
+                        </td>
+
+                        <td class="text-center" style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                                {{-- Botón Ver Asistencia
+                                <a href="{{ route('courses.periods.attendance', [$course, $period]) }}" 
+                                style="background: #667eea; color: white; border: none; padding: 8px 14px; border-radius: 5px; text-decoration: none; font-size: 0.9em; display: inline-flex; align-items: center; gap: 5px;">
                                 📊 Asistencia
-                            </a>
-                            
-                            {{-- Botón Asignar Usuarios --}}
-                            <button 
-                                onclick="openUsersModal({{ $period->id }}, '{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}')"
-                                style="background: #28a745; color: white; border: none; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-size: 0.9em; display: inline-flex; align-items: center; gap: 5px;">
-                                👥 Usuarios
-                            </button>
-                            
-                            {{-- Botón Eliminar --}}
-                            <form action="{{ route('courses.periods.destroy', [$course, $period]) }}" method="POST" style="display: inline;" onsubmit="return confirm('¿Eliminar este período? Los usuarios asignados perderán acceso.');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" style="background: #dc3545; color: white; border: none; padding: 8px 14px; border-radius: 5px; cursor: pointer; font-size: 0.9em; display: inline-flex; align-items: center; gap: 5px;">
-                                    🗑️ Eliminar
+                                </a> --}}
+                                {{-- Boton editar --}}
+                                <button onclick="toggleEditRow(event, '{{ $period->id }}')"
+                                        class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
                                 </button>
+                                {{-- Botón Asignar Usuarios anterior --}}
+                                <a onclick="openUsersModal({{ $period->id }}, '{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}')"
+                                    class="btn btn-sm btn-success"
+                                    style="cursos:pointer;">
+                                <i class="fa-solid fa-user-plus"></i>
+                                </a>
+                                {{-- Boton de participantes 
+                                <a href="{{ route('sessions.groups', $period->id) }}"
+                                    class="btn btn-sm btn-success">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                </a> --}}
+                                {{-- Botón Eliminar --}}
+                                <form action="{{ route('courses.periods.destroy', [$course, $period]) }}" method="POST" style="display: inline;" onsubmit="return confirm('¿Eliminar este período? Los usuarios asignados perderán acceso.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn-delete-session">
+                                        <i class="fa-solid fa-delete-left"></i>
+                                    </button>
+                                </form>
+                        </td>
+                    </tr>
+
+                    <tr id="edit-row-{{ $period->id }}" style="display:none;" class="edit-row-active">
+                        <td colspan="4">
+
+                            <form action="{{ route('courses.periods.update', [$course, $period]) }}" method="POST" style="display:flex; gap:10px;">
+                                @csrf
+                                @method('PUT')
+
+                                <input type="date" name="start_date" value="{{ $period->start_date->format('Y-m-d') }}" class="form-control-custom">
+
+                                <input type="date" name="end_date" value="{{ $period->end_date->format('Y-m-d') }}" class="form-control-custom">
+
+                                <button class="btn btn-primary btn-sm">
+                                    Ok
+                                </button>
+
                             </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" style="padding: 40px; text-align: center; color: #999;">
-                        <div style="font-size: 3em; margin-bottom: 10px;">📅</div>
-                        <div style="font-size: 1.2em;">No hay períodos creados. Crea el primero arriba.</div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+
+                    @empty
+                    <tr>
+                        <td colspan="4" style="padding: 40px; text-align: center; color: #999;">
+                            <div style="font-size: 3em; margin-bottom: 10px;">📅</div>
+                            <div style="font-size: 1.2em;">No hay períodos creados. Crea el primero arriba.</div>
+                        </td>
+                    </tr>
+                    @endforelse
+                    </tbody>
+</table>
+
+            </div>
+        </div>
     </div>
 </div>
+
 
 {{-- Modal Asignar Usuarios --}}
 <div id="usersModal" style="display: none; position: fixed; top: 0; right: 0; width: 450px; height: 100vh; background: white; box-shadow: -2px 0 15px rgba(0,0,0,0.3); z-index: 9999; overflow-y: auto;">
@@ -159,6 +262,16 @@
 <script>
 let currentPeriodId = null;
 let allUsers = [];
+
+window.toggleEditRow = function (e, id) {
+    e.preventDefault ();
+
+    const row = document.getElementById('edit-row-' + id);
+
+    if (!row) return;
+
+    row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none'; 
+};
 
 function openUsersModal(periodId, periodRange) {
     currentPeriodId = periodId;
