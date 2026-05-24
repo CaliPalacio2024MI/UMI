@@ -10,6 +10,7 @@ use App\Models\Cursos\CourseSession;
 use App\Services\ExternalApiService;
 use App\Models\Users\Institution;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class GroupsController extends Controller
 {
@@ -269,12 +270,19 @@ public function getParticipantsByFilters(Request $request)
                 ->get();
         }
     }
+    $attendanceMap = DB::table('course_session_attendances')
+        ->where('course_session_id', $session->id)
+        ->get()
+        ->keyBy(function ($item) {
+           return strtoupper(trim($item->rfc));
+        });
 
     $pdf = Pdf::loadView(
         'pdf.group-list',
         compact(
             'session',
-            'hosts'
+            'hosts',
+            'attendanceMap'
         )
     );
 

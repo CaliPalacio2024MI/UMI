@@ -77,21 +77,19 @@
         <small class="text-muted">Mantén presionada la tecla CTRL para seleccionar múltiples cursos</small>
     </div>
 
-    <div class="form-group">
-        <label>Total de horas del curso híbrido</label>
-        <input type="number" id="total_hours" class="form-control" readonly>
-        <small class="text-muted">La suma automática de las horas de los cursos seleccionados</small>
-    </div>
 </div>
       {{-- Campos especiales para Universidad Mundo Imperial --}}
     @if ($currentInstitution->name == 'Universidad Mundo Imperial')
 
-    <div class="form-row">
+<div class="form-row">
+    <div class="form-group flex-1" id="hours_container">
+        <label for="hours">Horas</label>
         <input type="number"
-            name="hours"
-            id="hours"
-            class="form-control"
-            value="{{ old('hours') }}">
+               name="hours"
+               id="hours"
+               class="form-control"
+               value="{{ old('hours') }}">
+    </div>
         <div class="form-group flex-1">
             <label for="credits">Créditos</label>
             <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
@@ -187,7 +185,6 @@
 
     const hoursInput        = document.getElementById('hours'); //  EL QUE SE GUARDA
     const coursesSelect     = document.getElementById('courses_select');
-    const totalHoursInput   = document.getElementById('total_hours');
 
     /* ============================
        3. Cargar puestos
@@ -267,24 +264,23 @@
 
         if (!modalitySelect) return;
 if (modalitySelect.value === 'hibrida') {
-
-    if (ponderacion)    ponderacion.style.display = 'block';
+    if (ponderacion) ponderacion.style.display = 'block';
     if (hibridoSection) hibridoSection.style.display = 'block';
 
     if (hoursContainer) hoursContainer.style.display = 'block';
     if (hoursInput) hoursInput.readOnly = true;
 
 } else {
-
-    if (ponderacion)    ponderacion.style.display = 'none';
+    if (ponderacion) ponderacion.style.display = 'none';
     if (hibridoSection) hibridoSection.style.display = 'none';
 
     if (hoursContainer) hoursContainer.style.display = 'block';
-    if (hoursInput) hoursInput.readOnly = false;
+    if (hoursInput) {
+        hoursInput.readOnly = false;
+        hoursInput.value = '';
+    }
 
     if (coursesSelect) coursesSelect.selectedIndex = -1;
-    if (totalHoursInput) totalHoursInput.value = '';
-    if (hoursInput) hoursInput.value = '';
 }
     }
 
@@ -296,29 +292,19 @@ if (modalitySelect.value === 'hibrida') {
     /* ============================
        6. SUMA AUTOMÁTICA DE HORAS
     ============================ */
-    if (coursesSelect) {
+if (coursesSelect) {
     coursesSelect.addEventListener('change', function () {
-
         let total = 0;
 
         Array.from(this.selectedOptions).forEach(option => {
             total += Number(option.dataset.hours || 0);
         });
 
-        // Mostrar total visible
-        if (totalHoursInput) {
-            totalHoursInput.value = total;
-        }
-
-        // Guardar en el campo real
         if (hoursInput) {
             hoursInput.value = total;
         }
-
-        console.log('Horas calculadas:', total);
     });
 }
-
 })();
 </script>
 

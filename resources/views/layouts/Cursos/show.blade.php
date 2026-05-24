@@ -414,7 +414,18 @@
 
                 @foreach($hosts as $index => $host)
 
-                    <tr data-rfc="{{ strtoupper($host->RFC ?? '') }}">
+                    @php
+                        $hostRfc = strtoupper(trim($host->RFC ?? $host->rfc ?? ''));
+
+                        $sessionAttendances = $attendanceMap[$session->id] ?? collect();
+
+                        $attendance = $sessionAttendances->firstWhere('rfc', $hostRfc);
+
+                        $hasAttendance = $attendance ? true : false;
+                    @endphp
+
+                    <tr data-rfc="{{ $hostRfc }}"
+                        class="{{ $hasAttendance ? 'attendance-row-present' : '' }}">
 
                         {{-- NÚMERO DE LISTA --}}
                         <td>
@@ -453,8 +464,8 @@
 
                         {{-- ASISTENCIA --}}
                         <td class="attendance-status">
-                            <span class="attendance-badge pending">
-                                Pendiente
+                            <span class="attendance-badge {{ $hasAttendance ? 'present' : 'pending' }}">
+                                {{ $hasAttendance ? 'Asistió' : 'Pendiente' }}
                             </span>
                         </td>
 
@@ -1438,7 +1449,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-
 <script>
 let selectedSessionData = {
     id: null,
@@ -1505,7 +1515,7 @@ function extraerRFC(valorQR) {
         .replace(/[^A-Z0-9Ñ&]/g, '');
 }
 
-function validarAsistenciaPorRFC(valorQR) {
+async function validarAsistenciaPorRFC(valorQR) {
     const rfc = extraerRFC(valorQR);
 
     if (!rfc) {
@@ -1560,16 +1570,71 @@ function validarAsistenciaPorRFC(valorQR) {
         return false;
     }
 
-    if (badge) {
-        badge.textContent = 'Asistió';
-        badge.classList.remove('pending');
-        badge.classList.add('present');
+    try {
+        const response = await fetch(`/sessions/${selectedSessionData.id}/attendance/qr`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                rfc: rfc
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            alert(data.message || 'No se pudo guardar la asistencia.');
+            return false;
+        }
+
+        if (badge) {
+            badge.textContent = 'Asistió';
+            badge.classList.remove('pending');
+            badge.classList.add('present');
+        }
+
+        fila.classList.add('attendance-row-present');
+
+        alert('Asistencia registrada correctamente.');
+        return true;
+
+    } catch (error) {
+        console.error('Error al guardar asistencia:', error);
+        alert('Error al guardar la asistencia.');
+        return false;
+    }
+}
+
+function cerrarCamara() {
+    scanning = false;
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
     }
 
-    fila.classList.add('attendance-row-present');
+    const video = document.getElementById('camera-preview');
 
-    alert('Asistencia registrada correctamente.');
-    return true;
+    if (video) {
+        video.srcObject = null;
+    }
+}
+
+function cerrarCamaraYModal() {
+    cerrarCamara();
+
+    const qrModal = document.getElementById('qrModal');
+
+    if (qrModal) {
+        const modal = bootstrap.Modal.getInstance(qrModal);
+
+        if (modal) {
+            modal.hide();
+        }
+    }
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1606,7 +1671,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             scanning = true;
 
-            function scanLoop() {
+            async function scanLoop() {
                 if (!scanning) return;
 
                 if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -1631,7 +1696,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (code && code.data) {
                         scanning = false;
 
-                        const registrado = validarAsistenciaPorRFC(code.data);
+                        const registrado = await validarAsistenciaPorRFC(code.data);
 
                         if (registrado) {
                             cerrarCamaraYModal();
@@ -1667,26 +1732,6 @@ document.addEventListener("DOMContentLoaded", function () {
         cerrarCamara();
     });
 });
-
-function cerrarCamara() {
-    scanning = false;
-
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-    }
-}
-
-function cerrarCamaraYModal() {
-    cerrarCamara();
-
-    const qrModal = document.getElementById('qrModal');
-    const modal = bootstrap.Modal.getInstance(qrModal);
-
-    if (modal) {
-        modal.hide();
-    }
-}
 </script>
 {{-- ========== FUNCIONES DE LA TORTUGUITA ========== --}}
 <script>

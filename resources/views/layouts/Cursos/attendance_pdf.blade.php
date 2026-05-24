@@ -1,232 +1,320 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Lista de Participantes</title>
+    <meta charset="utf-8">
 
-<style>
+    <style>
+        @page {
+            margin: 22px 28px;
+        }
 
-body {
-    font-family: Arial, sans-serif;
-    font-size: 12pt;
-    color: #1a2942;
-    margin: 0;
-}
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 10px;
+            color: #061d33;
+        }
 
-/* HEADER */
-.header-table {
-    width: 100%;
-    margin-bottom: 12px;
-}
-.header-table td {
-    vertical-align: middle;
-}
-.title {
-    font-size: 16pt;
-    font-weight: normal;
-    text-align: center;
-}
-.logo-left { height: 60px; }
-.logo-right { height: 60px; }
+        .header-table {
+            width: 100%;
+            margin-bottom: 34px;
+        }
 
-/* BLOQUES */
-.label-blue {
-    background: #1a2942;
-    color: #fff;
-    padding: 8px 14px;   /* 🔥 más alto */
-    border-radius: 8px;
-    font-size: 12pt;
-    text-align: center;
-    white-space: nowrap;
-    font-weight: bold;
-}
+        .logo-left {
+            width: 120px;
+            text-align: left;
+            vertical-align: top;
+        }
 
-.value-white {
-    background: #eef2f6;
-    padding: 8px 14px;   /* 🔥 más alto */
-    border-radius: 8px;
-    text-align: center;
-    font-weight: normal;
-    font-size: 12pt;
-}
+        .logo-right {
+            width: 140px;
+            text-align: right;
+            vertical-align: top;
+        }
 
-.info-row td {
-    vertical-align: middle;
+        .icon-cell {
+            width: 70px;
+            text-align: center;
+            vertical-align: middle;
+        }
 
-}
+        .title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            color: #071f38;
+        }
 
-/* FILAS */
-.course-row {
-    width: 85%; /* Tu configuración actual */
-    margin-bottom: 8px;
-    border-collapse: collapse; /* Recomendado para que no se separen las celdas */
-}
+        .info-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            margin-bottom: 20px;
+        }
 
-.info-row {
-    width: 100%;
-    margin-bottom: 12px;
-}
+        .label {
+            background: #061d33;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 8px 9px;
+            border-radius: 5px;
+            text-align: center;
+            width: 118px;
+            font-size: 10px;
+        }
 
-/* TABLA */
-table.main {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10pt;
-    border: 1px solid #1a2942;
-}
-thead { display: table-header-group; }
+        .label-small {
+            background: #061d33;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 7px 7px;
+            border-radius: 5px;
+            text-align: center;
+            width: 65px;
+            font-size: 10px;
+        }
 
-th {
-    background: #1a2942;
-    color: white;
-    padding: 6px 4px;
-    text-align: center;
-    font-weight: bold;
-    border: none;
-    border-bottom: 2px solid #1a2942;
-}
+        .value {
+            border: 1px solid #aeb7c2;
+            padding: 7px 10px;
+            border-radius: 5px;
+            text-align: center;
+            background: #ffffff;
+            font-size: 10px;
+        }
 
-td {
-    padding: 6px 4px;
-    border: none;
-    text-align: center;
-}
+        .list-box {
+            border: 1px solid #aeb7c2;
+            border-radius: 5px;
+            min-height: 455px;
+            overflow: hidden;
+        }
 
-tr:nth-child(even) {
-    background: #f7f9fb;
-}
+        table.participants {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-tr {
-    page-break-inside: avoid;
-}
+        .participants thead tr {
+            background: #061d33;
+        }
 
-/* FOOTER */
-.footer {
-    position: fixed;
-    bottom: 8mm;
-    width: 100%;
-    text-align: center;
-    font-size: 7pt;
-    color: #555;
-}
+        .participants th {
+            color: #ffffff;
+            padding: 7px 4px;
+            font-size: 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #061d33;
+        }
+        .participants td {
+            padding: 5px 4px;
+            font-size: 8px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #c7d0da;
+        }
 
-.bordered-field {
-    border: 1px solid black;        
-    background-color: transparent;  
-    padding: 8px 14px;              
-    border-radius: 8px;
-    color: #1a2942;                 
-    font-weight: normal;           
-    text-align: center;
-}
+        .col-num {
+            width: 25px;
+        }
 
-</style>
+        .col-name {
+            width: 180px;
+        }
+
+        .col-puesto {
+            width: 115px;
+        }
+
+        .col-rfc {
+           width: 90px;
+        }
+
+        .col-date {
+            width: 80px;
+        }
+
+        .col-score {
+            width: 65px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 12px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7px;
+            color: #061d33;
+        }
+
+        .footer p {
+            margin: 2px 0;
+        }
+    </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <table class="header-table">
-<tr>
-    <td width="30%">
-        <img src="{{ public_path('storage/logos/MI.png') }}" class="logo-left">
-    </td>
-    <td width="40%" class="title">
-        LISTA DE PARTICIPANTES
-    </td>
-    <td width="30%" style="text-align:right;">
-        <img src="{{ public_path('storage/logos/palacio-mundo-imperial.jpg') }}" class="logo-right">
-    </td>
-</tr>
-</table>
-
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
     <tr>
-        <td style="width: 85%; vertical-align: top;">
-            <table class="course-row" style="width: 100%;">
-                <tr>
-                    <td width="120">
-                        <div class="label-blue">Nombre del curso:</div>
-                    </td>
-                    <td>
-                        <div class="bordered-field">{{ $course->title }}</div>
-                    </td>
-                </tr>
-            </table>
+        <td class="logo-left">
+            <img
+                src="file://{{ public_path('images/logos/logomundoimperial.png') }}"
+                style="width: 95px; height: auto;"
+            >
         </td>
 
-        <td style="width: 15%; text-align: center; vertical-align: middle;">
-            <img src="{{ public_path('storage/logos/ordenador-portatil.png') }}" style="width: 40px; height: auto;">
+        <td class="title">
+            LISTA DE PARTICIPANTES
+        </td>
+
+        @php
+            $institutionId = $course->institution_id ?? null;
+
+            $propertyLogo = match($institutionId) {
+                2 => 'images/logos/Princess Mundo Imperial.png',
+                1 => 'images/logos/Palacio Mundo Imperial.png',
+                3 => 'images/logos/Pierre Mundo Imperial.png',
+                default => 'images/logos/Universidad Mundo Imperial.png',
+            };
+        @endphp
+
+        <td class="logo-right">
+            <img
+                src="file://{{ public_path($propertyLogo) }}"
+                style="width: 120px; height: auto;"
+            >
         </td>
     </tr>
 </table>
 
-<table class="info-row">
-<tr>
-    <!-- Instructor -->
-    <td width="50">
-        <div class="label-blue">Instructor:</div>
-    </td>
-    <td width="100">
-        <div class="bordered-field">{{ $instructor }}</div>
-    </td>
+<table class="info-table">
 
-    <!-- Inicio -->
-    <td width="30">
-        <div class="label-blue">Fecha<br>Inicio:</div>
-    </td>
-    <td width="70">
-        <div class="bordered-field">{{ $fecha_inicio }}</div>
-    </td>
+    <tr>
+        <td class="label">
+            Nombre del curso:
+        </td>
 
-    <!-- Fin -->
-    <td width="30">
-        <div class="label-blue">Fecha<br>Fin:</div>
-    </td>
-    <td width="70">
-        <div class="bordered-field">{{ $fecha_fin }}</div>
-    </td>
-</tr>
+        <td class="value" colspan="6">
+            {{ $course->title ?? 'N/A' }}
+        </td>
+
+        <td class="icon-cell" colspan="2">
+            <img
+                src="file://{{ public_path('images/icons/desktop-solid-full.svg') }}"
+                width="36"
+                height="36"
+            >
+        </td>
+    </tr>
+
+    <tr>
+        <td class="label">
+            Instructor:
+        </td>
+
+        <td class="value" colspan="3">
+            {{ $instructor ?? 'N/A' }}
+        </td>
+
+        <td class="label-small">
+            Fecha<br>Inicio:
+        </td>
+
+        <td class="value">
+            {{ $fecha_inicio ?? 'N/A' }}
+        </td>
+
+        <td class="label-small">
+            Fecha<br>Fin:
+        </td>
+
+        <td class="value">
+            {{ $fecha_fin ?? 'N/A' }}
+        </td>
+    </tr>
+
 </table>
 
-<!-- TABLA -->
-<table class="main">
-<thead>
-<tr>
-    <th style="width: 5%;">#</th>
-    <th style="width: 32%;">Nombre completo</th>
-    <th style="width: 18%;">Puesto</th>
-    <th style="width: 15%;">RFC</th>
-    <th style="width: 15%;">Fecha y Hora Inicio</th>
-    <th style="width: 15%;">Fecha y Hora Fin</th>
-    <th style="width: 10%;">Calificación</th>
-</tr>
-</thead>
+<div class="list-box">
 
-<tbody>
-@forelse($attendances as $index => $attendance)
-<tr>
-    <td>{{ $index + 1 }}</td>
-    <td style="text-align:left;">{{ $attendance['nombre'] }}</td>
-    <td>{{ $attendance['puesto'] }}</td>
-    <td>{{ $attendance['rfc'] }}</td>
-    <td>{{ $attendance['inicio'] ?? '—' }}</td>
-    <td>{{ $attendance['fin'] ?? '—' }}</td>
-    <td>{{ $attendance['final_score'] ?? '—' }}</td>
-</tr>
-@empty
-<tr>
-    <td colspan="7">No hay participantes inscritos</td>
-</tr>
-@endforelse
-</tbody>
-</table>
+    <table class="participants">
 
-<!-- FOOTER -->
+        <thead>
+            <tr>
+                <th class="col-num">#</th>
+                <th class="col-name">Nombre completo</th>
+                <th class="col-puesto">Puesto</th>
+                <th class="col-rfc">RFC</th>
+                <th class="col-date">Fecha Inicio</th>
+                <th class="col-date">Fecha Fin</th>
+                <th class="col-score">Calificación</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @forelse($attendances as $index => $attendance)
+                <tr>
+                    <td>
+                        {{ $index + 1 }}
+                    </td>
+
+                    <td>
+                        {{ $attendance['nombre'] ?? 'N/A' }}
+                    </td>
+
+                    <td>
+                        {{ $attendance['puesto'] ?? 'N/A' }}
+                    </td>
+
+                    <td>
+                        {{ $attendance['rfc'] ?? 'N/A' }}
+                    </td>
+
+                    <td>
+                        @if(!empty($attendance['started_at']))
+                            {{ \Carbon\Carbon::parse($attendance['started_at'])->format('d/m/Y') }}
+                        @else
+                            —
+                        @endif
+                    </td>
+
+                    <td>
+                        @if(!empty($attendance['completed_at']))
+                            {{ \Carbon\Carbon::parse($attendance['completed_at'])->format('d/m/Y') }}
+                        @else
+                            —
+                        @endif
+                    </td>
+
+                    <td>
+                        @if(array_key_exists('final_score', $attendance) && $attendance['final_score'] !== null)
+                            {{ $attendance['final_score'] }}%
+                        @else
+                            —
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="7">
+                        No hay participantes inscritos
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+
+    </table>
+
+</div>
+
 <div class="footer">
-        Propiedad de {{ $institution_name }}<br>
-        Prohibida su reproducción total o parcial sin previa autorización
-    </div>
+    <p>
+        Propiedad de {{ $institution_name ?? 'Mundo Imperial' }}
+    </p>
+</div>
 
 </body>
 </html>

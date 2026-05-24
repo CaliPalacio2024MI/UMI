@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use App\Models\Group;
 use App\Models\Users\User;
 use App\Services\ExternalApiService;
+use Illuminate\Support\Facades\DB;
 
 class CourseSessionController extends Controller
 {
@@ -232,6 +233,32 @@ public function groups($session)
         'selectedHosts' => $group && method_exists($group, 'hosts')
             ? $group->hosts->pluck('id')->toArray()
             : [],
+    ]);
+}
+public function storeQrAttendance(Request $request, CourseSession $session)
+{
+    $request->validate([
+        'rfc' => 'required|string',
+    ]);
+
+    $rfc = strtoupper(trim($request->rfc));
+
+    DB::table('course_session_attendances')->updateOrInsert(
+        [
+            'course_session_id' => $session->id,
+            'rfc' => $rfc,
+        ],
+        [
+            'attended_at' => now(),
+            'updated_at' => now(),
+            'created_at' => now(),
+        ]
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Asistencia registrada correctamente',
+        'attended_at' => now()->format('H:i:s'),
     ]);
 }
 }

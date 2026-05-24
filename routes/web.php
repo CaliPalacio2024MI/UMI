@@ -50,6 +50,8 @@ use App\Http\Controllers\Api\GroupDataController;
 use App\Http\Controllers\WorkstationController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\Cursos\CourseSessionController;
+use App\Http\Controllers\AttendanceController;
+
 
 
 
@@ -180,6 +182,7 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
 
         //Lector QR
         Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
+        Route::post('/sessions/{session}/attendance/qr', [CourseSessionController::class, 'storeQrAttendance'])->name('sessions.attendance.qr');
 
         // Grupos
         Route::post('/api/workstations-by-departments', [WorkstationController::class, 'byDepartments']);
@@ -196,7 +199,10 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         Route::get('/sync-positions/{property}/{department}', [ExternalDataController::class, 'syncPositions']);
         Route::get('/groups/{session}/export-pdf',[GroupsController::class, 'exportPdf'])->name('groups.export.pdf');
 
-
+        //Virtual grupos
+        Route::get('/cursos/{course}/periodos/{period}/usuarios',[CoursePeriodsController::class, 'usersIndex'])->name('courses.periods.users.index');
+        Route::post('/cursos/periodos/usuarios/guardar',[CoursePeriodsController::class, 'usersStore'])->name('courses.periods.users.store');
+        Route::get('/cursos/{course}/asistencias/virtual/pdf', [CoursePeriodsController::class, 'attendancePdf'])->name('courses.attendance.virtual.pdf');
         // Ruta para mostrar el formulario de creación de grupos
         Route::get('/sessions/{sessionId}/groups/create', [GroupsController::class, 'create'])->name('groups.create');
         Route::get('/sync-properties', [ExternalDataController::class, 'syncProperties']);

@@ -368,11 +368,30 @@
 
                     <td>
 
+                        @php
+
+                            $hostRfc = strtoupper(
+                                trim($host->RFC ?? $host->rfc ?? '')
+                            );
+
+                            $attendance =
+                            $attendanceMap[$hostRfc] ?? null;
+
+                        @endphp
+
+                        @if($attendance)
+
                         {{
                             \Carbon\Carbon::parse(
-                                $session->start_time
-                            )->format('h:i a')
+                                $attendance->attended_at
+                            )->format('h:i:s a')
                         }}
+
+                        @else
+
+                            No asistió
+
+                        @endif
 
                     </td>
 

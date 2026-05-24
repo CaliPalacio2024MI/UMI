@@ -278,129 +278,134 @@ public function store(StoreCourseRequest $request): RedirectResponse
     /**
      * Mostrar detalles de un curso
      */
-public function show(Course $course)
-{
-    $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
+    public function show(Course $course)
+    {
+        $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
 
-    $user = Auth::user();
-    $departments = Department::with('workstations')->get();
+        $user = Auth::user();
+        $departments = Department::with('workstations')->get();
 
-    $course->load([
-        'sessions.groups.hosts.department',
-        'sessions.groups.hosts.workstation'
-    ]);
+        $course->load([
+            'sessions.groups.hosts.department',
+            'sessions.groups.hosts.workstation'
+        ]);
 
-    $hybridCourses = $course->hybridCourses()->get();
+        $attendanceMap = \Illuminate\Support\Facades\DB::table('course_session_attendances')
+            ->whereIn('course_session_id', $course->sessions->pluck('id'))
+            ->get()
+            ->groupBy('course_session_id');
 
-    $progress = 0;
-    $isEnrolled = false;
-    $finalExamData = null;
-    $finalExamActivity = null;
-    $userCompletions = collect();
-    $totalItems = 0;
+        $hybridCourses = $course->hybridCourses()->get();
 
-    if ($user) {
-        $isEnrolled = $user->courses()
-            ->where('course_id', $course->id)
-            ->exists();
+        $progress = 0;
+        $isEnrolled = false;
+        $finalExamData = null;
+        $finalExamActivity = null;
+        $userCompletions = collect();
+        $totalItems = 0;
 
-        if (!$isEnrolled) {
-            // Buscar período activo HOY
-            $currentPeriod = $course->periods()
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
-                ->first();
+        if ($user) {
+            $isEnrolled = $user->courses()
+                ->where('course_id', $course->id)
+                ->exists();
 
-            \Log::info('🔍 Período encontrado para inscripción:', [
-                'course_id' => $course->id,
-                'period_id' => $currentPeriod?->id,
-                'period_name' => $currentPeriod?->name,
-                'today' => now()->format('Y-m-d')
-            ]);
+            if (!$isEnrolled) {
+                // Buscar período activo HOY
+                $currentPeriod = $course->periods()
+                    ->whereDate('start_date', '<=', now())
+                    ->whereDate('end_date', '>=', now())
+                    ->first();
 
-            // Primera vez - inscribir con período actual
-            $user->courses()->attach($course->id, [
-                'progress' => 0,
-                'started_at' => now(),
-                'period_id' => $currentPeriod ? $currentPeriod->id : null
-            ]);
+                \Log::info('🔍 Período encontrado para inscripción:', [
+                    'course_id' => $course->id,
+                    'period_id' => $currentPeriod?->id,
+                    'period_name' => $currentPeriod?->name,
+                    'today' => now()->format('Y-m-d')
+                ]);
 
-            $progress = 0;
-            $isEnrolled = true;
+                // Primera vez - inscribir con período actual
+                $user->courses()->attach($course->id, [
+                    'progress' => 0,
+                    'started_at' => now(),
+                    'period_id' => $currentPeriod ? $currentPeriod->id : null
+                ]);
 
-        } else {
-            // Ya inscrito - leer el progreso guardado
-            $pivotRow = $user->courses()->where('course_id', $course->id)->first();
-            if ($pivotRow && $pivotRow->pivot) {
-                $progress = $pivotRow->pivot->progress;
+                $progress = 0;
+                $isEnrolled = true;
 
-                // Si no tiene started_at, agregarlo UNA VEZ
-                if (!$pivotRow->pivot->started_at) {
-                    $user->courses()->updateExistingPivot($course->id, [
-                        'started_at' => now()
-                    ]);
-                }
+            } else {
+                // Ya inscrito - leer el progreso guardado
+                $pivotRow = $user->courses()->where('course_id', $course->id)->first();
+                if ($pivotRow && $pivotRow->pivot) {
+                    $progress = $pivotRow->pivot->progress;
 
-                // Si no tiene period_id pero existe un período activo, asignarlo
-                if (!$pivotRow->pivot->period_id) {
-                    $currentPeriod = $course->periods()
-                        ->whereDate('start_date', '<=', now())
-                        ->whereDate('end_date', '>=', now())
-                        ->first();
-
-                    if ($currentPeriod) {
+                    // Si no tiene started_at, agregarlo UNA VEZ
+                    if (!$pivotRow->pivot->started_at) {
                         $user->courses()->updateExistingPivot($course->id, [
-                            'period_id' => $currentPeriod->id
+                            'started_at' => now()
                         ]);
+                    }
 
-                        \Log::info('✅ Período asignado a usuario existente:', [
-                            'user_id' => $user->id,
-                            'course_id' => $course->id,
-                            'period_id' => $currentPeriod->id
-                        ]);
+                   // Si no tiene period_id pero existe un período activo, asignarlo
+                    if (!$pivotRow->pivot->period_id) {
+                        $currentPeriod = $course->periods()
+                            ->whereDate('start_date', '<=', now())
+                            ->whereDate('end_date', '>=', now())
+                            ->first();
+
+                        if ($currentPeriod) {
+                            $user->courses()->updateExistingPivot($course->id, [
+                                'period_id' => $currentPeriod->id
+                            ]);
+
+                            \Log::info('✅ Período asignado a usuario existente:', [
+                                'user_id' => $user->id,
+                                'course_id' => $course->id,
+                                'period_id' => $currentPeriod->id
+                            ]);
+                        }
                     }
                 }
             }
+
+            // Completions del usuario
+            $userCompletions = $user->completions->map(function ($item) {
+                return [
+                    'type' => class_basename($item->completable_type),
+                    'id'   => $item->completable_id
+                ];
+            });
+
+            // Examen final
+            $finalExamActivity = $course->finalExam;
+
+            if ($finalExamActivity) {
+                $finalExamData = $user->completions()
+                    ->where('completable_type', Activities::class)
+                    ->where('completable_id', $finalExamActivity->id)
+                    ->first();
+            }
         }
 
-        // Completions del usuario
-        $userCompletions = $user->completions->map(function ($item) {
-            return [
-                'type' => class_basename($item->completable_type),
-                'id'   => $item->completable_id
-            ];
-        });
+        $topics = $course->topics;
 
-        // Examen final
-        $finalExamActivity = $course->finalExam;
+        $periods = $course->periods;
 
-        if ($finalExamActivity) {
-            $finalExamData = $user->completions()
-                ->where('completable_type', Activities::class)
-                ->where('completable_id', $finalExamActivity->id)
-                ->first();
-        }
+        // Retornar vista con TODAS las variables
+        return view('layouts.Cursos.show', compact(
+            'departments',
+            'course',
+            'topics',
+            'progress',
+            'totalItems',
+            'isEnrolled',
+            'finalExamActivity',
+            'finalExamData',
+            'userCompletions',
+            'hybridCourses',
+            'periods'
+        ));
     }
-
-    $topics = $course->topics;
-
-    $periods = $course->periods;
-
-    // Retornar vista con TODAS las variables
-    return view('layouts.Cursos.show', compact(
-        'departments',
-        'course',
-        'topics',
-        'progress',
-        'totalItems',
-        'isEnrolled',
-        'finalExamActivity',
-        'finalExamData',
-        'userCompletions',
-        'hybridCourses',
-        'periods'
-    ));
-}
 
     /**
      * Mostrar formulario de edición

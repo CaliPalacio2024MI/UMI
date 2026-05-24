@@ -62,7 +62,7 @@
             </select>
         </div>
 
-</div>
+
 
         {{-- PONDERACIÓN --}}
         <div id="ponderacionContainer" style="display:none; margin-top:15px;">
