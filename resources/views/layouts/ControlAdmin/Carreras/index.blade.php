@@ -54,7 +54,7 @@
                 <!-- Header -->
                 <div class="card-header">
                     <h4>{{ $clasificacion->name }}</h4>
-                    <span class="count-pill">{{ $clasificacion->careers_count }} {{ $clasificacion->careers_count == 1 ? 'carrera' : 'carreras' }}</span>
+                    
                 </div>
 
                 <!-- Cuerpo -->
