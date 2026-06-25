@@ -21,20 +21,30 @@
                     </div>
                 @endif
 
-                {{-- Campo: Carrera (carrera_id) --}}
+                {{-- Campo: Carrera --}}
                 <div class="form-field lists">
                     <label for="carrera_id">Carrera:</label> 
                     <select id="carrera_id" name="carrera_id" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
                         <option value="">Seleccione una Carrera</option> 
-                        
-                        {{-- La clave foránea en la DB es 'career_id' --}}
                         @foreach ($carreras as $carrera) 
                             <option 
                                 value="{{ $carrera->id }}" 
-                                {{-- Usamos el valor actual de la materia si no hay old input --}}
                                 {{ old('carrera_id', $registro->career_id) == $carrera->id ? 'selected' : '' }}
                             >
                                 {{ $carrera->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Campo: Clasificación --}}
+                <div class="form-field lists">
+                    <label for="career_classification_id_{{ $registro->id }}">Clasificación:</label>
+                    <select id="career_classification_id_{{ $registro->id }}" name="career_classification_id" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
+                        <option value="">Seleccione una Clasificación</option>
+                        @foreach ($clasificaciones as $clasificacion)
+                            <option value="{{ $clasificacion->id }}" {{ old('career_classification_id', $registro->career_classification_id) == $clasificacion->id ? 'selected' : '' }}>
+                                {{ $clasificacion->name }}
                             </option>
                         @endforeach
                     </select>
@@ -55,7 +65,7 @@
                 </div>
 
                 <div class="options">
-                    {{-- Campo: Modalidad (type) --}}
+                    {{-- Campo: Modalidad --}}
                     <div class="form-field Checkboxes">
                         <label>Modalidad:</label>
                         <div>
@@ -78,18 +88,38 @@
                     </div>
                 </div>
 
+                {{-- Campo: Descripción --}}
                 <div class="form-field">
                     <label for="descripcion_{{ $registro->id }}">Descripción general:</label>
                     <textarea id="descripcion_{{ $registro->id }}" name="descripcion" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('descripcion', $registro->descripcion) }}</textarea>
                 </div>
+
+                {{-- Campo: Objetivo --}}
                 <div class="form-field">
                     <label for="objetivo_{{ $registro->id }}">Objetivo:</label>
                     <textarea id="objetivo_{{ $registro->id }}" name="objetivo" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('objetivo', $registro->objetivo) }}</textarea>
                 </div>
+
+                {{-- Campo: Temario (dinámico) --}}
                 <div class="form-field">
-                    <label for="temario_{{ $registro->id }}">Temario:</label>
-                    <textarea id="temario_{{ $registro->id }}" name="temario" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('temario', $registro->temario) }}</textarea>
+                    <label>Temario:</label>
+                    <div id="temario-container-{{ $registro->id }}">
+                        @php
+                            $temas = old('temario', $registro->temario ?? []);
+                            if (!is_array($temas)) $temas = [];
+                            if (empty($temas)) $temas = [''];
+                        @endphp
+                        @foreach($temas as $i => $tema)
+                            <div class="temario-item" style="display:flex; gap:8px; margin-bottom:6px;">
+                                <input type="text" name="temario[]" value="{{ $tema }}" placeholder="Tema {{ $i + 1 }}" style="flex:1;">
+                                <button type="button" class="remove-tema" style="background:#c0392b;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;">&times;</button>
+                            </div>
+                        @endforeach
+                    </div>
+                    <button type="button" class="add-tema-btn" onclick="addMateriaTemaEdit(event, 'temario-container-{{ $registro->id }}')" style="margin-top:6px;background:#2c3e50;color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;">+ Agregar tema</button>
                 </div>
+
+                {{-- Campo: Infografía --}}
                 <div class="form-field">
                     <label for="infografia_{{ $registro->id }}">Infografía de la materia:</label>
                     <textarea id="infografia_{{ $registro->id }}" name="infografia" rows="1" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">{{ old('infografia', $registro->infografia) }}</textarea>
@@ -102,4 +132,29 @@
 
         </div>
     </div>
+    <script>
+    function addMateriaTemaEdit(event, containerId) {
+        event.preventDefault();
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const count = container.querySelectorAll('.temario-item').length + 1;
+        const div = document.createElement('div');
+        div.className = 'temario-item';
+        div.style.cssText = 'display:flex; gap:8px; margin-bottom:6px;';
+        div.innerHTML = '<input type="text" name="temario[]" placeholder="Tema ' + count + '" style="flex:1;">' +
+            '<button type="button" class="remove-tema" style="background:#c0392b;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;">&times;</button>';
+        container.appendChild(div);
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-tema')) {
+            const item = e.target.closest('.temario-item');
+            const container = item ? item.closest('[id^="temario-container-"]') : null;
+            if (container && container.querySelectorAll('.temario-item').length > 1) {
+                item.remove();
+            }
+        }
+    });
+    </script>
 </div>

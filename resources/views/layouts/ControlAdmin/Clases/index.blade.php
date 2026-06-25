@@ -165,6 +165,32 @@
     .clases-table-scroll .tabla-base th,
     .clases-table-scroll .tabla-base td { padding: 6px 4px; font-size: 0.85rem; }
 }
+#form-filtros select {
+    cursor: pointer;
+}
+#form-filtros select:disabled {
+    cursor: default;
+}
+.col-matricula {
+    max-width: 200px;
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.col-acciones {
+    min-width: 110px;
+    text-align: center;
+}
+.btn-seleccionar-todo-clases {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+#clases-tabla-filtros .filtros-tabla-scroll,
+#clases-tabla-filtros .filtros-tabla-scroll .tabla-base {
+    max-width: 100% !important;
+}
 </style>
 @endpush
 
@@ -272,29 +298,45 @@
                             <select name="clase_id" id="clase_id" class="form-control clases-filtro-select select-horarios {{ empty($claseIds) ? 'clase-placeholder' : '' }}" {{ !$materiaId || $semestre === null || $semestre === '' ? 'disabled' : '' }}>
                                 <option value="">Seleccione el horario</option>
                                 @if($materiaId && ($clasesParaSelect ?? collect())->isNotEmpty())
-                                    @php
+                                @php
                                         $diasLargo = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
-                                        $opcionesPorDia = [];
+                                        $opcionesPorPaquete = [];
                                         foreach ($clasesParaSelect as $hc) {
                                             if ($hc->franjas->isEmpty()) continue;
+                                            $gruposHora = [];
                                             foreach ($hc->franjas as $f) {
                                                 $dias = $f->dias_semana;
                                                 if (is_string($dias)) { $dias = json_decode($dias, true); }
                                                 if (!is_array($dias)) { $dias = $dias !== null && $dias !== '' ? [(int)$dias] : []; }
                                                 $inicio = \Carbon\Carbon::parse($f->hora_inicio)->format('H:i');
                                                 $fin = \Carbon\Carbon::parse($f->hora_fin)->format('H:i');
+                                                $claveHora = $inicio . '-' . $fin;
+                                                if (!isset($gruposHora[$claveHora])) {
+                                                    $gruposHora[$claveHora] = ['inicio' => $inicio, 'fin' => $fin, 'dias' => []];
+                                                }
                                                 foreach ($dias as $d) {
                                                     $num = (int) $d;
-                                                    if ($num >= 1 && $num <= 7) {
-                                                        $texto = ($diasLargo[$num] ?? '') . ' ' . $inicio . ' – ' . $fin;
-                                                        $opcionesPorDia[] = ['dia' => $num, 'texto' => $texto, 'clase_id' => $hc->id];
+                                                    if ($num >= 1 && $num <= 7 && !in_array($num, $gruposHora[$claveHora]['dias'])) {
+                                                        $gruposHora[$claveHora]['dias'][] = $num;
                                                     }
                                                 }
                                             }
+                                            $partes = [];
+                                            foreach ($gruposHora as $g) {
+                                                sort($g['dias']);
+                                                $nombresD = array_map(fn($n) => $diasLargo[$n] ?? '', $g['dias']);
+                                                $partes[] = implode(', ', $nombresD) . ' ' . $g['inicio'] . ' – ' . $g['fin'];
+                                            }
+                                            if (!empty($partes)) {
+                                                $texto = implode(' | ', $partes);
+                                                $opcionesPorPaquete[] = ['texto' => $texto, 'clase_id' => $hc->id];
+                                            }
                                         }
-                                        usort($opcionesPorDia, fn($a, $b) => $a['dia'] <=> $b['dia']);
                                     @endphp
-                                    @foreach($opcionesPorDia as $op)
+                                    @foreach($opcionesPorPaquete as $op)
+                                        <option value="{{ $op['clase_id'] }}" data-texto="{{ e($op['texto']) }}" {{ in_array($op['clase_id'], $claseIds ?? []) ? 'selected' : '' }}>{{ $op['texto'] }}</option>
+                                    @endforeach
+                                    @foreach($opcionesPorPaquete as $op)
                                         <option value="{{ $op['clase_id'] }}" data-texto="{{ e($op['texto']) }}" {{ in_array($op['clase_id'], $claseIds ?? []) ? 'selected' : '' }}>{{ $op['texto'] }}</option>
                                     @endforeach
                                 @endif
@@ -313,7 +355,7 @@
                                 <tr>
                                     <th class="col-carrera">Carrera</th>
                                     <th class="col-materia">Alumno</th>
-                                    <th class="col-matricula">Matrícula</th>
+                                    <th class="col-matricula">CURP</th>
                                     <th class="col-acciones">Acciones</th>
                                 </tr>
                             </thead>
@@ -334,7 +376,7 @@
                                         $nomCarrera = $al?->academicProfile?->career?->name ?? ($c->carrera->name ?? '—');
                                         $nomAlumno1 = $al ? trim(($al->nombre ?? '') . ' ' . ($al->apellido_paterno ?? '')) : '';
                                         $nomAlumno2 = $al ? trim(($al->apellido_materno ?? '')) : '';
-                                        $matricula = $al?->academicProfile?->matricula ?? null;
+                                        $matricula = $al->curp ?? null;
                                         $textoHorarioClase = '';
                                         if ($c->franjas && $c->franjas->isNotEmpty()) {
                                             $partesH = [];
@@ -927,65 +969,5 @@
     })();
     actualizarHorariosMateriaBox();
     </script>
-
-    <div id="clases-dynamic-content">
-    <div class="clases-layout">
-            @if($clase && $alumnosDisponibles->isNotEmpty())
-                <form action="{{ route('control.classes.store') }}" method="POST" id="form-agregar-clase">
-                    @csrf
-                    <input type="hidden" name="horario_clase_id" value="{{ $clase->id }}">
-                    <input type="hidden" name="carrera_id" value="{{ $carreraId }}">
-                    <input type="hidden" name="semestre" value="{{ $semestre ?? $clase->materia->semestre ?? '' }}">
-                    <input type="hidden" name="materia_id" value="{{ $materiaId }}">
-                    <div class="Table-view clases-table-scroll">
-                        <table class="tabla-base tabla-rayas tabla-bordes" style="width: 100%;">
-                            <thead class="encabezado-tabla">
-                                <tr>
-                                    <th>Carrera</th>
-                                    <th>Nombre</th>
-                                    <th>Matrícula</th>
-                                    <th class="checkbox-cell">
-                                        <label class="mb-0 small">Seleccionar todo</label>
-                                        <input type="checkbox" id="select-all-alumnos" class="d-block mx-auto" title="Seleccionar todo">
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="cuerpo-tabla" id="clases-tbody">
-                                @foreach($alumnosDisponibles as $alumno)
-                                    <tr>
-                                        <td>{{ $alumno->academicProfile->career->name ?? $clase->carrera->name ?? '—' }}</td>
-                                        <td class="col-nombre-dos-lineas">{{ $alumno->nombre }} {{ $alumno->apellido_paterno }}<br>{{ $alumno->apellido_materno }}</td>
-                                        <td>{{ $alumno->academicProfile->matricula ?? '—' }}</td>
-                                        <td class="checkbox-cell">
-                                            <input type="checkbox" name="alumnos[]" value="{{ $alumno->id }}" class="cb-alumno" {{ in_array($alumno->id, $alumnosInscritos) ? 'checked' : '' }}>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary btn-agregar-clase">
-                            <span aria-hidden="true">+</span> Agregar a clase
-                        </button>
-                    </div>
-                </form>
-            @endif
-
-    </div>
-</div>
-
-@if($clase && $alumnosDisponibles->isNotEmpty())
-<script>
-(function() {
-    var selectAll = document.getElementById('select-all-alumnos');
-    var checkboxes = document.querySelectorAll('.cb-alumno');
-    if (selectAll && checkboxes.length) {
-        selectAll.addEventListener('change', function() {
-            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
-        });
-    }
-})();
-</script>
-@endif
+<div id="clases-dynamic-content"></div>
 @endsection

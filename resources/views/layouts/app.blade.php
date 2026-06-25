@@ -18,7 +18,7 @@
   @vite(['resources/css/CRM/prospectos.css'])
   @vite(['resources/css/CRM/estadisticas.css'])
   @vite(['resources/css/CRM/comisiones.css'])
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/uniform.css', 'resources/js/app.js'])
   @stack('css')
 
 </head>

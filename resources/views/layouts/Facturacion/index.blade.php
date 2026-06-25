@@ -37,16 +37,12 @@
             </div>
             
             {{-- GRUPO DE ACCIONES --}}
-            <div class="action-group">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-                <a href="{{ route('Facturacion.index') }}" class="btn btn-secondary">Limpiar</a>
+                <div class="action-group">
+                <button type="submit" class="btn-primary">Filtrar</button>
+                <a href="{{ route('Facturacion.index') }}" class="btn-secondary">Limpiar</a>
                 
-                {{-- 
-                    SOLO ADMINS VEN ESTE BOTÓN.
-                --}}
                 @if(Auth::user()->hasActiveRole('master') || Auth::user()->hasActiveRole('control_administrativo'))
-                    {{-- CAMBIO AQUÍ: onclick="submitExport()" --}}
-                    <button type="button" class="btn export-btn" onclick="submitExport()">Exportar</button>
+                    <button type="button" class="btn-primary" onclick="submitExport()">Exportar</button>
                 @endif
             </div>
         </div>
@@ -91,7 +87,7 @@
                                         </summary>
                                         <div class="user-details">
                                             {{-- ITERACIÓN DE MESES Y FACTURAS --}}
-                                            <div class="months-container" style="display: flex; flex-direction: column; gap: 15px;">
+                                            <div class="months-container">
                                                 @foreach ($period->meses_calculados as $mes)
                                                     @php
                                                         $facturasDelMes = $userBillings->filter(function($b) use ($mes) {
@@ -104,13 +100,13 @@
                                                         });
                                                     @endphp
 
-                                                    <div class="monthly-block" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                                                    <div class="monthly-block">
                                                         <details class="monthly-block-details" open>
-                                                        <summary class="month-header" style="background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                                            <strong style="color: #223F70;">{{ $mes['label'] }}</strong>
+                                                        <summary class="month-header">
+                                                            <strong>{{ $mes['label'] }}</strong>
                                                             @if($period->is_active == 1)
-                                                                <div class="month-header__actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto;">
-                                                                    <button type="button" class="btn-sm-add btn-open-extra js-trigger-factura" style="margin: 0; white-space: nowrap;"
+                                                                <div class="month-header__actions">
+                                                                    <button type="button" class="btn-sm-add btn-open-extra js-trigger-factura"
                                                                         data-user-id="{{ $u->id }}"
                                                                         data-user-name="{{ $u->nombre }} {{ $u->apellido_paterno }}"
                                                                         data-period-id="{{ $period->id }}"
@@ -135,11 +131,11 @@
                                                         </summary>
 
                                                         @if($facturasDelMes->isNotEmpty())
-                                                            <div class="table-container" style="box-shadow: none; border: none; border-radius: 0;">
-                                                                <table style="width:100%; margin: 0;">
+                                                            <div class="table-container">
+                                                                <table class="main-table">
                                                                     <thead>
-                                                                        <tr style="background:#fff; border-bottom:1px solid #eee; color:#777; font-size:12px;">
-                                                                            <th width="15%">ID</th>
+                                                                        <tr>
+                                                                            <th width="15%">Folio</th>
                                                                             <th width="20%">Concepto</th>
                                                                             <th width="15%">Monto</th>
                                                                             <th width="15%">Vence</th>
@@ -157,33 +153,33 @@
                                                                                 $colorStatus = match($estatus) { 'Pagada' => '#28a745', 'Abonado' => '#ffc107', default => '#dc3545' };
                                                                             @endphp
                                                                             <tr class="billing-main-row">
-                                                                                <td style="padding:10px;">{{ $billing->factura_uid }}</td>
-                                                                                <td style="padding:10px;">{{ $billing->concepto }}</td>
-                                                                                <td style="padding:10px;">
+                                                                                <td>{{ $billing->factura_uid }}</td>
+                                                                                <td>{{ $billing->concepto }}</td>
+                                                                                <td>
                                                                                     ${{ number_format($billing->monto, 2) }}
                                                                                     @if($estatus == 'Abonado') <br><small style="color:#e8a800">Saldo: ${{number_format($saldo,2)}}</small> @endif
                                                                                 </td>
-                                                                                <td style="padding:10px;">{{ \Carbon\Carbon::parse($billing->fecha_vencimiento)->format('d/m/Y') }}</td>
-                                                                                <td style="padding:10px; font-weight:500;">
+                                                                                <td>{{ \Carbon\Carbon::parse($billing->fecha_vencimiento)->format('d/m/Y') }}</td>
+                                                                                <td style="font-weight:500;">
                                                                                     <div class="estado">
                                                                                         <img src="{{ asset('images/icons/'.$estatusIcono) }}" alt="{{$estatus}}" class="estado-icono" draggable="false" oncontextmenu="return false;">
                                                                                         <span style="color: {{ $colorStatus }}">{{ $estatus }}</span>
                                                                                     </div>
                                                                                 </td>
-                                                                                <td class="acciones" style="padding:10px;">
-                                                                                    <img src="{{ asset('images/icons/eye-solid-full.svg') }}" class="icono icon-toggle" title="Ver Abonos" style="cursor: pointer;" draggable="false">
-                                                                                    @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icono" draggable="false"></a>@endif
-                                                                                    @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icono" draggable="false"></a>@endif
-                                                                                    
+                                                                                <td class="acciones">
+                                                                                   <svg class="icon icon-toggle" title="Ver Abonos" style="cursor:pointer; width:20px; height:20px; vertical-align:middle;" viewBox="0 0 24 24" fill="#223F70" xmlns="http://www.w3.org/2000/svg" draggable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                                                                    @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icon" draggable="false"></a>@endif
+                                                                                    @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icon" draggable="false"></a>@endif
+                                                                                     
                                                                                    <form action="{{ route('Facturacion.destroy', $billing->id) }}" 
                                                                                     method="POST" 
                                                                                     class="form-eliminar" 
-                                                                                    data-uid="{{ $billing->factura_uid }}" {{-- Pasamos el folio aquí --}}
-                                                                                    style="display:inline;">
+                                                                                    data-uid="{{ $billing->factura_uid }}" 
+                                                                                    style="display:inline-flex; align-items:center; vertical-align:middle;">
                                                                                     @csrf 
                                                                                     @method('DELETE')
                                                                                     <button type="submit" style="background:none; border:none; padding:0; cursor:pointer;" title="Eliminar">
-                                                                                    <img src="{{ asset('images/icons/Vector.svg') }}" class="icono" draggable="false">
+                                                                                    <img src="{{ asset('images/icons/Vector.svg') }}" class="icon" draggable="false" style="width:22px; height:22px; vertical-align:middle;">
                                                                                     </button>
                                                                                     </form>
                                                                                 </td>
@@ -244,10 +240,10 @@
                     
                     <details id="period-{{ $period->id }}" @if(request('period_id') == $period->id) open @endif>
                         {{-- CAMBIO: Summary color Azul y texto blanco --}}
-                        <summary style="background-color: #223F70; color: #fff;">
-                            <span class="period-name" style="color: #fff;">{{ $period->name }}</span>
-                            <span class="period-info" style="color: #e9ecef;">({{ count($period->meses_calculados) }} Mensualidades)</span>
-                            <span class="arrow-icon" style="color: #fff;">▼</span>
+                        <summary class="period-summary period-summary--blue">
+                            <span class="period-name">{{ $period->name }}</span>
+                            <span class="period-info">({{ count($period->meses_calculados) }} Mensualidades)</span>
+                            <span class="arrow-icon">▼</span>
                         </summary>
                         
                         <div class="period-details">
@@ -258,10 +254,10 @@
                                             return \Carbon\Carbon::parse($b->fecha_vencimiento)->format('Y-m') === $mes['key'];
                                         });
                                     @endphp
-                                    <div class="monthly-block" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                                    <div class="monthly-block">
                                         
                                         {{-- CAMBIO: Encabezado del mes color Azul y texto blanco --}}
-                                        <div class="month-header" style="background-color: #ffffffff; padding: 10px 15px; font-weight: 600; color: #223F70; display: flex; justify-content: space-between; align-items: center;">
+                                        <div class="month-header">
                                             <span>{{ $mes['label'] }}</span>
                                             @if($facturasDelMes->isNotEmpty())
                                                 <span style="font-size: 0.8rem; color: #223F70; font-weight: 600; background: #fff; padding: 2px 8px; border-radius: 10px;">✓ Disponible</span>
@@ -272,11 +268,11 @@
                                         
                                         @if($facturasDelMes->isNotEmpty())
                                             {{-- TABLA DE FACTURAS DEL ALUMNO --}}
-                                            <div class="table-container" style="box-shadow: none; border: none; border-radius: 0;">
-                                                <table style="width: 100%; margin-bottom: 0;">
+                                            <div class="table-container">
+                                                <table class="main-table">
                                                     <thead> 
                                                         {{-- CAMBIO: Cabecera de tabla color Azul y texto blanco --}}
-                                                        <tr style="background:#223F70; border-bottom:1px solid #152744; color:#fff; font-size:12px;"> 
+                                                        <tr class="table-header--blue"> 
                                                             <th width="25%">Concepto</th> 
                                                             <th width="15%">Monto</th> 
                                                             <th width="15%">Vencimiento</th> 
@@ -294,13 +290,13 @@
                                                                 $colorStatus = match($estatus) { 'Pagada' => '#28a745', 'Abonado' => '#ffc107', default => '#dc3545' };
                                                             @endphp
                                                             <tr class="billing-main-row">
-                                                                <td style="padding:10px;">{{ $billing->concepto }}</td>
-                                                                <td style="padding:10px;">
+                                                                <td>{{ $billing->concepto }}</td>
+                                                                <td>
                                                                     ${{ number_format($billing->monto, 2) }}
                                                                     @if($estatus == 'Abonado') <br><small style="color:#e8a800">Saldo: ${{number_format($saldo,2)}}</small> @endif
                                                                 </td>
-                                                                <td style="padding:10px;">{{ \Carbon\Carbon::parse($billing->fecha_vencimiento)->format('d/m/Y') }}</td>
-                                                                <td style="padding:10px; font-weight:500;">
+                                                                <td>{{ \Carbon\Carbon::parse($billing->fecha_vencimiento)->format('d/m/Y') }}</td>
+                                                                <td style="font-weight:500;">
                                                                     <div class="estado">
                                                                         {{-- AQUÍ SE AGREGÓ oncontextmenu="return false;" --}}
                                                                         <img src="{{ asset('images/icons/'.$estatusIcono) }}" alt="{{$estatus}}" class="estado-icono" draggable="false" oncontextmenu="return false;">
@@ -308,15 +304,15 @@
                                                                     </div>
                                                                 </td>
                                                                 <td class="acciones" style="padding:10px;">
-                                                                    <img src="{{ asset('images/icons/eye-solid-full.svg') }}" class="icono icon-toggle" title="Ver Historial" oncontextmenu="return false;">
-                                                                    @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icono" draggable="false" oncontextmenu="return false;"></a>@endif
-                                                                    @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icono" draggable="false" oncontextmenu="return false;"></a>@endif
+                                                                    <img src="{{ asset('images/icons/eye-solid-full.svg') }}" class="icon icon-toggle" title="Ver Historial" oncontextmenu="return false;">
+                                                                    @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icon" draggable="false" oncontextmenu="return false;"></a>@endif
+                                                                    @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icon" draggable="false" oncontextmenu="return false;"></a>@endif
                                                                 </td>
                                                             </tr>
                                                             {{-- FILA HISTORIAL ALUMNO (SOLO LECTURA) --}}
-                                                            <tr class="payment-details-row" style="display:none; background:#f9f9f9;">
-                                                                <td colspan="6" style="padding: 20px;">
-                                                                    <div class="payment-history" style="width: 100%;">
+                                                            <tr class="payment-details-row">
+                                                                <td colspan="6">
+                                                                    <div class="payment-history">
                                                                         <h4 style="margin:0 0 10px; color:#223F70;">Historial de Abonos</h4>
                                                                         @if($billing->payments->isNotEmpty())
                                                                         <ul> @foreach($billing->payments as $payment) <li> <span class="payment-date">{{ \Carbon\Carbon::parse($payment->fecha_pago)->format('d/m/Y') }} - {{ $payment->nota ?? 'Abono' }}</span> <span class="payment-amount">- ${{ number_format($payment->monto, 2) }}</span> </li> @endforeach </ul>
@@ -348,7 +344,7 @@
             
             {{-- TÍTULO OPTIMIZADO: La estructura y el salto de línea (<br>) ya están aquí. 
                  El JS solo rellenará el span #modalUserName. --}}
-            <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 20px; color: #223F70; font-size: 26px; font-weight: 600; border-bottom: 1px solid #eee; padding-bottom: 10px; text-align: center; font-family: 'Poppins', sans-serif;">
+            <h2 id="modalTitle" class="modal-title">
                 Agregar Factura a:<br>
                 <span id="modalUserName" style="display:block; margin-top:5px; font-weight:700; font-size: 0.9em;"></span>
             </h2>
@@ -466,7 +462,7 @@
 
 
 
-                <button type="submit" class="guardar" style="width: 100%; padding: 12px; background-color: #223F70; color: white; border: none; border-radius: 4px; cursor: pointer;">Guardar Factura</button>
+                <button type="submit" class="guardar">Guardar Factura</button>
             </form>
         </div>
     </div>

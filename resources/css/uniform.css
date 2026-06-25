@@ -1,0 +1,138 @@
+:root{
+  --primary: #2f4b7c;
+  --accent: #0d6efd;
+  --muted: #6b7280;
+  --bg: #ffffff;
+  --surface: #f8fafc;
+  --border: #e6e9ef;
+  --success: #198754;
+  --danger: #d9534f;
+  --radius: 8px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Tipografía y títulos */
+body { font-family: var(--font-sans); color: #1f2937; background: transparent; }
+h1, h2, h3, h4, h5 { margin: 0 0 0.5rem 0; font-weight: 600; color: var(--primary); }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.95rem; }
+
+/* Tablas estandarizadas */
+.main-table { width: 100%; border-collapse: collapse; background: var(--bg); border-radius: 6px; overflow: hidden; }
+.main-table thead th { background: var(--surface); color: var(--muted); text-transform: uppercase; font-size: 0.72rem; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.main-table tbody td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.95rem; }
+.table-container { background: transparent; }
+.ajustes-table-scroll { overflow-x: auto; }
+
+/* Botones y acciones */
+.btn-primary, button.btn-primary { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.btn-secondary, button.btn-secondary { background: #f1f5f9; color: #111827; border: 1px solid var(--border); padding: 7px 10px; border-radius: 6px; }
+.actions { display:flex; gap:8px; align-items:center; }
+
+/* Iconos */
+.icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; font-size:16px; }
+.icon-sm { width:28px; height:28px; font-size:14px; }
+
+/* Tarjetas Carreras */
+.carrer-card { border-radius: 12px; overflow: hidden; transition: box-shadow .18s ease; }
+.carrer-card:hover { box-shadow: 0 6px 18px rgba(47,75,124,0.12); }
+.carrer-card h4 { color: #fff; }
+
+/* Carrer card parts */
+.carrer-card .card-header { background: var(--primary); color: white; padding: 14px 20px; display:flex; justify-content:space-between; align-items:center; border-top-left-radius: 24px; border-top-right-radius: 24px; }
+.carrer-card .card-body { padding: 16px 20px 32px; background: #ffffff; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; overflow: visible; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03); }
+.carrer-card .count-pill { background: rgba(255,255,255,0.12); padding: 4px 10px; border-radius: 20px; font-size:0.78rem; }
+.carrer-card .stat { background: #f0f4ff; padding: 8px 14px; border-radius: 8px; text-align:center; }
+
+/* Month blocks and billing */
+.monthly-block { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.month-header { background: #f8f9fa; padding: 10px 15px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.month-header strong { color: #223F70; }
+.billing-item-tbody tr td { padding: 10px; }
+.billing-item-tbody .estado .estado-icono { width:18px; height:18px; margin-right:6px; }
+
+/* Small buttons */
+.btn-sm-add { background: var(--accent); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.86rem; }
+.guardar-abono, .guardar { background: var(--primary); color: white; border: none; padding: 10px 12px; border-radius: 6px; cursor: pointer; }
+
+/* Filters and actions */
+.filter-controls { display:flex; justify-content:space-between; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom: 14px; }
+.filter-group { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.filter-item label { display:block; font-weight:600; margin-bottom:6px; color: #374151; }
+.filter-select, .search-input { padding:8px; border:1px solid var(--border); border-radius:6px; }
+.action-group { display:flex; gap:8px; align-items:center; }
+
+/* Modal */
+.modal .modal-content { background: var(--bg); padding: 18px; border-radius:10px; max-width: 720px; margin: 40px auto; }
+
+
+/* Badges y switches */
+.landing-badge { display:flex; align-items:center; gap:8px; position: relative; padding-bottom: 10px; }
+.landing-badge .switch { position: relative; z-index: 1; margin-top: 4px; transform: translateY(4px); }
+.badge-activo { width:10px; height:10px; background: var(--success); border-radius:50%; display:inline-block; }
+.badge-inactivo { width:10px; height:10px; background: #cbd5e1; border-radius:50%; display:inline-block; }
+
+/* Utilities */
+.text-muted { color: var(--muted); }
+.rounded { border-radius: var(--radius); }
+
+/* Responsive tweaks */
+@media (max-width: 720px){
+  h1{font-size:1.2rem}
+  .icon{width:30px;height:30px}
+  .main-table thead th{font-size:0.65rem}
+}
+
+/* Ensure toggle checkbox is visually hidden (accessible) */
+.switch, .landing-switch-wrapper { position: relative; display: inline-block; width: 50px; height: 26px; }
+.switch > input[type="checkbox"], .landing-switch-wrapper > input[type="checkbox"] { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.slider, .landing-switch-slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 999px; transition: background-color .3s ease; }
+.slider::before, .landing-switch-slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 4px; top: 4px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.18); transition: transform .3s ease; }
+.switch > input[type="checkbox"]:checked + .slider { background: var(--accent); }
+.landing-switch-wrapper > input[type="checkbox"]:checked + .landing-switch-slider { background: var(--success); }
+.switch > input[type="checkbox"]:checked + .slider::before, .landing-switch-wrapper > input[type="checkbox"]:checked + .landing-switch-slider::before { transform: translateX(22px); }
+.switch > input[type="checkbox"]:focus-visible + .slider, .landing-switch-wrapper > input[type="checkbox"]:focus-visible + .landing-switch-slider { box-shadow: 0 0 0 3px rgba(34, 139, 230, 0.18); }
+
+.landing-switch-control { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.9rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--primary); font-weight: 600; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.landing-switch-control:hover { background: #f8fbff; }
+.landing-switch-control span { display: inline-flex; align-items: center; }
+
+/* Facturacion helpers */
+.months-container { display: flex; flex-direction: column; gap: 15px; }
+.month-header__actions { display: flex; align-items:center; gap:10px; flex-wrap:wrap; margin-left:auto; }
+.btn-sm-add { margin:0; white-space:nowrap; }
+.monthly-block { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.month-header { background: #f8f9fa; padding: 10px 15px; font-weight: 600; color: #223F70; display:flex; justify-content:space-between; align-items:center; }
+.payment-details-row { display: none; }
+.payment-details-row--visible { display: table-row; }
+.period-summary--blue { background-color: #223F70; color: #fff; }
+.period-summary--blue .period-name, .period-summary--blue .period-info, .period-summary--blue .arrow-icon { color: #fff !important; }
+.table-header--blue tr, .table-header--blue th { background: var(--primary); color: #fff; }
+.no-data-centered { text-align: center; color: #888; padding: 20px; }
+
+/* Modal title */
+.modal-title { margin-top: 0; margin-bottom: 20px; color: #223F70; font-size: 26px; font-weight: 600; border-bottom: 1px solid #eee; padding-bottom: 10px; text-align: center; font-family: 'Poppins', sans-serif; }
+
+/* Ensure guardar button uses unified style */
+.guardar { width: 100%; padding: 12px; border-radius: 6px; }
+
+/* Carreras helpers */
+.carrers-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); grid-auto-rows: minmax(240px, auto); gap: 20px; align-items: stretch; width: 100%; }
+.carrer-card { width: 100%; max-width: 100%; min-height: 0; border-radius: 24px; overflow: hidden; transition: box-shadow .18s ease; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+.stat-row { display:flex; gap:12px; margin-bottom:14px; }
+.stat { background: #f0f4ff; padding:8px 14px; border-radius:8px; flex:1; text-align:center; }
+.stat-number { font-size:1.25rem; font-weight:700; color: var(--primary); }
+.stat-label { font-size:0.7rem; color: #666; text-transform:uppercase; letter-spacing:0.5px; }
+.career-list { margin-bottom:10px; }
+.career-list-title { font-size:0.75rem; color: var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+.career-items { display:flex; flex-direction:column; gap:5px; }
+.career-item { background: var(--surface); border:1px solid var(--border); border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; }
+.career-name { font-size:0.78rem; font-weight:500; color:#334155; }
+.career-pills { display:flex; gap:6px; }
+.career-pill { padding:2px 7px; border-radius:4px; font-size:0.68rem; }
+.career-pill--mat { background:#f0f4ff; color: var(--primary); }
+.career-pill--sem { background:#fdf6e3; color:#b8860b; }
+

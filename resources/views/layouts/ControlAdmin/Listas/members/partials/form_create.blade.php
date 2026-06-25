@@ -93,14 +93,31 @@
     @php
         $oldModalCarreras = collect(old('carreras', []))->map(fn ($v) => (int) $v)->all();
     @endphp
+    <h3><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Clasificación</h3>
+    <hr>
+    <div class="form-field" style="margin-bottom: 1rem;">
+        <label for="modal_clasificacion_docente">Filtrar por clasificación:</label>
+         <select id="modal_clasificacion_docente" onchange="var v=this.value;document.querySelectorAll('#docente-carreras-lista .docente-carrera-checkbox-label').forEach(function(l){if(!v||l.getAttribute('data-classification-id')===v){l.style.display=''}else{l.style.display='none';l.querySelector('input').checked=false}});var c=document.getElementById('modal_seleccionar_todo_carreras');if(c)c.checked=false" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc;">
+            <option value="">Todas las clasificaciones</option>
+            @foreach ($clasificaciones ?? [] as $clas)
+                <option value="{{ $clas->id }}">{{ $clas->name }}</option>
+            @endforeach
+        </select>
+    </div>
+
     <h3><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Carreras</h3>
     <hr>
     <div class="form-group-triple">
         <fieldset class="form-field docente-carreras-fieldset" style="grid-column: 1 / -1; border: none; padding: 0; margin: 0;">
-            <legend class="docente-carreras-legend"><img src="{{ asset('images/icons/clipboard-regular-full.svg') }}" alt="" width="18" height="18" style="vertical-align:middle;margin-right:5px;margin-top:-2px" aria-hidden="true"> Carreras</legend>
-            <div class="docente-carreras-checkboxes">
+            <div style="margin-bottom: 0.5rem;">
+                <label style="font-weight: 600; cursor: pointer;">
+                     <input type="checkbox" id="modal_seleccionar_todo_carreras" onchange="var c=this.checked;document.querySelectorAll('#docente-carreras-lista .docente-carrera-checkbox-label').forEach(function(l){if(l.style.display!=='none')l.querySelector('input').checked=c})">
+                    <span>Seleccionar todo / Deseleccionar todo</span>
+                </label>
+            </div>
+            <div class="docente-carreras-checkboxes" id="docente-carreras-lista">
                 @foreach ($carreras as $carrera)
-                    <label class="docente-carrera-checkbox-label">
+                    <label class="docente-carrera-checkbox-label" data-classification-id="{{ $carrera->career_classification_id }}">
                         <input type="checkbox" id="modal_carrera_{{ $carrera->id }}" name="carreras[]" value="{{ $carrera->id }}" @checked(in_array((int) $carrera->id, $oldModalCarreras, true))>
                         <span>{{ $carrera->name }}</span>
                     </label>
@@ -108,8 +125,10 @@
             </div>
         </fieldset>
     </div>
-
-    <div class="form-action-buttons" style="margin-top: 1rem;">
-        <button type="submit" class="submit-button">+ Guardar</button>
+<div style="text-align: center; margin-top: 1.5rem; padding-bottom: 1rem;">
+        <button type="submit" class="submit-button" style="padding: 10px 30px; background: #1a1f36collect(\DB::select('SHOW TABLES'))->pluck('Tables_in_miumi_db_production')->filter(fn($t) => str_contains($t, 'clase'))->values(); color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+            Registrar Docente
+        </button>
     </div>
 </form>
+    

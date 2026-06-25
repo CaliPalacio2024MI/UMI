@@ -30,10 +30,12 @@ class MateriaController extends Controller
             'objetivo',
             'temario',
             'infografia',
-            'career_id', // ¡IMPORTANTE! Clave foránea para la relación
+            'career_id',
+            'career_classification_id', // ¡IMPORTANTE! Clave foránea para la relación
         ];
 
         $carreras = Career::all(['id', 'name']);
+        $clasificaciones = \App\Models\Users\CareerClassification::all(['id', 'name']); // ← agregar
         
         // Listado ordenado por nombre de materia; carrera con clasificación
         $dataList = Materia::query()
@@ -44,17 +46,23 @@ class MateriaController extends Controller
                         ->with(['classification' => function ($q) {
                             $q->select('id', 'name');
                         }]);
+
                 },
+                'classification',
             ])
             ->orderBy('nombre')
             ->orderBy('id')
             ->get();
 
         $viewPath = 'layouts.ControlAdmin.Listas.' . $listType . '.index';
-        
+
         return view($viewPath, [
-            'dataList' => $dataList,'carreras' => $carreras
-        ]);
+    'dataList' => $dataList,
+    'carreras' => $carreras,
+    'clasificaciones' => $clasificaciones, 
+]);
+        
+       
     }
 
     // MateriaController.php
@@ -75,8 +83,10 @@ class MateriaController extends Controller
             'type' => ['required', 'in:Presencial,En linea'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
             'objetivo' => ['nullable', 'string', 'max:3000'],
-            'temario' => ['nullable', 'string', 'max:10000'],
+            'temario' => ['nullable', 'array'],
+            'temario.*' => ['nullable', 'string', 'max:500'],
             'infografia' => ['nullable', 'string', 'max:10000'],
+            'career_classification_id' => ['nullable', 'integer', 'exists:career_classifications,id'],
         ], [
             'carrera_id.required' => 'Te falta un campo por rellenar.',
             'carrera_id.integer' => 'Te falta un campo por rellenar.',
@@ -101,8 +111,9 @@ class MateriaController extends Controller
             'type' => $validatedData['type'],
             'descripcion' => $validatedData['descripcion'] ?? '',
             'objetivo' => $validatedData['objetivo'] ?? null,
-            'temario' => $validatedData['temario'] ?? null,
+            'temario' => array_values(array_filter($validatedData['temario'] ?? [])),
             'infografia' => $validatedData['infografia'] ?? null,
+            'career_classification_id' => $validatedData['career_classification_id'] ?? null,
         ];
         
         // 3. CREACIÓN DEL REGISTRO
@@ -114,93 +125,101 @@ class MateriaController extends Controller
             ->with('success', '¡Materia creada exitosamente!');
     }
     public function update(Request $request, Materia $registro)
-    {
-        // 1. VALIDACIÓN (nombre único por carrera; mismo nombre permitido en otra carrera)
-        $validator = Validator::make($request->all(), [
-            'carrera_id' => ['required', 'integer', 'exists:careers,id'],
-            'nombre' => [
-                'required',
-                'string',
-                'max:100',
-                Rule::unique('materias', 'nombre')
-                    ->where('career_id', $request->input('carrera_id'))
-                    ->ignore($registro->id),
-            ],
-            'creditos' => ['required', 'integer', 'min:1'],
-            'semestre' => ['required', 'integer', 'min:1'],
-            'type' => ['required', 'in:Presencial,En linea'],
-            'descripcion' => ['nullable', 'string', 'max:2000'],
-            'objetivo' => ['nullable', 'string', 'max:3000'],
-            'temario' => ['nullable', 'string', 'max:10000'],
-            'infografia' => ['nullable', 'string', 'max:10000'],
-        ], [
-            'carrera_id.required' => 'Te falta un campo por rellenar.',
-            'carrera_id.integer' => 'Te falta un campo por rellenar.',
-            'carrera_id.exists' => 'Te falta un campo por rellenar.',
-            'nombre.required' => 'Te falta un campo por rellenar.',
-            'nombre.max' => 'Te falta un campo por rellenar.',
-            'nombre.unique' => 'Ya existe una materia con ese nombre. Elija otro.',
-            'creditos.required' => 'Te falta un campo por rellenar.',
-            'creditos.min' => 'Te falta un campo por rellenar.',
-            'semestre.required' => 'Te falta un campo por rellenar.',
-            'semestre.min' => 'Te falta un campo por rellenar.',
-            'type.required' => 'Te falta un campo por rellenar.',
-            'type.in' => 'Te falta un campo por rellenar.',
-        ]);
+{
+    // 1. VALIDACIÓN (nombre único por carrera; mismo nombre permitido en otra carrera)
+    $validator = Validator::make($request->all(), [
+        'carrera_id' => ['required', 'integer', 'exists:careers,id'],
+        'nombre' => [
+            'required',
+            'string',
+            'max:100',
+            Rule::unique('materias', 'nombre')
+                ->where('career_id', $request->input('carrera_id'))
+                ->ignore($registro->id),
+        ],
+        'creditos' => ['required', 'integer', 'min:1'],
+        'semestre' => ['required', 'integer', 'min:1'],
+        'type' => ['required', 'in:Presencial,En linea'],
+        'descripcion' => ['nullable', 'string', 'max:2000'],
+        'objetivo' => ['nullable', 'string', 'max:3000'],
+        'temario' => ['nullable', 'array'],
+        'temario.*' => ['nullable', 'string', 'max:500'],
+        'infografia' => ['nullable', 'string', 'max:10000'],
+        'career_classification_id' => ['nullable', 'integer', 'exists:career_classifications,id'],
+    ], [
+        'carrera_id.required' => 'Te falta un campo por rellenar.',
+        'carrera_id.integer' => 'Te falta un campo por rellenar.',
+        'carrera_id.exists' => 'Te falta un campo por rellenar.',
+        'nombre.required' => 'Te falta un campo por rellenar.',
+        'nombre.max' => 'Te falta un campo por rellenar.',
+        'nombre.unique' => 'Ya existe una materia con ese nombre. Elija otro.',
+        'creditos.required' => 'Te falta un campo por rellenar.',
+        'creditos.min' => 'Te falta un campo por rellenar.',
+        'semestre.required' => 'Te falta un campo por rellenar.',
+        'semestre.min' => 'Te falta un campo por rellenar.',
+        'type.required' => 'Te falta un campo por rellenar.',
+        'type.in' => 'Te falta un campo por rellenar.',
+    ]);
 
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'ok' => false,
-                    'message' => $validator->errors()->first() ?? 'Error de validación.',
-                    'errors' => $validator->errors(),
-                ], 422);
-            }
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput()
-                ->with('edit_materia_id', $registro->id);
-        }
-
-        $validatedData = $validator->validated();
-
-        // 2. PRESERVAR CLAVE Y DESCRIPCIÓN (la columna descripcion no acepta NULL)
-        $validatedData['clave'] = $registro->clave ?? null;
-        $validatedData['descripcion'] = $validatedData['descripcion'] ?? $registro->descripcion ?? '';
-        $validatedData['objetivo'] = $validatedData['objetivo'] ?? null;
-        $validatedData['temario'] = $validatedData['temario'] ?? null;
-        $validatedData['infografia'] = $validatedData['infografia'] ?? null;
-
-        // 3. ACTUALIZACIÓN
-        $registro->update($validatedData);
-        $registro->load([
-            'career' => function ($q) {
-                $q->select('id', 'name', 'career_classification_id')
-                    ->with(['classification' => function ($c) {
-                        $c->select('id', 'name');
-                    }]);
-            },
-        ]);
-
-        $message = '¡Materia actualizada exitosamente!';
+    if ($validator->fails()) {
         if ($request->expectsJson()) {
             return response()->json([
-                'ok' => true,
-                'message' => $message,
-                'row' => [
-                    'nombre' => $registro->nombre,
-                    'classification_name' => $registro->career?->classification?->name ?? '—',
-                    'career_name' => $registro->career?->name ?? 'Sin datos',
-                    'creditos' => (string) $registro->creditos,
-                    'semestre' => (string) $registro->semestre,
-                    'type' => $registro->type,
-                ],
-            ]);
+                'ok' => false,
+                'message' => $validator->errors()->first() ?? 'Error de validación.',
+                'errors' => $validator->errors(),
+            ], 422);
         }
-
-        return Redirect::route('control.subjects.index', ['modal' => 'success'])
-            ->with('success', $message);
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput()
+            ->with('edit_materia_id', $registro->id);
     }
+
+    $validatedData = $validator->validated();
+
+    // 2. MAPEO Y PRESERVACIÓN DE DATOS
+    // El form envía 'carrera_id' pero la columna en DB es 'career_id'
+    $validatedData['career_id'] = $validatedData['carrera_id'];
+    unset($validatedData['carrera_id']);
+
+    $validatedData['clave'] = $registro->clave ?? null;
+    $validatedData['descripcion'] = $validatedData['descripcion'] ?? $registro->descripcion ?? '';
+    $validatedData['objetivo'] = $validatedData['objetivo'] ?? null;
+    $validatedData['temario'] = array_values(array_filter($validatedData['temario'] ?? []));
+    $validatedData['infografia'] = $validatedData['infografia'] ?? null;
+
+    // 3. ACTUALIZACIÓN
+    $registro->update($validatedData);
+
+    $registro->load([
+        'career' => function ($q) {
+            $q->select('id', 'name', 'career_classification_id')
+                ->with(['classification' => function ($c) {
+                    $c->select('id', 'name');
+                }]);
+        },
+        'classification',
+    ]);
+
+    $message = '¡Materia actualizada exitosamente!';
+    if ($request->expectsJson()) {
+        return response()->json([
+            'ok' => true,
+            'message' => $message,
+            'row' => [
+                'nombre' => $registro->nombre,
+                'classification_name' => $registro->classification?->name ?? '–',
+                'career_name' => $registro->career?->name ?? 'Sin datos',
+                'creditos' => (string) $registro->creditos,
+                'semestre' => (string) $registro->semestre,
+                'type' => $registro->type,
+            ],
+        ]);
+    }
+
+    return Redirect::route('control.subjects.index', ['modal' => 'success'])
+        ->with('success', $message);
+}
 
     public function destroy(Request $request, Materia $registro)
     {

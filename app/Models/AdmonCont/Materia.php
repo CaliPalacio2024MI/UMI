@@ -24,11 +24,20 @@ class Materia extends Model
         'temario',
         'infografia',
         'type',
-        'semestre'
+        'semestre',
+        'career_classification_id'
     ];
-    public function career(): BelongsTo
-    {
-        return $this->belongsTo(Career::class);
-    }
+    protected $casts = [
+    'temario' => 'array',
+];
+   public function career(): BelongsTo
+{
+    return $this->belongsTo(Career::class);
+}
+
+   public function classification(): BelongsTo
+{
+    return $this->belongsTo(\App\Models\Users\CareerClassification::class, 'career_classification_id');
+}
     
 }

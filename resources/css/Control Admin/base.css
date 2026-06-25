@@ -308,41 +308,178 @@
 
 .carrers-container{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 32px;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    grid-auto-rows: minmax(240px, auto);
+    gap: 40px;
     align-items: stretch;
     width: 100%;
-    min-height: 560px;
     max-width: 100%;
     box-sizing: border-box;
-    /* Separación respecto al bloque superior (título + “Agregar…”) */
     margin-top: 2rem;
 }
 
 .carrer-card {
     width: 100%;
-    min-width: 320px;
-    max-width: 409px;
-    height: 196px;
-    min-height: 196px;
-    padding: 15px;
-    margin: 0 auto;
-    border-radius: 8px;
-    background-color: #ecf0f1;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    max-width: 100%;
+    min-height: 0;
+    margin: 0;
+    border-radius: 12px;
+    background-color: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
-    gap: 0;
+    justify-content: space-between;
     box-sizing: border-box;
     cursor: pointer;
-    transition: box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+    overflow: hidden;
 }
 
 .carrer-card:hover {
-    background-color: #dfe4e8;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 24px 50px rgba(15, 23, 42, 0.14);
 }
 
+.carrer-card .card-header {
+    background: #2f4b7c;
+    color: #ffffff;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.carrer-card .card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.carrer-card .header-badge {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.carrer-card .card-body {
+    padding: 20px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.carrer-card .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    max-width: 360px;
+    margin: 16px auto;
+}
+
+.carrer-card .info-card {
+    padding: 10px 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 50px;
+}
+
+.carrer-card .info-card--mat {
+    background: #eef4ff;
+}
+
+.carrer-card .info-card--sem {
+    background: #fff6e1;
+}
+
+.carrer-card .info-number {
+    font-size: 1.75rem;
+    line-height: 1;
+    font-weight: 700;
+    color: #253d7f;
+}
+
+.carrer-card .info-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #64748b;
+}
+
+.carrer-card .carrer-btn-section {
+    border-top: 1px solid #eef2f7;
+    padding-top: 14px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.carrer-card .carrer-btn-section button,
+.carrer-card .carrer-btn-section form > button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 14px;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.carrer-card .carrer-btn-section button:hover,
+.carrer-card .carrer-btn-section form > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.carrer-card .carrer-btn-section form > button.btn-delete {
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.15);
+}
+
+.carrer-card .btn-view svg path,
+.carrer-card .btn-edit svg path,
+.carrer-card .btn-delete svg path {
+    transition: fill 0.2s ease;
+}
+.carrer-card .career-list {
+    padding: 0 8px;
+}
+
+.carrer-card .career-list-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.carrer-card .career-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    margin-bottom: 6px;
+}
 /* Carreras: responsive */
 @media (max-width: 900px) {
     .carrers-container {

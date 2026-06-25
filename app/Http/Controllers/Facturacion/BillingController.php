@@ -269,6 +269,18 @@ class BillingController extends Controller
         $uidFinal = $baseUid . str_pad($consecutivo, 6, '0', STR_PAD_LEFT);
 
         $esMensualidad = str_starts_with((string) $prefix, 'MEN-');
+        // Cargo moratorio desde la carrera del alumno (para mensualidades)
+        $careerCargo = ['porcentaje' => null, 'monetario' => null];
+        if ($esMensualidad) {
+            $alumno = User::with('academicProfile')->find($validated['user_id']);
+            if ($alumno && $alumno->academicProfile && $alumno->academicProfile->career_id) {
+                $carrera = \App\Models\Users\Career::find($alumno->academicProfile->career_id);
+                if ($carrera && $carrera->porcentaje_cargo_moratorio > 0) {
+                    $careerCargo['porcentaje'] = $carrera->porcentaje_cargo_moratorio;
+                    $careerCargo['monetario'] = round($validated['monto'] * ($carrera->porcentaje_cargo_moratorio / 100), 2);
+                }
+            }
+        }
 
         // C. GUARDAR
         $filePath = $request->hasFile('archivo') ? $request->file('archivo')->store('facturas', 'public') : null;
@@ -280,8 +292,8 @@ class BillingController extends Controller
             'period_id'         => $validated['period_id'],
             'concepto'          => $validated['concepto'],
             'monto'             => $validated['monto'],
-            'porcentaje_cargo_moratorio' => $esMensualidad ? null : ($validated['porcentaje_cargo_moratorio'] ?? null),
-            'cargo_monetario' => $esMensualidad ? null : ($validated['cargo_monetario'] ?? null),
+            'porcentaje_cargo_moratorio' => $esMensualidad ? $careerCargo['porcentaje'] : ($validated['porcentaje_cargo_moratorio'] ?? null),
+            'cargo_monetario' => $esMensualidad ? $careerCargo['monetario'] : ($validated['cargo_monetario'] ?? null),
             'fecha_vencimiento' => $validated['fecha'], // <--- RESPETAMOS LA FECHA DEL INPUT (NO "NOW")
             'archivo_path'      => $filePath,
             'xml_path'          => $xmlPath,

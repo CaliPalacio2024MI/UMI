@@ -77,8 +77,10 @@ class ClaseController extends Controller
         }
 
         if ($carreraId && $materiaId) {
+            $periodoActivo = \Illuminate\Support\Facades\DB::table('periods')->orderByDesc('id')->value('id');
             $query = HorarioClase::where('career_id', $carreraId)
                 ->where('materia_id', $materiaId)
+                ->where('period_id', $periodoActivo)
                 ->with(['carrera', 'materia', 'user', 'aula', 'alumnos']);
             $clase = !empty($claseIds)
                 ? $query->find($claseIds[0])
@@ -103,6 +105,7 @@ class ClaseController extends Controller
         }
 
         $clases = HorarioClase::query()
+            ->where('period_id', $periodoActivo ?? \Illuminate\Support\Facades\DB::table('periods')->orderByDesc('id')->value('id'))
             ->with(['carrera', 'materia', 'user', 'aula', 'franjas', 'alumnos'])
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
             ->when($materiaId, fn($q) => $q->where('materia_id', $materiaId))
@@ -403,6 +406,18 @@ class ClaseController extends Controller
         }
 
         $request->session()->forget('clases_agregadas_cajita');
+        // Inscribir alumnos en sus respectivas clases
+        foreach ($request->input('cajita_items', []) as $item) {
+            $hcId = (int) ($item['horario_clase_id'] ?? 0);
+            $alId = (int) ($item['alumno_id'] ?? 0);
+            if ($hcId <= 0 || $alId <= 0) {
+                continue;
+            }
+            $claseObj = HorarioClase::find($hcId);
+            if ($claseObj) {
+                $claseObj->alumnos()->syncWithoutDetaching([$alId]);
+            }
+        }
         $request->session()->forget('clases_ocultas');
 
         return redirect()

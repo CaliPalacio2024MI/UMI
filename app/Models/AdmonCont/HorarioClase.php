@@ -18,7 +18,8 @@ class HorarioClase extends Model
         'materia_id',
         'career_id',
         'user_id',
-        'aula_id'
+        'aula_id',
+        'period_id'
     ];
 
     public function franjas()

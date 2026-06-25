@@ -216,7 +216,15 @@
                                                 </div>
                                                 <div class="reticula-materia-row">
                                                     <dt>Temario</dt>
-                                                    <dd>{{ filled($mat->temario) ? $mat->temario : '—' }}</dd>
+                                                    <dd>
+ @if(filled($mat->temario) && is_array($mat->temario))
+        @foreach($mat->temario as $tema)
+            <span style="display:block;">• {{ $tema }}</span>
+        @endforeach
+    @else
+        —
+    @endif
+</dd>
                                                 </div>
                                                 <div class="reticula-materia-row">
                                                     <dt>Infografía</dt>

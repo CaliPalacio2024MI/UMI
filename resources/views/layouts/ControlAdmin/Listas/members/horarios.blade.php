@@ -5,6 +5,36 @@
 @vite(['resources/css/Control Admin/base.css', 'resources/js/app.js'])
 
 @section('content')
+<style>
+@media print {
+    @page {
+        size: landscape !important;
+    }
+    body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .sidebar,
+    .header,
+    .horario-page-toolbar {
+        display: none !important;
+    }
+    .app-container {
+        display: block !important;
+        min-height: auto !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+    .container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
+</style>
 <div class="container" style="max-width: 1400px; margin: 0 auto;">
     <div class="horario-page-toolbar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
         <h5 style="margin: 0; color: #002366; font-size: 1.5rem;">Horario de {{ trim($user->nombre . ' ' . ($user->apellido_paterno ?? '') . ' ' . ($user->apellido_materno ?? '')) ?: 'Docente' }}</h5>
@@ -18,4 +48,3 @@
     @include('layouts.ControlAdmin.Listas.members.partials.horarios_body', ['user' => $user, 'horarios' => $horarios, 'esAlumno' => isset($tituloHorario) && $tituloHorario === 'Horario de Alumno', 'materiaLabels' => $materiaLabels ?? [], 'horarioResumenPorClase' => $horarioResumenPorClase ?? []])
 </div>
 @endsection
-

@@ -12,3 +12,41 @@
     gap: 10px;
     box-sizing: border-box;
 }
+/* ===== Toggle Landing ===== */
+.toggle-landing {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    cursor: pointer;
+}
+.toggle-landing input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background-color: #e53e3e;
+    border-radius: 999px;
+    transition: 0.3s;
+}
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle-landing input:checked + .toggle-slider {
+    background-color: #38a169;
+}
+.toggle-landing input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}

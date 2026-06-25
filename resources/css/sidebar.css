@@ -62,7 +62,7 @@
   color: var(--accent);
 }
 
-.menu li.active a {
+.menu li.active > a {
   color: var(--accent);
   font-weight: 500;
 }
@@ -72,7 +72,7 @@ filter: brightness(0) saturate(100%) invert(71%) sepia(26%) saturate(936%) hue-r
   transform: scale(1.05);
 }
 
-.menu li.active a .icon {
+.menu li.active > a .icon {
 filter: brightness(0) saturate(100%) invert(71%) sepia(26%) saturate(936%) hue-rotate(355deg) brightness(89%) contrast(91%);
   box-shadow: var(--pill-shadow);
 }
@@ -295,4 +295,13 @@ filter: brightness(0) saturate(100%) invert(71%) sepia(26%) saturate(936%) hue-r
   .brand-img {
     max-width: 100px;
   }
+}
+/* Fix: Resaltar solo el item activo del submenú anidado */
+.submenu .submenu li a {
+    color: #333 !important;
+    font-weight: 400 !important;
+}
+.submenu .submenu li.active-submenu > a {
+    color: var(--accent) !important;
+    font-weight: 500 !important;
 }

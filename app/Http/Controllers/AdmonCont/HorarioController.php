@@ -18,7 +18,7 @@ use App\Support\AulaHorarioPresenter;
 class HorarioController extends Controller
 {
     /**
-     * Aulas de infraestructura que coinciden con carrera + materia (facilities.career_id + tipo_materia = nombre materia).
+     * Aulas de infraestructura que coinciden con carrera + materia (pivot o legacy).
      */
     public function aulasDisponibles(Request $request): JsonResponse
     {
@@ -36,10 +36,22 @@ class HorarioController extends Controller
             return response()->json(['aulas' => []]);
         }
 
-        $nombre = trim((string) $materia->nombre);
         $aulas = Facility::query()
-            ->where('career_id', $careerIdEsperado)
-            ->where('tipo_materia', $nombre)
+            ->where(function ($q) use ($careerIdEsperado, $materia) {
+                // Buscar por tablas pivote (nuevo)
+                $q->where(function ($q2) use ($careerIdEsperado, $materia) {
+                    $q2->whereHas('careers', function ($sq) use ($careerIdEsperado) {
+                        $sq->where('careers.id', $careerIdEsperado);
+                    })->whereHas('materias', function ($sq) use ($materia) {
+                        $sq->where('materias.id', $materia->id);
+                    });
+                })
+                // O por campos legacy (compatibilidad con aulas antiguas)
+                ->orWhere(function ($q2) use ($careerIdEsperado, $materia) {
+                    $q2->where('career_id', $careerIdEsperado)
+                       ->where('tipo_materia', trim((string) $materia->nombre));
+                });
+            })
             ->orderBy('nombre_aula')
             ->orderBy('id')
             ->get();
@@ -59,10 +71,22 @@ class HorarioController extends Controller
         }
 
         $materia = Materia::query()->findOrFail((int) $request->materia_id);
+
         $ok = Facility::query()
             ->where('id', (int) $request->aula_id)
-            ->where('career_id', (int) $request->carrera_id)
-            ->where('tipo_materia', trim((string) $materia->nombre))
+            ->where(function ($q) use ($request, $materia) {
+                $q->where(function ($q2) use ($request, $materia) {
+                    $q2->whereHas('careers', function ($sq) use ($request) {
+                        $sq->where('careers.id', (int) $request->carrera_id);
+                    })->whereHas('materias', function ($sq) use ($materia) {
+                        $sq->where('materias.id', $materia->id);
+                    });
+                })
+                ->orWhere(function ($q2) use ($request, $materia) {
+                    $q2->where('career_id', (int) $request->carrera_id)
+                       ->where('tipo_materia', trim((string) $materia->nombre));
+                });
+            })
             ->exists();
 
         if (! $ok) {
@@ -74,45 +98,30 @@ class HorarioController extends Controller
 
     public function index(Request $request)
     {
-        // 1. Obtener los datos necesarios para los desplegables
         $carreras = Career::with('classification')->get();
         $aulas = Facility::orderedForHorarios()->get();
-        $query = HorarioClase::with(['carrera.classification', 'materia', 'user', 'aula', 'franjas']);
+        $periodoActivo = DB::table('periods')->orderByDesc('id')->first();
+        $query = HorarioClase::with(['carrera.classification', 'materia', 'user', 'aula', 'franjas'])
+            ->where('period_id', $periodoActivo?->id);
         $search = $request->search_query;
 
-        // 💡 Importante: Filtramos los usuarios para que solo sean docentes.
-        // Asumiendo que tienes un campo 'role' o una tabla de roles
         $docentes = User::with(['academicProfile', 'teachingCareers'])->whereHas('roles', function ($query) {
             $query->where('name', 'docente');
-        })->get(); 
-        
-        // Las materias se cargan normalmente. 
-        // Nota: Si dependes de la carrera seleccionada, esta lista se cargará inicialmente vacía o con AJAX.
-        $materias = Materia::all(); 
-        
-        // 💡 CONDICIÓN CORREGIDA: Solo aplicamos el filtro si hay contenido útil.
-        if ($search !== null && $search !== '') { 
-            
-            // Usamos una Cláusula WHERE principal para agrupar todas las condiciones OR
+        })->get();
+
+        $materias = Materia::all();
+
+        if ($search !== null && $search !== '') {
             $query->where(function ($q) use ($search) {
-                
-                // 1. Buscar por Materia
                 $q->whereHas('materia', function ($sq) use ($search) {
-                    // Usamos el método where(columna, operador, valor) para mayor claridad
                     $sq->where('nombre', 'LIKE', '%' . $search . '%');
                 })
-                
-                // 2. Buscar por Carrera
                 ->orWhereHas('carrera', function ($sq) use ($search) {
                     $sq->where('name', 'LIKE', '%' . $search . '%');
                 })
-
-                // 3. Buscar por Clasificación (de la carrera)
                 ->orWhereHas('carrera.classification', function ($sq) use ($search) {
                     $sq->where('name', 'LIKE', '%' . $search . '%');
                 })
-                
-                // 4. Buscar por Docente
                 ->orWhereHas('user', function ($sq) use ($search) {
                     $sq->where('nombre', 'LIKE', '%' . $search . '%');
                 });
@@ -130,10 +139,6 @@ class HorarioController extends Controller
         ]);
     }
 
-    /**
-     * Visualizar un horario (carrera, materia, docente, aula y franjas).
-     * Si la petición pide JSON (p. ej. para el modal), devuelve los datos.
-     */
     public function show(Request $request, HorarioClase $horario)
     {
         $horario->load(['carrera.classification', 'materia', 'user', 'aula', 'franjas']);
@@ -163,12 +168,11 @@ class HorarioController extends Controller
             ]);
         }
 
-        // Solo se usa el modal desde el índice; acceso directo a la URL redirige a la lista.
         return redirect()->route('control.schedules.index');
     }
-    
-    public function store(Request $request){
-        // 1. VALIDACIÓN (aula_id opcional por el momento)
+
+    public function store(Request $request)
+    {
         $request->validate([
             'materia_id' => 'required|exists:materias,id',
             'carrera_id' => 'required|exists:careers,id',
@@ -183,12 +187,22 @@ class HorarioController extends Controller
         ]);
 
         $this->assertAulaCoincideCarreraMateria($request);
-        
-        // Decodificar las franjas (el array temporal de JS)
+
+        // Validar que no exista un horario duplicado (misma carrera + materia + docente)
+        $duplicado = HorarioClase::where('career_id', $request->carrera_id)
+            ->where('materia_id', $request->materia_id)
+            ->where('user_id', $request->docente_id)
+            ->where('period_id', DB::table('periods')->orderByDesc('id')->value('id'))
+            ->exists();
+        if ($duplicado) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Ya existe un horario con esta combinación de carrera, materia y docente.'], 422);
+            }
+            return redirect()->back()->withInput()->withErrors(['error' => 'Ya existe un horario con esta combinación de carrera, materia y docente.']);
+        }
+
         $franjasData = json_decode($request->franjas_json, true);
-        
-        //dd($request->all(), $franjasData);
-        // ¡Validación crítica! Asegurar que se haya añadido al menos una franja de tiempo
+
         if (empty($franjasData)) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -199,23 +213,18 @@ class HorarioController extends Controller
             return redirect()->back()->withErrors(['franjas_json' => '']);
         }
 
-        // Usamos una transacción para asegurar que, si falla el guardado de una franja, 
-        // se revierta el guardado del registro maestro.
         DB::beginTransaction();
         try {
-            // 2. CREAR REGISTRO MAESTRO (HorarioClase)
             $horarioClase = HorarioClase::create([
                 'materia_id' => $request->materia_id,
                 'career_id'  => $request->carrera_id,
                 'user_id'    => $request->docente_id,
                 'aula_id'    => $request->aula_id ?: null,
+                'period_id'  => DB::table('periods')->orderByDesc('id')->value('id'),
             ]);
-            
-            // 3. PREPARAR Y GUARDAR FRANJAS RELACIONADAS
-            $franjasAGuardar = [];
 
+            $franjasAGuardar = [];
             foreach ($franjasData as $franja) {
-                // Generamos un registro individual en la tabla horario_franjas por cada día
                 foreach ($franja['dias_semana'] as $dia) {
                     $franjasAGuardar[] = [
                         'dias_semana'  => $dia,
@@ -225,9 +234,8 @@ class HorarioController extends Controller
                 }
             }
 
-            // Usamos saveMany() para guardar todas las filas de franjas de golpe
-            $horarioClase->franjas()->createMany($franjasAGuardar); 
-            
+            $horarioClase->franjas()->createMany($franjasAGuardar);
+
             DB::commit();
 
             $message = 'Horario registrado correctamente.';
@@ -249,6 +257,7 @@ class HorarioController extends Controller
             return redirect()->back()->withInput()->withErrors(['error' => 'Error al guardar el horario: ' . $e->getMessage()]);
         }
     }
+
     public function destroy(HorarioClase $horario)
     {
         $request = request();
@@ -281,9 +290,7 @@ class HorarioController extends Controller
                 ->withErrors(['error' => 'No se pudo eliminar el horario.']);
         }
     }
-    /**
-     * Devuelve en JSON los datos del horario para edición (modal o AJAX).
-     */
+
     public function editData(HorarioClase $horario)
     {
         $horario->load('franjas');
@@ -320,80 +327,88 @@ class HorarioController extends Controller
         }
         return view('layouts.ControlAdmin.Horarios.edit', $data);
     }
-    public function update(Request $request, HorarioClase $horario){
-    // 1. VALIDACIÓN
-    $request->validate([
-        'materia_id' => 'required|exists:materias,id',
-        'carrera_id' => 'required|exists:careers,id',
-        'docente_id' => 'required|exists:users,id',
-        'aula_id'    => 'nullable|exists:facilities,id',
-        'franjas_json' => 'required|json',
-    ], [
-        'docente_id.required' => 'Seleccione un docente.',
-        'materia_id.required' => 'Seleccione una materia.',
-        'carrera_id.required' => 'Seleccione una carrera.',
-        'franjas_json.required' => '',
-    ]);
 
-    $this->assertAulaCoincideCarreraMateria($request);
-    
-    // Decodificar las franjas (el array temporal de JS)
-    $franjasData = json_decode($request->franjas_json, true);
-    
-    if (empty($franjasData)) {
-        if ($request->expectsJson()) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'Añada al menos una franja horaria.',
-            ], 422);
-        }
-        return redirect()->back()->withInput()->withErrors(['franjas_json' => '']);
-    }
-
-    DB::beginTransaction();
-    try {
-        // 2. ACTUALIZAR REGISTRO MAESTRO (HorarioClase)
-        $horario->update([
-            'materia_id' => $request->materia_id,
-            'career_id'  => $request->carrera_id,
-            'user_id'    => $request->docente_id,
-            'aula_id'    => $request->aula_id ?: null,
+    public function update(Request $request, HorarioClase $horario)
+    {
+        $request->validate([
+            'materia_id' => 'required|exists:materias,id',
+            'carrera_id' => 'required|exists:careers,id',
+            'docente_id' => 'required|exists:users,id',
+            'aula_id'    => 'nullable|exists:facilities,id',
+            'franjas_json' => 'required|json',
+        ], [
+            'docente_id.required' => 'Seleccione un docente.',
+            'materia_id.required' => 'Seleccione una materia.',
+            'carrera_id.required' => 'Seleccione una carrera.',
+            'franjas_json.required' => '',
         ]);
-        
-        // 3. PREPARAR Y SINCRONIZAR FRANJAS HORARIAS
-        $franjasAGuardar = [];
 
-        foreach ($franjasData as $franja) {
-            // Generamos un registro individual por cada día en el array del frontend
-            foreach ($franja['dias_semana'] as $dia) {
-                $franjasAGuardar[] = [
-                    'dias_semana' => $dia,
-                    'hora_inicio' => $franja['hora_inicio'],
-                    'hora_fin'    => $franja['hora_fin'],
-                ];
+        $this->assertAulaCoincideCarreraMateria($request);
+
+        // Validar que no exista un horario duplicado (excluyendo el actual)
+        $duplicado = HorarioClase::where('career_id', $request->carrera_id)
+            ->where('materia_id', $request->materia_id)
+            ->where('user_id', $request->docente_id)
+            ->where('id', '!=', $horario->id)
+            ->exists();
+        if ($duplicado) {
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json(['ok' => false, 'message' => 'Ya existe un horario con esta combinación de carrera, materia y docente.'], 422);
             }
+            return redirect()->back()->withInput()->withErrors(['error' => 'Ya existe un horario con esta combinación de carrera, materia y docente.']);
         }
 
-        // 🚨 Sincronización: Eliminar las franjas antiguas y crear las nuevas. 🚨
-        $horario->franjas()->delete(); // Borra todas las franjas_horarias relacionadas (CASCADE)
-        $horario->franjas()->createMany($franjasAGuardar); // Crea las nuevas
+        $franjasData = json_decode($request->franjas_json, true);
 
-        DB::commit();
-
-        $message = 'Horario actualizado correctamente.';
-        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
-            return response()->json(['ok' => true, 'success' => true, 'message' => $message]);
+        if (empty($franjasData)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Añada al menos una franja horaria.',
+                ], 422);
+            }
+            return redirect()->back()->withInput()->withErrors(['franjas_json' => '']);
         }
-        return redirect()
-            ->route('control.schedules.index', ['modal' => 'success'])
-            ->with('success', $message);
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
-            return response()->json(['ok' => false, 'success' => false, 'message' => 'Error al actualizar el horario.'], 422);
+        DB::beginTransaction();
+        try {
+            $horario->update([
+                'materia_id' => $request->materia_id,
+                'career_id'  => $request->carrera_id,
+                'user_id'    => $request->docente_id,
+                'aula_id'    => $request->aula_id ?: null,
+            ]);
+
+            $franjasAGuardar = [];
+            foreach ($franjasData as $franja) {
+                foreach ($franja['dias_semana'] as $dia) {
+                    $franjasAGuardar[] = [
+                        'dias_semana' => $dia,
+                        'hora_inicio' => $franja['hora_inicio'],
+                        'hora_fin'    => $franja['hora_fin'],
+                    ];
+                }
+            }
+
+            $horario->franjas()->delete();
+            $horario->franjas()->createMany($franjasAGuardar);
+
+            DB::commit();
+
+            $message = 'Horario actualizado correctamente.';
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json(['ok' => true, 'success' => true, 'message' => $message]);
+            }
+            return redirect()
+                ->route('control.schedules.index', ['modal' => 'success'])
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                return response()->json(['ok' => false, 'success' => false, 'message' => 'Error al actualizar el horario.'], 422);
+            }
+            return redirect()->back()->withInput()->withErrors(['error' => 'Error al actualizar el horario.']);
         }
-        return redirect()->back()->withInput()->withErrors(['error' => 'Error al actualizar el horario.']);
-    }
     }
 }

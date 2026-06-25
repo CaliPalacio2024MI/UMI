@@ -14,15 +14,23 @@
 
                 <div class="form-field">
                     <label for="career_classification_id" class="career-classification-label--opens-modal" title="Clic para agregar o administrar clasificaciones">Clasificación:</label>
-                    <select id="career_classification_id" name="career_classification_id"
-                        class="@error('career_classification_id') validation-error @enderror @if(blank(old('career_classification_id'))) placeholder @endif">
-                        <option value="" class="placeholder-option">Seleccione una clasificación</option>
-                        @foreach ($careerClassifications ?? [] as $clasificacion)
-                            <option value="{{ $clasificacion->id }}" @selected(old('career_classification_id') == $clasificacion->id)>
-                                {{ $clasificacion->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @isset($lockedClassification)
+                        {{-- Estás dentro de esta clasificación: queda fija --}}
+                        <input type="hidden" name="career_classification_id" value="{{ $lockedClassification->id }}">
+                        <select id="career_classification_id" disabled style="background:#f5f5f5; cursor:default;">
+                            <option selected>{{ $lockedClassification->name }}</option>
+                        </select>
+                    @else
+                        <select id="career_classification_id" name="career_classification_id"
+                            class="@error('career_classification_id') validation-error @enderror @if(blank(old('career_classification_id'))) placeholder @endif">
+                            <option value="" class="placeholder-option">Seleccione una clasificación</option>
+                            @foreach ($careerClassifications ?? [] as $clasificacion)
+                                <option value="{{ $clasificacion->id }}" @selected(old('career_classification_id') == $clasificacion->id)>
+                                    {{ $clasificacion->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endisset
                 </div>
 
                 <div class="form-field">

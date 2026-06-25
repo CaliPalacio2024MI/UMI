@@ -12,7 +12,7 @@
                 </div>
                 <div class="materia-view-row">
                     <dt>Clasificación:</dt>
-                    <dd>{{ $registro->career?->classification?->name ?? '—' }}</dd>
+                    <dd>{{ $registro->classification?->name ?? '—' }}</dd>
                 </div>
                 <div class="materia-view-row">
                     <dt>Carrera:</dt>
@@ -40,7 +40,17 @@
                 </div>
                 <div class="materia-view-row">
                     <dt>Temario:</dt>
-                    <dd>{{ filled($registro->temario) ? $registro->temario : '—' }}</dd>
+                    <dd>
+                        @if(!empty($registro->temario) && is_array($registro->temario))
+                            <ul style="margin:0; padding-left:18px;">
+                                @foreach($registro->temario as $tema)
+                                    <li>{{ $tema }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            —
+                        @endif
+                    </dd>
                 </div>
                 <div class="materia-view-row">
                     <dt>Infografía:</dt>

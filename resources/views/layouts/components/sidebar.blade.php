@@ -223,7 +223,7 @@
                     <ul class="submenu">
                         {{-- Orden: Control Académico → Control Escolar → Planeación y Vinculación --}}
                         @if($canSeeAcademico)
-                            <li class="has-submenu {{ request()->routeIs('control.*') && !request()->routeIs('control.planeacion.*') ? 'active open' : '' }}">
+                            <li class="has-submenu {{ request()->routeIs('control.*') && !request()->routeIs('control.planeacion.*') ? 'active' : '' }}">
                                 <a href="#">Control Académico</a>
                                 <ul class="submenu">
                                     <li class="{{ request()->routeIs('control.careers.*') ? 'active-submenu' : '' }}">
@@ -255,7 +255,7 @@
                         @endif
 
                         @if($canSeeEscolar)
-                            <li class="has-submenu {{ request()->routeIs('escolar.*') ? 'active open' : '' }}">
+                            <li class="has-submenu {{ request()->routeIs('escolar.*') ? 'active' : '' }}">
                                 <a href="#">Control Escolar</a>
                                 <ul class="submenu">
                                     <li class="{{ request()->routeIs('escolar.students.*') ? 'active-submenu' : '' }}">
@@ -275,7 +275,7 @@
                         @endif
 
                         @if($canSeePlaneacion)
-                            <li class="has-submenu {{ request()->is('control/planeacion/*') ? 'active open' : '' }}">
+                            <li class="has-submenu {{ request()->is('control/planeacion/*') ? 'active' : '' }}">
                                 <a href="#">Planeación y Vinc.</a>
                                 <ul class="submenu">
                                     <li class="{{ request()->is('control/planeacion/presupuesto*') ? 'active-submenu' : '' }}">

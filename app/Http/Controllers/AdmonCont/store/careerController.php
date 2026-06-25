@@ -22,9 +22,8 @@ class careerController extends Controller
             : Career::with('classification')->orderBy('created_at', 'desc')->get();
 
         $careerClassifications = $institutionId
-            ? CareerClassification::where('institution_id', $institutionId)->orderBy('name')->get()
-            : CareerClassification::orderBy('name')->get();
-
+            ? CareerClassification::where('institution_id', $institutionId)->withCount('careers')->with(['careers' => function($q) { $q->select('id','name','career_classification_id','semesters')->withCount('materias'); }])->orderBy('name')->get()
+            : CareerClassification::withCount('careers')->with(['careers' => function($q) { $q->select('id','name','career_classification_id','semesters')->withCount('materias'); }])->orderBy('name')->get();
         // Evita caché del listado (p. ej. GET repetido ?modal=success tras varios DELETE);
         // si el HTML sale de caché, el script del modal de éxito puede no ejecutarse y no verías el aviso.
         return response()
@@ -32,6 +31,28 @@ class careerController extends Controller
             ->header('Cache-Control', 'private, no-store, must-revalidate')
             ->header('Pragma', 'no-cache');
     }
+    public function careersByClassification(CareerClassification $careerClassification)
+{
+    $institutionId = session('active_institution_id');
+    $institutionId = $institutionId ? (int) $institutionId : null;
+
+    // Carreras de ESTA clasificación (respetando institución)
+    $careers = Career::where('career_classification_id', $careerClassification->id)
+        ->when($institutionId, fn($q) => $q->where('institution_id', $institutionId))
+        ->with('classification')
+        ->withCount('materias')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Clasificaciones para los modales de crear/editar carrera
+   $careerClassifications = $institutionId
+            ? CareerClassification::where('institution_id', $institutionId)->withCount('careers')->with('careers:id,name,career_classification_id')->orderBy('name')->get()
+            : CareerClassification::withCount('careers')->with('careers:id,name,career_classification_id')->orderBy('name')->get();
+    return response()
+        ->view('layouts.ControlAdmin.Carreras.byClassification', compact('careers', 'careerClassifications', 'careerClassification'))
+        ->header('Cache-Control', 'private, no-store, must-revalidate')
+        ->header('Pragma', 'no-cache');
+}
     public function create()
     {
         $institutionId = session('active_institution_id');
@@ -392,4 +413,23 @@ class careerController extends Controller
             ->route('control.careers.index', ['modal' => 'success'])
             ->with('success', 'Carrera eliminada exitosamente.');
     }
+  public function toggleLanding(CareerClassification $careerClassification)
+{
+    $careerClassification->visible_landing = !$careerClassification->visible_landing;
+    $careerClassification->save();
+
+    return redirect()
+        ->route('control.careers.index', ['modal' => 'success'])
+        ->with('success', 'Visibilidad de la clasificación en Landing actualizada.');
 }
+    public function toggleCareerLanding(Career $carrera)
+{
+    $carrera->visible_landing = !$carrera->visible_landing;
+    $carrera->save();
+
+    return redirect()
+        ->route('control.careers.index', ['modal' => 'success'])
+        ->with('success', 'Visibilidad de la carrera en Landing actualizada.');
+}
+}
+

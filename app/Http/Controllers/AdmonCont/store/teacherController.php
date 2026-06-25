@@ -211,13 +211,14 @@ class teacherController extends Controller
     public function form(Request $request){
         // 1. Cargar las Carreras
         // Asume que el modelo se llama 'Carrera' y tiene las columnas 'id' y 'nombre'.
-        $carreras = Career::all();
+       $carreras = Career::all();
+       $clasificaciones = \App\Models\Users\CareerClassification::orderBy('name')->get();
 
         if ($request->ajax()) {
-            return view('layouts.ControlAdmin.Listas.members.partials.form_create', compact('carreras'));
+            return view('layouts.ControlAdmin.Listas.members.partials.form_create', compact('carreras', 'clasificaciones'));
         }
 
-        return view('layouts.ControlAdmin.Listas.members.create', compact('carreras' /*, 'campuses' */));
+        return view('layouts.ControlAdmin.Listas.members.create', compact('carreras', 'clasificaciones' /*, 'campuses' */));
     }
 
     /**

@@ -78,7 +78,6 @@ class SimpleSPANavigation {
             if (link && !isSubmenuToggle && this.shouldIntercept(link)) {
                 e.preventDefault();
                 this.setImmediateActivate(link);
-                // Cerrar todos los submenús al elegir una opción (ej. Carreras) para que no se queden abiertos
                 document.querySelectorAll('.menu .has-submenu.open').forEach(openSubmenu => {
                     openSubmenu.classList.remove('open');
                 });
@@ -361,34 +360,39 @@ async loadPage(url, updateHistory = true) {
 
     updateActiveMenuItem() {
         const currentPath = new URL(window.location.href).pathname.replace(/\/+$/, '') || '/';
+
+        document.querySelectorAll('.menu li.active, .menu li.active-submenu, .menu li.open').forEach((item) => {
+            item.classList.remove('active', 'active-submenu', 'open');
+        });
+
         document.querySelectorAll('.menu a').forEach(link => {
             const li = link.closest('li');
             if (!li) return;
-            const href = link.getAttribute('href') || '#';
+            const href = (link.getAttribute('href') || '').trim();
+            if (!href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:')) {
+                return;
+            }
             let linkPath = '/';
             try {
                 linkPath = new URL(href, window.location.origin).pathname.replace(/\/+$/, '') || '/';
             } catch (e) {
                 linkPath = href.replace(/\/+$/, '') || '/';
             }
-            const isMatch = (linkPath === currentPath) ||
-                            (linkPath !== '/' && currentPath.startsWith(linkPath + '/')) ||
-                            (linkPath !== '/' && currentPath === linkPath);
-            if (isMatch) {
-                if (!li.classList.contains('active')) {
-                    li.classList.add('active');
-                }
-                li.classList.remove('spa-activating');
-                // Marcar también los padres (has-submenu) para que la rama quede activa al reabrir
-                let parent = li.parentElement?.closest('li.has-submenu');
-                while (parent) {
-                    parent.classList.add('active');
-                    parent = parent.parentElement?.closest('li.has-submenu');
-                }
+            const isMatch = linkPath === currentPath ||
+                            (linkPath !== '/' && currentPath.startsWith(linkPath + '/'));
+            if (!isMatch) return;
+
+            if (li.closest('.submenu')) {
+                li.classList.add('active-submenu');
             } else {
-                if (!li.classList.contains('spa-activating')) {
-                    li.classList.remove('active');
-                }
+                li.classList.add('active');
+            }
+
+            let parent = li.closest('li.has-submenu');
+            while (parent) {
+                parent.classList.add('active');
+                parent.classList.remove('open');
+                parent = parent.parentElement?.closest('li.has-submenu');
             }
         });
     }
@@ -916,8 +920,8 @@ document.addEventListener('submit', (e) => {
                     const tds = tr.querySelectorAll('td');
                     const r = data.row;
                     if (tds[0]) tds[0].textContent = r.nombre ?? '';
-                    if (tds[1]) tds[1].textContent = r.classification_name ?? '';
-                    if (tds[2]) tds[2].textContent = r.career_name ?? '';
+                    if (tds[1]) tds[1].textContent = r.career_name ?? ''; //Carrera
+                    if (tds[2]) tds[2].textContent = r.classification_name ?? ''; //Clasificacion
                     if (tds[3]) tds[3].textContent = r.creditos ?? '';
                     if (tds[4]) tds[4].textContent = r.semestre ?? '';
                     if (tds[5]) tds[5].textContent = r.type ?? '';
@@ -1907,12 +1911,12 @@ window.initHorarioEditForm = function(container) {
                     if (ok && data.success) {
                         if (typeof onHorarioUpdated === 'function') onHorarioUpdated();
                     } else {
-                        alert(data.message || 'Error al actualizar el horario.');
+                        scheduleShowMessage(form, data.message || 'Error al actualizar el horario.');
                     }
                 })
                 .catch(() => {
                     if (submitBtn) submitBtn.disabled = false;
-                    alert('Error al actualizar el horario.');
+                    
                 });
         });
     }
@@ -1948,7 +1952,7 @@ function initHorariosCareerFilterForContainer(container) {
     });
     Array.from(materiaSelect.options).forEach((opt, i) => {
         if (i === 0) return;
-        materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
+       materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || ''), semestre: String(opt.getAttribute('data-semestre') || '') });
     });
     Array.from(docenteSelect.options).forEach((opt, i) => {
         if (i === 0) return;
@@ -1974,21 +1978,48 @@ function initHorariosCareerFilterForContainer(container) {
             carreraSelect.value = '';
         }
     }
+    function populateSemestres(resetValues) {
+        const semestreSelect = document.getElementById('semestre_filter_select');
+        if (!semestreSelect) return;
+        const careerId = String(carreraSelect.value || '');
+        const materiasDeCarrera = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
+        const semestresUnicos = [...new Set(materiasDeCarrera.map((m) => m.semestre).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
+        const savedSemestre = semestreSelect.value;
+        semestreSelect.innerHTML = '';
+        semestreSelect.appendChild(new Option('Todos los semestres', '', true));
+        semestresUnicos.forEach((s) => {
+            semestreSelect.appendChild(new Option('Semestre ' + s, s, false));
+        });
+        if (!resetValues && savedSemestre && semestresUnicos.includes(savedSemestre)) {
+            semestreSelect.value = savedSemestre;
+        } else if (resetValues) {
+            semestreSelect.value = '';
+        }
+    }
+
     function filterByCareer(resetValues = true) {
         const careerId = String(carreraSelect.value || '');
+        const semestreSelect = document.getElementById('semestre_filter_select');
+        const semestreValue = semestreSelect ? String(semestreSelect.value || '') : '';
         const savedMateriaId = materiaSelect.value;
         const savedDocenteId = docenteSelect.value;
-        const materiasFiltered = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
+
+        let materiasFiltered = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
+        if (semestreValue) {
+            materiasFiltered = materiasFiltered.filter((m) => m.semestre === semestreValue);
+        }
         const docentesFiltered = careerId ? docentesData.filter((d) => horarioDocenteMatchesCareer(d.careerId, careerId)) : docentesData;
+
         materiaSelect.innerHTML = '';
         docenteSelect.innerHTML = '';
-        materiaSelect.appendChild(new Option('Seleccione una Materia', '', true));
+        materiaSelect.appendChild(new Option('Seleccione el nombre de la Materia', '', true));
         materiasFiltered.forEach((m) => {
             const o = new Option(m.text, m.value, false);
             o.setAttribute('data-career-id', m.careerId || '');
+            o.setAttribute('data-semestre', m.semestre || '');
             materiaSelect.appendChild(o);
         });
-        docenteSelect.appendChild(new Option('Seleccione un Docente', '', true));
+        docenteSelect.appendChild(new Option('Seleccione el nombre del docente', '', true));
         docentesFiltered.forEach((d) => docenteSelect.appendChild(new Option(d.text, d.value, false)));
         if (!resetValues && savedMateriaId && materiasFiltered.some((m) => m.value === savedMateriaId)) materiaSelect.value = savedMateriaId;
         if (!resetValues && savedDocenteId && docentesFiltered.some((d) => d.value === savedDocenteId)) docenteSelect.value = savedDocenteId;
@@ -2009,6 +2040,7 @@ function initHorariosCareerFilterForContainer(container) {
         }
     });
     filterCarrerasByClassification(false);
+    populateSemestres(false);
     filterByCareer(false);
 }
 document.addEventListener('click', (e) => {
@@ -2032,10 +2064,10 @@ document.addEventListener('click', (e) => {
 
 // --- Horarios: Ver en modal (legacy: data-schedule-show-url + scheduleModal) ---
 document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-view[data-schedule-show-url]');
+    const btn = e.target.closest('.btn-view[data-schedule-show-url], .btn-view[data-show-url]');
     if (!btn || !btn.closest('.schedule-table')) return;
     e.preventDefault();
-    const url = btn.getAttribute('data-schedule-show-url');
+    const url = btn.getAttribute('data-schedule-show-url') || btn.getAttribute('data-show-url');
     if (!url) return;
     const modal = document.getElementById('scheduleModal');
     const body = document.getElementById('scheduleModalBody');
@@ -2060,10 +2092,10 @@ document.addEventListener('click', (e) => {
 });
 // --- Horarios: Editar en modal (no navegar) ---
 document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-edit[data-schedule-edit-url]');
+    const btn = e.target.closest('.btn-edit[data-schedule-edit-url], .btn-edit[data-edit-url]');
     if (!btn || !btn.closest('.schedule-table')) return;
     e.preventDefault();
-    const url = btn.getAttribute('data-schedule-edit-url');
+    const url = btn.getAttribute('data-schedule-edit-url') || btn.getAttribute('data-edit-url');
     if (!url) return;
     const modal = document.getElementById('scheduleModal');
     const body = document.getElementById('scheduleModalBody');
@@ -2226,7 +2258,7 @@ function scheduleRenderPreview(form) {
         scheduleUpdatePreviewSelection(form);
         return;
     }
-    const deleteSvg = '<img src="/images/icons/trash-solid-full.svg" class="schedule-preview-card__icon schedule-preview-empty__icon" width="18" height="18" alt="" style="flex-shrink: 0;" />';
+    const deleteSvg = '<img src="/images/icons/Vector.svg" class="schedule-preview-card__icon schedule-preview-empty__icon" width="18" height="18" alt="" style="flex-shrink: 0;" />';
     franjas.forEach((franja) => {
         const diaNombres = (franja.dias_semana || []).map(scheduleGetNombreDia).join(' – ');
         const hi = scheduleTimeTo12h(franja.hora_inicio);
@@ -2238,8 +2270,38 @@ function scheduleRenderPreview(form) {
         container.appendChild(card);
     });
 }
+/** Muestra un mensaje estilizado temporal en el formulario de horarios (reemplaza alert). */
+function scheduleShowMessage(form, message, type) {
+    type = type || 'error';
+    var container = form ? form.closest('.schedule-lists') || form.parentElement : document.body;
+    var existing = container.querySelector('.schedule-inline-msg');
+    if (existing) existing.remove();
+    var div = document.createElement('div');
+    div.className = 'schedule-inline-msg';
+    var bgColor = type === 'error' ? '#fff3f3' : '#f3fff3';
+    var borderColor = type === 'error' ? '#e74c3c' : '#27ae60';
+    var textColor = type === 'error' ? '#c0392b' : '#1e8449';
+    div.style.cssText = 'padding:12px 16px;margin:10px 0;border-radius:8px;border:1px solid ' + borderColor + ';background:' + bgColor + ';color:' + textColor + ';font-size:0.9rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    var span = document.createElement('span');
+    span.textContent = message;
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'background:none;border:none;font-size:1.1rem;cursor:pointer;color:' + textColor + ';padding:0 4px;';
+    closeBtn.addEventListener('click', function() { div.remove(); });
+    div.appendChild(span);
+    div.appendChild(closeBtn);
+    var scheduleSettings = form ? form.querySelector('.schedule-settings') : null;
+    if (scheduleSettings) {
+        scheduleSettings.parentNode.insertBefore(div, scheduleSettings);
+    } else {
+        container.prepend(div);
+    }
+    setTimeout(function() { if (div.parentNode) div.remove(); }, 5000);
+}
 function scheduleClearTimeForm(form) {
     if (!form) return;
+    document.querySelectorAll('.time-picker-dropdown.is-open').forEach(function(el) { el.classList.remove('is-open'); });
     const hi = form.querySelector('input[name="hora_inicio"]');
     const hf = form.querySelector('input[name="hora_fin"]');
     if (hi) { hi.value = '00:00'; hi.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -2267,27 +2329,31 @@ document.addEventListener('click', (e) => {
         const horaInicio = (inputInicio && inputInicio.value ? inputInicio.value.trim() : '') || '';
         const horaFin = (inputFin && inputFin.value ? inputFin.value.trim() : '') || '';
         if (diasSeleccionados.length === 0 || !horaInicio || !horaFin) {
-            alert('Por favor, selecciona al menos un día y las horas de inicio y fin.');
+            scheduleShowMessage(form, 'Por favor, selecciona al menos un día y las horas de inicio y fin.');
             return;
         }
         if (horaInicio === horaFin) {
-            alert('La hora de inicio y la hora de fin deben ser distintas.');
+            scheduleShowMessage(form, 'La hora de inicio y la hora de fin deben ser distintas.');
             return;
         }
-        const diasYaUsados = new Set();
-        franjas.forEach((f) => {
-            (f.dias_semana || []).forEach((d) => {
-                const n = parseInt(d, 10);
-                if (!isNaN(n)) diasYaUsados.add(n);
+   // Validar solapamiento de horarios en el mismo día (permite mismo día si no se cruzan las horas)
+        var conflictos = [];
+        franjas.forEach(function (f) {
+            var existingDays = (f.dias_semana || []).map(function (d) { return parseInt(d, 10); });
+            var fInicio = (f.hora_inicio || '').substring(0, 5);
+            var fFin = (f.hora_fin || '').substring(0, 5);
+            diasSeleccionados.forEach(function (newDay) {
+                if (existingDays.indexOf(newDay) !== -1) {
+                    if (horaInicio < fFin && fInicio < horaFin) {
+                        conflictos.push(scheduleGetNombreDia(newDay));
+                    }
+                }
             });
         });
-        const diasRepetidos = diasSeleccionados.filter((d) => diasYaUsados.has(d));
-        if (diasRepetidos.length > 0) {
-            const nombres = [...new Set(diasRepetidos)]
-                .sort((a, b) => a - b)
-                .map(scheduleGetNombreDia)
-                .join(', ');
-            alert('No puede repetir un día que ya está en otra franja de este horario.');
+        if (conflictos.length > 0) {
+            var nombresConflicto = [];
+            conflictos.forEach(function (n) { if (nombresConflicto.indexOf(n) === -1) nombresConflicto.push(n); });
+            scheduleShowMessage(form, 'Hay un conflicto de horario en: ' + nombresConflicto.join(', ') + '. Los horarios se solapan en el mismo día.');
             return;
         }
         form._scheduleFranjas = franjas;
@@ -2411,12 +2477,13 @@ document.addEventListener('click', (e) => {
                         const first = Object.values(data.errors).flat()[0];
                         errMsg = first || '';
                     }
-                    window.alert(errMsg || 'Revisa el formulario de horario.');
+                    scheduleShowMessage(form, errMsg || 'Revisa el formulario de horario.');
                     return;
                 }
-                window.alert(data.message || 'No se pudo guardar el horario.');
             })
-            .catch(() => window.alert('Error de red. Intente de nuevo.'));
+            .catch(() => {
+                scheduleShowMessage(form || document.querySelector('#schedule_form'), 'Error de red. Intente de nuevo.');
+            });
     }
 });
 
@@ -2569,7 +2636,7 @@ function initHorariosCareerFilter() {
     });
     Array.from(materiaSelect.options).forEach((opt, i) => {
         if (i === 0) return;
-        materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || '') });
+       materiasData.push({ value: opt.value, text: opt.textContent.trim(), careerId: String(opt.getAttribute('data-career-id') || ''), semestre: String(opt.getAttribute('data-semestre') || '') });
     });
     Array.from(docenteSelect.options).forEach((opt, i) => {
         if (i === 0) return;
@@ -2582,7 +2649,7 @@ function initHorariosCareerFilter() {
         const savedCareerId = carreraSelect.value;
         const carrerasFiltered = classificationId
             ? carrerasData.filter((c) => c.classificationId === classificationId)
-            : carrerasData;
+            : carrerasData;   
         carreraSelect.innerHTML = '';
         carreraSelect.appendChild(new Option('Seleccione una Carrera', '', true));
         carrerasFiltered.forEach((c) => {
@@ -2596,7 +2663,24 @@ function initHorariosCareerFilter() {
             carreraSelect.value = '';
         }
     }
-
+function populateSemestres(resetValues) {
+        const semestreSelect = document.getElementById('semestre_filter_select');
+        if (!semestreSelect) return;
+        const careerId = String(carreraSelect.value || '');
+        const materiasDeCarrera = careerId ? materiasData.filter((m) => m.careerId === careerId) : materiasData;
+        const semestresUnicos = [...new Set(materiasDeCarrera.map((m) => m.semestre).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
+        const savedSemestre = semestreSelect.value;
+        semestreSelect.innerHTML = '';
+        semestreSelect.appendChild(new Option('Todos los semestres', '', true));
+        semestresUnicos.forEach((s) => {
+            semestreSelect.appendChild(new Option('Semestre ' + s, s, false));
+        });
+        if (!resetValues && savedSemestre && semestresUnicos.includes(savedSemestre)) {
+            semestreSelect.value = savedSemestre;
+        } else if (resetValues) {
+            semestreSelect.value = '';
+        }
+    }
     function filterByCareer(resetValues = true) {
         const careerId = String(carreraSelect.value || '');
         const savedMateriaId = materiaSelect.value;
@@ -2622,17 +2706,24 @@ function initHorariosCareerFilter() {
     if (clasificacionSelect) {
         clasificacionSelect.addEventListener('change', () => {
             filterCarrerasByClassification(true);
+            populateSemestres(true);
             filterByCareer(true);
         });
     }
-    carreraSelect.addEventListener('change', () => filterByCareer(true));
+    carreraSelect.addEventListener('change', () => {
+        populateSemestres(true);
+        filterByCareer(true);
+    });
+    const semestreFilterSelect = document.getElementById('semestre_filter_select');
+    if (semestreFilterSelect) {
+        semestreFilterSelect.addEventListener('change', () => filterByCareer(true));
+    }
     materiaSelect.addEventListener('change', () => {
         if (typeof window.refreshScheduleAulaOptionsFromForm === 'function') {
             window.refreshScheduleAulaOptionsFromForm(form);
         }
     });
-    filterCarrerasByClassification(false);
-    filterByCareer(false);
+    
 }
 
 // --- Horarios: time-picker (reloj) — disponible para SPA y modal; así funciona al entrar al módulo sin refrescar ---

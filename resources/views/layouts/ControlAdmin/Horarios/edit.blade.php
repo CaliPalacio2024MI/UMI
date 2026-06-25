@@ -103,7 +103,7 @@
                 <h3 class="schedule-resume__title">Vista Previa</h3>
                 <div class="schedule-resume schedule-resume--cards">
                     <div id="time_slots_body" class="schedule-preview-cards">
-                        <table class="schedule-preview-empty-table"><tr><th class="schedule-preview-empty" style="color: #ACACAC; font-size: 0.9rem; font-weight: normal; margin: 0; padding: 8px 12px; text-align: left; border: none; background: transparent; text-transform: capitalize; display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span>Lunes – Martes – Miercoles -- 07:00 – 08:00</span><img src="{{ asset('images/icons/trash-solid-full.svg') }}" class="schedule-preview-empty__icon" width="18" height="18" alt="Eliminar" style="flex-shrink: 0;" /></th></tr></table>
+                        <table class="schedule-preview-empty-table"><tr><th class="schedule-preview-empty" style="color: #ACACAC; font-size: 0.9rem; font-weight: normal; margin: 0; padding: 8px 12px; text-align: left; border: none; background: transparent; text-transform: capitalize; display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span>Lunes – Martes – Miercoles -- 07:00 – 08:00</span><img src="{{ asset('images/icons/Vector.svg') }}" class="schedule-preview-empty__icon" width="18" height="18" alt="Eliminar" style="flex-shrink: 0;" /></th></tr></table>
                     </div>
                 </div>
 

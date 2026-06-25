@@ -51,11 +51,11 @@ use App\Http\Controllers\WorkstationController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\Cursos\CourseSessionController;
 
-Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
+//Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
 //Filtrado de practicantes
-Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
+//Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
 //Lector QR
-Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
+//Route::post('/scan-qr', [AttendanceController::class, 'scanQr']);
 
 // ==========================================================================
 // 1. ACCESO PÚBLICO
@@ -78,7 +78,7 @@ Route::post('/registro-publico', [LeadPublicController::class, 'store'])
 // ==========================================================================
 // 2. PLATAFORMA GENERAL (Usuarios Autenticados)
 // ==========================================================================
-Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     
     // --- Contexto (Cambio de Rol/Institución) ---
     Route::match(['get', 'post'], '/set-context', [ContextController::class, 'setContext'])->name('context.set');
@@ -192,8 +192,8 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
         //  AJAX
         Route::get('/departments/{id}/workstations', [GroupDataController::class, 'workstations']);
         Route::get('/workstations/{id}/participants', [GroupDataController::class, 'participants']);
-        Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
-        Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
+        //Route::get('/practicantes', [PractitionerController::class, 'filter']) ->name('practicantes.filter');
+        //Route::get('/get-practicantes', [PractitionerController::class, 'getPracticantes']) ->name('get.practicantes');
         Route::get('/sessions/{id}/group-data', [CourseSessionController::class, 'getGroupData']);
 
     });
@@ -323,6 +323,9 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::post('/carreras', [careerController::class, 'store'])->name('careers.store');
             Route::post('/carreras/clasificaciones', [careerController::class, 'storeClassification'])->name('careers.classifications.store');
             Route::delete('/carreras/clasificaciones/{careerClassification}', [careerController::class, 'destroyClassification'])->name('careers.classifications.destroy');
+            Route::post('/carreras/clasificaciones/{careerClassification}/toggle', [careerController::class, 'toggleLanding'])->name('careers.classifications.toggle');
+            Route::get('/carreras/por-clasificacion/{careerClassification}', [careerController::class, 'careersByClassification'])->name('careers.byClassification');
+            Route::post('/carreras/{carrera}/toggle', [careerController::class, 'toggleCareerLanding'])->name('careers.toggle');
             Route::put('/carreras/{carrera}', [careerController::class, 'update'])->name('careers.update');
             Route::delete('/carreras/{carrera}', [careerController::class, 'destroy'])->name('careers.destroy');
 
@@ -336,7 +339,6 @@ Route::middleware(['auth', 'ajax', 'spa'])->group(function () {
             Route::get('/aulas/crear', [FacilityController::class, 'createForm'])->name('facilities.create');
             Route::post('/aulas', [FacilityController::class, 'store'])->name('facilities.store');
             Route::get('/aulas/materias-por-carrera', [FacilityController::class, 'materiasPorCarrera'])->name('facilities.materiasPorCarrera');
-            Route::get('/aulas/{facility}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
             Route::put('/aulas/{facility}', [FacilityController::class, 'update'])->name('facilities.update');
             Route::get('/aulas/{facility}', [FacilityController::class, 'show'])->name('facilities.show');
             Route::delete('/aulas/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');

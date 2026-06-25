@@ -38,7 +38,7 @@
                         <th>Nombre del Puesto</th>
                         <th>Departamento</th>
                     @elseif ($seccion === 'periods')
-                        <th>ID</th>
+                      
                         <th>Fecha Inicio</th>
                         <th>Fecha Fin</th>
                         <th>Mensualidades</th>
@@ -76,11 +76,10 @@
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->department->name ?? 'N/A' }}</td>
                         @elseif ($seccion === 'periods')
-                            <td>{{ $item->id }}</td>
-                            <td>{{ optional($item->start_date)->format('M Y') }}</td>
-                            <td>{{ optional($item->end_date)->format('M Y') }}</td>
+                            <td>{{ ucfirst(optional($item->start_date)?->isoFormat('MMMM YYYY')) }}</td>
+                            <td>{{ ucfirst(optional($item->end_date)?->isoFormat('MMMM YYYY')) }}</td>
                             <td>{{ $item->monthly_payments_count ?? 'N/A' }}</td>
-                           <td class="status-toggle-cell">
+                            <td class="status-toggle-cell">
                                 <div class="status-content-wrapper">
                                   
                                     <form action="{{ route('ajustes.periods.toggleStatus', $item->id) }}" 

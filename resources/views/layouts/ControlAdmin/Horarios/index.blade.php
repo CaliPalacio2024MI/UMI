@@ -4,6 +4,7 @@
 
 @vite(['resources/css/Cursos/courses.css', 'resources/js/app.js'])
 
+
 @section('content')
 
 @php
@@ -22,7 +23,7 @@
                 <span class="schedule-edit-header__title">Editar horario</span>
                 <button type="button" class="schedule-edit-close" id="schedule_edit_close" title="Salir de edición" aria-label="Salir de edición">✕</button>
             </div>
-            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($modoEdicion && $horario->aula_id) data-initial-aula-id="{{ $horario->aula_id }}" @endif @if($modoEdicion && $horario->aula_id && $horario->aula) data-initial-aula-label="{{ e(\App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)) }}" @endif @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
+            <form id="schedule_form" method="POST" action="{{ $modoEdicion ? route('control.schedules.update', $horario->id) : route('control.schedules.store') }}" data-store-url="{{ route('control.schedules.store') }}" data-index-url="{{ route('control.schedules.index') }}" data-aulas-url="{{ route('control.schedules.aulasDisponibles') }}" @if($modoEdicion && $horario->aula_id) data-initial-aula-id="{{ $horario->aula_id }}" @endif @if($modoEdicion && $horario->aula_id && $horario->aula) data-initial-aula-label="{{ e(\App\Support\AulaHorarioPresenter::selectOptionSoloSeccion($horario->aula)) }}" @endif @if($modoEdicion && $horario->franjas->isNotEmpty()) data-initial-franjas="{{ $horario->franjas->toJson() }}" @endif>
                 @csrf
                 @if ($modoEdicion)
                     @method('PUT') 
@@ -63,11 +64,15 @@
                     @endif
                 </div>
                 <div class = "schedule-list-select">
-                    <label for = "materia_select">Materia</label>
+                    <label for="semestre_filter_select">Semestre</label>
+                    <select id="semestre_filter_select" name="semestre_filter">
+                        <option value="">Todos los semestres</option>
+                    </select>
+                    <label for = "materia_select" style="margin-top: 0.75rem;">Materia</label>
                     <select id="materia_select" name="materia_id" required>
                         <option value="">Seleccione una Materia</option>
                         @foreach ($materias as $materia)
-                            <option value="{{ $materia->id }}" data-career-id="{{ $materia->career_id }}" @if ($modoEdicion && isset($horario) && $materia->id == $horario->materia_id) selected @endif>{{ $materia->nombre }}</option>
+                            <option value="{{ $materia->id }}" data-career-id="{{ $materia->career_id }}" data-semestre="{{ $materia->semestre ?? '' }}" @if ($modoEdicion && isset($horario) && $materia->id == $horario->materia_id) selected @endif>{{ $materia->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -76,7 +81,7 @@
                     <select id="docente_select" name="docente_id" required>
                         <option value="">Seleccione un Docente</option>
                         @foreach ($docentes as $docente)
-                            <option value="{{ $docente->id }}" data-career-id="{{ $docente->academicProfile->career_id ?? '' }}" @if ($modoEdicion && $docente->id == $horario->user_id) selected @endif>{{ $docente->nombre }}</option>
+                            <option value="{{ $docente->id }}" data-career-id="{{ $docente->teachingCareers->pluck('id')->implode(',') }}" @if ($modoEdicion && $docente->id == $horario->user_id) selected @endif>{{ $docente->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -141,7 +146,7 @@
                 <h3 class="schedule-resume__title">Vista Previa</h3>
                 <div class="schedule-resume schedule-resume--cards">
                     <div id="time_slots_body" class="schedule-preview-cards">
-                        <table class="schedule-preview-empty-table"><tr><th class="schedule-preview-empty" style="color: #ACACAC; font-size: 0.9rem; font-weight: normal; margin: 0; padding: 8px 12px; text-align: left; border: none; background: transparent; text-transform: capitalize; display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span>Lunes – Martes – Miercoles -- 07:00 – 08:00</span><img src="{{ asset('images/icons/trash-solid-full.svg') }}" class="schedule-preview-empty__icon" width="18" height="18" alt="Eliminar" style="flex-shrink: 0;" /></th></tr></table>
+                        <table class="schedule-preview-empty-table"><tr><th class="schedule-preview-empty" style="color: #ACACAC; font-size: 0.9rem; font-weight: normal; margin: 0; padding: 8px 12px; text-align: left; border: none; background: transparent; text-transform: capitalize; display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span>Lunes – Martes – Miercoles -- 07:00 – 08:00</span><img src="{{ asset('images/icons/Vector.svg') }}" class="schedule-preview-empty__icon" width="18" height="18" alt="Eliminar" style="flex-shrink: 0;" /></th></tr></table>
                     </div>
                 </div>
                 <div class = "schedule-list-select">
@@ -290,7 +295,8 @@
         const materiaOptions = Array.from(materiaSelect.querySelectorAll('option')).filter(o => o.value !== '').map(o => ({
             value: o.value,
             careerId: String(o.getAttribute('data-career-id') || ''),
-            text: o.textContent.trim()
+            text: o.textContent.trim(),
+            semestre: String(o.getAttribute('data-semestre') || ''),
         }));
         const docenteOptions = Array.from(docenteSelect.querySelectorAll('option')).filter(o => o.value !== '').map(o => ({
             value: o.value,
@@ -340,13 +346,14 @@
                 const opt = document.createElement('option');
                 opt.value = o.value;
                 opt.setAttribute('data-career-id', o.careerId);
+                opt.setAttribute('data-semestre', o.semestre);
                 opt.textContent = o.text;
                 if (!resetValues && materiaVal === o.value) opt.selected = true;
                 materiaSelect.appendChild(opt);
             });
 
             // Docente: igual; si la carrera no tiene docentes, el menú no muestra nada
-            const docentesFiltrados = careerId === '' ? docenteOptions : docenteOptions.filter(o => o.careerId === careerId);
+            const docentesFiltrados = careerId === '' ? docenteOptions : docenteOptions.filter(o => o.careerId.split(',').map(s => s.trim()).filter(Boolean).includes(careerId));
             docenteSelect.innerHTML = '';
             const optD0 = document.createElement('option');
             optD0.value = '';

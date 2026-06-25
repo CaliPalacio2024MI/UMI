@@ -13,7 +13,13 @@
                         <ul class="classification-modal-list__items">
                             @foreach($careerClassifications as $clasificacion)
                                 <li class="classification-modal-list__row">
-                                    <span class="classification-modal-list__name">{{ $clasificacion->name }}</span>
+
+                                    {{-- Nombre --}}
+                                    <span class="classification-modal-list__name">
+                                        {{ $clasificacion->name }}
+                                    </span>
+
+                                    {{-- Botón Eliminar (solo master) --}}
                                     @if(Auth::user()->hasAnyRole(['master']))
                                         <form method="post"
                                             action="{{ route('control.careers.classifications.destroy', $clasificacion) }}"
@@ -21,9 +27,12 @@
                                             onsubmit="return confirm('¿Eliminar esta clasificación?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="classification-modal-delete-btn" title="Eliminar clasificación" aria-label="Eliminar clasificación">×</button>
+                                            <button type="submit"
+                                                class="classification-modal-delete-btn"
+                                                title="Eliminar clasificación">✕</button>
                                         </form>
                                     @endif
+
                                 </li>
                             @endforeach
                         </ul>

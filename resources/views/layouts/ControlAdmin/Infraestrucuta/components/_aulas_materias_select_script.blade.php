@@ -1,93 +1,104 @@
-{{-- Carga materias por carrera (fetch JSON). Reutilizable en índice y edición de aula. --}}
+{{-- Filtro clasificación → carreras, carga materias por carreras marcadas. --}}
 <script>
 (function () {
-    if (window.__umiAulasMateriasSelectInit) {
-        return;
-    }
-    window.__umiAulasMateriasSelectInit = true;
+    if (window.__umiAulasCheckInit) return;
+    window.__umiAulasCheckInit = true;
 
-    window.UMI_AULAS_MAT_URL = window.UMI_AULAS_MAT_URL || @json(route('control.facilities.materiasPorCarrera'));
+    var MAT_URL = @json(route('control.facilities.materiasPorCarrera'));
 
-    window.umiAulasFillMateriaSelect = function (careerId, selectEl, selectedNombre) {
-        if (!selectEl) {
-            return;
-        }
-        selectedNombre = selectedNombre ? String(selectedNombre) : '';
-        selectEl.innerHTML = '';
-        var opt0 = document.createElement('option');
-        opt0.value = '';
-        if (!careerId) {
-            opt0.textContent = 'Seleccione la carrera';
-            selectEl.appendChild(opt0);
-            selectEl.disabled = true;
-            return;
-        }
-        opt0.textContent = 'Seleccione una materia';
-        selectEl.appendChild(opt0);
-        selectEl.disabled = true;
-        opt0.textContent = 'Cargando…';
-
-        var u = window.UMI_AULAS_MAT_URL + '?career_id=' + encodeURIComponent(careerId);
-        fetch(u, {
+    function fetchJson(url) {
+        return fetch(url, {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin',
-        })
-            .then(function (r) {
-                if (!r.ok) {
-                    throw new Error('HTTP ' + r.status);
-                }
-                return r.json();
-            })
+        }).then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        });
+    }
+
+    /* ── Filtrar carreras por clasificación (show/hide) ── */
+    window.umiAulasFilterCarreras = function (form, clasId) {
+        var items = form.querySelectorAll('.aula-check-item');
+        items.forEach(function (item) {
+            if (!clasId || clasId === '') {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = (item.dataset.classification == clasId) ? 'flex' : 'none';
+            }
+        });
+    };
+
+    /* ── Cargar materias por carreras marcadas ── */
+    window.umiAulasLoadMaterias = function (form, preselectedIds) {
+        preselectedIds = preselectedIds || [];
+        var container = form.querySelector('.aula-materias-container');
+        if (!container) return;
+
+        var checks = form.querySelectorAll('.aula-career-check:checked');
+        var ids = Array.from(checks).map(function (c) { return c.value; });
+
+        if (ids.length === 0) {
+            container.innerHTML = '<span class="text-muted">Seleccione al menos una carrera.</span>';
+            return;
+        }
+
+        container.innerHTML = '<span class="text-muted">Cargando materias…</span>';
+
+        var params = ids.map(function (id) { return 'career_ids[]=' + encodeURIComponent(id); }).join('&');
+
+        fetchJson(MAT_URL + '?' + params)
             .then(function (data) {
-                selectEl.innerHTML = '';
-                var o = document.createElement('option');
-                o.value = '';
-                o.textContent = 'Seleccione una materia';
-                selectEl.appendChild(o);
+                container.innerHTML = '';
                 var list = (data && data.materias) ? data.materias : [];
-                var found = false;
-                list.forEach(function (m) {
-                    var op = document.createElement('option');
-                    op.value = m.nombre;
-                    op.textContent = m.clave ? (m.nombre + ' (' + m.clave + ')') : m.nombre;
-                    if (selectedNombre && selectedNombre === m.nombre) {
-                        op.selected = true;
-                        found = true;
-                    }
-                    selectEl.appendChild(op);
-                });
-                if (selectedNombre && !found) {
-                    var legacy = document.createElement('option');
-                    legacy.value = selectedNombre;
-                    legacy.textContent = selectedNombre + ' (registro anterior)';
-                    legacy.selected = true;
-                    selectEl.insertBefore(legacy, selectEl.children[1] || null);
+                if (list.length === 0) {
+                    container.innerHTML = '<span class="text-muted">No hay materias disponibles.</span>';
+                    return;
                 }
-                selectEl.disabled = false;
+                list.forEach(function (m) {
+                    var lbl = document.createElement('label');
+                    lbl.className = 'aula-check-item';
+                    lbl.style.cssText = 'display:flex;align-items:center;padding:8px 12px;margin:0;border-bottom:1px solid #f0f0f0;cursor:pointer;';
+
+                    var inp = document.createElement('input');
+                    inp.type = 'checkbox';
+                    inp.className = 'aula-materia-check';
+                    inp.name = 'materia_ids[]';
+                    inp.value = m.id;
+                    inp.style.cssText = 'margin-right:10px;width:16px;height:16px;accent-color:#b87a2b;';
+                    if (preselectedIds.indexOf(m.id) !== -1) inp.checked = true;
+
+                    var span = document.createElement('span');
+                    span.textContent = m.clave ? (m.nombre + ' (' + m.clave + ')') : m.nombre;
+
+                    lbl.appendChild(inp);
+                    lbl.appendChild(span);
+                    container.appendChild(lbl);
+                });
             })
             .catch(function () {
-                selectEl.innerHTML = '';
-                var err = document.createElement('option');
-                err.value = '';
-                err.textContent = 'No se pudieron cargar las materias';
-                selectEl.appendChild(err);
-                selectEl.disabled = true;
+                container.innerHTML = '<span class="text-danger">Error al cargar materias.</span>';
             });
     };
 
+    /* ── Eventos delegados ── */
     document.addEventListener('change', function (e) {
-        if (!e.target) {
-            return;
+        var t = e.target;
+        if (!t) return;
+
+        // Clasificación cambia → filtrar carreras visibles
+        if (t.classList.contains('aula-clasificacion-select')) {
+            var form = t.closest('form');
+            if (form) {
+                window.umiAulasFilterCarreras(form, t.value);
+                // Recargar materias (por si quedaron carreras ocultas marcadas)
+                window.umiAulasLoadMaterias(form, []);
+            }
         }
-        if (e.target.id === 'career_id' && e.target.closest && e.target.closest('#createFacilityForm')) {
-            var form = e.target.closest('#createFacilityForm');
-            var mat = form.querySelector('#tipo_materia');
-            window.umiAulasFillMateriaSelect(e.target.value, mat, null);
-        }
-        if (e.target.id === 'edit_career_id' && e.target.closest && e.target.closest('#editFacilityForm')) {
-            var formE = e.target.closest('#editFacilityForm');
-            var matE = formE.querySelector('#edit_tipo_materia');
-            window.umiAulasFillMateriaSelect(e.target.value, matE, '');
+
+        // Carrera checkbox cambia → recargar materias
+        if (t.classList.contains('aula-career-check')) {
+            var form2 = t.closest('form');
+            if (form2) window.umiAulasLoadMaterias(form2, []);
         }
     });
 })();
