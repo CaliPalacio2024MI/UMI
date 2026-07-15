@@ -1,44 +1,57 @@
 @php
     $currentValue = old('name', isset($item) ? $item->name : '');
+
+    // Tipo actual: en edición se deriva de las banderas guardadas.
+    $currentType = old('unit_type');
+    if (!$currentType && isset($item)) {
+        $currentType = $item->is_universidad ? 'universidad'
+            : ($item->is_administrativo ? 'propiedad' : '');
+    }
 @endphp
 
-<div class="form-group tipo-unidad-flags-group">
-    <p class="tipo-unidad-question" id="tipoUnidadQuestion">Tipo de Unidad</p>
-    <input type="hidden" name="is_administrativo" value="0">
-    <input type="hidden" name="is_universidad" value="0">
-    <div class="tipo-unidad-checkboxes-row" role="group" aria-labelledby="tipoUnidadQuestion">
-        <div class="checkbox-inline">
-            <input type="checkbox" id="flag_administrativo" name="is_administrativo" value="1" @checked(old('is_administrativo', isset($item) && $item->is_administrativo ? '1' : '0') === '1')>
-            <label for="flag_administrativo">Propiedades</label>
-        </div>
-        <span class="tipo-unidad-separator" aria-hidden="true">/</span>
-        <div class="checkbox-inline">
-            <input type="checkbox" id="flag_universidad" name="is_universidad" value="1" @checked(old('is_universidad', isset($item) && $item->is_universidad ? '1' : '0') === '1')>
-            <label for="flag_universidad">Universidad</label>
-        </div>
-    </div>
-</div>
-
+{{-- =================================================================== --}}
+{{-- 1. TIPO DE UNIDAD: Universidad o Propiedad                          --}}
+{{--    Estas banderas ocultas se sincronizan por JS según la selección. --}}
+{{-- =================================================================== --}}
 <div class="form-group">
-    {{-- Campo para Pierre/Palacio/Princess (se llena desde la API) --}}
-    <select id="nameSelect" name="name" disabled>
-        <option value="">-- Seleccione Unidad de Negocio --</option>
-        @if(!empty($currentValue))
-            <option value="{{ $currentValue }}" selected>{{ $currentValue }}</option>
-        @endif
+    <label for="unitTypeSelect">Universidad o Propiedad</label>
+    <input type="hidden" name="is_universidad" id="is_universidad" value="{{ $currentType === 'universidad' ? 1 : 0 }}">
+    <input type="hidden" name="is_administrativo" id="is_administrativo" value="{{ $currentType === 'propiedad' ? 1 : 0 }}">
+    <select id="unitTypeSelect" required>
+        <option value="">-- Seleccione una opción --</option>
+        <option value="universidad" @selected($currentType === 'universidad')>Universidad</option>
+        <option value="propiedad" @selected($currentType === 'propiedad')>Propiedad</option>
     </select>
-
-    {{-- Campo para Universidad (escribible) - se crea dinámicamente en cliente --}}
-    <div id="nameInputLabel" style="display:none; margin-top: 8px; margin-bottom: 6px; font-weight: 600; color: #BC8A55;">
-        Escriba su unidad de negocio
-    </div>
-    <div id="nameInputContainer" style="display:none;"></div>
 </div>
+
+{{-- =================================================================== --}}
+{{-- 2. NOMBRE DE LA UNIDAD (depende del tipo)                           --}}
+{{--    - Propiedad  -> select llenado desde la API                      --}}
+{{--    - Universidad -> campo de texto abierto                          --}}
+{{-- =================================================================== --}}
+<div class="form-group">
+    {{-- Propiedad: opciones recuperadas de la API --}}
+    <div id="propiedadWrapper" style="display:none;">
+        <label for="nameSelect">Propiedad</label>
+        <select id="nameSelect" name="name" disabled>
+            <option value="">-- Seleccione propiedad --</option>
+            @if(!empty($currentValue))
+                <option value="{{ $currentValue }}" selected>{{ $currentValue }}</option>
+            @endif
+        </select>
+    </div>
+
+    {{-- Universidad: nombre escrito manualmente --}}
+    <div id="universidadWrapper" style="display:none;">
+        <label for="nameInput">Nombre de la universidad</label>
+        <input type="text" id="nameInput" name="name" autocomplete="off" value="{{ $currentType === 'universidad' ? $currentValue : '' }}" disabled>
+    </div>
+</div>
+
 <div class="form-group">
     <label for="logo_path">Logo</label>
     <input type="file" id="logo_path" name="logo_path" accept="image/*">
-   
-   
+
     @if(isset($item) && $item->logo_path)
         <div style="margin-top: 10px;">
             <img src="{{ asset('storage/' . $item->logo_path) }}" alt="Logo actual" style="max-width: 100px; max-height: 50px; border-radius: 4px;">
@@ -49,91 +62,77 @@
 
 <script>
     (function () {
-        const select = document.getElementById('nameSelect');
-        const flagAdministrativo = document.getElementById('flag_administrativo');
-        const flagUniversidad = document.getElementById('flag_universidad');
-        const inputContainer = document.getElementById('nameInputContainer');
-        const nameInputLabel = document.getElementById('nameInputLabel');
-        if (!select || !flagAdministrativo || !flagUniversidad || !inputContainer || !nameInputLabel) return;
+        const typeSelect = document.getElementById('unitTypeSelect');
+        const isUniversidad = document.getElementById('is_universidad');
+        const isAdministrativo = document.getElementById('is_administrativo');
+        const propiedadWrapper = document.getElementById('propiedadWrapper');
+        const universidadWrapper = document.getElementById('universidadWrapper');
+        const nameSelect = document.getElementById('nameSelect');
+        const nameInput = document.getElementById('nameInput');
 
-        if (flagAdministrativo.checked && flagUniversidad.checked) {
-            flagUniversidad.checked = false;
+        if (!typeSelect || !isUniversidad || !isAdministrativo ||
+            !propiedadWrapper || !universidadWrapper || !nameSelect || !nameInput) {
+            return;
         }
 
-        // Valor inicial que viene del backend (old('name') o $item->name)
         const currentValue = (@json($currentValue) || '').trim();
-        let cachedPropiedades = null; // Cacheamos para no consumir la API más de una vez
-        let input = null;
+        let cachedPropiedades = null; // Se consume la API una sola vez.
 
-        function isUniversidadFlagOn() {
-            return flagUniversidad.checked;
+        // --- UNIVERSIDAD: campo de texto abierto ---
+        function showUniversidad() {
+            isUniversidad.value = '1';
+            isAdministrativo.value = '0';
+
+            universidadWrapper.style.display = 'block';
+            propiedadWrapper.style.display = 'none';
+
+            nameInput.disabled = false;
+            nameInput.required = true;
+            nameSelect.disabled = true;   // deshabilitado => no se envía
+            nameSelect.required = false;
+
+            if (currentValue && !nameInput.value) nameInput.value = currentValue;
         }
 
-        function isAdministrativoFlagOn() {
-            return flagAdministrativo.checked;
+        // --- PROPIEDAD: select desde la API ---
+        function showPropiedad() {
+            isUniversidad.value = '0';
+            isAdministrativo.value = '1';
+
+            propiedadWrapper.style.display = 'block';
+            universidadWrapper.style.display = 'none';
+
+            nameSelect.disabled = false;
+            nameSelect.required = true;
+            nameInput.disabled = true;    // deshabilitado => no se envía
+            nameInput.required = false;
+
+            loadPropiedades();
         }
 
-        function ensureInputElement() {
-            if (input) return input;
+        // --- Sin tipo seleccionado: ocultar ambos ---
+        function hideBoth() {
+            isUniversidad.value = '0';
+            isAdministrativo.value = '0';
 
-            input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'nameInput';
-            input.name = 'name';
-            input.autocomplete = 'off';
-            input.required = true;
-            input.disabled = false;
+            propiedadWrapper.style.display = 'none';
+            universidadWrapper.style.display = 'none';
 
-            inputContainer.innerHTML = '';
-            inputContainer.appendChild(input);
-            inputContainer.style.display = 'block';
-
-            // Si venías editando una institución, preservamos el valor actual.
-            if (currentValue && !input.value) input.value = currentValue;
-
-            return input;
+            nameSelect.disabled = true;
+            nameSelect.required = false;
+            nameInput.disabled = true;
+            nameInput.required = false;
         }
 
-        function setMode() {
-            if (isUniversidadFlagOn()) {
-                // Universidad: crear input escribible, sin consumir API
-                const uniInput = ensureInputElement();
-                uniInput.disabled = false;
-                uniInput.required = true;
-
-                select.disabled = true;
-                select.required = false;
-                select.style.display = 'none';
-
-                nameInputLabel.style.display = 'block';
-
-                // No tocamos el select; solo deshabilitamos para que no se envíe.
-                return;
+        function applyType() {
+            switch (typeSelect.value) {
+                case 'universidad': showUniversidad(); break;
+                case 'propiedad':   showPropiedad();   break;
+                default:            hideBoth();         break;
             }
-
-            // Si no es universidad, removemos input manual.
-            if (input) {
-                input.remove();
-                input = null;
-            }
-            inputContainer.style.display = 'none';
-            nameInputLabel.style.display = 'none';
-
-            // Propiedades (administrativo): mostrar select.
-            if (isAdministrativoFlagOn()) {
-                select.disabled = false;
-                select.required = true;
-                select.style.display = 'block';
-                return;
-            }
-
-            // Ninguna opción seleccionada: ocultar select.
-            select.disabled = true;
-            select.required = false;
-            select.style.display = 'none';
         }
 
-        function populateSelectFromPropiedades(propiedades) {
+        function populateSelect(propiedades) {
             const raw = Array.isArray(propiedades)
                 ? propiedades
                 : (propiedades?.propiedades ?? propiedades?.data ?? propiedades);
@@ -143,15 +142,13 @@
                 return;
             }
 
-            const list = raw;
-
-            select.innerHTML = '';
+            nameSelect.innerHTML = '';
             const placeholder = document.createElement('option');
             placeholder.value = '';
-            placeholder.textContent = '-- Seleccione Unidad de Negocio --';
-            select.appendChild(placeholder);
+            placeholder.textContent = '-- Seleccione propiedad --';
+            nameSelect.appendChild(placeholder);
 
-            list.forEach(p => {
+            raw.forEach(p => {
                 const optionValue = (p?.nombre ?? p?.name ?? p?.descripcion ?? String(p?.id ?? '')).trim();
                 const optionText = (p?.nombre ?? p?.name ?? p?.descripcion ?? `ID ${p?.id ?? ''}`).toString();
                 if (!optionValue) return;
@@ -159,74 +156,43 @@
                 const opt = document.createElement('option');
                 opt.value = optionValue;
                 opt.textContent = optionText;
-                select.appendChild(opt);
+                nameSelect.appendChild(opt);
             });
 
-            if (currentValue) {
-                // Si el valor actual existe en el select, lo re-seleccionamos.
-                const found = Array.from(select.options).some(o => o.value === currentValue);
-                if (found) select.value = currentValue;
+            // Re-seleccionar el valor actual si existe (modo edición).
+            if (currentValue && Array.from(nameSelect.options).some(o => o.value === currentValue)) {
+                nameSelect.value = currentValue;
             }
         }
 
-        async function loadPropiedadesIfNeeded() {
-            if (!isAdministrativoFlagOn() || isUniversidadFlagOn()) return;
+        async function loadPropiedades() {
             if (cachedPropiedades) {
-                populateSelectFromPropiedades(cachedPropiedades);
+                populateSelect(cachedPropiedades);
                 return;
             }
 
-            const r = await fetch('/external-data?endpoint=/api/external/propiedades', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                credentials: 'same-origin'
-            });
+            try {
+                const r = await fetch('/external-data?endpoint=/api/external/propiedades', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
 
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-            const data = await r.json();
-            const list = data?.propiedades ?? data?.data ?? data;
-            cachedPropiedades = list;
-
-            populateSelectFromPropiedades(cachedPropiedades);
-        }
-
-        async function applyModeFromFlags() {
-            setMode();
-            if (isAdministrativoFlagOn() && !isUniversidadFlagOn()) {
-                try {
-                    await loadPropiedadesIfNeeded();
-                } catch (e) {
-                    console.error('No se pudo cargar propiedades para el select:', e);
-                }
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const data = await r.json();
+                cachedPropiedades = data?.propiedades ?? data?.data ?? data;
+                populateSelect(cachedPropiedades);
+            } catch (e) {
+                console.error('No se pudo cargar propiedades desde la API:', e);
             }
         }
 
-        flagAdministrativo.addEventListener('change', () => {
-            if (flagAdministrativo.checked) {
-                flagUniversidad.checked = false;
-            }
-            applyModeFromFlags();
-        });
+        typeSelect.addEventListener('change', applyType);
 
-        flagUniversidad.addEventListener('change', () => {
-            if (flagUniversidad.checked) {
-                flagAdministrativo.checked = false;
-            }
-            applyModeFromFlags();
-        });
-
-        // Inicializar:
-        // - Universidad: input manual
-        // - Propiedades: select desde API
-        // - Ninguna: ocultar ambos campos
-        setMode();
-        if (isAdministrativoFlagOn() && !isUniversidadFlagOn()) {
-            loadPropiedadesIfNeeded().catch(e => {
-                console.error('No se pudo cargar propiedades al inicializar:', e);
-            });
-        }
+        // Inicializa según el tipo (relevante en modo edición).
+        applyType();
     })();
 </script>

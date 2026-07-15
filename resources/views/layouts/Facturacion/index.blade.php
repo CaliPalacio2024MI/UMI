@@ -74,6 +74,9 @@
                                     @if(request('status') && $userBillings->isEmpty())
                                         @continue
                                     @endif
+                                    @if(!$u->is_active && $userBillings->isEmpty())
+                                        @continue
+                                    @endif
                                     <details id="factura-target-user-{{ $u->id }}-period-{{ $period->id }}">
                                         <summary>
                                         <div class="user-container">
@@ -126,7 +129,21 @@
                                                                     @endif
                                                                 </div>
                                                             @else
-                                                                <span style="font-size: 0.8rem; color: #28a745; font-weight: 600;">✓ Registrada</span>
+                                                                @if($facturasDelMes->isNotEmpty())
+                                                                    @php
+                                                                        $todasPagadas = $facturasDelMes->every(fn($b) => $b->computed_status === 'Pagada');
+                                                                        $algunaAbonada = $facturasDelMes->contains(fn($b) => $b->computed_status === 'Abonado');
+                                                                    @endphp
+                                                                    @if($todasPagadas)
+                                                                        <span style="font-size: 0.8rem; color: #28a745; font-weight: 600;">✓ Pagada</span>
+                                                                    @elseif($algunaAbonada)
+                                                                        <span style="font-size: 0.8rem; color: #ffc107; font-weight: 600;">◐ Abonado</span>
+                                                                    @else
+                                                                        <span style="font-size: 0.8rem; color: #dc3545; font-weight: 600;">✗ Sin pago</span>
+                                                                    @endif
+                                                                @else
+                                                                    <span style="font-size: 0.8rem; color: #999; font-weight: 600;">— Sin factura</span>
+                                                                @endif
                                                             @endif
                                                         </summary>
 
@@ -187,6 +204,19 @@
                                                                             {{-- Fila Detalles de Pagos --}}
                                                                             <tr class="payment-details-row" style="display:none;">
                                                                                 <td colspan="6" class="payment-details-cell">
+                                                                                    @if($billing->cargo_moratorio_aplicado)
+                                                                                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px;">
+                                                                                        <h4 style="margin:0 0 8px; color:#856404;">⚠️ Cargo Moratorio Aplicado</h4>
+                                                                                        <p style="margin:2px 0; font-size:0.9em; color:#856404;">
+                                                                                            <strong>Porcentaje:</strong> {{ $billing->porcentaje_cargo_moratorio }}% |
+                                                                                            <strong>Cargo:</strong> ${{ number_format($billing->cargo_monetario, 2) }} |
+                                                                                            <strong>Aplicado:</strong> {{ \Carbon\Carbon::parse($billing->fecha_cargo_moratorio)->format('d/m/Y') }}
+                                                                                            @if($billing->fecha_prorroga_fin)
+                                                                                            | <strong>Prórroga hasta:</strong> {{ \Carbon\Carbon::parse($billing->fecha_prorroga_fin)->format('d/m/Y') }}
+                                                                                            @endif
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    @endif
                                                                                     <div class="payment-history"><h4>Historial</h4>
                                                                                         @if($billing->payments->isNotEmpty())
                                                                                             <ul> @foreach($billing->payments as $payment) <li> <span class="payment-date">{{ \Carbon\Carbon::parse($payment->fecha_pago)->format('d/m/Y') }} - {{ $payment->nota ?? 'Abono' }}</span> <span class="payment-amount">- ${{ number_format($payment->monto, 2) }}</span> </li> @endforeach </ul>
@@ -304,7 +334,7 @@
                                                                     </div>
                                                                 </td>
                                                                 <td class="acciones" style="padding:10px;">
-                                                                    <img src="{{ asset('images/icons/eye-solid-full.svg') }}" class="icon icon-toggle" title="Ver Historial" oncontextmenu="return false;">
+                                                                    <svg class="icon icon-toggle" title="Ver Historial" style="cursor:pointer; width:20px; height:20px; vertical-align:middle;" viewBox="0 0 24 24" fill="#223F70" xmlns="http://www.w3.org/2000/svg" oncontextmenu="return false;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                                                                     @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icon" draggable="false" oncontextmenu="return false;"></a>@endif
                                                                     @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icon" draggable="false" oncontextmenu="return false;"></a>@endif
                                                                 </td>
@@ -312,6 +342,29 @@
                                                             {{-- FILA HISTORIAL ALUMNO (SOLO LECTURA) --}}
                                                             <tr class="payment-details-row">
                                                                 <td colspan="6">
+                                                                    @if($billing->cargo_moratorio_aplicado)
+                                                                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 15px; margin-bottom: 10px;">
+                                                                        <h4 style="margin:0 0 8px; color:#856404;">⚠️ Cargo Moratorio Aplicado</h4>
+                                                                        <p style="margin:2px 0; font-size:0.9em; color:#856404;">
+                                                                            <strong>Porcentaje:</strong> {{ $billing->porcentaje_cargo_moratorio }}% |
+                                                                            <strong>Cargo:</strong> ${{ number_format($billing->cargo_monetario, 2) }} |
+                                                                            <strong>Fecha aplicación:</strong> {{ \Carbon\Carbon::parse($billing->fecha_cargo_moratorio)->format('d/m/Y') }}
+                                                                        </p>
+                                                                        @if($billing->fecha_prorroga_fin)
+                                                                        <p style="margin:2px 0; font-size:0.9em; color:#856404;">
+                                                                            <strong>Prórroga hasta:</strong> {{ \Carbon\Carbon::parse($billing->fecha_prorroga_fin)->format('d/m/Y') }}
+                                                                            @php $diasProrrogaRestantes = \Carbon\Carbon::today()->diffInDays(\Carbon\Carbon::parse($billing->fecha_prorroga_fin), false); @endphp
+                                                                            @if($diasProrrogaRestantes > 0)
+                                                                                <span style="color:#dc3545; font-weight:bold;"> ({{ $diasProrrogaRestantes }} día(s) restantes)</span>
+                                                                            @elseif($diasProrrogaRestantes == 0)
+                                                                                <span style="color:#dc3545; font-weight:bold;"> (Vence HOY)</span>
+                                                                            @else
+                                                                                <span style="color:#dc3545; font-weight:bold;"> (Expirada)</span>
+                                                                            @endif
+                                                                        </p>
+                                                                        @endif
+                                                                    </div>
+                                                                    @endif
                                                                     <div class="payment-history">
                                                                         <h4 style="margin:0 0 10px; color:#223F70;">Historial de Abonos</h4>
                                                                         @if($billing->payments->isNotEmpty())

@@ -36,7 +36,10 @@
     width: 150px;
     height: auto;
     margin-bottom: 10px;
-    /* Filtro para cambiar el color del logo (opcional) */
+}
+
+.profile-welcome-image--default {
+    /* Filtro para cambiar el color del logo genérico (solo cuando no hay foto real) */
     filter: brightness(0) saturate(100%) invert(22%) sepia(41%) saturate(1231%) hue-rotate(190deg) brightness(91%) contrast(89%);
 }
 

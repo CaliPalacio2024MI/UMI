@@ -46,7 +46,27 @@
                         @endforeach
                     </select>
                 </div>
-                <div><label>Nombre documento</label><input id="beca_nombre_documento" class="becas-input" type="text" name="nombre_documento" required></div>
+                @if(!empty($expedienteConfig) && $expedienteConfig->isNotEmpty())
+                    <div class="beca-config-guide" style="background:#f0f7f2;border:1px solid #cbe6d5;border-radius:8px;padding:10px 12px;margin:4px 0 10px;font-size:0.85rem;color:#1e7e45;">
+                        <strong><i class="fa-solid fa-circle-info"></i> Documentos requeridos (Becas):</strong>
+                        <ul style="margin:6px 0 0;padding-left:18px;">
+                            @foreach($expedienteConfig as $req)
+                                <li>{{ $req->nombre }} — {{ strtoupper(implode(', ', $req->tiposArchivoArray())) }}{{ $req->obligatorio ? ' (obligatorio)' : '' }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <div>
+                    <label>Nombre documento</label>
+                    <input id="beca_nombre_documento" class="becas-input" type="text" name="nombre_documento"
+                           list="beca_docs_list" autocomplete="off" required>
+                    <datalist id="beca_docs_list">
+                        @foreach(($expedienteConfig ?? collect()) as $req)
+                            <option value="{{ $req->nombre }}"></option>
+                        @endforeach
+                    </datalist>
+                    <small id="beca_doc_hint" style="display:none;color:#888;margin-top:4px;"></small>
+                </div>
                 <div><label>Descripción</label><textarea id="beca_descripcion" class="becas-input" name="descripcion"></textarea></div>
                 <div><label>Archivo</label><input id="beca_archivo" type="file" name="archivo" accept=".pdf,.jpg,.jpeg,.png"></div>
                 <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px;">
@@ -57,7 +77,36 @@
     </div>
 </div>
 
+@php
+    $becaDocsConfig = ($expedienteConfig ?? collect())->mapWithKeys(fn ($r) => [
+        mb_strtolower($r->nombre) => [
+            'tipos' => $r->tiposArchivoArray(),
+            'cantidad' => $r->cantidad,
+            'obligatorio' => (bool) $r->obligatorio,
+        ],
+    ]);
+@endphp
 <script>
+// Documentos configurados en Ajustes → Expediente (proceso Becas).
+const BECA_DOCS_CONFIG = @json($becaDocsConfig);
+const BECA_ACCEPT_MAP = { pdf: '.pdf', jpg: '.jpg,.jpeg', png: '.png', doc: '.doc,.docx', xls: '.xls,.xlsx' };
+function becaApplyDocConfig(){
+    const nombre = (document.getElementById('beca_nombre_documento').value || '').trim().toLowerCase();
+    const archivo = document.getElementById('beca_archivo');
+    const hint = document.getElementById('beca_doc_hint');
+    const cfg = BECA_DOCS_CONFIG[nombre];
+    if (cfg) {
+        archivo.accept = (cfg.tipos || []).map(t => BECA_ACCEPT_MAP[t] || ('.' + t)).join(',') || '.pdf,.jpg,.jpeg,.png';
+        hint.textContent = 'Tipos permitidos: ' + (cfg.tipos || []).map(t => t.toUpperCase()).join(', ') + ' · Máx ' + cfg.cantidad + ' archivo(s)';
+        hint.style.display = 'block';
+    } else {
+        archivo.accept = '.pdf,.jpg,.jpeg,.png';
+        hint.style.display = 'none';
+    }
+}
+document.getElementById('beca_nombre_documento')?.addEventListener('input', becaApplyDocConfig);
+document.getElementById('beca_nombre_documento')?.addEventListener('change', becaApplyDocConfig);
+
 function openBecaModal(){ document.getElementById('becaForm').reset(); document.getElementById('becaForm').action='{{ route('escolar.becas.store') }}'; document.getElementById('beca_method').value=''; document.getElementById('beca_archivo').required=true; document.getElementById('becaModalTitle').textContent='Agregar documento de beca'; document.getElementById('becaModal').style.display='flex'; }
 function closeBecaModal(){ document.getElementById('becaModal').style.display='none'; }
 async function editBeca(id){
@@ -70,6 +119,7 @@ async function editBeca(id){
   document.getElementById('beca_nombre_documento').value = row.nombre_documento || '';
   document.getElementById('beca_descripcion').value = row.descripcion || '';
   document.getElementById('beca_archivo').required = false;
+  becaApplyDocConfig();
   document.getElementById('becaModalTitle').textContent='Editar documento de beca';
   document.getElementById('becaModal').style.display='flex';
 }

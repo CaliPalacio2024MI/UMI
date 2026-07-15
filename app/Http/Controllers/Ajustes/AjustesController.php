@@ -23,6 +23,7 @@ use App\Models\Users\Period;
 use App\Models\Users\AcademicProfile;
 use App\Models\Users\CorporateProfile;
 use App\Models\Lead;
+use App\Models\DocumentRequirement;
 
 class AjustesController extends Controller
 {
@@ -59,8 +60,9 @@ class AjustesController extends Controller
                 abort(403, 'No tienes permiso para ver esta sección.');
             }
         } else {
-            
-            if ($seccion === 'periods') {
+
+            // 'expediente' (documentos requeridos por proceso) es exclusivo de la Universidad.
+            if (in_array($seccion, ['periods', 'expediente'])) {
                 abort(403, 'No tienes permiso para ver esta sección.');
             }
         }
@@ -221,10 +223,17 @@ class AjustesController extends Controller
                 Period::where('institution_id', $data['institution_id'])->update(['is_active' => false]);
                 
                 Period::create($data);
-                break; 
+                break;
+
+            case 'expediente':
+                $payload = $this->validateExpediente($request);
+                $payload['institution_id'] = $activeInstitutionId;
+                DocumentRequirement::create($payload);
+                $message = 'Documento agregado al expediente.';
+                break;
 
             case 'users':
-             
+
             $this->resolveCorporateCatalogIdsFromApiNames($request);
            
             $tipoCreacion = $request->input('tipo_usuario_creacion', 'normal');
@@ -387,6 +396,9 @@ class AjustesController extends Controller
                 'role_id' => $role_id_to_add,
                 'institution_id' => $institution_id_to_add,
             ]);
+
+            // Propiedades extra habilitadas para el usuario (además de la principal).
+            $this->syncExtraUserInstitutions($request, $user, (int) $institution_id_to_add, (int) $role_id_to_add);
 
             $message .= ' y asignado correctamente.';
  
@@ -616,7 +628,10 @@ public function update(Request $request, $seccion, $id)
               
                 $item->roles()->wherePivot('institution_id', $institution_id)->detach();
                 $item->roles()->attach($role_id, ['institution_id' => $institution_id]);
-                
+
+                // Propiedades extra habilitadas para el usuario (además de la principal).
+                $this->syncExtraUserInstitutions($request, $item, (int) $institution_id, (int) $role_id);
+
                 
                 $roleName = $selectedRole->name;
                 $academicRoles = ['docente', 'control_escolar', 'control_administrativo', 'estudiante']; 
@@ -643,7 +658,11 @@ public function update(Request $request, $seccion, $id)
                 
 
                 $clear_spa_cache = true;
-                
+
+                break;
+
+            case 'expediente':
+                $item->update($this->validateExpediente($request));
                 break;
 
             default:
@@ -715,6 +734,13 @@ public function update(Request $request, $seccion, $id)
                 $query = Period::query();
                 if ($search) $query->where('name', 'like', "%{$search}%");
                $query->orderBy('id', 'asc');
+                break;
+            case 'expediente':
+                // Documentos requeridos, filtrados por el proceso seleccionado en las pestañas.
+                $proceso = $this->currentProceso();
+                $query = DocumentRequirement::query()->where('proceso', $proceso);
+                if ($search) $query->where('nombre', 'like', "%{$search}%");
+                $query->orderBy('orden')->orderBy('id');
                 break;
             case 'users':
                 $query = User::with([
@@ -791,6 +817,48 @@ public function update(Request $request, $seccion, $id)
     }
 
     /**
+     * Valida y normaliza el formulario de un documento del expediente.
+     * Devuelve el arreglo listo para create()/update().
+     */
+    private function validateExpediente(Request $request): array
+    {
+        $validated = $request->validate([
+            'proceso'        => ['required', 'string', 'in:' . implode(',', array_keys(DocumentRequirement::PROCESOS))],
+            'nombre'         => ['required', 'string', 'max:255'],
+            'descripcion'    => ['nullable', 'string', 'max:1000'],
+            'tipos_archivo'  => ['required', 'array', 'min:1'],
+            'tipos_archivo.*' => ['string', 'in:' . implode(',', array_keys(DocumentRequirement::TIPOS_ARCHIVO))],
+            'cantidad'       => ['required', 'integer', 'min:1', 'max:20'],
+            'orden'          => ['nullable', 'integer', 'min:0', 'max:999'],
+        ], [
+            'tipos_archivo.required' => 'Selecciona al menos un tipo de archivo permitido.',
+            'tipos_archivo.min'      => 'Selecciona al menos un tipo de archivo permitido.',
+        ]);
+
+        return [
+            'proceso'       => $validated['proceso'],
+            'nombre'        => $validated['nombre'],
+            'descripcion'   => $validated['descripcion'] ?? null,
+            'tipos_archivo' => implode(',', $validated['tipos_archivo']),
+            'cantidad'      => $validated['cantidad'],
+            'obligatorio'   => $request->boolean('obligatorio'),
+            'orden'         => $validated['orden'] ?? 0,
+            'activo'        => $request->boolean('activo', true),
+        ];
+    }
+
+    /**
+     * Proceso activo para la sección "expediente" (pestañas). Valida contra la
+     * lista de procesos permitidos y cae al primero por defecto.
+     */
+    private function currentProceso(): string
+    {
+        $proceso = (string) request()->query('proceso', '');
+        $validos = array_keys(DocumentRequirement::PROCESOS);
+        return in_array($proceso, $validos, true) ? $proceso : $validos[0];
+    }
+
+    /**
      * Encuentra un item por ID para 'update' o 'destroy'.
      */
     private function findItem($seccion, $id)
@@ -801,6 +869,7 @@ public function update(Request $request, $seccion, $id)
             case 'workstations': return Workstation::find($id);
             case 'periods': return Period::find($id);
             case 'users': return User::find($id);
+            case 'expediente': return DocumentRequirement::find($id);
             default: return null;
         }
     }
@@ -835,6 +904,53 @@ public function update(Request $request, $seccion, $id)
                 $query->whereHas('roles', function($q) {
                     $q->whereIn('name', ['control_escolar', 'docente']);
                 });
+            }
+        }
+    }
+
+    /**
+     * Habilita propiedades EXTRA a un usuario (además de la principal).
+     * Recibe institution_access[] del formulario. En contexto de propiedad nunca
+     * permite la universidad. Es aditivo (no quita accesos existentes).
+     */
+    private function syncExtraUserInstitutions(Request $request, User $user, int $primaryInstitutionId, int $roleId): void
+    {
+        $extra = $request->input('institution_access', []);
+        if (! is_array($extra)) {
+            return;
+        }
+
+        $extraIds = array_values(array_unique(array_filter(array_map('intval', $extra))));
+        if (empty($extraIds)) {
+            return;
+        }
+
+        // En contexto de propiedad no se puede habilitar la universidad.
+        $activeInstitution = Institution::find(session('active_institution_id'));
+        $isUniversityContext = (bool) ($activeInstitution?->is_universidad ?? false)
+            || (optional($activeInstitution)->name === 'Universidad Mundo Imperial');
+
+        $query = Institution::whereIn('id', $extraIds);
+        if (! $isUniversityContext) {
+            $query->where('is_universidad', false)
+                  ->where('name', '!=', 'Universidad Mundo Imperial');
+        }
+        $allowedIds = $query->pluck('id')->all();
+
+        foreach ($allowedIds as $instId) {
+            $instId = (int) $instId;
+            if ($instId === $primaryInstitutionId) {
+                continue; // la principal ya se asignó
+            }
+
+            $user->institutions()->syncWithoutDetaching([$instId]);
+
+            $already = $user->roles()
+                ->wherePivot('institution_id', $instId)
+                ->wherePivot('role_id', $roleId)
+                ->exists();
+            if (! $already) {
+                $user->roles()->attach($roleId, ['institution_id' => $instId, 'is_active' => true]);
             }
         }
     }
@@ -879,8 +995,16 @@ public function update(Request $request, $seccion, $id)
         
         switch ($seccion) {
             case 'departments':
-                 
+
                  $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
+                break;
+            case 'expediente':
+                $data['procesos'] = DocumentRequirement::PROCESOS;
+                $data['tiposArchivo'] = DocumentRequirement::TIPOS_ARCHIVO;
+                // Proceso por defecto: el de la pestaña activa (al crear) o el del item (al editar).
+                $data['currentProceso'] = isset($data['item'])
+                    ? $data['item']->proceso
+                    : $this->currentProceso();
                 break;
             case 'workstations':
                 
@@ -892,12 +1016,25 @@ public function update(Request $request, $seccion, $id)
                 break;
                 
             case 'users':
-                $data['all_institutions'] = Institution::orderBy('name')->get();
+                // Máster de propiedad: solo puede asignar/habilitar PROPIEDADES, nunca la universidad.
+                // (Los usuarios de la escuela solo los da de alta el máster de la universidad.)
+                $institutionsQuery = Institution::query()->orderBy('name');
+                if (! $data['isActiveInstitutionUniversity']) {
+                    $institutionsQuery->where('is_universidad', false)
+                                      ->where('name', '!=', $data['universityName']);
+                }
+                $data['all_institutions'] = $institutionsQuery->get();
+
                 if ($user->hasActiveRole('master') && $data['isActiveInstitutionUniversity']) {
                     $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
                 } else {
-                    $data['institutions'] = Institution::orderBy('name')->get();
+                    $data['institutions'] = $data['all_institutions'];
                 }
+
+                // Instituciones que el usuario ya tiene (para precargar los checkboxes al editar).
+                $data['user_institution_ids'] = isset($data['item'])
+                    ? $data['item']->institutions->pluck('id')->map(fn ($i) => (int) $i)->all()
+                    : [];
                 
                
                 $data['all_roles'] = Role::orderBy('display_name')->get(); 
@@ -1016,6 +1153,10 @@ public function togglePeriodStatus($id)
         'users' => [
             'plural' => 'Usuarios',
             'singular' => 'Usuario'
+        ],
+        'expediente' => [
+            'plural' => 'Expediente',
+            'singular' => 'Documento'
         ],
     ];
 

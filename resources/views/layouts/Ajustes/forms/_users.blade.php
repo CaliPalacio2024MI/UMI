@@ -311,6 +311,7 @@
         const institutionAccessList = document.getElementById('institution-access-list');
         const selectedInstitutionIdFromServer = @json((string) ($selectedInstitutionId ?? ''));
         const allInstitutions = @json($all_institutions ?? []);
+        const userInstitutionIds = @json(array_map('strval', $user_institution_ids ?? []));
 
         if (!roleSwitch || !roleSwitchState) return;
 
@@ -350,11 +351,12 @@
         }
 
         function renderInstitutionAccessList(sourceList) {
-            if (!institutionAccessList || !institutionSelect) return;
+            if (!institutionAccessList) return;
             institutionAccessList.innerHTML = '';
 
             const normalized = normalizeInstitutionList(sourceList);
-            const selectedValue = String(institutionSelect.value || selectedInstitutionIdFromServer || '');
+            // La "principal" es la unidad por defecto (donde se registra el usuario).
+            const primaryValue = String((institutionHidden && institutionHidden.value) || selectedInstitutionIdFromServer || '');
 
             normalized.forEach(item => {
                 const row = document.createElement('label');
@@ -364,38 +366,33 @@
                 row.style.cursor = 'pointer';
                 row.style.margin = '0';
 
+                const isPrimary = primaryValue !== '' && primaryValue === item.value;
+
                 const input = document.createElement('input');
                 input.type = 'checkbox';
-                input.name = 'institution_access_ui';
+                input.name = 'institution_access[]';
                 input.value = item.value;
-                input.checked = selectedValue !== '' && selectedValue === item.value;
                 input.style.width = '16px';
                 input.style.height = '16px';
 
+                if (isPrimary) {
+                    // La principal siempre incluida (se envía vía institution_id).
+                    input.checked = true;
+                    input.disabled = true;
+                } else {
+                    // Multi-selección: se pueden habilitar varias propiedades extra.
+                    input.checked = userInstitutionIds.includes(item.value);
+                }
+
                 const text = document.createElement('span');
-                text.textContent = item.text;
+                text.textContent = item.text + (isPrimary ? ' (principal)' : '');
                 text.style.fontSize = '0.98rem';
                 text.style.color = '#444';
-
-                input.addEventListener('change', function () {
-                    const allChecks = institutionAccessList.querySelectorAll('input[name="institution_access_ui"]');
-                    allChecks.forEach(chk => {
-                        if (chk !== input) chk.checked = false;
-                    });
-                    // Se comporta como radio: siempre deja una unidad seleccionada.
-                    input.checked = true;
-                    institutionSelect.value = input.value;
-                    syncInstitutionFields();
-                });
 
                 row.appendChild(input);
                 row.appendChild(text);
                 institutionAccessList.appendChild(row);
             });
-
-            if (!institutionSelect.value && normalized.length > 0) {
-                institutionSelect.value = normalized[0].value;
-            }
         }
 
         function ensureInstitutionSelection() {
@@ -420,27 +417,15 @@
         function paintSwitch() {
             const container = roleSwitch.nextElementSibling;
             const knob = container?.nextElementSibling;
-            if (!container || !knob) return;
-
-            container.style.backgroundColor = roleSwitch.checked ? '#e0b84f' : '#c6c6c6';
-            knob.style.transform = roleSwitch.checked ? 'translateX(22px)' : 'translateX(0)';
+            if (container && knob) {
+                container.style.backgroundColor = roleSwitch.checked ? '#e0b84f' : '#c6c6c6';
+                knob.style.transform = roleSwitch.checked ? 'translateX(22px)' : 'translateX(0)';
+            }
             roleSwitchState.textContent = 'Accesos';
 
-            if (!institutionSelect) return;
-            if (roleSwitch.checked) {
-                if (institutionAccessWrapper) institutionAccessWrapper.style.display = 'block';
-                // Activo: mostrar todas las unidades dadas de alta en el sistema.
-                populateInstitutionOptions(allInstitutions, institutionSelect.value || selectedInstitutionIdFromServer);
-                ensureInstitutionSelection();
-                renderInstitutionAccessList(allInstitutions);
-                syncInstitutionFields();
-            } else {
-                if (institutionAccessWrapper) institutionAccessWrapper.style.display = 'none';
-                // Inactivo: volver al set original (contexto permitido) y cerrar menú de accesos.
-                populateInstitutionOptions(defaultInstitutionOptions, institutionSelect.value || selectedInstitutionIdFromServer);
-                ensureInstitutionSelection();
-                renderInstitutionAccessList(defaultInstitutionOptions);
-                syncInstitutionFields();
+            // Solo mostrar/ocultar la lista de propiedades extra; la principal no cambia.
+            if (institutionAccessWrapper) {
+                institutionAccessWrapper.style.display = roleSwitch.checked ? 'block' : 'none';
             }
         }
 
@@ -469,9 +454,22 @@
             });
         }
         if (institutionSelect) {
-            institutionSelect.addEventListener('change', syncInstitutionFields);
+            institutionSelect.addEventListener('change', function () {
+                syncInstitutionFields();
+                // Al cambiar la principal, re-render para marcarla como "(principal)".
+                renderInstitutionAccessList(allInstitutions);
+            });
         }
         roleSwitch.addEventListener('change', paintSwitch);
+
+        // Render inicial de la lista de propiedades extra.
+        renderInstitutionAccessList(allInstitutions);
+
+        // Si el usuario ya tiene propiedades extra (edición), abrir la lista para mostrarlas.
+        const primaryNow = String((institutionHidden && institutionHidden.value) || selectedInstitutionIdFromServer || '');
+        const hasExtras = userInstitutionIds.some(id => id !== primaryNow);
+        if (hasExtras) roleSwitch.checked = true;
+
         paintSwitch();
         syncInstitutionFields();
     })();

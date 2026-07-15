@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdmonCont\store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\SubmittedDocument;
 use App\Models\Users\User;
 use App\Models\Users\AcademicProfile;
 use App\Models\Users\Role;
@@ -24,6 +25,29 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class studentController extends Controller
 {
+    /**
+     * Documentos del expediente subidos dinámicamente por un alumno
+     * (configurados en Ajustes → Expediente). Devuelve JSON para el modal "Ver Expediente".
+     */
+    public function documentosExpediente($id)
+    {
+        $docs = SubmittedDocument::with('requirement')
+            ->where('user_id', $id)
+            ->orderBy('document_requirement_id')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'nombre' => $d->requirement?->nombre ?? ($d->nombre_original ?? 'Documento'),
+                    'proceso' => $d->requirement?->proceso_label ?? '',
+                    'url' => '/storage/' . ltrim((string) $d->archivo_path, '/'),
+                    'nombre_original' => $d->nombre_original,
+                ];
+            });
+
+        return response()->json(['data' => $docs]);
+    }
+
     public function acceptAspirante(Request $request, Lead $lead)
     {
         $normalize = fn (?string $value): string => strtoupper(preg_replace('/\s+/', '', (string) $value));
@@ -399,7 +423,7 @@ class studentController extends Controller
                 });
             } else {
                 $query->whereHas('academicProfile', function ($q) {
-                    $q->where('status', 'Alumno Inactivo');
+                    $q->whereIn('status', ['Alumno Inactivo', 'Baja']);
                 });
             }
             $dataList = $query->orderBy('created_at', 'desc')->paginate($perPage)
@@ -918,20 +942,139 @@ class studentController extends Controller
         }
 
         try {
-            $user->delete();
+            // Desactivar usuario (no eliminar)
+            $user->update(['is_active' => 0]);
+
+            // Cambiar estatus académico a "Baja" y guardar el último periodo activo
+            if ($user->academicProfile) {
+                $periodoActivo = Period::where('is_active', 1)->first();
+                $user->academicProfile->update([
+                    'status' => 'Baja',
+                    'ultimo_periodo_id' => $periodoActivo?->id,
+                ]);
+            }
         } catch (\Throwable $e) {
             if ($request->expectsJson()) {
-                return response()->json(['ok' => false, 'message' => 'No se pudo eliminar el alumno.'], 500);
+                return response()->json(['ok' => false, 'message' => 'No se pudo dar de baja al alumno.'], 500);
             }
             throw $e;
         }
 
-        $message = 'Alumno eliminado correctamente.';
+        $message = 'Alumno dado de baja correctamente.';
         if ($request->expectsJson()) {
             return response()->json(['ok' => true, 'message' => $message]);
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Reactivar un alumno dado de baja.
+     */
+    public function reactivar(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (!$user->roles()->where('name', 'estudiante')->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+            abort(403, 'Acceso no autorizado.');
+        }
+
+        try {
+            $user->update(['is_active' => 1]);
+
+            if ($user->academicProfile) {
+                $user->academicProfile->update([
+                    'status' => 'Alumno',
+                    'ultimo_periodo_id' => null,
+                ]);
+            }
+            // Sincronizar Enrollment: si quedó "Pendiente", pasarlo a "Inscrito"
+            // para que el alumno no vea la pantalla de espera al reactivarlo.
+            \App\Models\Users\Enrollment::where('user_id', $user->id)
+                ->where('status', 'Pendiente')
+                ->update(['status' => 'Inscrito']);
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'No se pudo reactivar al alumno.'], 500);
+            }
+            throw $e;
+        }
+
+        $message = 'Alumno reactivado correctamente.';
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Guardar datos del alumno desde el modal de expediente (sin lead CRM).
+     */
+    public function updateProfileFromModal(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (!$user->roles()->where('name', 'estudiante')->exists()) {
+            return response()->json(['ok' => false, 'message' => 'Acceso no autorizado.'], 403);
+        }
+
+        $request->validate([
+            'alumno_nombre' => 'nullable|string|max:255',
+            'alumno_paterno' => 'nullable|string|max:255',
+            'alumno_materno' => 'nullable|string|max:255',
+            'alumno_curp' => 'nullable|string|max:18',
+            'telefono1' => 'nullable|string|max:20',
+            'alumno_email' => 'nullable|email|max:255',
+            'carrera_id' => 'nullable|exists:careers,id',
+            'semestre' => 'nullable|integer|min:1|max:12',
+            'matricula' => 'nullable|string|max:50',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        // Actualizar datos personales del usuario
+        $datosUser = [];
+        if ($request->has('alumno_nombre') && $request->alumno_nombre) $datosUser['nombre'] = $request->alumno_nombre;
+        if ($request->has('alumno_paterno') && $request->alumno_paterno) $datosUser['apellido_paterno'] = $request->alumno_paterno;
+        if ($request->has('alumno_materno')) $datosUser['apellido_materno'] = $request->alumno_materno;
+        if ($request->has('alumno_curp')) $datosUser['curp'] = $request->alumno_curp ? strtoupper(trim($request->alumno_curp)) : null;
+        if ($request->has('telefono1')) $datosUser['telefono'] = $request->telefono1;
+        if ($request->has('alumno_email') && $request->alumno_email) {
+            $emailExists = User::where('email', $request->alumno_email)->where('id', '!=', $user->id)->exists();
+            if (!$emailExists) {
+                $datosUser['email'] = $request->alumno_email;
+            }
+        }
+        if (!empty($datosUser)) {
+            $user->update($datosUser);
+        }
+
+        // Actualizar perfil académico
+        $profile = $user->academicProfile;
+        if (!$profile) {
+            return response()->json(['ok' => false, 'message' => 'El alumno no tiene perfil académico.'], 422);
+        }
+
+        $datos = [];
+        if ($request->has('carrera_id') && $request->carrera_id) $datos['career_id'] = $request->carrera_id;
+        if ($request->has('semestre') && $request->semestre) $datos['semestre'] = $request->semestre;
+        if ($request->has('matricula')) $datos['matricula'] = $request->matricula;
+
+        if ($request->hasFile('foto')) {
+            if ($profile->foto) {
+                Storage::disk('public')->delete($profile->foto);
+            }
+            $datos['foto'] = $request->file('foto')->store("documentos/{$user->id}/foto", 'public');
+        }
+
+        if (!empty($datos)) {
+            $profile->update($datos);
+        }
+
+        return response()->json(['ok' => true, 'message' => 'Perfil actualizado correctamente.']);
     }
 
     /**

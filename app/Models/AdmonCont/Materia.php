@@ -22,10 +22,15 @@ class Materia extends Model
         'descripcion',
         'objetivo',
         'temario',
+        'temario_archivo',
         'infografia',
         'type',
         'semestre',
-        'career_classification_id'
+        'career_classification_id',
+        'num_parciales',
+        'peso_tareas',
+        'peso_evaluaciones',
+        'peso_asistencias',
     ];
     protected $casts = [
     'temario' => 'array',

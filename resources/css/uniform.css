@@ -108,7 +108,7 @@ h5 { font-size: 0.95rem; }
 .month-header { background: #f8f9fa; padding: 10px 15px; font-weight: 600; color: #223F70; display:flex; justify-content:space-between; align-items:center; }
 .payment-details-row { display: none; }
 .payment-details-row--visible { display: table-row; }
-.period-summary--blue { background-color: #223F70; color: #fff; }
+.period-summary--blue { background-color: #223F70 !important; color: #fff !important; }
 .period-summary--blue .period-name, .period-summary--blue .period-info, .period-summary--blue .arrow-icon { color: #fff !important; }
 .table-header--blue tr, .table-header--blue th { background: var(--primary); color: #fff; }
 .no-data-centered { text-align: center; color: #888; padding: 20px; }

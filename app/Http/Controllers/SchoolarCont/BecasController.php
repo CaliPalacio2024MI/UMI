@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SchoolarCont;
 
 use App\Http\Controllers\Controller;
 use App\Models\Schoolar\BecaDocumento;
+use App\Models\DocumentRequirement;
 use App\Models\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,7 +51,10 @@ class BecasController extends Controller
             ]);
         }
 
-        return view('layouts.ControlEsc.Becas.index', compact('dataList', 'alumnos'));
+        // Documentos requeridos configurados en Ajustes → Expediente (proceso Becas).
+        $expedienteConfig = DocumentRequirement::query()->forActiveProcess('becas')->get();
+
+        return view('layouts.ControlEsc.Becas.index', compact('dataList', 'alumnos', 'expedienteConfig'));
     }
 
     public function store(Request $request)

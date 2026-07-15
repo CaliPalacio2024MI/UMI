@@ -24,7 +24,7 @@
     
    
     <div class="profile-welcome-container">
-        <img src="{{ $user->profile_photo_path ? asset('storage/'.$user->profile_photo_path) : asset('images/LOGO 4.svg') }}" class="profile-welcome-image" alt="Foto de perfil">
+        <img src="{{ $user->academicProfile && $user->academicProfile->foto ? asset('storage/'.$user->academicProfile->foto) : asset('images/LOGO 4.svg') }}" class="profile-welcome-image @if(!($user->academicProfile && $user->academicProfile->foto)) profile-welcome-image--default @endif" alt="Foto de perfil">
         <div class="profile-orange-line"></div>
         <div class="profile-student-name">
             {{ $user->nombre }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}
@@ -36,6 +36,14 @@
 
         
         @if($isStaff)
+            <div class="profile-info-row">
+                <span class="profile-info-title">Unidad de Negocio:</span>
+                <span class="profile-info-content">{{ session('active_institution_name', 'No asignada') }}</span>
+            </div>
+            <div class="profile-info-row">
+                <span class="profile-info-title">Rol:</span>
+                <span class="profile-info-content">{{ session('active_role_display_name', 'Sin rol') }}</span>
+            </div>
             <div class="profile-info-row">
                 <span class="profile-info-title">Departamento:</span>
                 <span class="profile-info-content">{{ $user->department->name ?? 'No asignado' }}</span>
@@ -71,7 +79,7 @@
             <div class="profile-inline-pair">
                 
                 <span class="profile-info-title">{{ $isStudent ? 'Matrícula:' : 'RFC/Usuario:' }}</span>
-                <span class="profile-info-content">{{ $isStudent ? 'xxxxxxxxxxxxx' : ($user->RFC ?? 'Sin registro') }}</span>
+                <span class="profile-info-content">{{ $isStudent ? ($user->academicProfile->matricula ?? 'Sin registro') : ($user->RFC ?? 'Sin registro') }}</span>
             </div>
              <div class="profile-inline-pair">
                 <span class="profile-info-title">Correo:</span>

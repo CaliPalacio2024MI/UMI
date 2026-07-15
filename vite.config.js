@@ -17,6 +17,7 @@ export default defineConfig({
                 'resources/css/layout.css',
                 'resources/css/responsive.css',
                 'resources/css/variables.css',
+                'resources/css/uniform.css',
                 // CSS Ajustes
                 'resources/css/Ajustes/modal.css',
                 'resources/css/Ajustes/table.css',
@@ -35,6 +36,8 @@ export default defineConfig({
                 // CSS ControlEsc
                 'resources/css/ControlEsc/base.css',
                 'resources/css/ControlEsc/boletas.css',
+                'resources/css/ControlEsc/becas.css',
+                'resources/css/ControlEsc/titulacion.css',
                 // CSS Cursos
                 'resources/css/Cursos/certificados.css',
                 'resources/css/Cursos/courseShow.css',
@@ -42,11 +45,16 @@ export default defineConfig({
                 'resources/css/Cursos/createCourses.css',
                 'resources/css/Cursos/editCourses.css',
                 'resources/css/Cursos/topic.css',
+                'resources/css/Cursos/horarios.css',
                 // CSS Mi_Informacion
                 'resources/css/Mi_Informacion/clases.css',
                 'resources/css/Mi_Informacion/historial_academico.css',
                 'resources/css/Mi_Informacion/horario.css',
                 'resources/css/Mi_Informacion/perfil.css',
+                'resources/css/Mi_Informacion/tareas.css',
+                'resources/css/Mi_Informacion/contenido_materia.css',
+                'resources/css/Mi_Informacion/asistencia.css',
+                'resources/css/Mi_Informacion/boletas.css',
                 // JavaScript
                 'resources/js/app.js',
                 'resources/js/facturacion.js',

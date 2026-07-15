@@ -48,17 +48,17 @@
     {{-- CARD QUE CONTIENE LA TABLA (Área de crecimiento flexible) --}}
     <div class="umi-table-card">
         <div class="umi-table-scroll">
-            <table style="width: 100%; table-layout: fixed;">
+            <table style="width: 100%; table-layout: auto;">
                 <thead>
                     <tr>
-                        <th>Curp</th>
-                        <th>Nombre</th>
-                        <th>Apellido<br>Paterno</th>
-                        <th>Apellido<br>Materno</th>
-                        <th style="text-align:center">Estatus</th>
-                        <th style="min-width: 180px;">Carrera</th>
-                        <th style="min-width: 160px;">Clasificación</th>
-                        <th style="text-align:center; min-width: 240px;">Acciones</th>
+                        <th style="width: 14%;">Curp</th>
+                        <th style="width: 10%;">Nombre</th>
+                        <th style="width: 10%;">Apellido<br>Paterno</th>
+                        <th style="width: 10%;">Apellido<br>Materno</th>
+                        <th style="text-align:center; width: 10%;">Estatus</th>
+                        <th style="width: 14%;">Carrera</th>
+                        <th style="width: 12%;">Clasificación</th>
+                        <th style="text-align:center; width: 20%;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="data-table-body" id="students-table-body">
@@ -150,6 +150,15 @@
                     <div class="detail-item">
                         <label>Semestre:</label> <span id="modalSemester">-</span>
                     </div>
+                    <div class="detail-item">
+                        <label>Matrícula:</label> <span id="modalMatricula">-</span>
+                    </div>
+                    <div id="modalFotoWrap" style="margin-top: 10px; display: none;">
+                        <label style="font-weight: 600; color: #BC8A55;">Foto:</label>
+                        <div style="margin-top: 8px;">
+                            <img id="modalFoto" src="" alt="Foto del alumno" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #223F70;">
+                        </div>
+                    </div>
                 </div>
 
                 <div id="studentDetailsTabDocs" class="student-details-tab-panel" role="tabpanel" aria-labelledby="studentDetailsTabBtnDocs">
@@ -163,6 +172,14 @@
                         <div id="noDocsMsg" class="no-docs" style="display:none;">
                             No hay documentos digitales cargados.
                         </div>
+                    </div>
+
+                    {{-- Documentos del expediente configurados en Ajustes (subidos dinámicamente) --}}
+                    <div id="expedienteSubmittedDocsWrap" style="display:none; margin-top:16px; border-top:1px solid #eee; padding-top:12px;">
+                        <h4 style="margin:0 0 8px; font-size:0.95rem; color:#223F70;">
+                            <i class="fa-solid fa-folder-open"></i> Documentos del expediente
+                        </h4>
+                        <div id="expedienteSubmittedDocs" class="docs-list"></div>
                     </div>
                 </div>
             </div>
@@ -217,6 +234,15 @@
                             </div>
                             <div class="detail-item"><label>Semestre:</label>
                                 <input type="number" name="semestre" id="leadSemestre" min="1" max="12" value="1" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:100px;">
+                            </div>
+                            <div class="detail-item"><label>Matrícula:</label>
+                                <input type="text" name="matricula" id="leadMatricula" placeholder="Ej: UMI-2026-001" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;">
+                            </div>
+                            <div class="detail-item" style="flex-direction: column; align-items: flex-start;">
+                                <label>Foto del alumno:</label>
+                                <div id="leadFotoPreview" style="margin: 8px 0;"></div>
+                                <input type="file" name="foto" id="leadFoto" accept=".jpg,.jpeg,.png" style="font-size: 0.85rem;">
+                                <small style="color: #666;">JPG o PNG. Máx 2MB.</small>
                             </div>
                         </div>
                         <div id="leadEditTabDocs" class="lead-edit-tab-panel" role="tabpanel" aria-labelledby="leadEditTabBtnDocs">
@@ -313,7 +339,53 @@
         </div>
     </div>
 </div>
+{{-- MODAL: CONFIRMAR REACTIVAR ALUMNO --}}
+<div id="reactivarAlumnoModal" class="modal-overlay" style="display: none; z-index: 10001;">
+    <div class="modal-container accept-aspirante-modal">
+        <div class="modal-header accept-aspirante-modal__header">
+            <button type="button" class="modal-close" onclick="closeReactivarAlumnoModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll accept-aspirante-modal__body">
+            <div class="accept-aspirante-modal__icon" aria-hidden="true" style="border-color: #c8e6c9; color: #2e7d32;">
+                <span aria-hidden="true">✓</span>
+            </div>
+            <p id="reactivarAlumnoText" class="accept-aspirante-modal__text">
+                ¿Deseas reactivar a este alumno?
+            </p>
+            <p style="color: #666; font-size: 0.85rem; margin-top: 6px;">
+                Su usuario volverá a estar activo y podrá acceder al sistema.
+            </p>
+            <div class="accept-aspirante-modal__actions" style="margin-top: 16px;">
+                <button type="button" style="background: #e0e0e0; color: #333; border: none; border-radius: 50px; padding: 10px 22px; font-weight: 600; cursor: pointer;" onclick="closeReactivarAlumnoModal()">Cancelar</button>
+                <button type="button" id="btnConfirmReactivarAlumno" style="background: #223F70; color: #fff; border: none; border-radius: 50px; padding: 10px 22px; font-weight: 600; cursor: pointer;">Reactivar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+{{-- MODAL: CONFIRMAR BAJA DE ALUMNO --}}
+<div id="bajaAlumnoModal" class="modal-overlay" style="display: none; z-index: 10001;">
+    <div class="modal-container accept-aspirante-modal">
+        <div class="modal-header accept-aspirante-modal__header">
+            <button type="button" class="modal-close" onclick="closeBajaAlumnoModal()">&times;</button>
+        </div>
+        <div class="modal-body-scroll accept-aspirante-modal__body">
+            <div class="accept-aspirante-modal__icon" aria-hidden="true" style="border-color: #f5c6cb; color: #e74c3c;">
+                <span aria-hidden="true">!</span>
+            </div>
+            <p id="bajaAlumnoText" class="accept-aspirante-modal__text">
+                ¿Deseas dar de baja a este alumno?
+            </p>
+            <p style="color: #666; font-size: 0.85rem; margin-top: 6px;">
+                Su información se conservará pero su usuario quedará inactivo.
+            </p>
+            <div class="accept-aspirante-modal__actions" style="margin-top: 16px;">
+                <button type="button" style="background: #e0e0e0; color: #333; border: none; border-radius: 50px; padding: 10px 22px; font-weight: 600; cursor: pointer;" onclick="closeBajaAlumnoModal()">Cancelar</button>
+                <button type="button" id="btnConfirmBajaAlumno" style="background: #e74c3c; color: #fff; border: none; border-radius: 50px; padding: 10px 22px; font-weight: 600; cursor: pointer;">Dar de baja</button>
+            </div>
+        </div>
+    </div>
+</div>
 {{-- ESTILOS Y SCRIPTS --}}
 <style>
     /* Input de búsqueda: borde, sombra, altura menor, icono a la izquierda */
@@ -599,6 +671,82 @@
         gap: 10px;
     }
 
+
+    /* Estilos modal reactivar alumno */
+    #reactivarAlumnoModal .accept-aspirante-modal {
+        max-width: 460px;
+        max-height: 300px;
+    }
+    #reactivarAlumnoModal .accept-aspirante-modal__header {
+        background: #ffffff;
+        justify-content: flex-end;
+    }
+    #reactivarAlumnoModal .accept-aspirante-modal__body {
+        padding: 14px 18px 12px;
+        text-align: center;
+    }
+    #reactivarAlumnoModal .accept-aspirante-modal__icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        border: 2px solid #c8e6c9;
+        color: #2e7d32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    #reactivarAlumnoModal .accept-aspirante-modal__text {
+        margin: 0;
+        color: #223F70;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    #reactivarAlumnoModal .accept-aspirante-modal__actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    /* Estilos modal baja alumno */
+    #bajaAlumnoModal .accept-aspirante-modal {
+        max-width: 460px;
+        max-height: 300px;
+    }
+    #bajaAlumnoModal .accept-aspirante-modal__header {
+        background: #ffffff;
+        justify-content: flex-end;
+    }
+    #bajaAlumnoModal .accept-aspirante-modal__body {
+        padding: 14px 18px 12px;
+        text-align: center;
+    }
+    #bajaAlumnoModal .accept-aspirante-modal__icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        border: 2px solid #f5c6cb;
+        color: #e74c3c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    #bajaAlumnoModal .accept-aspirante-modal__text {
+        margin: 0;
+        color: #223F70;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    #bajaAlumnoModal .accept-aspirante-modal__actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
 
     /* Botones tipo "confirmación" ovalados azul marino */
     #acceptAspiranteModal .btn {
@@ -905,6 +1053,17 @@
             semVal = '1';
         }
         document.getElementById('modalSemester').innerText = String(semVal);
+        document.getElementById('modalMatricula').innerText = data.matricula || 'No Asignada';
+        var fotoWrap = document.getElementById('modalFotoWrap');
+        var fotoImg = document.getElementById('modalFoto');
+        if (fotoWrap && fotoImg) {
+            if (data.foto && data.foto.trim() !== '') {
+                fotoImg.src = data.foto;
+                fotoWrap.style.display = 'block';
+            } else {
+                fotoWrap.style.display = 'none';
+            }
+        }
         
         // 2. Configurar Badge (Etiqueta de color)
         const badge = document.getElementById('modalStatusBadge');
@@ -948,8 +1107,43 @@
         configureBtn('btnDocFicha', data.docFicha, 'Ficha de pago / comprobante');
 
         document.getElementById('noDocsMsg').style.display = (docsCount === 0) ? 'block' : 'none';
+
+        // Documentos del expediente (configurados en Ajustes → Expediente, subidos dinámicamente).
+        loadExpedienteSubmittedDocs(data.userId);
+
         resetStudentDetailsTabsToPersonal();
         document.getElementById('studentDetailsModal').style.display = 'flex';
+    }
+
+    function loadExpedienteSubmittedDocs(userId) {
+        const wrap = document.getElementById('expedienteSubmittedDocsWrap');
+        const list = document.getElementById('expedienteSubmittedDocs');
+        if (!wrap || !list) return;
+        wrap.style.display = 'none';
+        list.innerHTML = '';
+        if (!userId) return;
+
+        fetch(`/expediente-alumno/${userId}/documentos`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+        .then(res => {
+            const docs = (res && res.data) ? res.data : [];
+            if (!docs.length) return;
+            docs.forEach(doc => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'doc-btn';
+                btn.textContent = doc.proceso ? `${doc.nombre} · ${doc.proceso}` : doc.nombre;
+                btn.onclick = function (e) {
+                    e.stopPropagation();
+                    openDocViewer(doc.url, doc.nombre);
+                };
+                list.appendChild(btn);
+            });
+            wrap.style.display = 'block';
+        })
+        .catch(err => console.error('No se pudieron cargar los documentos del expediente:', err));
     }
 
     function closeStudentDetails() {
@@ -1032,7 +1226,22 @@
         document.getElementById('leadAlumnoEmail').value = data.alumnoEmail || '';
         document.getElementById('leadCarreraId').value = data.carreraId || '';
         document.getElementById('leadSemestre').value = data.semestre || '1';
+        document.getElementById('leadMatricula').value = data.matricula || '';
+        var fotoPreview = document.getElementById('leadFotoPreview');
+        if (fotoPreview) {
+            fotoPreview.innerHTML = '';
+            if (data.foto && data.foto.trim() !== '') {
+                var img = document.createElement('img');
+                img.src = data.foto;
+                img.alt = 'Foto actual';
+                img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:50%; border:2px solid #223F70;';
+                fotoPreview.appendChild(img);
+            }
+        }
+        var fotoInput = document.getElementById('leadFoto');
+        if (fotoInput) fotoInput.value = '';
         document.getElementById('leadEditForm').dataset.leadId = data.leadId;
+        document.getElementById('leadEditForm').dataset.userId = data.userId || '';
         var docsFlag = document.getElementById('leadEditDocsInteracted');
         if (docsFlag) docsFlag.value = '0';
 
@@ -1173,6 +1382,9 @@
             openStudentDetails({
                 name: d.name, email: d.email, phone: d.phone,
                 career: d.career, semester: d.semester, status: d.status,
+                matricula: d.matricula || '',
+                foto: d.foto || '',
+                userId: d.userId || '',
                 alumnoNombre: d.alumnoNombre,
                 alumnoPaterno: d.alumnoPaterno,
                 alumnoMaterno: d.alumnoMaterno,
@@ -1200,6 +1412,9 @@
                 alumnoEmail: d.alumnoEmail || '',
                 carreraId: d.carreraId,
                 semestre: d.semestre || '1',
+                userId: d.userId || '',
+                matricula: d.matricula || '',
+                foto: d.foto || '',
                 docActa: docsEdit.docActa || '',
                 docCert: docsEdit.docCert || '',
                 docCurp: docsEdit.docCurp || '',
@@ -1305,8 +1520,64 @@
     document.getElementById('leadEditForm')?.addEventListener('submit', function(e) {
         e.preventDefault();
         const leadId = this.dataset.leadId;
+        const userId = this.dataset.userId;
+        if (!leadId && !userId) {
+            alert('No se puede guardar: no hay lead CRM ni perfil de alumno vinculado.');
+            return;
+        }
         if (!leadId) {
-            alert('Este alumno no tiene un lead CRM vinculado para editar desde este modal.');
+            // Solo tiene perfil de alumno, guardar todos los campos directamente
+            var profileData = new FormData();
+            profileData.append('alumno_nombre', document.getElementById('leadAlumnoNombre') ? document.getElementById('leadAlumnoNombre').value.trim() : '');
+            profileData.append('alumno_paterno', document.getElementById('leadAlumnoPaterno') ? document.getElementById('leadAlumnoPaterno').value.trim() : '');
+            profileData.append('alumno_materno', document.getElementById('leadAlumnoMaterno') ? document.getElementById('leadAlumnoMaterno').value.trim() : '');
+            profileData.append('alumno_curp', document.getElementById('leadAlumnoCurp') ? document.getElementById('leadAlumnoCurp').value.trim() : '');
+            profileData.append('telefono1', document.getElementById('leadTelefono1') ? document.getElementById('leadTelefono1').value.trim() : '');
+            profileData.append('alumno_email', document.getElementById('leadAlumnoEmail') ? document.getElementById('leadAlumnoEmail').value.trim() : '');
+            profileData.append('carrera_id', document.getElementById('leadCarreraId') ? document.getElementById('leadCarreraId').value : '');
+            profileData.append('semestre', document.getElementById('leadSemestre') ? document.getElementById('leadSemestre').value : '');
+            var matriculaVal = document.getElementById('leadMatricula') ? document.getElementById('leadMatricula').value.trim() : '';
+            profileData.append('matricula', matriculaVal);
+            var fotoInput = document.getElementById('leadFoto');
+            if (fotoInput && fotoInput.files && fotoInput.files.length) {
+                profileData.append('foto', fotoInput.files[0]);
+            }
+            var profileUrl = (UMI_STUDENTS_LEADS_BASE.replace('/leads', '') + '/' + userId + '/update-profile');
+            var submitBtnProfile = this.querySelector('button[type="submit"]');
+            var origTextProfile = submitBtnProfile?.textContent;
+            if (submitBtnProfile) { submitBtnProfile.disabled = true; submitBtnProfile.textContent = 'Guardando...'; }
+            fetch(profileUrl, {
+                method: 'POST',
+                body: profileData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function(r) { return r.json().then(function(j) { if (!r.ok) throw new Error(j.message || 'Error al guardar'); return j; }); })
+            .then(function() {
+                closeLeadEditModal();
+                var form = document.getElementById('umi-search-form');
+                if (form) {
+                    var params = new URLSearchParams(new FormData(form));
+                    var url = form.action + (params.toString() ? '?' + params.toString() : '');
+                    fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+                        .then(function(r) { return r.text(); })
+                        .then(function(html) {
+                            var tbody = document.getElementById('students-table-body');
+                            if (tbody) tbody.innerHTML = html;
+                        });
+                }
+                var successModal = document.getElementById('careerSuccessModal');
+                var successMsg = document.getElementById('careerSuccessModalMessage');
+                if (successModal && successMsg) {
+                    successMsg.textContent = 'Perfil actualizado correctamente.';
+                    successModal.style.display = 'flex';
+                }
+            })
+            .catch(function(err) { alert(err.message); })
+            .finally(function() { if (submitBtnProfile) { submitBtnProfile.disabled = false; submitBtnProfile.textContent = origTextProfile || '+ Guardar'; } });
             return;
         }
         const formData = new FormData(this);
@@ -1332,6 +1603,30 @@
                 }
                 return j;
             });
+        })
+        .then(function() {
+            // Guardar matrícula y foto en perfil académico
+            var userId = document.getElementById('leadEditForm').dataset.userId;
+            if (userId) {
+                var profileData = new FormData();
+                var matriculaVal = document.getElementById('leadMatricula') ? document.getElementById('leadMatricula').value.trim() : '';
+                profileData.append('matricula', matriculaVal);
+                var fotoInput = document.getElementById('leadFoto');
+                if (fotoInput && fotoInput.files && fotoInput.files.length) {
+                    profileData.append('foto', fotoInput.files[0]);
+                }
+                var profileUrl = (UMI_STUDENTS_LEADS_BASE.replace('/leads', '') + '/' + userId + '/update-profile');
+                return fetch(profileUrl, {
+                    method: 'POST',
+                    body: profileData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                }).then(function(r) { return r.json(); });
+            }
+            return Promise.resolve();
         })
         .then(function() {
             const emailVal = (document.getElementById('leadAlumnoEmail') && document.getElementById('leadAlumnoEmail').value) ? document.getElementById('leadAlumnoEmail').value.trim() : '';
@@ -1481,7 +1776,166 @@
             });
         });
     })();
+// =============================================================
+    // 4. MODAL CONFIRMAR BAJA DE ALUMNO
+    // =============================================================
+    let bajaAlumnoFormTarget = null;
 
+    function openBajaAlumnoModal(form) {
+        bajaAlumnoFormTarget = form;
+        var row = form.closest('tr');
+        var nombre = '';
+        if (row) {
+            var tds = row.querySelectorAll('td');
+            if (tds.length >= 4) {
+                nombre = (tds[1].textContent.trim() + ' ' + tds[2].textContent.trim() + ' ' + tds[3].textContent.trim()).trim();
+            }
+        }
+        var text = document.getElementById('bajaAlumnoText');
+        text.textContent = nombre
+            ? '¿Deseas dar de baja a "' + nombre + '"?'
+            : '¿Deseas dar de baja a este alumno?';
+        document.getElementById('bajaAlumnoModal').style.display = 'flex';
+    }
+
+    function closeBajaAlumnoModal() {
+        bajaAlumnoFormTarget = null;
+        document.getElementById('bajaAlumnoModal').style.display = 'none';
+    }
+
+    document.getElementById('btnConfirmBajaAlumno')?.addEventListener('click', function() {
+        if (!bajaAlumnoFormTarget) return;
+        var btn = this;
+        var original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+
+        var formData = new FormData(bajaAlumnoFormTarget);
+        fetch(bajaAlumnoFormTarget.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, data: j }; }); })
+        .then(function(res) {
+            if (!res.ok || !res.data?.ok) {
+                throw new Error(res.data?.message || 'No se pudo dar de baja al alumno.');
+            }
+            closeBajaAlumnoModal();
+            var form = document.getElementById('umi-search-form');
+            if (form) {
+                var params = new URLSearchParams(new FormData(form));
+                var url = form.action + (params.toString() ? '?' + params.toString() : '');
+                fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) {
+                        var tbody = document.getElementById('students-table-body');
+                        if (tbody) tbody.innerHTML = html;
+                    });
+            }
+            if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                window.spaNav.clearCache();
+            }
+            var successModal = document.getElementById('careerSuccessModal');
+            var successMsg = document.getElementById('careerSuccessModalMessage');
+            if (successModal && successMsg) {
+                successMsg.textContent = 'Alumno dado de baja correctamente.';
+                successModal.style.display = 'flex';
+            }
+        })
+        .catch(function(err) { alert(err.message); })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = original;
+        });
+    });
+
+    // Interceptar clic en botones de baja para abrir el modal
+    document.addEventListener('click', function(e) {
+        var form = e.target.closest('.js-alumno-delete-form');
+        if (form && e.target.closest('button[type="submit"]')) {
+            e.preventDefault();
+            openBajaAlumnoModal(form);
+        }
+    });
+    // =============================================================
+    // 5. MODAL CONFIRMAR REACTIVAR ALUMNO
+    // =============================================================
+    let reactivarAlumnoUrl = '';
+
+    function openReactivarAlumnoModal(url, nombre) {
+        reactivarAlumnoUrl = url;
+        var text = document.getElementById('reactivarAlumnoText');
+        text.textContent = nombre
+            ? '¿Deseas reactivar a "' + nombre + '"?'
+            : '¿Deseas reactivar a este alumno?';
+        document.getElementById('reactivarAlumnoModal').style.display = 'flex';
+    }
+
+    function closeReactivarAlumnoModal() {
+        reactivarAlumnoUrl = '';
+        document.getElementById('reactivarAlumnoModal').style.display = 'none';
+    }
+
+    document.getElementById('btnConfirmReactivarAlumno')?.addEventListener('click', function() {
+        if (!reactivarAlumnoUrl) return;
+        var btn = this;
+        var original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+
+        fetch(reactivarAlumnoUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, data: j }; }); })
+        .then(function(res) {
+            if (!res.ok || !res.data?.ok) {
+                throw new Error(res.data?.message || 'No se pudo reactivar al alumno.');
+            }
+            closeReactivarAlumnoModal();
+            var form = document.getElementById('umi-search-form');
+            if (form) {
+                var params = new URLSearchParams(new FormData(form));
+                var url = form.action + (params.toString() ? '?' + params.toString() : '');
+                fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+                    .then(function(r) { return r.text(); })
+                    .then(function(html) {
+                        var tbody = document.getElementById('students-table-body');
+                        if (tbody) tbody.innerHTML = html;
+                    });
+            }
+            if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
+                window.spaNav.clearCache();
+            }
+            var successModal = document.getElementById('careerSuccessModal');
+            var successMsg = document.getElementById('careerSuccessModalMessage');
+            if (successModal && successMsg) {
+                successMsg.textContent = 'Alumno reactivado correctamente.';
+                successModal.style.display = 'flex';
+            }
+        })
+        .catch(function(err) { alert(err.message); })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = original;
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.js-alumno-reactivar-btn');
+        if (btn) {
+            e.preventDefault();
+            openReactivarAlumnoModal(btn.dataset.reactivarUrl, btn.dataset.alumnoName);
+        }
+    });
 </script>
 
 @endsection

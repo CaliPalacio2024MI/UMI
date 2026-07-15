@@ -1,0 +1,162 @@
+.boletas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 0 10px;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.boletas-page-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8em;
+    color: #1E1E1E;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.boletas-subtitulo {
+    font-family: 'Poppins', sans-serif;
+    color: #666;
+}
+
+.boletas-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.boletas-container {
+    padding: 0 20px 20px;
+    width: 100%;
+    max-width: 1150px;
+    margin: 0 auto;
+}
+
+/* Tarjeta/tabla: mismo patrón que .boletas-esc__card (Control Escolar) */
+.boletas-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.boletas-table.main-table thead th {
+    background: #223F70;
+    color: #fff;
+    text-transform: none;
+    font-size: 0.85em;
+    text-align: center;
+}
+
+.boletas-table.main-table tbody td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.boletas-table.main-table tbody td:first-child {
+    text-align: left;
+    font-weight: 500;
+}
+
+/* Input de parcial dentro de la captura del docente */
+.boletas-parcial-input {
+    width: 62px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+.boletas-parcial-input:disabled {
+    background: #f1f3f5;
+    color: #333;
+    border-color: #e0e0e0;
+}
+
+.boletas-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.78em;
+    font-weight: 600;
+}
+
+.boletas-badge--confirmada {
+    background: #d4edda;
+    color: #198754;
+}
+
+.boletas-badge--pendiente {
+    background: #fff3cd;
+    color: #b8860b;
+}
+
+.boletas-acciones {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.boletas-btn-mini {
+    border: none;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.8em;
+    font-weight: 500;
+    cursor: pointer;
+    color: #fff;
+    background: #223F70;
+    transition: background-color 0.2s;
+}
+
+.boletas-btn-mini:hover {
+    background: #1a3158;
+}
+
+.boletas-btn-mini--confirmar {
+    background: #198754;
+}
+
+.boletas-btn-mini--confirmar:hover {
+    background: #157347;
+}
+
+.boletas-btn-mini:disabled {
+    background: #adb5bd;
+    cursor: not-allowed;
+}
+
+/* Ícono de ojo para reabrir una calificación confirmada */
+.boletas-accion-ojo {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #e69a37;
+    font-size: 1.05em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.boletas-accion-ojo:hover {
+    color: #223F70;
+    transform: scale(1.1);
+}
+
+/* Detalle por materia (alumno) */
+.boletas-detalle-parciales {
+    font-size: 0.82em;
+    color: #666;
+}

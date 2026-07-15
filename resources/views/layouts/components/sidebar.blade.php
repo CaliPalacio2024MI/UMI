@@ -95,7 +95,7 @@
             @if($isUniversity)
                 {{-- CASO UNIVERSIDAD: Muestra Submenú con Horario, Clases, etc. --}}
                 <li class="has-submenu {{ request()->routeIs('MiInformacion.*') ? 'active' : '' }}">
-                    <a href="{{ route('Facturacion.index') }}">
+                    <a href="#">
                         <span class="icon" aria-hidden="true">
                             <img src="{{ asset('images/icons/user-solid-full.svg') }}" alt="Info Icon" style="width:24px;height:24px" loading="lazy">
                         </span>
@@ -116,11 +116,23 @@
                         <li class="{{ request()->routeIs('MiInformacion.historial') ? 'active-submenu' : '' }}">
                             <a href="{{ route('MiInformacion.historial') }}">Historial Académico</a>
                         </li>
-                       
-                        {{-- Opciones Extra (Boletas) --}}
+                        <li class="{{ request()->routeIs('MiInformacion.tareas*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('MiInformacion.tareas') }}">Tareas</a>
+                        </li>
+                        <li class="{{ request()->routeIs('MiInformacion.evaluaciones*') ? 'active-submenu' : '' }}">
+                            <a href="{{ route('MiInformacion.evaluaciones') }}">Evaluaciones</a>
+                        </li>
+
+                        {{-- Boletas de calificaciones (alumno consulta, docente captura) --}}
                         @if($isDocenteGroup || $isStudentGroup)
-                             <li class="{{ request()->routeIs('MiInformacion.boletas') ? 'active-submenu' : '' }}">
-                                <a href="#">Boletas</a>
+                             <li class="{{ request()->routeIs('MiInformacion.boletas*') ? 'active-submenu' : '' }}">
+                                <a href="{{ route('MiInformacion.boletas') }}">Boletas</a>
+                            </li>
+                        @endif
+                        {{-- Retícula de la carrera (solo alumno) --}}
+                        @if($isStudentGroup)
+                             <li class="{{ request()->routeIs('MiInformacion.reticula') ? 'active-submenu' : '' }}">
+                                <a href="{{ route('MiInformacion.reticula') }}">Retícula</a>
                             </li>
                         @endif
                         @endif
@@ -247,9 +259,6 @@
                                     <li class="{{ request()->routeIs('control.students.*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('control.students.index') }}">Alumnos</a>
                                     </li>
-                                    <li class="{{ request()->is('control/academico/planeacion') ? 'active-submenu' : '' }}">
-                                        <a href="#">Planeación Escolar</a>
-                                    </li>
                                 </ul>
                             </li>
                         @endif
@@ -371,10 +380,20 @@
                             <li class="{{ request()->is('ajustes/users') ? 'active-submenu' : '' }}">
                                 <a href="{{ route('ajustes.show', 'users') }}">Usuarios</a>
                             </li>
+                            @if($isUniversity)
+                                <li class="{{ request()->is('ajustes/expediente') ? 'active-submenu' : '' }}">
+                                    <a href="{{ route('ajustes.show', 'expediente') }}">Expediente</a>
+                                </li>
+                            @endif
                         @elseif($isControlGroup)
                             <li class="{{ request()->is('ajustes/users') ? 'active-submenu' : '' }}">
                                 <a href="{{ route('ajustes.show', 'users') }}">Usuarios</a>
                             </li>
+                            @if($isUniversity)
+                                <li class="{{ request()->is('ajustes/expediente') ? 'active-submenu' : '' }}">
+                                    <a href="{{ route('ajustes.show', 'expediente') }}">Expediente</a>
+                                </li>
+                            @endif
                             <li class="{{ request()->is('ajustes/periods') ? 'active-submenu' : '' }}">
                                 <a href="{{ route('ajustes.show', 'periods') }}">Periodos</a>
                             </li>

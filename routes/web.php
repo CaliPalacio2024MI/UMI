@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Users\ContextController;
 use App\Http\Controllers\MiInformacion\MiInformacionController;
+use App\Http\Controllers\MiInformacion\TareaController;
+use App\Http\Controllers\MiInformacion\EvaluacionController;
+use App\Http\Controllers\MiInformacion\BoletaController;
 use App\Http\Controllers\Ajustes\AjustesController;
 use App\Http\Controllers\ExternalDataController;
 
@@ -96,6 +99,47 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/clases', [MiInformacionController::class, 'showClases'])->name('clases');
             Route::get('/horario', [MiInformacionController::class, 'showHorario'])->name('horario');
             Route::get('/historial', [MiInformacionController::class, 'showHistorial'])->name('historial');
+
+            // Boletas de calificaciones (alumno consulta, docente captura/confirma)
+            Route::get('/boletas', [BoletaController::class, 'index'])->name('boletas');
+            Route::get('/boletas/clase/{clase}', [BoletaController::class, 'materia'])->name('boletas.materia');
+            Route::post('/boletas/clase/{clase}/alumno/{alumno}', [BoletaController::class, 'guardar'])->name('boletas.guardar');
+            Route::post('/boletas/clase/{clase}/alumno/{alumno}/confirmar', [BoletaController::class, 'confirmar'])->name('boletas.confirmar');
+            Route::post('/boletas/clase/{clase}/alumno/{alumno}/reabrir', [BoletaController::class, 'reabrir'])->name('boletas.reabrir');
+
+            // Retícula de la carrera del alumno (consulta)
+            Route::get('/reticula', [BoletaController::class, 'reticula'])->name('reticula');
+
+            // Tareas (alumno consulta/entrega, docente crea/califica)
+            Route::get('/tareas', [TareaController::class, 'index'])->name('tareas');
+            Route::post('/tareas', [TareaController::class, 'store'])->name('tareas.store');
+            Route::put('/tareas/{tarea}', [TareaController::class, 'update'])->name('tareas.update');
+            Route::delete('/tareas/{tarea}', [TareaController::class, 'destroy'])->name('tareas.destroy');
+            Route::post('/tareas/{tarea}/entregar', [TareaController::class, 'entregar'])->name('tareas.entregar');
+            Route::get('/tareas/{tarea}/entregas', [TareaController::class, 'entregas'])->name('tareas.entregas');
+            Route::post('/tareas/{tarea}/entregas/{alumno}', [TareaController::class, 'calificar'])->name('tareas.calificar');
+
+            // Evaluaciones (mismo comportamiento que Tareas, tipo distinto)
+            Route::get('/evaluaciones', [EvaluacionController::class, 'index'])->name('evaluaciones');
+            Route::post('/evaluaciones', [EvaluacionController::class, 'store'])->name('evaluaciones.store');
+            Route::put('/evaluaciones/{tarea}', [EvaluacionController::class, 'update'])->name('evaluaciones.update');
+            Route::delete('/evaluaciones/{tarea}', [EvaluacionController::class, 'destroy'])->name('evaluaciones.destroy');
+            Route::post('/evaluaciones/{tarea}/entregar', [EvaluacionController::class, 'entregar'])->name('evaluaciones.entregar');
+            Route::get('/evaluaciones/{tarea}/entregas', [EvaluacionController::class, 'entregas'])->name('evaluaciones.entregas');
+            Route::post('/evaluaciones/{tarea}/entregas/{alumno}', [EvaluacionController::class, 'calificar'])->name('evaluaciones.calificar');
+
+            // Tareas/Evaluaciones por materia (vista del docente entrando desde la tarjeta de Clases)
+            Route::get('/clases/{clase}/tareas', [TareaController::class, 'porMateria'])->name('clases.tareas');
+            Route::get('/clases/{clase}/evaluaciones', [EvaluacionController::class, 'porMateria'])->name('clases.evaluaciones');
+
+            // Contenido de la materia (icono de ojo en Clases)
+            Route::post('/clases/{clase}/contenido', [MiInformacionController::class, 'actualizarContenidoMateria'])->name('clases.contenido.update');
+            Route::get('/clases/{clase}/temario', [MiInformacionController::class, 'descargarTemario'])->name('clases.temario');
+
+            // Lista de alumnos y asistencia (icono de la clase)
+            Route::get('/clases/{clase}/asistencia', [MiInformacionController::class, 'showAsistencia'])->name('clases.asistencia');
+            Route::post('/clases/{clase}/asistencia', [MiInformacionController::class, 'guardarAsistencia'])->name('clases.asistencia.guardar');
+            Route::get('/clases/{clase}/asistencia/export', [MiInformacionController::class, 'exportAsistencia'])->name('clases.asistencia.export');
         });
     });
 
@@ -264,6 +308,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/lista-alumnos/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
             Route::put('/lista-alumnos/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-alumnos/{id}', [studentController::class, 'destroy'])->name('students.destroy');
+            Route::post('/lista-alumnos/{id}/reactivar', [studentController::class, 'reactivar'])->name('students.reactivar');
+        Route::post('/lista-alumnos/{id}/update-profile', [studentController::class, 'updateProfileFromModal'])->name('students.updateProfileModal');
             Route::post('/lista-alumnos/aspirantes/{lead}/aceptar', [studentController::class, 'acceptAspirante'])->name('students.acceptAspirante');
             Route::post('/lista-alumnos/leads/{lead}/alumno-email', [studentController::class, 'syncAlumnoEmailFromModal'])->name('students.syncAlumnoEmail');
             Route::post('/lista-alumnos/leads/{lead}/expediente', [studentController::class, 'updateLeadExpediente'])->name('students.updateLeadExpediente');
@@ -293,6 +339,8 @@ Route::middleware(['auth'])->group(function () {
 
             Route::get('/boletas-calificaciones', [BoletaCalificacionController::class, 'index'])->name('boletas.index');
             Route::get('/boletas-calificaciones/export', [BoletaCalificacionController::class, 'export'])->name('boletas.export');
+            Route::get('/boletas-calificaciones/carreras', [BoletaCalificacionController::class, 'carrerasPorClasificacion'])->name('boletas.carreras');
+            Route::get('/boletas-calificaciones/materias', [BoletaCalificacionController::class, 'materiasPorCarrera'])->name('boletas.materias');
         });
 
 
@@ -365,6 +413,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/lista-estudiantes/{id}/edit', [studentController::class, 'edit'])->name('students.edit');
             Route::put('/lista-estudiantes/{id}', [studentController::class, 'update'])->name('students.update');
             Route::delete('/lista-estudiantes/{id}', [studentController::class, 'destroy'])->name('students.destroy');
+            Route::post('/lista-estudiantes/{id}/reactivar', [studentController::class, 'reactivar'])->name('students.reactivar');
+            Route::post('/lista-estudiantes/{id}/update-profile', [studentController::class, 'updateProfileFromModal'])->name('students.updateProfileModal');
             Route::post('/lista-estudiantes/leads/{lead}/alumno-email', [studentController::class, 'syncAlumnoEmailFromModal'])->name('students.syncAlumnoEmailControl');
             Route::post('/lista-estudiantes/leads/{lead}/expediente', [studentController::class, 'updateLeadExpediente'])->name('students.updateLeadExpedienteControl');
         });
@@ -405,6 +455,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/inscripcion/nuevo', [InscripcionController::class, 'create'])->name('inscripcion.create');
             Route::post('/inscripcion/nuevo', [InscripcionController::class, 'store'])->name('inscripcion.store');
         });
+
+    // Documentos del expediente subidos dinámicamente (Ajustes → Expediente).
+    // Alimenta el modal "Ver Expediente" de Control Escolar / Académico (solo lectura, JSON).
+    Route::middleware(['role:master,control_administrativo'])
+        ->get('/expediente-alumno/{id}/documentos', [studentController::class, 'documentosExpediente'])
+        ->name('expediente.documentos');
 
     // Endpoint para consumir la API externa (devuelve JSON).
     // Nota: está dentro del middleware ['auth', 'ajax', 'spa'], así que idealmente llámalo como AJAX

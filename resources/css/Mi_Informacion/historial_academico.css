@@ -241,9 +241,8 @@
 
 .materia-row {
     display: flex;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    align-items: stretch; /* las celdas y separadores ocupan toda la altura de la fila */
+    border-bottom: 1px solid #d7dce1; /* reja horizontal */
     font-size: 0.85em;
     color: #333;
 }
@@ -252,18 +251,25 @@
     border-bottom: none;
 }
 
-/* Celdas de la fila */
+/* Celdas de la fila: centradas y con padding propio para formar la cuadrícula */
 .materia-row > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    padding: 0 5px;
+    padding: 12px 8px;
+    min-height: 44px;
 }
 
-/* Separadores verticales (Líneas rojas del diseño) */
+/* Separadores verticales (rejas): líneas de altura completa entre columnas */
 .cell-divider {
     width: 1px;
-    height: 20px;
-    background-color: #e69a37; /* Color naranja/rojo */
-    margin: 0 5px;
+    align-self: stretch;
+    height: auto;
+    background-color: #d7dce1;
+    margin: 0;
+    padding: 0 !important;
+    flex: 0 0 1px;
 }
 
 /* Footer (Créditos y Promedio Final) */

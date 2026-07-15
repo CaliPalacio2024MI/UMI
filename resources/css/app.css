@@ -18,5 +18,9 @@
 @import './Mi_Informacion/clases.css';
 @import './Mi_Informacion/horario.css';
 @import './Mi_Informacion/historial_academico.css';
+@import './Mi_Informacion/tareas.css';
+@import './Mi_Informacion/contenido_materia.css';
+@import './Mi_Informacion/asistencia.css';
+@import './Mi_Informacion/boletas.css';
 @import './Control Admin/base.css';
 @import './ControlEsc/base.css';

@@ -125,6 +125,24 @@
                     </div>
                 </div>
 
+                {{-- FOTO DEL ALUMNO --}}
+                <h3> Foto del Alumno</h3>
+                <hr>
+                <div class="form-group-double" style="margin-bottom: 20px;">
+                    <div class="form-field" style="align-items: center;">
+                        @if(!empty($user->academicProfile->foto))
+                            <img src="/storage/{{ $user->academicProfile->foto }}" alt="Foto del alumno"
+                                style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%; border: 3px solid #223F70; margin-bottom: 10px;">
+                        @else
+                            <div style="width: 150px; height: 150px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 50px; color: #999; border: 3px solid #ccc; margin-bottom: 10px;">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                        @endif
+                        <input type="file" name="foto" accept=".jpg,.jpeg,.png" style="max-width: 250px;">
+                        <small style="color: #666;">Formatos: JPG, PNG. Máx 2MB.</small>
+                    </div>
+                </div>
+
                 {{-- 3. DATOS PERSONALES --}}
                 <h3> Datos Personales</h3>
                 <hr>
@@ -220,6 +238,17 @@
                     <div class="form-field">
                         <label>Semestre</label>
                         <input type="number" name="semestre" value="{{ old('semestre', $user->academicProfile->semestre ?? 1) }}">
+                    </div>
+                </div>
+
+                <div class="form-group-double">
+                    <div class="form-field">
+                        <label>Matrícula</label>
+                        <input type="text" name="matricula" value="{{ old('matricula', $user->academicProfile->matricula ?? '') }}" placeholder="Ej: UMI-2026-001">
+                    </div>
+                    <div class="form-field">
+                        <label>CURP</label>
+                        <input type="text" name="curp" value="{{ old('curp', $user->curp ?? '') }}" maxlength="18" style="text-transform: uppercase;">
                     </div>
                 </div>
 

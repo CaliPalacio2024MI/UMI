@@ -315,6 +315,55 @@
                     </div>
                 </div>
 
+                {{-- CARGA DE DOCUMENTOS CONFIGURABLES (Ajustes → Expediente) --}}
+                @if(!empty($expedienteConfig) && $expedienteConfig->isNotEmpty())
+                <div class="docs-container" style="background: #ffffff; padding: 20px; border: 1px dashed #27ae60; border-radius: 8px; margin-top: 20px;">
+                    <h4 style="margin-top:0; color: #1e7e45; font-size: 1rem;"><i class="fa-solid fa-folder-plus"></i> Documentos requeridos</h4>
+                    @php
+                        $acceptMap = ['pdf' => '.pdf', 'jpg' => '.jpg,.jpeg', 'png' => '.png', 'doc' => '.doc,.docx', 'xls' => '.xls,.xlsx'];
+                    @endphp
+                    <div class="form-group-double" style="flex-wrap: wrap;">
+                        @foreach($expedienteConfig as $req)
+                            @php
+                                $subsDelReq = isset($expedienteSubs) ? ($expedienteSubs[$req->id] ?? collect()) : collect();
+                                $exts = $req->tiposArchivoArray();
+                                $accept = collect($exts)->map(fn ($e) => $acceptMap[$e] ?? ('.' . $e))->implode(',');
+                            @endphp
+                            <div class="form-field" style="flex: 1 1 45%;">
+                                <label>
+                                    {{ $req->nombre }}
+                                    @if($req->obligatorio)
+                                        <span style="color:#c0392b;">*</span>
+                                    @else
+                                        <small style="color:#888; font-weight:400;">(Opcional)</small>
+                                    @endif
+                                </label>
+                                @if($req->descripcion)
+                                    <p style="color:#666; font-size:0.85rem; margin:2px 0 6px;">{{ $req->descripcion }}</p>
+                                @endif
+                                <input type="file" name="expediente_docs[{{ $req->id }}][]"
+                                       accept="{{ $accept }}" @if($req->cantidad > 1) multiple @endif>
+                                <small style="display:block; color:#888; margin-top:4px;">
+                                    Tipos: {{ strtoupper(implode(', ', $exts)) }} · Máx {{ $req->cantidad }} archivo(s)
+                                </small>
+                                @error("expediente_docs.{$req->id}")
+                                    <p style="color:#c0392b; font-size:0.85rem; margin:4px 0 0;"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
+                                @enderror
+                                @if($subsDelReq->isNotEmpty())
+                                    <div style="margin-top:6px;">
+                                        @foreach($subsDelReq as $sub)
+                                            <a href="{{ asset('storage/'.$sub->archivo_path) }}" target="_blank" class="link-view-doc" style="display:block;">
+                                                <i class="fa-regular fa-eye"></i> {{ $sub->nombre_original ?? 'Ver documento actual' }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 {{-- 6. FACTURACIÓN DINÁMICA --}}
                 <div class="billing-container" style="background: #fdf2f2; padding: 20px; border: 1px solid #e74c3c; border-radius: 8px; margin-top: 20px;">
                     <h4 style="margin-top:0; color: #c0392b; font-size: 1rem;"><i class="fa-solid fa-money-bill-wave"></i> Ficha de Pago / Facturación</h4>
@@ -351,7 +400,9 @@
                                 <label for="modal_concepto" style="font-weight:bold; display:block; margin-top:10px;">Concepto:</label>
                                 {{-- Solo concepto ligado a la carrera (monto desde data-cargo-monetario); sin catálogo billing_concepts --}}
                                 <select id="modal_concepto" name="concepto" class="filter-select" style="width: 100%; padding: 8px;">
-                                    <option value="Inscripción" data-from-career="1" selected>Inscripción</option>
+                                    @foreach($billingConcepts ?? [] as $bc)
+                                        <option value="{{ $bc->concept }}" data-amount="{{ $bc->amount }}">{{ $bc->concept }} — ${{ number_format($bc->amount, 2) }}</option>
+                                    @endforeach
                                 </select>
 
                                 {{-- 3. Monto --}}
@@ -513,12 +564,9 @@
         function aplicarMontoFacturacion() {
             if (!conceptoSelect || !montoVisible || !montoHidden) return;
             const selectedOption = conceptoSelect.options[conceptoSelect.selectedIndex];
-            const usaCarrera = selectedOption && selectedOption.getAttribute('data-from-career') === '1';
             let amount = null;
-            if (usaCarrera) {
-                amount = obtenerCargoMonetarioCarreraSeleccionada();
-            } else {
-                const a = selectedOption && selectedOption.getAttribute('data-amount');
+            if (selectedOption) {
+                const a = selectedOption.getAttribute('data-amount');
                 if (a !== null && a !== '') {
                     const n = parseFloat(a);
                     amount = isNaN(n) ? null : n;

@@ -31,6 +31,9 @@ class Billing extends Model
         'archivo_path',
         'status',
         'xml_path',
+        'cargo_moratorio_aplicado',
+        'fecha_cargo_moratorio',
+        'fecha_prorroga_fin',
     ];
 
     protected $dates = ['deleted_at'];

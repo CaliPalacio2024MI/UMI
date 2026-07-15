@@ -45,7 +45,27 @@
                         @endforeach
                     </select>
                 </div>
-                <div><label>Nombre documento</label><input id="titulacion_nombre_documento" class="titulacion-input" type="text" name="nombre_documento" required></div>
+                @if(!empty($expedienteConfig) && $expedienteConfig->isNotEmpty())
+                    <div class="titulacion-config-guide" style="background:#f0f7f2;border:1px solid #cbe6d5;border-radius:8px;padding:10px 12px;margin:4px 0 10px;font-size:0.85rem;color:#1e7e45;">
+                        <strong><i class="fa-solid fa-circle-info"></i> Documentos requeridos (Titulación):</strong>
+                        <ul style="margin:6px 0 0;padding-left:18px;">
+                            @foreach($expedienteConfig as $req)
+                                <li>{{ $req->nombre }} — {{ strtoupper(implode(', ', $req->tiposArchivoArray())) }}{{ $req->obligatorio ? ' (obligatorio)' : '' }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <div>
+                    <label>Nombre documento</label>
+                    <input id="titulacion_nombre_documento" class="titulacion-input" type="text" name="nombre_documento"
+                           list="titulacion_docs_list" autocomplete="off" required>
+                    <datalist id="titulacion_docs_list">
+                        @foreach(($expedienteConfig ?? collect()) as $req)
+                            <option value="{{ $req->nombre }}"></option>
+                        @endforeach
+                    </datalist>
+                    <small id="titulacion_doc_hint" style="display:none;color:#888;margin-top:4px;"></small>
+                </div>
                 <div><label>Descripción</label><textarea id="titulacion_descripcion" class="titulacion-input" name="descripcion"></textarea></div>
                 <div><label>Archivo</label><input id="titulacion_archivo" type="file" name="archivo" accept=".pdf,.jpg,.jpeg,.png"></div>
                 <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px;">
@@ -56,7 +76,36 @@
     </div>
 </div>
 
+@php
+    $titulacionDocsConfig = ($expedienteConfig ?? collect())->mapWithKeys(fn ($r) => [
+        mb_strtolower($r->nombre) => [
+            'tipos' => $r->tiposArchivoArray(),
+            'cantidad' => $r->cantidad,
+            'obligatorio' => (bool) $r->obligatorio,
+        ],
+    ]);
+@endphp
 <script>
+// Documentos configurados en Ajustes → Expediente (proceso Titulación).
+const TITULACION_DOCS_CONFIG = @json($titulacionDocsConfig);
+const TITULACION_ACCEPT_MAP = { pdf: '.pdf', jpg: '.jpg,.jpeg', png: '.png', doc: '.doc,.docx', xls: '.xls,.xlsx' };
+function titulacionApplyDocConfig(){
+    const nombre = (document.getElementById('titulacion_nombre_documento').value || '').trim().toLowerCase();
+    const archivo = document.getElementById('titulacion_archivo');
+    const hint = document.getElementById('titulacion_doc_hint');
+    const cfg = TITULACION_DOCS_CONFIG[nombre];
+    if (cfg) {
+        archivo.accept = (cfg.tipos || []).map(t => TITULACION_ACCEPT_MAP[t] || ('.' + t)).join(',') || '.pdf,.jpg,.jpeg,.png';
+        hint.textContent = 'Tipos permitidos: ' + (cfg.tipos || []).map(t => t.toUpperCase()).join(', ') + ' · Máx ' + cfg.cantidad + ' archivo(s)';
+        hint.style.display = 'block';
+    } else {
+        archivo.accept = '.pdf,.jpg,.jpeg,.png';
+        hint.style.display = 'none';
+    }
+}
+document.getElementById('titulacion_nombre_documento')?.addEventListener('input', titulacionApplyDocConfig);
+document.getElementById('titulacion_nombre_documento')?.addEventListener('change', titulacionApplyDocConfig);
+
 function openTitulacionModal(){ document.getElementById('titulacionForm').reset(); document.getElementById('titulacionForm').action='{{ route('escolar.titulacion.store') }}'; document.getElementById('titulacion_method').value=''; document.getElementById('titulacion_archivo').required=true; document.getElementById('titulacionModalTitle').textContent='Agregar documento de titulación'; document.getElementById('titulacionModal').style.display='flex'; }
 function closeTitulacionModal(){ document.getElementById('titulacionModal').style.display='none'; }
 async function editTitulacion(id){
@@ -69,6 +118,7 @@ async function editTitulacion(id){
   document.getElementById('titulacion_nombre_documento').value = row.nombre_documento || '';
   document.getElementById('titulacion_descripcion').value = row.descripcion || '';
   document.getElementById('titulacion_archivo').required = false;
+  titulacionApplyDocConfig();
   document.getElementById('titulacionModalTitle').textContent='Editar documento de titulación';
   document.getElementById('titulacionModal').style.display='flex';
 }

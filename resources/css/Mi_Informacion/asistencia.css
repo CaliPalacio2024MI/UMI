@@ -1,0 +1,114 @@
+.asistencia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+.asistencia-page-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8em;
+    color: #1E1E1E;
+    font-weight: 600;
+}
+
+.asistencia-subtitulo {
+    font-family: 'Poppins', sans-serif;
+    color: #666;
+}
+
+.asistencia-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    margin-bottom: 15px;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Buscador: mismo patrón de píldora que .search-input (Facturación) */
+.search-input {
+    flex: 1;
+    min-width: 220px;
+    height: 42px;
+    padding: 8px 16px;
+    border: 1px solid #ced4da;
+    border-radius: 20px !important;
+    font-size: 14px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    border-color: #223F70;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 63, 112, 0.15);
+}
+
+/* Botones de la barra de acciones: mismo patrón que .action-group .btn (Facturación) */
+.action-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.action-group .btn {
+    height: 42px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 20px !important;
+    background-color: #223F70 !important;
+    color: #fff !important;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+}
+
+.action-group .btn:hover {
+    background-color: #1a3158 !important;
+    transform: translateY(-1px);
+}
+
+.asistencia-container {
+    padding: 0 20px 20px;
+}
+
+/* Tarjeta/tabla: mismo patrón que .boletas-esc__card / table (Control Escolar) */
+.asistencia-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.asistencia-table.main-table thead th {
+    background: #223F70;
+    color: #fff;
+    text-transform: none;
+    font-size: 0.85em;
+    text-align: left;
+}
+
+.asistencia-detalles {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.asistencia-check {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #223F70;
+}

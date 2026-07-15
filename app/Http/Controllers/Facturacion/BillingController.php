@@ -169,48 +169,108 @@ class BillingController extends Controller
         }
 
         
-        // 5. Alertas de Vencimiento
+        // 5. Alertas de Vencimiento + Cargo Moratorio Automático + Auto-Baja
         $alertasVencimiento = [];
         
         if (!$isAdmin) {
-            $facturasPorVencer = Billing::with('payments') 
+            $facturasPendientes = Billing::with('payments') 
                 ->where('user_id', $user->id)
                 ->whereIn('status', ['Pendiente', 'Abonado']) 
-                ->whereDate('fecha_vencimiento', '<=', Carbon::today()->addDays(7))
-                
-                // Filtro SQL: Ignorar EXT y RE desde la base de datos
                 ->where('factura_uid', 'not like', 'EXT-%')
                 ->get();
 
-            foreach ($facturasPorVencer as $factura) {
-                // Filtro PHP (Doble Seguridad)
-                // Si por alguna razón pasó el filtro SQL, lo matamos aquí.
+            foreach ($facturasPendientes as $factura) {
                 if (str_starts_with($factura->factura_uid, 'EXT-')) continue;
-
                 if ($factura->computed_status === 'Pagada') continue; 
 
-                $diasRestantes = Carbon::today()->diffInDays(Carbon::parse($factura->fecha_vencimiento)->startOfDay(), false);
-                $agregarAlerta = false;
-                $tipo = 'info'; $titulo = ''; $mensaje = '';
+                $hoy = Carbon::today();
+                $vencimiento = Carbon::parse($factura->fecha_vencimiento)->startOfDay();
+                $diasRestantes = $hoy->diffInDays($vencimiento, false);
 
+                // --- AVISO 1: Falta 1 semana (7 a 3 días antes) ---
                 if ($diasRestantes <= 7 && $diasRestantes >= 3) {
-                    $titulo = "📅 Recordatorio";
-                    $mensaje = "Tu factura '{$factura->concepto}' vence en {$diasRestantes} días.";
-                    $agregarAlerta = true;
-                } elseif ($diasRestantes <= 2 && $diasRestantes >= 0) {
-                    $tipo = 'warning';
-                    $titulo = "⚠ Pago Próximo";
-                    $mensaje = "Tu factura '{$factura->concepto}' está por vencer.";
-                    $agregarAlerta = true;
-                } elseif ($diasRestantes < 0) {
-                    $tipo = 'error';
-                    $titulo = "⛔ AVISO DE BAJA";
-                    $mensaje = "Tu factura venció hace " . abs($diasRestantes) . " días.";
-                    $agregarAlerta = true;
+                    $alertasVencimiento[] = [
+                        'tipo' => 'info',
+                        'titulo' => '📅 Primer Aviso de Pago',
+                        'mensaje' => "Tu factura '{$factura->concepto}' vence en {$diasRestantes} días. Realiza tu pago a tiempo para evitar cargos moratorios.",
+                    ];
                 }
+                // --- AVISO 2: Faltan 2 días o menos (antes de vencer) ---
+                elseif ($diasRestantes <= 2 && $diasRestantes > 0) {
+                    $alertasVencimiento[] = [
+                        'tipo' => 'warning',
+                        'titulo' => '⚠️ Segundo Aviso - Pago Urgente',
+                        'mensaje' => "Tu factura '{$factura->concepto}' vence en {$diasRestantes} día(s). Evita el cargo moratorio.",
+                    ];
+                }
+                // --- DÍA DE VENCIMIENTO ---
+                elseif ($diasRestantes == 0) {
+                    $alertasVencimiento[] = [
+                        'tipo' => 'warning',
+                        'titulo' => '⚠️ Vence Hoy',
+                        'mensaje' => "Tu factura '{$factura->concepto}' vence HOY. Paga antes de que termine el día.",
+                    ];
+                }
+                // --- VENCIÓ: Aplicar cargo moratorio + prórroga de 2 días ---
+                elseif ($diasRestantes < 0) {
+                    // Auto-aplicar cargo moratorio si no se ha aplicado
+                    if (!$factura->cargo_moratorio_aplicado && $factura->cargo_monetario > 0) {
+                        $factura->update([
+                            'cargo_moratorio_aplicado' => true,
+                            'fecha_cargo_moratorio' => $hoy->toDateString(),
+                            'fecha_prorroga_fin' => $hoy->copy()->addDays(2)->toDateString(),
+                            'monto' => $factura->monto + $factura->cargo_monetario,
+                        ]);
+                        $factura->refresh();
+                    }
 
-                if ($agregarAlerta) {
-                    $alertasVencimiento[] = compact('titulo', 'mensaje', 'tipo');
+                    // Calcular días de prórroga restantes
+                    if ($factura->fecha_prorroga_fin) {
+                        $finProrroga = Carbon::parse($factura->fecha_prorroga_fin)->startOfDay();
+                        $diasProrroga = $hoy->diffInDays($finProrroga, false);
+
+                        if ($diasProrroga > 1) {
+                            // Dentro de prórroga, aún tiene tiempo
+                            $alertasVencimiento[] = [
+                                'tipo' => 'error',
+                                'titulo' => '⛔ Cargo Moratorio Aplicado',
+                                'mensaje' => "Se aplicó un cargo moratorio de $" . number_format($factura->cargo_monetario, 2) . " a '{$factura->concepto}'. Tienes {$diasProrroga} día(s) para pagar antes de ser dado de baja.",
+                            ];
+                        } elseif ($diasProrroga == 1) {
+                            // Último día de prórroga
+                            $alertasVencimiento[] = [
+                                'tipo' => 'error',
+                                'titulo' => '🚨 ÚLTIMO DÍA - Aviso de Baja',
+                                'mensaje' => "MAÑANA serás dado de baja si no pagas '{$factura->concepto}'. Monto total: $" . number_format($factura->monto, 2),
+                            ];
+                        } elseif ($diasProrroga <= 0) {
+                            // --- AUTO-BAJA ---
+                            $alumno = $factura->user;
+                            if ($alumno && $alumno->is_active) {
+                                $periodoActivo = Period::where('is_active', 1)->first();
+                                $alumno->update(['is_active' => 0]);
+                                if ($alumno->academicProfile) {
+                                    $alumno->academicProfile->update([
+                                        'status' => 'Baja',
+                                        'ultimo_periodo_id' => $periodoActivo?->id,
+                                    ]);
+                                }
+                            }
+                            $alertasVencimiento[] = [
+                                'tipo' => 'error',
+                                'titulo' => '🚫 Cuenta Deshabilitada',
+                                'mensaje' => "Tu cuenta ha sido dada de baja por falta de pago en '{$factura->concepto}'. Contacta a administración.",
+                            ];
+                        }
+                    } else {
+                        // Venció pero no tiene cargo moratorio configurado
+                        $diasVencida = abs($diasRestantes);
+                        $alertasVencimiento[] = [
+                            'tipo' => 'error',
+                            'titulo' => '⛔ Factura Vencida',
+                            'mensaje' => "Tu factura '{$factura->concepto}' venció hace {$diasVencida} día(s). Acude a administración.",
+                        ];
+                    }
                 }
             }
         }

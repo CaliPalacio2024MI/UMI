@@ -101,4 +101,42 @@ class Career extends Model
     {
         return $this->hasMany(Enrollment::class);
     }
+
+    /**
+     * Ícono (Font Awesome) representativo de la carrera, elegido por palabras clave
+     * en su nombre. Se usa en tarjetas como "Clases" para que el ícono vaya acorde
+     * a la carrera en lugar de un ícono genérico fijo.
+     */
+    public function iconClass(): string
+    {
+        $name = \Illuminate\Support\Str::of($this->name ?? '')->lower()->ascii()->__toString();
+
+        $map = [
+            'fa-briefcase' => ['negocio', 'administracion', 'gerencia'],
+            'fa-laptop-code' => ['sistemas', 'software', 'computacion', 'informatica', 'tecnologias de la informacion', 'ti'],
+            'fa-scale-balanced' => ['derecho', 'leyes'],
+            'fa-utensils' => ['gastronomia', 'culinaria'],
+            'fa-plane' => ['turismo', 'hoteleria', 'hospitalidad'],
+            'fa-palette' => ['diseno'],
+            'fa-drafting-compass' => ['arquitectura'],
+            'fa-calculator' => ['contaduria', 'finanzas', 'contabilidad'],
+            'fa-heart-pulse' => ['enfermeria', 'medicina', 'salud', 'nutricion'],
+            'fa-bullhorn' => ['mercadotecnia', 'marketing', 'publicidad'],
+            'fa-brain' => ['psicologia'],
+            'fa-network-wired' => ['redes', 'telecomunicaciones'],
+            'fa-industry' => ['industrial', 'manufactura'],
+            'fa-seedling' => ['agronomia', 'ambiental', 'sustentable'],
+            'fa-cogs' => ['ingenieria'],
+        ];
+
+        foreach ($map as $icon => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($name, $keyword)) {
+                    return $icon;
+                }
+            }
+        }
+
+        return 'fa-graduation-cap';
+    }
 }

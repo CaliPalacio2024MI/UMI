@@ -38,7 +38,9 @@ class AcademicProfile extends Model
         'modules',
         'rol',
         'matricula',
-        'documentoSEP_path'
+        'documentoSEP_path',
+        'ultimo_periodo_id',
+        'foto'
     ];
 
     protected $casts = [

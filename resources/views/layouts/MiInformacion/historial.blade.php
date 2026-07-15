@@ -18,12 +18,10 @@
         <div class="historial-welcome-container">
             <div class="historial-welcome-message">¡Bienvenido(a) {{ $user->nombre }}!</div>
             <div class="historial-action-buttons">
-                {{-- Botón con JS --}}
-                <button class="historial-btn" onclick="alert('Mostrando retícula...')">
+                <a href="{{ route('MiInformacion.reticula') }}" class="historial-btn">
                     <i class="fa-solid fa-book-open" style="margin-right: 5px;"></i> Retícula
-                </button>
-                {{-- Enlace a otra ruta (cuando la tengas) --}}
-                <a href="#" class="historial-btn">
+                </a>
+                <a href="{{ route('MiInformacion.boletas') }}" class="historial-btn">
                     <i class="fa-solid fa-file-lines" style="margin-right: 5px;"></i> Boleta
                 </a>
             </div>
@@ -47,12 +45,8 @@
             </div>
             <div class="info-item">
                 <span class="info-label">Carrera:</span>
-                <span class="info-value">{{ $user->academicProfile->carrera ?? 'Ingeniería' }}</span>
+                <span class="info-value">{{ $user->academicProfile->career->name ?? '—' }}</span>
             </div>
-        </div>
-        <div class="specialty-container">
-            <div class="specialty-label">Especialidad:</div>
-            <div class="specialty-value">Desarrollo de Software</div>
         </div>
     </div>
 
@@ -69,86 +63,45 @@
         </div>
 
         <div class="materias-scroll-container">
-            
-            {{-- BLOQUE SEMESTRE 1 (Ejemplo Estático) --}}
-            <div class="semester-card">
-                {{-- Panel Izquierdo --}}
-                <div class="semester-left-panel">
-                    <div class="semester-number">1</div>
-                    <div class="semester-period">AGO 2020<br>DIC 2020</div>
-                    <div class="semester-grade-label">Promedio:</div>
-                    <div class="semester-grade-value">96.6</div>
-                </div>
-
-                {{-- Panel Derecho (Materias) --}}
-                <div class="semester-content">
-                    {{-- Fila de Materia --}}
-                    <div class="materia-row">
-                        <div class="col-materia">Inteligencia de Negocios</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-creditos">5</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-calificacion">100</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-evaluacion">OR</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-observaciones">-</div>
+            @forelse($semestres as $sem)
+                <div class="semester-card">
+                    <div class="semester-left-panel">
+                        <div class="semester-number">{{ $sem->numero }}</div>
+                        <div class="semester-period">{!! nl2br(e($sem->periodo)) !!}</div>
+                        <div class="semester-grade-label">Promedio:</div>
+                        <div class="semester-grade-value">{{ $sem->promedio }}</div>
                     </div>
 
-                    <div class="materia-row">
-                        <div class="col-materia">Ética Profesional</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-creditos">4</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-calificacion">94</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-evaluacion">REG</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-observaciones">Examen 2da op.</div>
-                    </div>
-                    
-                    {{-- Agrega más filas aquí --}}
-                </div>
-            </div>
-
-             {{-- BLOQUE SEMESTRE 2 (Ejemplo) --}}
-             <div class="semester-card">
-                <div class="semester-left-panel">
-                    <div class="semester-number">2</div>
-                    <div class="semester-period">ENE 2021<br>JUN 2021</div>
-                    <div class="semester-grade-label">Promedio:</div>
-                    <div class="semester-grade-value">92.0</div>
-                </div>
-                <div class="semester-content">
-                    <div class="materia-row">
-                        <div class="col-materia">Programación Web</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-creditos">6</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-calificacion">98</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-evaluacion">OR</div>
-                        <div class="cell-divider"></div>
-                        <div class="col-observaciones">-</div>
+                    <div class="semester-content">
+                        @forelse($sem->materias as $mat)
+                            <div class="materia-row">
+                                <div class="col-materia">{{ $mat->nombre }}</div>
+                                <div class="cell-divider"></div>
+                                <div class="col-creditos">{{ $mat->creditos }}</div>
+                                <div class="cell-divider"></div>
+                                <div class="col-calificacion">{{ $mat->calificacion }}</div>
+                                <div class="cell-divider"></div>
+                                <div class="col-evaluacion">{{ $mat->evaluacion }}</div>
+                                <div class="cell-divider"></div>
+                                <div class="col-observaciones">{{ $mat->observaciones }}</div>
+                            </div>
+                        @empty
+                            <div class="materia-row"><div class="col-materia">Sin materias con calificación.</div></div>
+                        @endforelse
                     </div>
                 </div>
-            </div>
-
+            @empty
+                <div style="text-align:center; padding:40px; color:#666; font-family:'Poppins',sans-serif;">
+                    Aún no tienes calificaciones registradas.
+                </div>
+            @endforelse
         </div>
     </div>
 
     {{-- FOOTER (Calificación Final) --}}
     <div class="historial-footer">
         <div class="final-grade-badge">
-            Promedio Final: 95.4
-        </div>
-        <div class="credits-info">
-            <div class="credit-badge">
-                Total Créditos: <span class="credit-value">260</span>
-            </div>
-            <div class="credit-badge">
-                Acumulados: <span class="credit-value">180</span>
-            </div>
+            Promedio Final: {{ $promedioFinal }}
         </div>
     </div>
 

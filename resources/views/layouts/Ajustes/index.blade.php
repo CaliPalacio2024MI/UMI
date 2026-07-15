@@ -13,12 +13,34 @@
                     <img src="{{ asset('images/icons/magnifying-glass-svgrepo-com.svg') }}" alt="Buscar" width="18" height="18">
                 </span>
                 <input type="text" name="search" placeholder="Buscar por..." value="{{ request('search') }}" id="searchInput" autocomplete="off">
+                @if ($seccion === 'expediente' && request('proceso'))
+                    <input type="hidden" name="proceso" value="{{ request('proceso') }}">
+                @endif
             </form>
             <button id="openModalBtn" class="btn-primary">
                 + Agregar {{ $singular_title }}
             </button>
         </div>
     </header>
+
+    @if ($seccion === 'expediente')
+        @php
+            $procesos = \App\Models\DocumentRequirement::PROCESOS;
+            $procesoActual = request('proceso');
+            if (! array_key_exists($procesoActual, $procesos)) {
+                $procesoActual = array_key_first($procesos);
+            }
+        @endphp
+        <div class="exp-tabs">
+            @foreach($procesos as $slug => $label)
+                <a href="{{ route('ajustes.show', ['seccion' => 'expediente', 'proceso' => $slug]) }}"
+                   class="exp-tab {{ $procesoActual === $slug ? 'is-active' : '' }}">
+                    {{ $label }}
+                </a>
+            @endforeach
+        </div>
+    @endif
+
     {{-- Contenedor de la tabla (scroll interno + responsive) --}}
     <div class="table-container">
         <div class="ajustes-table-scroll">
@@ -26,15 +48,12 @@
             <thead>
                 <tr>
                     @if ($seccion === 'institutions')
-                        <th>ID</th>
                         <th>Nombre de Unidad</th>
                         <th>Logo</th>
                     @elseif ($seccion === 'departments')
-                        <th>ID</th>
                         <th>Nombre</th>
                         <th>Unidad de Negocio</th>
                     @elseif ($seccion === 'workstations')
-                        <th>ID</th>
                         <th>Nombre del Puesto</th>
                         <th>Departamento</th>
                     @elseif ($seccion === 'periods')
@@ -50,6 +69,12 @@
                         <th>A. Paterno</th>
                         <th>A. Materno</th>
                         <th>Rol</th>
+                    @elseif ($seccion === 'expediente')
+                        <th>Documento</th>
+                        <th>Tipos de archivo</th>
+                        <th>Cantidad</th>
+                        <th>Obligatorio</th>
+                        <th>Estatus</th>
                     @endif
                     <th>Acciones</th>
                 </tr>
@@ -58,7 +83,6 @@
                 @forelse ($data as $item)
                     <tr>
                         @if ($seccion === 'institutions')
-                            <td>{{ $item->id }}</td>
                             <td>{{ $item->name }}</td>
                             <td>
                                 @if($item->logo_path)
@@ -68,11 +92,9 @@
                                 @endif
                             </td>
                         @elseif ($seccion === 'departments')
-                            <td>{{ $item->id }}</td>
                             <td>{{ $item->name }}</td>
-                            <td>{{ $item->institution->name ?? 'N/A' }}</td> 
+                            <td>{{ $item->institution->name ?? 'N/A' }}</td>
                         @elseif ($seccion === 'workstations')
-                            <td>{{ $item->id }}</td>
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->department->name ?? 'N/A' }}</td>
                         @elseif ($seccion === 'periods')
@@ -110,7 +132,36 @@
                             <td>{{ $item->apellido_paterno }}</td>
                             <td>{{ $item->apellido_materno }}</td>
                             <td>{{ $item->roleDisplayNameForAjustes() }}</td>
-                            
+
+                        @elseif ($seccion === 'expediente')
+                            <td>
+                                {{ $item->nombre }}
+                                @if($item->descripcion)
+                                    <div style="color:#888;font-size:0.82em;">{{ $item->descripcion }}</div>
+                                @endif
+                            </td>
+                            <td>
+                                @forelse($item->tiposArchivoArray() as $ext)
+                                    <span class="exp-tag">{{ strtoupper($ext) }}</span>
+                                @empty
+                                    <span style="color:#888;">—</span>
+                                @endforelse
+                            </td>
+                            <td>{{ $item->cantidad }}</td>
+                            <td>
+                                @if($item->obligatorio)
+                                    <span class="exp-badge exp-badge--req">Obligatorio</span>
+                                @else
+                                    <span class="exp-badge exp-badge--opt">Opcional</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($item->activo)
+                                    <span class="exp-badge exp-badge--on">Activo</span>
+                                @else
+                                    <span class="exp-badge exp-badge--off">Inactivo</span>
+                                @endif
+                            </td>
                         @endif
                         
                         {{-- =================================================== --}}
@@ -163,6 +214,59 @@
         color: #0d2240;
         font-weight: 700;
     }
+
+    /* ===== Sección Expediente (pestañas de procesos) ===== */
+    .exp-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 4px 0 18px;
+    }
+    .exp-tab {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid #d7dce4;
+        background: #fff;
+        color: #46536b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+    .exp-tab:hover { border-color: #0d2240; color: #0d2240; }
+    .exp-tab.is-active {
+        background: #0d2240;
+        border-color: #0d2240;
+        color: #fff;
+    }
+
+    /* Etiquetas de tipos de archivo */
+    .exp-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        margin: 2px 3px 2px 0;
+        border-radius: 4px;
+        background: #eef1f6;
+        color: #46536b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+    }
+
+    /* Badges de estatus / obligatoriedad */
+    .exp-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .exp-badge--req { background: #fde8e8; color: #c0392b; }
+    .exp-badge--opt { background: #eef1f6; color: #46536b; }
+    .exp-badge--on  { background: #e6f6ec; color: #1e7e45; }
+    .exp-badge--off { background: #f1f1f1; color: #8a8a8a; }
 </style>
 <div id="formModal" class="modal">
     <div class="modal-content">
@@ -205,6 +309,7 @@
         const seccion = @json($seccion);
         const singularName = @json($singular_title);
         const baseUrl = @json(url('ajustes'));
+        const currentProceso = @json(request('proceso'));
         
         function clearMethodInput() {
             const oldMethodInput = modalForm.querySelector('input[name="_method"]');
@@ -272,7 +377,11 @@
                     }
                     
                     Object.keys(data.errors).forEach(field => {
-                        const input = modalForm.querySelector(`[name="${field}"]`);
+                        // Soporta también campos tipo arreglo (name="campo[]") y claves "campo.*".
+                        const baseField = field.split('.')[0];
+                        const input = modalForm.querySelector(`[name="${field}"]`)
+                            || modalForm.querySelector(`[name="${baseField}"]`)
+                            || modalForm.querySelector(`[name="${baseField}[]"]`);
                         if (input) {
                             input.classList.add('is-invalid');
                             const errorSpan = document.createElement('span');
@@ -303,7 +412,11 @@
             modalForm.action = `${baseUrl}/${seccion}`; 
             
             try {
-                const response = await fetch(`${baseUrl}/${seccion}/create-form`);
+                let createFormUrl = `${baseUrl}/${seccion}/create-form`;
+                if (seccion === 'expediente' && currentProceso) {
+                    createFormUrl += `?proceso=${encodeURIComponent(currentProceso)}`;
+                }
+                const response = await fetch(createFormUrl);
                 if (!response.ok) throw new Error('Error al cargar el formulario');
                 modalBody.innerHTML = await response.text();
                 
@@ -321,14 +434,11 @@
 
       
         document.addEventListener('click', async function (e) {
-            const btn = e.target.closest('.btn-edit, .btn-view');
+            const btn = e.target.closest('.btn-edit');
             if (!btn) return;
             e.preventDefault();
             const itemId = btn.dataset.id;
-            const isViewButton = btn.classList.contains('btn-view');
-            modalTitle.textContent = isViewButton
-                ? `Ver ${singularName} #${itemId}`
-                : `Editar ${singularName} #${itemId}`;
+            modalTitle.textContent = `Editar ${singularName} #${itemId}`;
             modalForm.action = `${baseUrl}/${seccion}/${itemId}`;
             clearMethodInput();
             const methodInput = document.createElement('input');
@@ -340,15 +450,9 @@
                 const response = await fetch(`${baseUrl}/${seccion}/${itemId}/edit-form`);
                 if (!response.ok) throw new Error('Error al cargar formulario');
                 modalBody.innerHTML = await response.text();
-                if (isViewButton) {
-                    modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
-                    const submitBtn = modalForm.querySelector('button[type="submit"]');
-                    if (submitBtn) submitBtn.style.display = 'none';
-                } else {
-                    modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
-                    const submitBtn = modalForm.querySelector('button[type="submit"]');
-                    if (submitBtn) submitBtn.style.display = 'block';
-                }
+                modalBody.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+                const submitBtn = modalForm.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.style.display = 'block';
                 executeScriptsIn(modalBody);
                 modal.style.display = 'block';
             } catch (error) {

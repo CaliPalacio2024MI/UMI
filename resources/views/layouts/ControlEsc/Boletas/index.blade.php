@@ -27,12 +27,34 @@
                     name="search"
                     value="{{ $search ?? '' }}"
                     placeholder="Buscar por..."
-                    style="border: none; outline: none; font-size: 0.95rem; min-width: 280px; background: transparent;"
+                    style="border: none; outline: none; font-size: 0.95rem; min-width: 200px; background: transparent;"
                 >
             </div>
 
             <div class="boletas-esc__pill boletas-esc__pill--dark">
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9.14" cy="9.14" r="7.64"/><line x1="22.5" y1="22.5" x2="14.39" y2="14.39"/></svg>
+                <select id="boletas-clasificacion-select" name="clasificacion_id" aria-label="Clasificación">
+                    <option value="">Clasificación</option>
+                    @foreach($clasificaciones as $cl)
+                        <option value="{{ $cl->id }}" @selected((int) ($clasificacionId ?? 0) === (int) $cl->id)>
+                            {{ $cl->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="boletas-esc__pill boletas-esc__pill--dark">
+                <select id="boletas-carrera-select" name="carrera_id" aria-label="Carrera" disabled>
+                    <option value="">Carrera</option>
+                </select>
+            </div>
+
+            <div class="boletas-esc__pill boletas-esc__pill--dark">
+                <select id="boletas-materia-select" name="materia_id" aria-label="Materia" disabled>
+                    <option value="">Materia</option>
+                </select>
+            </div>
+
+            <div class="boletas-esc__pill boletas-esc__pill--dark">
                 <select id="boletas-periodo-select" name="periodo_id" aria-label="Periodo de estudios">
                     <option value="">Periodo de estudios</option>
                     @foreach($periodos as $per)
@@ -58,7 +80,9 @@
                 <thead>
                     <tr>
                         <th>Alumno</th>
-                        <th class="boletas-col-divider">Parciales</th>
+                        @for($i = 1; $i <= ($materiaSeleccionada->num_parciales ?? 3); $i++)
+                            <th class="boletas-col-divider">Parcial {{ $i }}</th>
+                        @endfor
                         <th class="boletas-col-divider">Calificación Final</th>
                         <th class="boletas-col-divider">Evaluación</th>
                         <th class="boletas-col-divider">Observaciones</th>
@@ -81,85 +105,123 @@
 (function () {
     const form = document.getElementById('boletas-search-form');
     const input = document.getElementById('boletas-search-input');
+    const clasificacionSelect = document.getElementById('boletas-clasificacion-select');
+    const carreraSelect = document.getElementById('boletas-carrera-select');
+    const materiaSelect = document.getElementById('boletas-materia-select');
     const periodoSelect = document.getElementById('boletas-periodo-select');
     const tbody = document.getElementById('boletas-table-body');
     const pagination = document.getElementById('boletas-pagination');
+    const thead = document.querySelector('.boletas-esc__table-wrap thead tr');
     const exportForm = document.getElementById('boletas-export-form');
     if (!form || !input || !tbody || !pagination || !exportForm) return;
 
     let timer = null;
 
     function syncExportFilters() {
-        exportForm.querySelectorAll('input[name="search"], input[name="periodo_id"], input[data-boletas-sync="1"]').forEach((el) => el.remove());
-        const searchVal = (input.value || '').trim();
-        const periodoVal = periodoSelect ? (periodoSelect.value || '').trim() : '';
+        exportForm.querySelectorAll('input[data-boletas-sync="1"]').forEach(function(el) { el.remove(); });
+        var fields = {search: input.value, clasificacion_id: clasificacionSelect.value, carrera_id: carreraSelect.value, materia_id: materiaSelect.value, periodo_id: periodoSelect.value};
+        for (var key in fields) {
+            if ((fields[key] || '').trim() !== '') {
+                var h = document.createElement('input');
+                h.type = 'hidden'; h.name = key; h.value = fields[key].trim();
+                h.setAttribute('data-boletas-sync', '1');
+                exportForm.appendChild(h);
+            }
+        }
+    }
 
-        if (searchVal !== '') {
-            const h = document.createElement('input');
-            h.type = 'hidden';
-            h.name = 'search';
-            h.value = searchVal;
-            h.setAttribute('data-boletas-sync', '1');
-            exportForm.appendChild(h);
+    function updateThead(numParciales) {
+        var html = '<th>Alumno</th>';
+        for (var i = 1; i <= numParciales; i++) {
+            html += '<th class="boletas-col-divider">Parcial ' + i + '</th>';
         }
-        if (periodoVal !== '') {
-            const h = document.createElement('input');
-            h.type = 'hidden';
-            h.name = 'periodo_id';
-            h.value = periodoVal;
-            h.setAttribute('data-boletas-sync', '1');
-            exportForm.appendChild(h);
-        }
+        html += '<th class="boletas-col-divider">Calificación Final</th>';
+        html += '<th class="boletas-col-divider">Evaluación</th>';
+        html += '<th class="boletas-col-divider">Observaciones</th>';
+        thead.innerHTML = html;
     }
 
     function refreshTable(url) {
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-            },
-        })
-            .then((r) => r.json())
-            .then((data) => {
+        fetch(url, {method: 'GET', headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'}})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 tbody.innerHTML = data.tbody || '';
                 pagination.innerHTML = data.pagination || '';
+                if (data.numParciales) updateThead(data.numParciales);
                 window.history.replaceState({}, '', url);
                 syncExportFilters();
             })
-            .catch(() => {});
+            .catch(function() {});
     }
 
     function buildUrl(pageUrl) {
-        const url = new URL(pageUrl || form.action, window.location.origin);
-        const searchVal = (input.value || '').trim();
-        const periodoVal = periodoSelect ? (periodoSelect.value || '').trim() : '';
-        if (searchVal !== '') url.searchParams.set('search', searchVal);
-        else url.searchParams.delete('search');
-        if (periodoVal !== '') url.searchParams.set('periodo_id', periodoVal);
-        else url.searchParams.delete('periodo_id');
+        var url = new URL(pageUrl || form.action, window.location.origin);
+        var params = {search: input.value, clasificacion_id: clasificacionSelect.value, carrera_id: carreraSelect.value, materia_id: materiaSelect.value, periodo_id: periodoSelect.value};
+        for (var key in params) {
+            if ((params[key] || '').trim() !== '') url.searchParams.set(key, params[key].trim());
+            else url.searchParams.delete(key);
+        }
         if (!pageUrl) url.searchParams.delete('page');
         return url.toString();
     }
 
-    input.addEventListener('input', function () {
-        clearTimeout(timer);
-        timer = setTimeout(() => refreshTable(buildUrl()), 300);
+    clasificacionSelect.addEventListener('change', function() {
+        carreraSelect.innerHTML = '<option value="">Carrera</option>';
+        carreraSelect.disabled = true;
+        materiaSelect.innerHTML = '<option value="">Materia</option>';
+        materiaSelect.disabled = true;
+        if (!this.value) { refreshTable(buildUrl()); return; }
+        fetch('{{ route("escolar.boletas.carreras") }}?clasificacion_id=' + this.value, {headers: {'Accept': 'application/json'}})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                data.forEach(function(c) {
+                    var opt = document.createElement('option');
+                    opt.value = c.id; opt.textContent = c.name;
+                    carreraSelect.appendChild(opt);
+                });
+                carreraSelect.disabled = false;
+            });
+        refreshTable(buildUrl());
     });
 
-    if (periodoSelect) {
-        periodoSelect.addEventListener('change', function () {
-            refreshTable(buildUrl());
-        });
-    }
+    carreraSelect.addEventListener('change', function() {
+        materiaSelect.innerHTML = '<option value="">Materia</option>';
+        materiaSelect.disabled = true;
+        if (!this.value) { refreshTable(buildUrl()); return; }
+        fetch('{{ route("escolar.boletas.materias") }}?carrera_id=' + this.value, {headers: {'Accept': 'application/json'}})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                data.forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.id; opt.textContent = m.nombre + (m.clave ? ' (' + m.clave + ')' : '');
+                    opt.setAttribute('data-parciales', m.num_parciales);
+                    materiaSelect.appendChild(opt);
+                });
+                materiaSelect.disabled = false;
+            });
+        refreshTable(buildUrl());
+    });
 
-    form.addEventListener('submit', function (e) {
+    materiaSelect.addEventListener('change', function() {
+        refreshTable(buildUrl());
+    });
+
+    periodoSelect.addEventListener('change', function() {
+        refreshTable(buildUrl());
+    });
+
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() { refreshTable(buildUrl()); }, 300);
+    });
+
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
         refreshTable(buildUrl());
     });
 
-    document.addEventListener('click', function (e) {
-        const link = e.target.closest('#boletas-pagination a');
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('#boletas-pagination a');
         if (!link) return;
         e.preventDefault();
         refreshTable(buildUrl(link.href));

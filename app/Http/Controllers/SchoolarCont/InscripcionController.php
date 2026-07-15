@@ -21,6 +21,9 @@ use App\Models\Users\Enrollment;
 use App\Models\Users\Period;
 use App\Models\Facturacion\Billing;
 use App\Models\Lead;
+use App\Models\Users\Institution;
+use App\Models\DocumentRequirement;
+use App\Models\SubmittedDocument;
 
 class InscripcionController extends Controller
 {
@@ -38,6 +41,7 @@ class InscripcionController extends Controller
         }
 
         $carreras = Career::all();
+        $billingConcepts = \App\Models\Facturacion\BillingConcept::where('is_active', 1)->get();
 
         // Si el usuario autenticado es estudiante, prellenamos el formulario
         // con sus datos actuales, pero manteniendo el modo "Nuevo Registro de Aspirante".
@@ -137,14 +141,18 @@ class InscripcionController extends Controller
             }
         }
 
+        // Documentos configurados dinámicamente en Ajustes → Expediente (proceso inscripción).
+        $exp = $this->expedienteInscripcionData($alumno);
+
         return view('layouts.ControlEsc.Inscripcion.index', compact(
             'carreras',
             'periodoActivo',
             'periods',
             'alumno',
             'modoReinscripcion',
-            'bloqueadoPorAceptacion'
-        ));
+            'bloqueadoPorAceptacion',
+            'billingConcepts'
+        ) + $exp);
     }
 
     public function create()
@@ -228,6 +236,18 @@ class InscripcionController extends Controller
                 ? redirect()->route('escolar.inscripcion.create', ['modal' => 1])
                 : back();
             return $redirect->withInput()->withErrors($validator);
+        }
+
+        // Documentos configurados dinámicamente (Ajustes → Expediente).
+        $expedienteErrors = $this->validarDocumentosExpediente(
+            $request,
+            $request->filled('existing_user_id') ? (int) $request->existing_user_id : null
+        );
+        if (! empty($expedienteErrors)) {
+            $redirect = $request->filled('modal')
+                ? redirect()->route('escolar.inscripcion.create', ['modal' => 1])
+                : back();
+            return $redirect->withInput()->withErrors($expedienteErrors);
         }
 
         DB::beginTransaction();
@@ -358,6 +378,9 @@ class InscripcionController extends Controller
                 ['user_id' => $user->id],
                 $datosPerfil
             );
+
+            // Documentos configurados dinámicamente (Ajustes → Expediente).
+            $this->guardarDocumentosExpediente($request, $user);
 
             $this->syncLeadFromStudentDocumentUpload($user, $rutasDocs, $docRechazoPorCampo);
 
@@ -543,6 +566,7 @@ class InscripcionController extends Controller
         $user = User::with(['address', 'academicProfile'])->findOrFail($id);
         $carreras = Career::all();
         $historialInscripciones = Enrollment::where('user_id', $id)->orderBy('created_at', 'desc')->get();
+        $billingConcepts = \App\Models\Facturacion\BillingConcept::where('is_active', 1)->get();
 
         return view('layouts.ControlEsc.Inscripcion.index', [
             'alumno' => $user,
@@ -550,7 +574,8 @@ class InscripcionController extends Controller
             'periodoActivo' => $periodoActivo,
             'periods' => $periods,
             'historialInscripciones' => $historialInscripciones,
-        ]);
+            'billingConcepts' => $billingConcepts,
+        ] + $this->expedienteInscripcionData($user));
     }
 
     public function destroy($id) {
@@ -662,6 +687,156 @@ class InscripcionController extends Controller
         }
 
         $lead->update($final);
+    }
+
+    // =========================================================================
+    // DOCUMENTOS DINÁMICOS DEL EXPEDIENTE (Ajustes → Expediente, proceso inscripción)
+    // =========================================================================
+
+    /** Unidad de negocio activa (Universidad para el flujo de inscripción). */
+    private function universityInstitutionId(): int
+    {
+        $id = (int) (session('active_institution_id') ?: 0);
+        if ($id > 0) {
+            return $id;
+        }
+        return (int) (Institution::where('is_universidad', true)->value('id') ?? 4);
+    }
+
+    /** Extensiones aceptadas por un requerimiento, expandidas (jpg→jpg,jpeg; doc→doc,docx; xls→xls,xlsx). */
+    private function expandirExtensiones(array $exts): array
+    {
+        $mapa = [
+            'jpg' => ['jpg', 'jpeg'],
+            'doc' => ['doc', 'docx'],
+            'xls' => ['xls', 'xlsx'],
+        ];
+        $out = [];
+        foreach ($exts as $e) {
+            $e = strtolower(trim($e));
+            $out = array_merge($out, $mapa[$e] ?? [$e]);
+        }
+        return array_values(array_unique(array_filter($out)));
+    }
+
+    /** Config + envíos previos para pintar la sección dinámica en la vista. */
+    private function expedienteInscripcionData(?User $alumno): array
+    {
+        $config = DocumentRequirement::query()
+            ->forProcess($this->universityInstitutionId(), 'inscripcion')
+            ->get();
+
+        $subs = collect();
+        if ($alumno && $config->isNotEmpty()) {
+            $subs = SubmittedDocument::query()
+                ->where('user_id', $alumno->id)
+                ->whereIn('document_requirement_id', $config->pluck('id'))
+                ->orderBy('id')
+                ->get()
+                ->groupBy('document_requirement_id');
+        }
+
+        return ['expedienteConfig' => $config, 'expedienteSubs' => $subs];
+    }
+
+    /** Valida los archivos subidos contra la config. Devuelve arreglo campo=>mensaje (vacío si todo ok). */
+    private function validarDocumentosExpediente(Request $request, ?int $userId): array
+    {
+        $config = DocumentRequirement::query()
+            ->forProcess($this->universityInstitutionId(), 'inscripcion')
+            ->get();
+
+        if ($config->isEmpty()) {
+            return [];
+        }
+
+        $errores = [];
+        foreach ($config as $req) {
+            $key = "expediente_docs.{$req->id}";
+            $files = $request->file("expediente_docs.{$req->id}", []);
+            $files = is_array($files) ? array_filter($files) : ($files ? [$files] : []);
+
+            $tieneEnvioPrevio = $userId
+                ? SubmittedDocument::where('user_id', $userId)
+                    ->where('document_requirement_id', $req->id)
+                    ->exists()
+                : false;
+
+            if (empty($files)) {
+                if ($req->obligatorio && ! $tieneEnvioPrevio) {
+                    $errores[$key] = "El documento \"{$req->nombre}\" es obligatorio.";
+                }
+                continue;
+            }
+
+            if (count($files) > $req->cantidad) {
+                $errores[$key] = "Para \"{$req->nombre}\" se esperan máximo {$req->cantidad} archivo(s).";
+                continue;
+            }
+
+            $permitidas = $this->expandirExtensiones($req->tiposArchivoArray());
+            foreach ($files as $file) {
+                if (! $file->isValid()) {
+                    $errores[$key] = "Hubo un problema al subir \"{$req->nombre}\". Intenta de nuevo.";
+                    break;
+                }
+                if ($file->getSize() > 5 * 1024 * 1024) {
+                    $errores[$key] = "\"{$req->nombre}\": cada archivo debe pesar máximo 5 MB.";
+                    break;
+                }
+                $ext = strtolower($file->getClientOriginalExtension());
+                if (! empty($permitidas) && ! in_array($ext, $permitidas, true)) {
+                    $errores[$key] = "\"{$req->nombre}\" debe ser de tipo: " . strtoupper(implode(', ', $req->tiposArchivoArray())) . '.';
+                    break;
+                }
+            }
+        }
+
+        return $errores;
+    }
+
+    /** Guarda los archivos subidos como SubmittedDocument (reemplaza los previos del mismo requerimiento). */
+    private function guardarDocumentosExpediente(Request $request, User $user): void
+    {
+        $config = DocumentRequirement::query()
+            ->forProcess($this->universityInstitutionId(), 'inscripcion')
+            ->get();
+
+        if ($config->isEmpty()) {
+            return;
+        }
+
+        foreach ($config as $req) {
+            $files = $request->file("expediente_docs.{$req->id}", []);
+            $files = is_array($files) ? array_filter($files) : ($files ? [$files] : []);
+            if (empty($files)) {
+                continue;
+            }
+
+            // Reemplazo: se eliminan los envíos previos de este requerimiento antes de guardar los nuevos.
+            $previos = SubmittedDocument::where('user_id', $user->id)
+                ->where('document_requirement_id', $req->id)
+                ->get();
+            foreach ($previos as $previo) {
+                if ($previo->archivo_path) {
+                    Storage::disk('public')->delete($previo->archivo_path);
+                }
+                $previo->delete();
+            }
+
+            foreach ($files as $file) {
+                $path = $file->store("documentos/{$user->id}/expediente", 'public');
+                SubmittedDocument::create([
+                    'document_requirement_id' => $req->id,
+                    'user_id' => $user->id,
+                    'archivo_path' => $path,
+                    'nombre_original' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'tamano_bytes' => $file->getSize(),
+                    'uploaded_by' => Auth::id(),
+                ]);
+            }
+        }
     }
 
     /** PDF ficha y PDF factura (campo request archivo_xml; columna perfil doc_factura_xml). */

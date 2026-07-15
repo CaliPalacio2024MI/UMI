@@ -266,6 +266,7 @@
                 </button>
                     <button type="button" class="btn-icon" title="Ver Expediente" style="border:none; background:none; display: inline-flex; align-items: center; justify-content: center;"
                         data-action="open-expediente"
+                        data-user-id="{{ $user->id }}"
                         data-name="{{ $user->nombre }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}"
                         data-alumno-nombre="{{ $user->nombre ?? '' }}"
                         data-alumno-paterno="{{ $user->apellido_paterno ?? '' }}"
@@ -282,7 +283,9 @@
                         data-doc-curp="{{ $umiStudentPubUrl($umiFirstDocPath($user->academicProfile?->doc_curp, $user->fallback_lead_doc_curp ?? null, $user->fallback_enrollment_doc_curp ?? null)) }}"
                         data-doc-ine="{{ $umiStudentPubUrl($umiFirstDocPath($user->academicProfile?->doc_ine, $user->fallback_lead_doc_ine ?? null, $user->fallback_enrollment_doc_ine ?? null)) }}"
                         data-doc-ficha="{{ $umiStudentPubUrl($umiFirstDocPath($user->academicProfile?->doc_ficha_pago, $user->fallback_lead_doc_ficha ?? null)) }}"
-                        data-doc-xml="{{ $umiStudentPubUrl($umiFirstDocPath($user->academicProfile?->doc_factura_xml, $user->fallback_lead_doc_xml ?? null)) }}">
+                        data-doc-xml="{{ $umiStudentPubUrl($umiFirstDocPath($user->academicProfile?->doc_factura_xml, $user->fallback_lead_doc_xml ?? null)) }}"
+                        data-matricula="{{ $user->academicProfile?->matricula ?? 'No Asignada' }}"
+                        data-foto="{{ !empty($user->academicProfile?->foto) ? '/storage/' . $user->academicProfile->foto : '' }}">
                         <img src="{{ asset('images/icons/eye-solid-full-bc8a55.svg') }}" alt="Ver">
                     </button>
                     <button type="button" class="btn-icon" title="Editar"
@@ -309,18 +312,30 @@
                         data-doc-xml="{{ $umiStudentPubUrl($umiFirstDocPath($user->academicProfile?->doc_factura_xml, $user->fallback_lead_doc_xml ?? null)) }}"
                         data-doc-rech-ficha="{{ (!empty($user->academicProfile?->doc_ficha_pago_rechazado) || !empty($user->fallback_lead_doc_rech_ficha)) ? '1' : '0' }}"
                         data-doc-rech-xml="{{ (!empty($user->academicProfile?->doc_factura_xml_rechazado) || !empty($user->fallback_lead_doc_rech_xml)) ? '1' : '0' }}"
+                        data-user-id="{{ $user->id }}"
+                        data-matricula="{{ $user->academicProfile?->matricula ?? '' }}"
+                        data-foto="{{ !empty($user->academicProfile?->foto) ? '/storage/' . $user->academicProfile->foto : '' }}"
                         style="border:none; background:none; display: inline-flex; align-items: center; justify-content: center;">
                         <img src="{{ asset('images/icons/pen-to-square-solid-full.svg') }}" alt="Editar" width="20" height="20">
                     </button>
                 @endif
+                    @if($userAcademicStatus === 'Baja')
+                    <button type="button" class="btn-icon js-alumno-reactivar-btn" title="Reactivar alumno"
+                        data-reactivar-url="{{ request()->routeIs('control.*') ? route('control.students.reactivar', $user->id) : route('escolar.students.reactivar', $user->id) }}"
+                        data-alumno-name="{{ $user->nombre }} {{ $user->apellido_paterno }} {{ $user->apellido_materno }}"
+                        style="border:none; background:none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;">
+                        <img src="{{ asset('images/icons/clock-solid-full-092034.svg') }}" alt="Reactivar" width="20" height="20" style="filter: hue-rotate(90deg) saturate(2);">
+                    </button>
+                    @endif
                     <form action="{{ request()->routeIs('control.*') ? route('control.students.destroy', $user->id) : route('escolar.students.destroy', $user->id) }}" method="POST"
                         class="js-alumno-delete-form"
-                        style="display: inline-flex; margin: 0; align-items: center;">
+                        style="display: inline-flex; margin: 0; align-items: center;"
+                        onsubmit="return confirm('¿Deseas dar de baja a este alumno? Su información se conservará pero quedará inactivo.');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn-icon" title="Eliminar alumno"
+                        <button type="submit" class="btn-icon" title="Dar de baja alumno"
                             style="border:none; background:none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;">
-                            <img src="{{ asset('images/icons/delete.svg') }}" alt="Eliminar" width="20" height="20">
+                            <img src="{{ asset('images/icons/delete.svg') }}" alt="Dar de baja" width="20" height="20">
                         </button>
                     </form>
                 </div>

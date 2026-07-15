@@ -806,48 +806,7 @@ document.addEventListener('submit', (e) => {
         });
 });
 
-// Eliminar alumno (lista): AJAX + careerSuccessModal (misma UX que docentes)
-document.addEventListener('submit', (e) => {
-    const form = e.target.closest('form.js-alumno-delete-form');
-    if (!form) return;
-    e.preventDefault();
-    if (!confirm('¿Eliminar este alumno? Esta acción no se puede deshacer.')) return;
-    const url = form.getAttribute('action');
-    if (!url) return;
-    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    const fd = new FormData(form);
-    fetch(url, {
-        method: 'POST',
-        body: fd,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            Accept: 'application/json',
-            'X-CSRF-TOKEN': token,
-        },
-    })
-        .then(async (res) => {
-            const data = await res.json().catch(() => ({}));
-            if (res.ok && data.ok) {
-                const tr = form.closest('tr');
-                if (tr) tr.remove();
-                const successModal = document.getElementById('careerSuccessModal');
-                const successModalMessage = document.getElementById('careerSuccessModalMessage');
-                if (successModal && successModalMessage) {
-                    successModalMessage.textContent = data.message || 'Alumno eliminado correctamente.';
-                    successModal.style.display = 'flex';
-                }
-                if (window.spaNav && typeof window.spaNav.clearCache === 'function') {
-                    window.spaNav.clearCache();
-                }
-                return;
-            }
-            const msg = (data && data.message) || 'No se pudo eliminar el alumno.';
-            window.alert(msg);
-        })
-        .catch(() => {
-            window.alert('Error de red. Intenta de nuevo.');
-        });
-});
+
 
 // Eliminar horario (lista Horarios): AJAX + careerSuccessModal (misma UX que materias/docentes)
 document.addEventListener('submit', (e) => {
