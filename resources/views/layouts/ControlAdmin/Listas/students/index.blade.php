@@ -1120,6 +1120,7 @@
         const list = document.getElementById('expedienteSubmittedDocs');
         if (!wrap || !list) return;
         wrap.style.display = 'none';
+        wrap.dataset.userId = userId;
         list.innerHTML = '';
         if (!userId) return;
 
@@ -1130,20 +1131,136 @@
         .then(res => {
             const docs = (res && res.data) ? res.data : [];
             if (!docs.length) return;
-            docs.forEach(doc => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'doc-btn';
-                btn.textContent = doc.proceso ? `${doc.nombre} · ${doc.proceso}` : doc.nombre;
-                btn.onclick = function (e) {
-                    e.stopPropagation();
-                    openDocViewer(doc.url, doc.nombre);
-                };
-                list.appendChild(btn);
+
+            const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const resumen = res.resumen || {};
+            let html = '';
+
+            if (resumen.total != null) {
+                html += '<div style="margin-bottom:12px;font-size:.85rem;color:#46536b;">'
+                     + '<strong>' + resumen.subidos + '</strong> de <strong>' + resumen.total + '</strong> subidos'
+                     + (resumen.pendientes > 0 ? ' · <span style="color:#c0392b;font-weight:600;">' + resumen.pendientes + ' pendiente(s)</span>' : ' · <span style="color:#1e7e45;font-weight:600;">completo</span>')
+                     + '</div>';
+            }
+
+            // Agrupar por proceso conservando el orden recibido.
+            const grupos = [];
+            const idx = {};
+            docs.forEach(d => {
+                if (idx[d.proceso] === undefined) { idx[d.proceso] = grupos.length; grupos.push({ proceso: d.proceso, items: [] }); }
+                grupos[idx[d.proceso]].items.push(d);
             });
+
+            grupos.forEach(g => {
+                html += '<div style="margin-bottom:12px;">'
+                     + '<div style="font-weight:700;color:#223F70;font-size:.85rem;margin-bottom:6px;">' + esc(g.proceso) + '</div>';
+                g.items.forEach(d => {
+                    let control = '';
+                    if (!d.subido) {
+                        control = '<span style="background:#fdeaea;color:#c0392b;font-size:.72rem;font-weight:600;padding:5px 14px;border-radius:50px;white-space:nowrap;letter-spacing:.02em;border:1.5px solid #c0392b;">Pendiente</span>';
+                    } else {
+                        const primerStatus = (d.archivos && d.archivos.length) ? d.archivos[0].validation_status : null;
+                        const docId = d.archivos && d.archivos.length ? d.archivos[0].id : null;
+
+                        if (primerStatus === 'aceptado') {
+                            control = '<span onclick="reabrirValidacion(' + docId + ', this)" title="Clic para cambiar" style="background:#223F70;color:#fff;font-size:.72rem;font-weight:600;padding:5px 14px;border-radius:50px;white-space:nowrap;border:1.5px solid #223F70;cursor:pointer;letter-spacing:.02em;">✓ Aceptado</span>';
+                        } else if (primerStatus === 'rechazado') {
+                            control = '<span onclick="reabrirValidacion(' + docId + ', this)" title="Clic para cambiar" style="background:#c0392b;color:#fff;font-size:.72rem;font-weight:600;padding:5px 14px;border-radius:50px;white-space:nowrap;border:1.5px solid #c0392b;cursor:pointer;letter-spacing:.02em;">✗ Rechazado</span>';
+                        } else if (docId) {
+                            const estiloToggle = 'display:inline-flex;border:1.5px solid #223F70;border-radius:50px;overflow:hidden;font-size:.72rem;font-weight:600;flex-shrink:0;box-shadow:0 2px 6px rgba(34,63,112,0.12);';
+                            const baseOk = 'padding:5px 14px;border:none;cursor:pointer;letter-spacing:.02em;background:#fff;color:#223F70;font-size:.72rem;font-weight:600;font-family:inherit;';
+                            const baseNo = 'padding:5px 14px;border:none;cursor:pointer;letter-spacing:.02em;background:#fff;color:#223F70;border-left:1.5px solid #223F70;font-size:.72rem;font-weight:600;font-family:inherit;';
+                            control = '<span data-doc-id="' + docId + '" style="' + estiloToggle + '">'
+                                + '<button onclick="validarDocExpediente(' + docId + ',\'aceptado\',this)" style="' + baseOk + '">Aceptar</button>'
+                                + '<button onclick="validarDocExpediente(' + docId + ',\'rechazado\',this)" style="' + baseNo + '">Rechazar</button>'
+                                + '</span>';
+                        }
+                    }
+                    let links = '';
+                    (d.archivos || []).forEach(a => {
+                        links += ' <a href="' + esc(a.url) + '" target="_blank" rel="noopener" style="color:#BC8A55;font-size:.8rem;text-decoration:none;white-space:nowrap;"><i class="fa-regular fa-eye"></i> ' + esc(a.nombre) + '</a>';
+                    });
+                    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #f2f2f2;">'
+                         + '<span style="font-size:.88rem;color:#333;">' + esc(d.nombre) + (d.obligatorio ? ' <span style="color:#c0392b;">*</span>' : ' <span style="color:#999;font-size:.8rem;">(opcional)</span>') + links + '</span>'
+                         + control
+                         + '</div>';
+                });
+                html += '</div>';
+            });
+
+            list.innerHTML = html;
             wrap.style.display = 'block';
         })
         .catch(err => console.error('No se pudieron cargar los documentos del expediente:', err));
+    }
+
+    function reabrirValidacion(docId, badge) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')
+            ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            : '{{ csrf_token() }}';
+
+        badge.style.opacity = '0.5';
+        badge.style.pointerEvents = 'none';
+
+        fetch(`/expediente-alumno/documento/${docId}/validar`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ status: null }),
+        })
+        .then(r => r.ok ? r.json() : Promise.reject(r))
+        .then(() => {
+            const estiloToggle = 'display:inline-flex;border:1.5px solid #223F70;border-radius:50px;overflow:hidden;font-size:.72rem;font-weight:600;flex-shrink:0;box-shadow:0 2px 6px rgba(34,63,112,0.12);';
+            const baseOk = 'padding:5px 14px;border:none;cursor:pointer;letter-spacing:.02em;background:#fff;color:#223F70;font-size:.72rem;font-weight:600;font-family:inherit;';
+            const baseNo = 'padding:5px 14px;border:none;cursor:pointer;letter-spacing:.02em;background:#fff;color:#223F70;border-left:1.5px solid #223F70;font-size:.72rem;font-weight:600;font-family:inherit;';
+            const toggle = document.createElement('span');
+            toggle.style.cssText = estiloToggle;
+            toggle.innerHTML = '<button onclick="validarDocExpediente(' + docId + ',\'aceptado\',this)" style="' + baseOk + '">Aceptar</button>'
+                             + '<button onclick="validarDocExpediente(' + docId + ',\'rechazado\',this)" style="' + baseNo + '">Rechazar</button>';
+            badge.replaceWith(toggle);
+        })
+        .catch(() => {
+            badge.style.opacity = '';
+            badge.style.pointerEvents = '';
+            alert('Error al resetear la validación. Intenta de nuevo.');
+        });
+    }
+
+    function validarDocExpediente(docId, status, btn) {
+        btn.disabled = true;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')
+            ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            : '{{ csrf_token() }}';
+
+        fetch(`/expediente-alumno/documento/${docId}/validar`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ status }),
+        })
+        .then(r => r.ok ? r.json() : Promise.reject(r))
+        .then(() => {
+            // btn.parentElement es siempre el span toggle que lo contiene
+            const toggle = btn.parentElement;
+            if (!toggle) return;
+            const esOk = status === 'aceptado';
+            const badge = document.createElement('span');
+            badge.title = 'Clic para cambiar';
+            badge.style.cssText = 'font-size:.72rem;font-weight:600;padding:5px 14px;border-radius:50px;white-space:nowrap;letter-spacing:.02em;cursor:pointer;'
+                + (esOk ? 'background:#223F70;color:#fff;border:1.5px solid #223F70;' : 'background:#c0392b;color:#fff;border:1.5px solid #c0392b;');
+            badge.textContent = esOk ? '✓ Aceptado' : '✗ Rechazado';
+            badge.onclick = function() { reabrirValidacion(docId, this); };
+            toggle.replaceWith(badge);
+        })
+        .catch(() => { btn.disabled = false; alert('Error al guardar la validación. Intenta de nuevo.'); });
     }
 
     function closeStudentDetails() {

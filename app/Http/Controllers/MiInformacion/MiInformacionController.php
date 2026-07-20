@@ -7,6 +7,8 @@ use App\Models\AdmonCont\HorarioClase;
 use App\Models\AdmonCont\HorarioClaseOculta;
 use App\Models\AdmonCont\ClaseAsistencia;
 use App\Models\Users\User;
+use App\Models\DocumentRequirement;
+use App\Models\SubmittedDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -29,6 +31,131 @@ class MiInformacionController extends Controller
 
         // 3. Enviamos la variable $user a la vista
         return view('layouts.MiInformacion.index', compact('user'));
+    }
+
+    /**
+     * Expediente del alumno: muestra los documentos configurados en
+     * Ajustes → Expediente (agrupados por proceso) y lo que ya subió.
+     */
+    public function showExpediente()
+    {
+        $user = Auth::user();
+        $institutionId = DocumentRequirement::resolveInstitutionId();
+
+        $config = DocumentRequirement::query()
+            ->where('institution_id', $institutionId)
+            ->where('activo', true)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('proceso');
+
+        $reqIds = $config->flatten()->pluck('id');
+        $subs = SubmittedDocument::query()
+            ->where('user_id', $user->id)
+            ->whereIn('document_requirement_id', $reqIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('document_requirement_id');
+
+        $procesos = DocumentRequirement::PROCESOS;
+
+        return view('layouts.MiInformacion.expediente', compact('user', 'config', 'subs', 'procesos'));
+    }
+
+    /**
+     * Guarda los archivos que el alumno sube en su expediente.
+     * Permite subida parcial (no obliga a cargar todo de una vez);
+     * solo valida tipo/cantidad de lo que sí se envía.
+     */
+    public function storeExpediente(Request $request)
+    {
+        $user = Auth::user();
+        $institutionId = DocumentRequirement::resolveInstitutionId();
+
+        $config = DocumentRequirement::query()
+            ->where('institution_id', $institutionId)
+            ->where('activo', true)
+            ->get();
+
+        if ($config->isEmpty()) {
+            return back()->with('error', 'No hay documentos configurados para tu unidad.');
+        }
+
+        $errores = [];
+        $guardados = 0;
+
+        foreach ($config as $req) {
+            $files = $request->file("expediente_docs.{$req->id}", []);
+            $files = is_array($files) ? array_filter($files) : ($files ? [$files] : []);
+            if (empty($files)) {
+                continue;
+            }
+
+            if (count($files) > $req->cantidad) {
+                $errores["expediente_docs.{$req->id}"] = "Para \"{$req->nombre}\" se esperan máximo {$req->cantidad} archivo(s).";
+                continue;
+            }
+
+            $permitidas = $this->expandirExtensionesExpediente($req->tiposArchivoArray());
+            $valido = true;
+            foreach ($files as $file) {
+                if (! $file->isValid() || $file->getSize() > 5 * 1024 * 1024) {
+                    $errores["expediente_docs.{$req->id}"] = "\"{$req->nombre}\": cada archivo debe pesar máximo 5 MB.";
+                    $valido = false;
+                    break;
+                }
+                $ext = strtolower($file->getClientOriginalExtension());
+                if (! empty($permitidas) && ! in_array($ext, $permitidas, true)) {
+                    $errores["expediente_docs.{$req->id}"] = "\"{$req->nombre}\" debe ser de tipo: " . strtoupper(implode(', ', $req->tiposArchivoArray())) . '.';
+                    $valido = false;
+                    break;
+                }
+            }
+            if (! $valido) {
+                continue;
+            }
+
+            // Bloquear si ya existe un envío para este requerimiento.
+            $yaExiste = SubmittedDocument::where('user_id', $user->id)
+                ->where('document_requirement_id', $req->id)
+                ->exists();
+            if ($yaExiste) {
+                continue;
+            }
+
+            foreach ($files as $file) {
+                $path = $file->store("documentos/{$user->id}/expediente", 'public');
+                SubmittedDocument::create([
+                    'document_requirement_id' => $req->id,
+                    'user_id' => $user->id,
+                    'archivo_path' => $path,
+                    'nombre_original' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'tamano_bytes' => $file->getSize(),
+                    'uploaded_by' => $user->id,
+                ]);
+                $guardados++;
+            }
+        }
+
+        if (! empty($errores)) {
+            return back()->withErrors($errores)->with('error', 'Algunos documentos no se guardaron. Revisa los mensajes.');
+        }
+
+        return back()->with('success', "Se guardó correctamente tu documentación ({$guardados} archivo(s)).");
+    }
+
+    /** Expande extensiones (jpg→jpg,jpeg; doc→doc,docx; xls→xls,xlsx). */
+    private function expandirExtensionesExpediente(array $exts): array
+    {
+        $mapa = ['jpg' => ['jpg', 'jpeg'], 'doc' => ['doc', 'docx'], 'xls' => ['xls', 'xlsx']];
+        $out = [];
+        foreach ($exts as $e) {
+            $e = strtolower(trim($e));
+            $out = array_merge($out, $mapa[$e] ?? [$e]);
+        }
+        return array_values(array_unique(array_filter($out)));
     }
 
     /**

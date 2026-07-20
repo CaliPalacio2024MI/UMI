@@ -135,6 +135,12 @@
                                 <a href="{{ route('MiInformacion.reticula') }}">Retícula</a>
                             </li>
                         @endif
+                        {{-- Expediente: el alumno sube su documentación requerida --}}
+                        @if($isStudentGroup)
+                            <li class="{{ request()->routeIs('MiInformacion.expediente') ? 'active-submenu' : '' }}">
+                                <a href="{{ route('MiInformacion.expediente') }}">Expediente</a>
+                            </li>
+                        @endif
                         @endif
                     </ul>
                 </li>

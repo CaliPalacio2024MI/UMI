@@ -413,8 +413,13 @@
             
             try {
                 let createFormUrl = `${baseUrl}/${seccion}/create-form`;
-                if (seccion === 'expediente' && currentProceso) {
-                    createFormUrl += `?proceso=${encodeURIComponent(currentProceso)}`;
+                if (seccion === 'expediente') {
+                    // El proceso se toma de la pestaña activa (que puede cambiar por AJAX sin recargar).
+                    const activeTab = document.querySelector('.exp-tab.is-active');
+                    const proc = activeTab
+                        ? new URL(activeTab.getAttribute('href'), window.location.origin).searchParams.get('proceso')
+                        : currentProceso;
+                    if (proc) createFormUrl += `?proceso=${encodeURIComponent(proc)}`;
                 }
                 const response = await fetch(createFormUrl);
                 if (!response.ok) throw new Error('Error al cargar el formulario');
@@ -508,6 +513,49 @@
         input.addEventListener('input', function() {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(fetchTable, 400);
+        });
+    })();
+
+    (function expedienteTabsAjax() {
+        // Las pestañas del expediente cambian el contenido SIN recargar la página,
+        // para que el menú lateral (dropdown de Ajustes) no se re-renderice ni se abra solo.
+        if (@json($seccion) !== 'expediente') return;
+        const tabsBar = document.querySelector('.exp-tabs');
+        if (!tabsBar) return;
+
+        tabsBar.addEventListener('click', function (e) {
+            const tab = e.target.closest('.exp-tab');
+            if (!tab || tab.classList.contains('is-active')) return;
+            e.preventDefault();
+
+            const url = tab.getAttribute('href');
+            // Marcar la pestaña activa de inmediato (respuesta visual instantánea).
+            tabsBar.querySelectorAll('.exp-tab').forEach(t => t.classList.remove('is-active'));
+            tab.classList.add('is-active');
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                credentials: 'same-origin'
+            })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(function (html) {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const nueva = doc.querySelector('.table-container');
+                const actual = document.querySelector('.table-container');
+                if (nueva && actual) {
+                    actual.replaceWith(nueva);
+                }
+                // Mantener el filtro de búsqueda coherente con la pestaña.
+                const proc = new URL(url, window.location.origin).searchParams.get('proceso');
+                const hiddenProc = document.querySelector('#searchForm input[name="proceso"]');
+                if (hiddenProc && proc) hiddenProc.value = proc;
+
+                history.pushState({}, '', url);
+            })
+            .catch(function (err) {
+                console.error('No se pudo cambiar de pestaña por AJAX, recargando:', err);
+                window.location.href = url; // Respaldo: navegación normal.
+            });
         });
     })();
 </script>

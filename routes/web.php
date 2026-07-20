@@ -110,6 +110,10 @@ Route::middleware(['auth'])->group(function () {
             // Retícula de la carrera del alumno (consulta)
             Route::get('/reticula', [BoletaController::class, 'reticula'])->name('reticula');
 
+            // Expediente del alumno: sube los documentos configurados en Ajustes → Expediente.
+            Route::get('/expediente', [MiInformacionController::class, 'showExpediente'])->name('expediente');
+            Route::post('/expediente', [MiInformacionController::class, 'storeExpediente'])->name('expediente.store');
+
             // Tareas (alumno consulta/entrega, docente crea/califica)
             Route::get('/tareas', [TareaController::class, 'index'])->name('tareas');
             Route::post('/tareas', [TareaController::class, 'store'])->name('tareas.store');
@@ -461,6 +465,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:master,control_administrativo'])
         ->get('/expediente-alumno/{id}/documentos', [studentController::class, 'documentosExpediente'])
         ->name('expediente.documentos');
+
+    Route::middleware(['role:master,control_administrativo'])
+        ->patch('/expediente-alumno/documento/{id}/validar', [studentController::class, 'validarDocumento'])
+        ->name('expediente.validarDocumento');
 
     // Endpoint para consumir la API externa (devuelve JSON).
     // Nota: está dentro del middleware ['auth', 'ajax', 'spa'], así que idealmente llámalo como AJAX

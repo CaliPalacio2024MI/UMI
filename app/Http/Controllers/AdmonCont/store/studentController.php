@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdmonCont\store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\DocumentRequirement;
 use App\Models\SubmittedDocument;
 use App\Models\Users\User;
 use App\Models\Users\AcademicProfile;
@@ -31,21 +32,71 @@ class studentController extends Controller
      */
     public function documentosExpediente($id)
     {
-        $docs = SubmittedDocument::with('requirement')
-            ->where('user_id', $id)
-            ->orderBy('document_requirement_id')
-            ->orderBy('id')
-            ->get()
-            ->map(function ($d) {
-                return [
-                    'nombre' => $d->requirement?->nombre ?? ($d->nombre_original ?? 'Documento'),
-                    'proceso' => $d->requirement?->proceso_label ?? '',
-                    'url' => '/storage/' . ltrim((string) $d->archivo_path, '/'),
-                    'nombre_original' => $d->nombre_original,
-                ];
-            });
+        $institutionId = DocumentRequirement::resolveInstitutionId();
 
-        return response()->json(['data' => $docs]);
+        // Todos los documentos requeridos (activos) configurados en Ajustes → Expediente.
+        $config = DocumentRequirement::query()
+            ->where('institution_id', $institutionId)
+            ->where('activo', true)
+            ->get();
+
+        // Ordenar por el orden de los procesos definidos + orden interno.
+        $orden = array_flip(array_keys(DocumentRequirement::PROCESOS));
+        $config = $config->sortBy(function ($r) use ($orden) {
+            return sprintf('%02d-%04d-%06d', $orden[$r->proceso] ?? 99, $r->orden, $r->id);
+        })->values();
+
+        // Lo que el alumno ya subió, agrupado por requerimiento.
+        $subs = SubmittedDocument::where('user_id', $id)->get()->groupBy('document_requirement_id');
+
+        $data = $config->map(function ($req) use ($subs) {
+            $envios = $subs->get($req->id, collect());
+            return [
+                'proceso'     => $req->proceso_label,
+                'nombre'      => $req->nombre,
+                'obligatorio' => (bool) $req->obligatorio,
+                'subido'      => $envios->isNotEmpty(),
+                'archivos'    => $envios->map(fn ($e) => [
+                    'id'                => $e->id,
+                    'url'               => '/storage/' . ltrim((string) $e->archivo_path, '/'),
+                    'nombre'            => $e->nombre_original ?? 'documento',
+                    'validation_status' => $e->validation_status, // null | 'aceptado' | 'rechazado'
+                ])->values(),
+            ];
+        })->values();
+
+        $total    = $data->count();
+        $subidos  = $data->where('subido', true)->count();
+        $aceptados = $data->filter(fn ($d) =>
+            $d['subido'] && collect($d['archivos'])->every(fn ($a) => $a['validation_status'] === 'aceptado')
+        )->count();
+
+        return response()->json([
+            'data' => $data,
+            'resumen' => [
+                'total'     => $total,
+                'subidos'   => $subidos,
+                'pendientes'=> $total - $subidos,
+                'aceptados' => $aceptados,
+            ],
+        ]);
+    }
+
+    public function validarDocumento(Request $request, $id)
+    {
+        $status = $request->input('status');
+        if (!in_array($status, ['aceptado', 'rechazado', null], true)) {
+            return response()->json(['error' => 'Estado inválido'], 422);
+        }
+
+        $doc = SubmittedDocument::findOrFail($id);
+        $doc->update([
+            'validation_status' => $status,
+            'validated_by'      => auth()->id(),
+            'validated_at'      => now(),
+        ]);
+
+        return response()->json(['ok' => true, 'status' => $status]);
     }
 
     public function acceptAspirante(Request $request, Lead $lead)

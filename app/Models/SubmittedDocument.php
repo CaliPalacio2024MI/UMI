@@ -21,6 +21,13 @@ class SubmittedDocument extends Model
         'mime_type',
         'tamano_bytes',
         'uploaded_by',
+        'validation_status',
+        'validated_by',
+        'validated_at',
+    ];
+
+    protected $casts = [
+        'validated_at' => 'datetime',
     ];
 
     public function requirement()

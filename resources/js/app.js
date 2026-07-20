@@ -433,7 +433,10 @@ async loadPage(url, updateHistory = true) {
     }
 
     getCacheKey(url) {
-        return new URL(url).pathname;
+        // Incluir el query string: páginas que comparten path pero cambian ?params
+        // (p. ej. las pestañas de Ajustes → Expediente ?proceso=) deben cachearse por separado.
+        const u = new URL(url, window.location.origin);
+        return u.pathname + u.search;
     }
 
     getCSRFToken() {
