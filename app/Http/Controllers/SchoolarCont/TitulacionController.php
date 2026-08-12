@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SchoolarCont;
 use App\Http\Controllers\Controller;
 use App\Models\Schoolar\TitulacionDocumento;
 use App\Models\DocumentRequirement;
+use App\Models\SubmittedDocument;
 use App\Models\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,7 +53,17 @@ class TitulacionController extends Controller
         // Documentos requeridos configurados en Ajustes → Expediente (proceso Titulación).
         $expedienteConfig = DocumentRequirement::query()->forActiveProcess('titulacion')->get();
 
-        return view('layouts.ControlEsc.Titulacion.index', compact('dataList', 'alumnos', 'expedienteConfig'));
+        // Docs subidos por alumnos desde su expediente (proceso Titulación).
+        $submittedDocs = SubmittedDocument::query()
+            ->with([
+                'user:id,nombre,apellido_paterno,apellido_materno',
+                'requirement:id,nombre',
+            ])
+            ->whereIn('document_requirement_id', $expedienteConfig->pluck('id'))
+            ->latest()
+            ->get();
+
+        return view('layouts.ControlEsc.Titulacion.index', compact('dataList', 'alumnos', 'expedienteConfig', 'submittedDocs'));
     }
 
     public function store(Request $request)

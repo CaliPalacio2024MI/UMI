@@ -1,5 +1,7 @@
 @extends('layouts.app')
-
+@push('css')
+    @vite('resources/css/CRM/leads.css')
+@endpush
 @section('title', 'CRM - Leads')
 
 @section('content')
@@ -77,6 +79,7 @@
                             data-alumno-curp="{{ $lead->alumno_curp }}"
                             data-comentario-reasignacion="{{ $lead->comentario_reasignacion }}"
                             data-carrera="{{ $lead->carrera->name ?? 'Sin carrera' }}"
+                            data-datos-adicionales='@json($lead->datos_adicionales ?? [])'
                         >
                             <div>{{ $lead->alumno_nombre ?? 'N/A' }}</div>
                             <div>{{ $lead->alumno_paterno ?? 'N/A' }}</div>
@@ -369,8 +372,33 @@ function renderizarSeguimiento(fila) {
     });
 }
 
+const CAMPOS_FORMULARIO = @json($camposFormulario ?? []);
+
 function renderizarDatos(fila) {
     const d = fila.dataset;
+    const adicionales = JSON.parse(d.datosAdicionales || '{}');
+
+    // Campos adicionales agrupados por sección
+    const porSeccion = { tutor: [], postulante: [], sin_seccion: [] };
+    CAMPOS_FORMULARIO.forEach(c => {
+        const val = adicionales[c.nombre_campo];
+        if (val === undefined || val === null || val === '') return;
+        const display = c.tipo === 'file'
+            ? `<a href="/storage/${val}" target="_blank" style="color:#B08955;font-size:.82rem;">Ver archivo</a>`
+            : val;
+        const item = `<div class="dato-item"><label>${c.etiqueta}:</label><p>${display}</p></div>`;
+        if (c.seccion === 'tutor') porSeccion.tutor.push(item);
+        else if (c.seccion === 'postulante') porSeccion.postulante.push(item);
+        else porSeccion.sin_seccion.push(item);
+    });
+
+    const extraTutor = porSeccion.tutor.length
+        ? `<div class="datos-grid-3 mt-3">${porSeccion.tutor.join('')}</div>` : '';
+    const extraPostulante = porSeccion.postulante.length
+        ? `<div class="datos-grid-3 mt-3">${porSeccion.postulante.join('')}</div>` : '';
+    const extraGeneral = porSeccion.sin_seccion.length
+        ? `<div class="datos-card"><h6 class="titulo-seccion">Información adicional</h6><div class="datos-grid-3">${porSeccion.sin_seccion.join('')}</div></div>` : '';
+
     document.getElementById('datos-panel').innerHTML = `
     <div class="datos-card">
         <h6 class="titulo-seccion">Datos del Tutor</h6>
@@ -385,6 +413,7 @@ function renderizarDatos(fila) {
             <div class="dato-item"><label>Teléfono 2:</label><p>${d.telefono2 || '---'}</p></div>
             <div class="dato-item"><label>Correo electrónico:</label><p>${d.tutorEmail || '---'}</p></div>
         </div>
+        ${extraTutor}
     </div>
     <div class="datos-card">
         <h6 class="titulo-seccion">Datos del Aspirante a Alumno</h6>
@@ -401,7 +430,9 @@ function renderizarDatos(fila) {
             <label>Plan de estudios / Carrera:</label>
             <p>${d.carrera || '---'}</p>
         </div>
-    </div>`;
+        ${extraPostulante}
+    </div>
+    ${extraGeneral}`;
 }
 
 window.renderizarSeguimiento = renderizarSeguimiento;

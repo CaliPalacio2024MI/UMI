@@ -1,7 +1,9 @@
 @extends('layouts.app')
+@push('css')
+    @vite('resources/css/CRM/prospectos.css')
+@endpush
 @section('title', 'CRM - Prospectos')
 @section('content')
-<link rel="stylesheet" href="{{ Vite::asset('resources/css/CRM/prospectos.css') }}">
 <div class="crm-prospectos">
    <!-- Encabezado SUPERIOR -->
    <div class="header-top">

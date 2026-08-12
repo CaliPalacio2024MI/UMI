@@ -7,15 +7,8 @@
 
         // --- 1. CONTEXTO ---
         $universityName = 'Universidad Mundo Imperial';
-        $activeInstitutionId = (int) session('active_institution_id', 0);
-        $activeInstitution = $activeInstitutionId > 0
-            ? \App\Models\Users\Institution::query()->find($activeInstitutionId)
-            : null;
-        $isUniversity = (bool) ($activeInstitution?->is_universidad ?? false);
-        // Fallback por compatibilidad con datos antiguos/sesión.
-        if (! $isUniversity) {
-            $isUniversity = (session('active_institution_name') == $universityName);
-        }
+        $isUniversity = session('active_institution_is_universidad')
+            ?? (session('active_institution_name') == $universityName);
 
         // --- 2. ROLES ---
         $isMaster       = $user->hasActiveRole('master');
@@ -285,6 +278,12 @@
                                     <li class="{{ request()->is('control-escolar/titulacion*') ? 'active-submenu' : '' }}">
                                         <a href="{{ route('escolar.titulacion.index') }}">Titulación</a>
                                     </li>
+                                    <li class="{{ request()->is('control-escolar/servicio-social*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('escolar.servicio_social.index') }}">Servicio Social</a>
+                                    </li>
+                                    <li class="{{ request()->is('control-escolar/practicas-profesionales*') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('escolar.practicas_profesionales.index') }}">Prácticas Profesionales</a>
+                                    </li>
                                 </ul>
                             </li>
                         @endif
@@ -293,14 +292,11 @@
                             <li class="has-submenu {{ request()->is('control/planeacion/*') ? 'active' : '' }}">
                                 <a href="#">Planeación y Vinc.</a>
                                 <ul class="submenu">
-                                    <li class="{{ request()->is('control/planeacion/presupuesto*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Presupuesto</a>
+                                    <li class="{{ request()->routeIs('escolar.practicas_profesionales.index') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('escolar.practicas_profesionales.index') }}">Prácticas profesionales</a>
                                     </li>
-                                    <li class="{{ request()->is('control/planeacion/practicas-profesionales*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Prácticas profesionales</a>
-                                    </li>
-                                    <li class="{{ request()->is('control/planeacion/servicio-social*') ? 'active-submenu' : '' }}">
-                                        <a href="#">Servicio Social</a>
+                                    <li class="{{ request()->routeIs('escolar.servicio_social.index') ? 'active-submenu' : '' }}">
+                                        <a href="{{ route('escolar.servicio_social.index') }}">Servicio Social</a>
                                     </li>
                                 </ul>
                             </li>
@@ -348,7 +344,15 @@
                     <li class="{{ request()->routeIs('crm.estadisticas') ? 'active-submenu' : '' }}">
                         <a href="{{ route('crm.estadisticas') }}">Estadísticas</a>
                     </li>
-                        @endif
+                @endif
+
+            {{-- Formulario: Master y Control Admin --}}
+            @if($isMaster || $isControlAdmin)
+                <li class="{{ request()->routeIs('crm.formulario.*') ? 'active-submenu' : '' }}">
+                    <a href="{{ route('crm.formulario.index') }}">Formulario</a>
+                </li>
+            @endif
+
                     </ul>
                 </li>  {{-- ← este faltaba --}}
             @endif
@@ -395,17 +399,17 @@
                             <li class="{{ request()->is('ajustes/users') ? 'active-submenu' : '' }}">
                                 <a href="{{ route('ajustes.show', 'users') }}">Usuarios</a>
                             </li>
-                            @if($isUniversity)
-                                <li class="{{ request()->is('ajustes/expediente') ? 'active-submenu' : '' }}">
-                                    <a href="{{ route('ajustes.show', 'expediente') }}">Expediente</a>
-                                </li>
-                            @endif
                             <li class="{{ request()->is('ajustes/periods') ? 'active-submenu' : '' }}">
                                 <a href="{{ route('ajustes.show', 'periods') }}">Periodos</a>
                             </li>
                             <li class="{{ request()->is('ajustes/departments') ? 'active-submenu' : '' }}">
                                 <a href="{{ route('ajustes.show', 'departments') }}">Departamentos</a>
                             </li>
+                            @if($isUniversity)
+                                <li class="{{ request()->is('ajustes/expediente') ? 'active-submenu' : '' }}">
+                                    <a href="{{ route('ajustes.show', 'expediente') }}">Expediente</a>
+                                </li>
+                            @endif
                         @endif
                     </ul>
                 </li>

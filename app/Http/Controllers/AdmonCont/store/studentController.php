@@ -85,7 +85,7 @@ class studentController extends Controller
     public function validarDocumento(Request $request, $id)
     {
         $status = $request->input('status');
-        if (!in_array($status, ['aceptado', 'rechazado', null], true)) {
+        if (!in_array($status, ['aceptado', 'rechazado', 'en_revision', null], true)) {
             return response()->json(['error' => 'Estado inválido'], 422);
         }
 

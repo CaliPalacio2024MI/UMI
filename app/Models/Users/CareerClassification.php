@@ -11,6 +11,8 @@ class CareerClassification extends Model
     protected $fillable = [
         'name',
         'institution_id',
+        'visible_landing',
+        'is_active',
     ];
 
     public function institution(): BelongsTo

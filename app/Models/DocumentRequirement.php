@@ -23,6 +23,7 @@ class DocumentRequirement extends Model
         'obligatorio',
         'orden',
         'activo',
+        'slug',
     ];
 
     protected $casts = [

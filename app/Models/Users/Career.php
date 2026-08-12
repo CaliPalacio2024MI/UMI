@@ -59,7 +59,8 @@ class Career extends Model
         'monto_mensualidad',
         'cargo_monetario',
         'fecha_vencimiento_moratorio',
-        'visible_landing'
+        'visible_landing',
+        'is_active',
     ];
 
     protected $casts = [

@@ -199,4 +199,39 @@
 select[multiple] {
     max-height: 120px;
     overflow-y: auto;
+
+}
+.btn-salir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-width: 160px;
+    height: 48px;
+
+    background: #2f4b7c;
+    color: #ffffff !important;
+
+    border: none;
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: all .25s ease;
+}
+
+.btn-salir:hover {
+    background: #3b82f6;
+    color: #ffffff !important;
+
+    transform: translateY(-2px);
+}
+
+.btn-salir i {
+    font-size: 14px;
 }

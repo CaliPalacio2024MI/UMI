@@ -1,4 +1,7 @@
 @extends('layouts.app')
+@push('css')
+    @vite('resources/css/CRM/comisiones.css')
+@endpush
 @section('title', 'CRM - Comisiones')
 @section('content')
 <div class="crm-comisiones">

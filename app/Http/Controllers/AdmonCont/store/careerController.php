@@ -109,9 +109,14 @@ class careerController extends Controller
             7 => '7mo Semestre',
         ];
 
+        $clasificaciones = $institutionId
+            ? \App\Models\Users\CareerClassification::where('institution_id', $institutionId)->orderBy('name')->get(['id', 'name'])
+            : \App\Models\Users\CareerClassification::orderBy('name')->get(['id', 'name']);
+
         return view('layouts.ControlAdmin.Carreras.reticula', compact(
             'carrera',
             'carreras',
+            'clasificaciones',
             'porSemestre',
             'totalSemesters',
             'totalMaterias',
@@ -143,7 +148,7 @@ class careerController extends Controller
                 'regex:/^[A-Za-z0-9\/\-\s]+$/',
                 Rule::unique('careers', 'official_id'),
             ],
-            'description' => 'required|string|max:2000',
+            'description' => 'nullable|string|max:2000',
             'type'         => 'required|in:Presencial,En linea',
             'semesters'    => 'required|integer|min:1',
             'career_classification_id' => [
@@ -431,5 +436,29 @@ class careerController extends Controller
         ->route('control.careers.index', ['modal' => 'success'])
         ->with('success', 'Visibilidad de la carrera en Landing actualizada.');
 }
+
+    public function toggleCareerActive(Career $carrera)
+    {
+        if (!request()->user()->hasAnyRole(['master'])) {
+            abort(403);
+        }
+        $carrera->is_active = !$carrera->is_active;
+        $carrera->save();
+
+        $msg = $carrera->is_active ? 'Carrera habilitada.' : 'Carrera deshabilitada.';
+        return redirect()->back()->with('success', $msg);
+    }
+
+    public function toggleClassificationActive(CareerClassification $careerClassification)
+    {
+        if (!request()->user()->hasAnyRole(['master'])) {
+            abort(403);
+        }
+        $careerClassification->is_active = !$careerClassification->is_active;
+        $careerClassification->save();
+
+        $msg = $careerClassification->is_active ? 'Clasificación habilitada.' : 'Clasificación deshabilitada.';
+        return redirect()->back()->with('success', $msg);
+    }
 }
 

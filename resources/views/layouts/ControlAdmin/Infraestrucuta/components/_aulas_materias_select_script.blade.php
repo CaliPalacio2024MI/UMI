@@ -18,7 +18,7 @@
 
     /* ── Filtrar carreras por clasificación (show/hide) ── */
     window.umiAulasFilterCarreras = function (form, clasId) {
-        var items = form.querySelectorAll('.aula-check-item');
+        var items = form.querySelectorAll('.aula-carreras-list .aula-check-item');
         items.forEach(function (item) {
             if (!clasId || clasId === '') {
                 item.style.display = 'flex';
@@ -90,7 +90,13 @@
             var form = t.closest('form');
             if (form) {
                 window.umiAulasFilterCarreras(form, t.value);
-                // Recargar materias (por si quedaron carreras ocultas marcadas)
+                // Desmarcar carreras ocultas para que no contaminen la carga de materias
+                form.querySelectorAll('.aula-carreras-list .aula-check-item').forEach(function (item) {
+                    if (item.style.display === 'none') {
+                        var cb = item.querySelector('.aula-career-check');
+                        if (cb) cb.checked = false;
+                    }
+                });
                 window.umiAulasLoadMaterias(form, []);
             }
         }

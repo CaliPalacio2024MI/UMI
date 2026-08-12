@@ -336,9 +336,6 @@
                                     @foreach($opcionesPorPaquete as $op)
                                         <option value="{{ $op['clase_id'] }}" data-texto="{{ e($op['texto']) }}" {{ in_array($op['clase_id'], $claseIds ?? []) ? 'selected' : '' }}>{{ $op['texto'] }}</option>
                                     @endforeach
-                                    @foreach($opcionesPorPaquete as $op)
-                                        <option value="{{ $op['clase_id'] }}" data-texto="{{ e($op['texto']) }}" {{ in_array($op['clase_id'], $claseIds ?? []) ? 'selected' : '' }}>{{ $op['texto'] }}</option>
-                                    @endforeach
                                 @endif
                             </select>
                             <div id="clase_id_resumen" class="mt-1 small" style="display: none; white-space: pre-line; color: #555; min-height: 1.5em;" aria-live="polite"></div>

@@ -98,7 +98,7 @@
         <div class="modal-body-scroll">
             {{-- Encabezado del Alumno --}}
             <div class="student-summary">
-                <div class="avatar-placeholder">
+                <div id="modalAvatarWrap" class="avatar-placeholder" style="width:64px;height:64px;font-size:26px;overflow:hidden;flex-shrink:0;">
                     <i class="fa-solid fa-user"></i>
                 </div>
                 <div class="student-info-header">
@@ -153,12 +153,6 @@
                     <div class="detail-item">
                         <label>Matrícula:</label> <span id="modalMatricula">-</span>
                     </div>
-                    <div id="modalFotoWrap" style="margin-top: 10px; display: none;">
-                        <label style="font-weight: 600; color: #BC8A55;">Foto:</label>
-                        <div style="margin-top: 8px;">
-                            <img id="modalFoto" src="" alt="Foto del alumno" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #223F70;">
-                        </div>
-                    </div>
                 </div>
 
                 <div id="studentDetailsTabDocs" class="student-details-tab-panel" role="tabpanel" aria-labelledby="studentDetailsTabBtnDocs">
@@ -201,10 +195,19 @@
             <form id="leadEditForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 0;">
                 <input type="hidden" name="lead_edit_docs_interacted" id="leadEditDocsInteracted" value="0">
                 <div class="student-summary" style="margin-bottom: 15px;">
-                    <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    <div style="position:relative; flex-shrink:0;">
+                        <div id="leadEditAvatarWrap" class="avatar-placeholder" style="width:64px;height:64px;font-size:26px;overflow:hidden;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <label for="leadFoto" title="Cambiar foto" style="position:absolute;bottom:0;right:0;width:20px;height:20px;background:#223F70;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff;">
+                            <i class="fa-solid fa-pen" style="font-size:8px;color:#fff;"></i>
+                        </label>
+                        <input type="file" name="foto" id="leadFoto" accept=".jpg,.jpeg,.png" style="display:none;">
+                    </div>
                     <div class="student-info-header">
                         <h2 id="leadEditModalName" style="margin:0 0 6px 0; font-size: 1.25rem;">-</h2>
                         <span id="leadEditModalStatusBadge" class="badge-status badge-orange">Aspirante</span>
+                        <small id="leadFotoHint" style="color:#9aa6b6;font-size:.75rem;display:none;">JPG o PNG · Máx 2MB</small>
                     </div>
                 </div>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
@@ -237,12 +240,6 @@
                             </div>
                             <div class="detail-item"><label>Matrícula:</label>
                                 <input type="text" name="matricula" id="leadMatricula" placeholder="Ej: UMI-2026-001" style="flex:1; padding:6px 10px; border:none; border-radius:6px; max-width:200px;">
-                            </div>
-                            <div class="detail-item" style="flex-direction: column; align-items: flex-start;">
-                                <label>Foto del alumno:</label>
-                                <div id="leadFotoPreview" style="margin: 8px 0;"></div>
-                                <input type="file" name="foto" id="leadFoto" accept=".jpg,.jpeg,.png" style="font-size: 0.85rem;">
-                                <small style="color: #666;">JPG o PNG. Máx 2MB.</small>
                             </div>
                         </div>
                         <div id="leadEditTabDocs" class="lead-edit-tab-panel" role="tabpanel" aria-labelledby="leadEditTabBtnDocs">
@@ -315,8 +312,9 @@
             <h3 id="docViewerTitle" style="margin: 0; font-size: 1.1rem;">Visualizando Documento</h3>
             <button type="button" class="modal-close" onclick="closeDocViewer()" style="color: white;">&times;</button>
         </div>
-        <div class="modal-body" style="padding: 0; height: 100%; background: #525659;">
-            <iframe id="docViewerFrame" src="" width="100%" height="100%" style="border:none;"></iframe>
+        <div class="modal-body" style="padding: 0; height: 100%; background: #525659; display:flex; align-items:center; justify-content:center; overflow:auto;">
+            <iframe id="docViewerFrame" src="" width="100%" height="100%" style="border:none; display:none;"></iframe>
+            <img id="docViewerImg" src="" alt="Documento" style="display:none; max-width:100%; max-height:100%; object-fit:contain;">
         </div>
     </div>
 </div>
@@ -1027,14 +1025,29 @@
     // --- VISOR DE DOCUMENTOS ---
     function openDocViewer(url, title) {
         if (!url || url === '') return;
-        document.getElementById('docViewerFrame').src = url;
-        document.getElementById('docViewerTitle').innerText = title;
+        const frame = document.getElementById('docViewerFrame');
+        const img   = document.getElementById('docViewerImg');
+        const ext   = url.split('?')[0].split('.').pop().toLowerCase();
+        const isImg = ['jpg','jpeg','png','gif','webp','bmp','svg'].includes(ext);
+        if (isImg) {
+            frame.style.display = 'none';
+            frame.src = '';
+            img.src = url;
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+            img.src = '';
+            frame.src = url;
+            frame.style.display = 'block';
+        }
+        document.getElementById('docViewerTitle').innerText = title || 'Documento';
         document.getElementById('docViewerModal').style.display = 'flex';
     }
 
     function closeDocViewer() {
         document.getElementById('docViewerModal').style.display = 'none';
-        document.getElementById('docViewerFrame').src = ""; 
+        document.getElementById('docViewerFrame').src = '';
+        document.getElementById('docViewerImg').src = '';
     }
 
     // --- EXPEDIENTE ALUMNO ---
@@ -1054,14 +1067,12 @@
         }
         document.getElementById('modalSemester').innerText = String(semVal);
         document.getElementById('modalMatricula').innerText = data.matricula || 'No Asignada';
-        var fotoWrap = document.getElementById('modalFotoWrap');
-        var fotoImg = document.getElementById('modalFoto');
-        if (fotoWrap && fotoImg) {
+        var avatarWrapModal = document.getElementById('modalAvatarWrap');
+        if (avatarWrapModal) {
             if (data.foto && data.foto.trim() !== '') {
-                fotoImg.src = data.foto;
-                fotoWrap.style.display = 'block';
+                avatarWrapModal.innerHTML = '<img src="' + data.foto + '" alt="Foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
             } else {
-                fotoWrap.style.display = 'none';
+                avatarWrapModal.innerHTML = '<i class="fa-solid fa-user"></i>';
             }
         }
         
@@ -1178,7 +1189,7 @@
                     }
                     let links = '';
                     (d.archivos || []).forEach(a => {
-                        links += ' <a href="' + esc(a.url) + '" target="_blank" rel="noopener" style="color:#BC8A55;font-size:.8rem;text-decoration:none;white-space:nowrap;"><i class="fa-regular fa-eye"></i> ' + esc(a.nombre) + '</a>';
+                        links += ' <a href="#" data-doc-url="' + esc(a.url) + '" data-doc-name="' + esc(a.nombre) + '" onclick="openDocViewer(this.dataset.docUrl, this.dataset.docName); return false;" style="color:#BC8A55;font-size:.8rem;text-decoration:none;white-space:nowrap;"><i class="fa-regular fa-eye"></i> ' + esc(a.nombre) + '</a>';
                     });
                     html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #f2f2f2;">'
                          + '<span style="font-size:.88rem;color:#333;">' + esc(d.nombre) + (d.obligatorio ? ' <span style="color:#c0392b;">*</span>' : ' <span style="color:#999;font-size:.8rem;">(opcional)</span>') + links + '</span>'
@@ -1344,19 +1355,28 @@
         document.getElementById('leadCarreraId').value = data.carreraId || '';
         document.getElementById('leadSemestre').value = data.semestre || '1';
         document.getElementById('leadMatricula').value = data.matricula || '';
-        var fotoPreview = document.getElementById('leadFotoPreview');
-        if (fotoPreview) {
-            fotoPreview.innerHTML = '';
+        var avatarWrap = document.getElementById('leadEditAvatarWrap');
+        if (avatarWrap) {
             if (data.foto && data.foto.trim() !== '') {
-                var img = document.createElement('img');
-                img.src = data.foto;
-                img.alt = 'Foto actual';
-                img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:50%; border:2px solid #223F70;';
-                fotoPreview.appendChild(img);
+                avatarWrap.innerHTML = '<img src="' + data.foto + '" alt="Foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+            } else {
+                avatarWrap.innerHTML = '<i class="fa-solid fa-user"></i>';
             }
         }
         var fotoInput = document.getElementById('leadFoto');
-        if (fotoInput) fotoInput.value = '';
+        if (fotoInput) {
+            fotoInput.value = '';
+            fotoInput.onchange = function() {
+                if (!this.files || !this.files[0]) return;
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    if (avatarWrap) avatarWrap.innerHTML = '<img src="' + e.target.result + '" alt="Nueva foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                    var hint = document.getElementById('leadFotoHint');
+                    if (hint) hint.style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+            };
+        }
         document.getElementById('leadEditForm').dataset.leadId = data.leadId;
         document.getElementById('leadEditForm').dataset.userId = data.userId || '';
         var docsFlag = document.getElementById('leadEditDocsInteracted');

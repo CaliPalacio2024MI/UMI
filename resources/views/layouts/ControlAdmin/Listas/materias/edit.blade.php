@@ -21,30 +21,33 @@
                     </div>
                 @endif
 
-                {{-- Campo: Carrera --}}
+                {{-- Campo: Clasificación --}}
                 <div class="form-field lists">
-                    <label for="carrera_id">Carrera:</label> 
-                    <select id="carrera_id" name="carrera_id" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
-                        <option value="">Seleccione una Carrera</option> 
-                        @foreach ($carreras as $carrera) 
-                            <option 
-                                value="{{ $carrera->id }}" 
-                                {{ old('carrera_id', $registro->career_id) == $carrera->id ? 'selected' : '' }}
-                            >
-                                {{ $carrera->name }}
+                    <label for="career_classification_id_{{ $registro->id }}">Clasificación:</label>
+                    <select id="career_classification_id_{{ $registro->id }}" name="career_classification_id"
+                        class="js-clasif-select @if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif"
+                        data-modal-id="{{ $registro->id }}">
+                        <option value="">Seleccione una Clasificación</option>
+                        @foreach ($clasificaciones as $clasificacion)
+                            <option value="{{ $clasificacion->id }}" {{ old('career_classification_id', $registro->career_classification_id) == $clasificacion->id ? 'selected' : '' }}>
+                                {{ $clasificacion->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                {{-- Campo: Clasificación --}}
+                {{-- Campo: Carrera (filtrada por clasificación) --}}
                 <div class="form-field lists">
-                    <label for="career_classification_id_{{ $registro->id }}">Clasificación:</label>
-                    <select id="career_classification_id_{{ $registro->id }}" name="career_classification_id" class="@if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif">
-                        <option value="">Seleccione una Clasificación</option>
-                        @foreach ($clasificaciones as $clasificacion)
-                            <option value="{{ $clasificacion->id }}" {{ old('career_classification_id', $registro->career_classification_id) == $clasificacion->id ? 'selected' : '' }}>
-                                {{ $clasificacion->name }}
+                    <label for="carrera_id_{{ $registro->id }}">Carrera:</label>
+                    <select id="carrera_id_{{ $registro->id }}" name="carrera_id"
+                        class="js-carrera-select @if(session('edit_materia_id') == $registro->id && $errors->any()) validation-error @endif"
+                        data-modal-id="{{ $registro->id }}">
+                        <option value="">Seleccione una Carrera</option>
+                        @foreach ($carreras as $carrera)
+                            <option value="{{ $carrera->id }}"
+                                data-clasificacion="{{ $carrera->career_classification_id }}"
+                                {{ old('carrera_id', $registro->career_id) == $carrera->id ? 'selected' : '' }}>
+                                {{ $carrera->name }}
                             </option>
                         @endforeach
                     </select>
@@ -156,5 +159,41 @@
             }
         }
     });
+
+    (function() {
+        const mid = '{{ $registro->id }}';
+        const selClasif = document.getElementById('career_classification_id_' + mid);
+        const selCarrera = document.getElementById('carrera_id_' + mid);
+        if (!selClasif || !selCarrera) return;
+
+        const allOpts = Array.from(selCarrera.options).slice(1);
+
+        function filterCarreras(clasificId) {
+            const current = selCarrera.value;
+            while (selCarrera.options.length > 1) selCarrera.remove(1);
+            allOpts.forEach(opt => {
+                if (!clasificId || opt.dataset.clasificacion == clasificId) {
+                    selCarrera.appendChild(opt.cloneNode(true));
+                }
+            });
+            if (current && Array.from(selCarrera.options).some(o => o.value == current)) {
+                selCarrera.value = current;
+            } else {
+                selCarrera.value = '';
+            }
+        }
+
+        selClasif.addEventListener('change', function() { filterCarreras(this.value); });
+
+        selCarrera.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            if (opt && opt.dataset.clasificacion) {
+                selClasif.value = opt.dataset.clasificacion;
+                filterCarreras(opt.dataset.clasificacion);
+            }
+        });
+
+        if (selClasif.value) filterCarreras(selClasif.value);
+    })();
     </script>
 </div>

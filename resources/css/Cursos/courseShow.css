@@ -1143,17 +1143,17 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain; 
+    object-fit: contain;
     opacity: 0;
     z-index: 1;
     transition: opacity 0.3s ease, transform 0.3s ease;
-    transform: translate(0, 0) scale(1); 
+    transform: translate(0, 0) scale(1);
 }
 
 .welcome-turtle-video.welcome-active {
     opacity: 1;
     z-index: 2;
-    transform: translate(0, -5%) scale(2.0); 
+    transform: translate(0, -5%) scale(2.0);
 }
 
 /* Nombre de la tortuguita */
@@ -1198,96 +1198,21 @@ body {
     .welcome-modal-content {
         padding: 30px 20px;
     }
-    
+
     .turtles-container {
         flex-direction: column;
         gap: 40px;
     }
-    
+
     .welcome-turtle-wrapper {
         width: 220px;
         height: 220px;
     }
-    
+
     .welcome-turtle-name {
         font-size: 20px;
     }
 }
-
-/* ===== BOTON QR ===== */
-.btn-qr {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-
-    /* 👉 MISMA GAMA PERO DIFERENTE */
-    background: linear-gradient(135deg, #1e40af, #3b82f6);
-
-    color: white;
-    font-weight: 500;
-    font-size: 14px;
-
-    transition: all 0.2s ease;
-}
-
-/* Hover */
-.btn-qr:hover {
-    background: linear-gradient(135deg, #1d4ed8, #60a5fa);
-    transform: translateY(-1px);
-}
-
-/* Click */
-.btn-qr:active {
-    transform: scale(0.97);
-}
-
-/* Icono */
-.btn-qr i {
-    font-size: 16px;
-}
-
-/* ===== BOTON QR ===== */
-.btn-qr {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-
-
-    background: linear-gradient(135deg, #1e40af, #3b82f6);
-
-    color: rgb(0, 0, 0);
-    font-weight: 500;
-    font-size: 14px;
-
-    transition: all 0.2s ease;
-}
-
-/* Hover */
-.btn-qr:hover {
-    background: linear-gradient(135deg, #1d4ed8, #60a5fa);
-    transform: translateY(-1px);
-}
-
-/* Click */
-.btn-qr:active {
-    transform: scale(0.97);
-}
-
-/* Icono */
-.btn-qr i {
-    font-size: 16px;
-}
-
 /* ===== FIX DEFINITIVO MODALES ===== */
 
 /* Bootstrap default correcto */
@@ -1448,6 +1373,7 @@ body.modal-open .turtle-container {
     border-radius: 10px;
 }
 
+
 /* Botón guía del curso (simple como los demás) */
 .btn-guide {
     background: #4f46e5; /* usa el mismo color base que tus botones */
@@ -1461,9 +1387,9 @@ body.modal-open .turtle-container {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 34px; /* 🔥 importante: misma altura que los otros */
- min-width: 150px; /* 🔥 clave: asegura que quepa el texto */
-    white-space: nowrap; /* 🔥 evita que se rompa en 2 líneas */
+    height: 34px; /*  importante: misma altura que los otros */
+ min-width: 150px; /*  clave: asegura que quepa el texto */
+    white-space: nowrap; /*  evita que se rompa en 2 líneas */
 }
 
 /* Hover simple */
@@ -1481,5 +1407,611 @@ body.modal-open .turtle-container {
     margin-left: auto; /* empuja todo a la derecha */
     display: flex;
     align-items: center;
-    gap: 8px; /* 🔥 controla qué tan pegados están */
+    gap: 8px; /*  controla qué tan pegados están */
+}
+
+
+.btn-exit-hybrid {
+    background: #f8d7da;
+    color: #9c3d46;
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.course-viewer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ===== CARDS SHOW PRO ===== */
+
+.course-show .courses-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 300px));
+    gap: 24px;
+    justify-content: center;
+    padding-top: 10px;
+}
+
+/* CARD */
+.course-show .course-card {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    background: linear-gradient(145deg, #ffffff, #f3f4f6);
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    transition: all 0.3s ease;
+}
+
+/* HOVER */
+.course-show .course-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(0,0,0,.18);
+}
+
+/* HEADER CON COLOR */
+.course-show .course-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* INFO */
+.course-show .course-info {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* TITULO */
+.course-show .course-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* DESCRIPCIÓN */
+.course-show .course-description {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+/* META */
+.course-show .course-meta {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* ICONO */
+.course-show .course-modality {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #ffffff;
+    padding: 8px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+}
+
+.course-show .course-modality i {
+    font-size: 16px;
+    color: #4f46e5;
+}
+
+/* CLICK AREA */
+.course-show .course-card-show {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+/*RESPONSIVE*/
+
+/* ===== TODOS TUS ESTILOS ACTUALES VAN AQUÍ (lo que ya tienes) ===== */
+
+/* ===== RESPONSIVE ===== */
+/* Pantallas medianas (tablets, menos de 1024px) */
+@media (max-width: 1024px) {
+    .course-menu {
+        width: 240px; /* Menú un poco más pequeño */
+    }
+
+    .sopa-cell {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+}
+
+/* Pantallas pequeñas (móviles, menos de 768px) */
+@media (max-width: 768px) {
+    /* Layout principal en columna */
+    .course-layout {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+    }
+
+    /* Menú ocupa todo el ancho */
+    .course-menu {
+        width: 100%;
+        max-height: 280px; /* Para que no ocupe toda la pantalla */
+    }
+
+    /* Visor ocupa todo */
+    .course-viewer {
+        width: 100%;
+    }
+
+    /* Grupos de listas en 1 columna */
+    #listasModal .groups-container {
+        grid-template-columns: 1fr;
+    }
+
+    /* Cards de cursos en 1 columna */
+    .course-show .courses-container {
+        grid-template-columns: 1fr;
+    }
+
+    /* Crucigrama en columna */
+    .crucigrama-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    /* Teclado del ahorcado más compacto */
+    .keyboard {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+
+    /* Botones de navegación */
+    .nav-controls {
+        flex-wrap: wrap;
+    }
+
+    /* Controles del curso */
+    .course-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .right-controls {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    /* Tamaños de letra */
+    .content-panel h2 {
+        font-size: 1.3rem;
+    }
+
+    /* Celdas de la sopa de letras más pequeñas */
+    .sopa-cell {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+}
+
+/* Pantallas muy pequeñas (menos de 480px) */
+@media (max-width: 480px) {
+    .sopa-cell {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .keyboard {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .letter-btn {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .word-display .letter {
+        width: 30px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .course-controls button {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .btn-guide {
+        min-width: 120px;
+        font-size: 12px;
+        height: 30px;
+    }
+}
+
+/* =========================
+   HORARIOS (SIDEBAR LMS)
+========================= */
+
+.course-sessions-box {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Card de cada horario */
+.course-session-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.course-session-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+/* Texto principal del horario */
+.course-session-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.course-session-date {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.course-session-time {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Badge de estado */
+.session-status {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Activo */
+.session-status.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* Inactivo */
+.session-status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+/* Hover izquierdo tipo "selector" */
+.course-session-item::before {
+    content: "";
+    width: 4px;
+    height: 100%;
+    background: transparent;
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 12px 0 0 12px;
+    transition: 0.2s;
+}
+
+.course-session-item:hover::before {
+    background: #0ea5e9;
+}
+
+/* Contenedor relativo para el before */
+.course-session-item {
+    position: relative;
+}
+/* ===== LAYOUT HORARIOS ===== */
+
+.sessions-layout {
+    display: flex;
+    gap: 24px;
+    width: 100%;
+    height: 100%;
+}
+
+.sessions-sidebar {
+    width: 380px;
+    flex-shrink: 0;
+}
+
+.sessions-content {
+    flex: 1;
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    min-height: 600px;
+    overflow: auto;
+}
+
+.empty-session-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+    color: #888;
+    font-size: 18px;
+    text-align: center;
+}
+/* =========================
+   PRESENCIAL: TABLA EN VIEWER
+========================= */
+
+.presencial-table-viewer {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 24px;
+    overflow-x: auto;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Tabla de usuarios del horario */
+.presencial-users-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    background: #ffffff;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.presencial-users-table thead {
+    background: #284878;
+    color: #ffffff;
+}
+
+.presencial-users-table th {
+    padding: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    letter-spacing: 0.5px;
+}
+
+.presencial-users-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.presencial-users-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.presencial-users-table tbody tr:hover {
+    background: #eef2ff;
+}
+
+/* Mensaje vacío dentro del viewer */
+.empty-session-message {
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8b95a7;
+    font-size: 18px;
+    text-align: center;
+}
+
+/* Oculta el progress en presencial si no lo quieres */
+.course-viewer .course-progress {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .presencial-table-viewer {
+        padding: 14px;
+    }
+
+    .presencial-users-table {
+        min-width: 650px;
+    }
+}
+.course-menu {
+    flex: 2;
+    min-width: 0;
+    min-height: 520px;
+    padding: 18px;
+    border-radius: 10px;
+}
+
+.course-viewer {
+    flex: 4;
+    min-width: 0;
+    padding-top: 10px;
+}
+/* ===== BOTONES PRESENCIAL ===== */
+
+.presencial-actions {
+
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 6px;
+}
+
+/* BOTONES */
+.btn-presencial-action {
+
+    width: 190px;
+    height: 48px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    background-color: #1d4ed8 !important;
+
+    color: #ffffff !important;
+
+    border: 1px solid #1d4ed8 !important;
+
+    border-radius: 14px;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    box-shadow: 0 8px 20px rgba(37,99,235,.25);
+
+    transition: all .25s ease;
+
+    cursor: pointer;
+}
+
+/* HOVER */
+.btn-presencial-action:hover {
+
+    background-color: #3b82f6 !important;
+
+    border-color: #3b82f6 !important;
+
+    color: #ffffff !important;
+
+    transform: translateY(-2px);
+}
+/* ===== MODAL QR CORREGIDO ===== */
+
+#qrModal .modal-dialog {
+    max-width: 720px;
+}
+
+#qrModal .modal-content {
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.qr-modal-content {
+    background: #ffffff;
+    border-radius: 14px;
+}
+
+.qr-header {
+    padding: 16px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.qr-header h5 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.qr-body {
+    padding: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
+}
+
+#camera-preview {
+    width: 100% !important;
+    max-width: 520px !important;
+    height: 330px !important;
+    background: #000;
+    object-fit: cover;
+}
+
+.qr-footer {
+    padding: 18px;
+    text-align: center;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-cancel-qr {
+    min-width: 140px;
+    height: 46px;
+
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    background: #dc2626;
+    color: #ffffff !important;
+
+    border: none;
+    border-radius: 10px;
+
+    padding: 0 20px;
+
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.course-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.course-controls button,
+.course-controls .btn-guide,
+.course-controls .exit {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: auto;
+    white-space: nowrap;
+}
+
+.right-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
 }

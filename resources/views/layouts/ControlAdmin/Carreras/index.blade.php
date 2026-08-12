@@ -12,7 +12,7 @@
     <!-- Header -->
     <div class ="content-header">
         <div class="content-title">
-            <h5>Carreras</h5>
+            <h5>Clasificación</h5>
         </div>
         <div class="option-carrer">
             @if(Auth::user()->hasAnyRole(['master']))
@@ -54,7 +54,6 @@
                 <!-- Header -->
                 <div class="card-header">
                     <h4>{{ $clasificacion->name }}</h4>
-                    
                 </div>
 
                 <!-- Cuerpo -->
@@ -97,6 +96,7 @@
                             </form>
                         @endif
                     </div>
+
                 </div>
             </div>
         @empty
@@ -108,52 +108,22 @@
 {{-- Script JS --}}
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            // --- Reabrir modal de clasificación si hubo error de validación ---
+        // Reabrir modal de clasificación si hubo error de validación
+        (function () {
             const classificationModal = document.getElementById('createClassificationModal');
             const hasClassificationErrors = @json($errors->has('classification_name'));
             if (classificationModal && hasClassificationErrors) {
                 classificationModal.style.display = 'flex';
             }
+        })();
 
-            // --- Clic en tarjeta de clasificación: ver sus carreras (no si es el toggle) ---
-            document.querySelectorAll('.carrer-card[data-careers-url]').forEach(card => {
-                card.addEventListener('click', function(e) {
-                    if (e.target.closest('form')) return;
-                    const url = this.getAttribute('data-careers-url');
-                    if (url) window.location.href = url;
-                });
+        // Clic en tarjeta de clasificación: ver sus carreras (no si es el toggle/form)
+        document.querySelectorAll('.carrer-card[data-careers-url]').forEach(function (card) {
+            card.addEventListener('click', function (e) {
+                if (e.target.closest('form')) return;
+                const url = card.getAttribute('data-careers-url');
+                if (url) window.location.href = url;
             });
-
-            // --- Cierre unificado de modales ---
-            document.querySelectorAll('.close-custom, .btn-secondary, .btn-close-view').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const modal = btn.closest('.modal-overlay');
-                    if (modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            });
-
-            document.querySelectorAll('.modal-overlay').forEach(modal => {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            });
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    document.querySelectorAll('.modal-overlay').forEach(modal => {
-                        if (modal.style.display === 'flex') {
-                            modal.style.display = 'none';
-                        }
-                    });
-                }
-            });
-
         });
     </script>
 @endpush

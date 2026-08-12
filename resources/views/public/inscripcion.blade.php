@@ -35,130 +35,11 @@
                 </div>
             @endif
 
-            <form method="POST" action="/registro-publico">
+            <form method="POST" action="/registro-publico" enctype="multipart/form-data">
                 @csrf
-
-                <!-- Section: Datos del responsable o tutor -->
-                <div class="form-section">
-                    <h2 class="section-title">Datos del padre o tutor interesado:</h2>
-
-                    <div class="form-group">
-                        <label class="form-label">CURP:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="tutor_curp" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="18">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Nombre(s):</label>
-                        <div class="form-input-container">
-                            <input type="text" name="tutor_nombre" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Apellido paterno:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="tutor_paterno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Apellido materno:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="tutor_materno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Telefono 1:</label>
-                        <div class="form-input-container split-inputs">
-                            <input type="text" name="telefono1" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric" maxlength="10">
-                            <label class="split-label">Telefono 2:</label>
-                            <input type="text" name="telefono2" class="form-control" oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric" maxlength="10">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Correo electrónico:</label>
-                        <div class="form-input-container">
-                            <input type="email" name="tutor_email" class="form-control">
-                        </div>
-                    </div>
+                <div id="form-fields">
+                    @include('public._form_fields')
                 </div>
-
-                <!-- Section: Datos del Alumno -->
-                <div class="form-section" style="margin-top: 50px;">
-                    <h2 class="section-title">Datos del postulante:</h2>
-
-                    <div class="form-group">
-                        <label class="form-label">CURP:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="alumno_curp" class="form-control" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" style="text-transform: uppercase;" maxlength="18">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Nombre(s):</label>
-                        <div class="form-input-container">
-                            <input type="text" name="alumno_nombre" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Apellido paterno:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="alumno_paterno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Apellido materno:</label>
-                        <div class="form-input-container">
-                            <input type="text" name="alumno_materno" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-ZñÑáéíóúÁÉÍÓÚ\s]/g, '')">
-                        </div>
-                    </div>
-
-                    <!-- SELECT 1: Nivel educativo (clasificación) -->
-                    <div class="form-group">
-                        <label class="form-label">Nivel educativo:</label>
-                        <div class="form-input-container">
-                            <select name="nivel_educativo" id="select-clasificacion" class="form-control">
-                                <option value="">Seleccione un nivel</option>
-                                @foreach($clasificaciones as $clasificacion)
-                                    <option value="{{ $clasificacion->id }}">
-                                        {{ $clasificacion->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- SELECT 2: Carrera (filtrada por clasificación) -->
-                    <div class="form-group" id="grupo-carrera" style="display: none;">
-                        <label class="form-label">Plan de Estudio/Carrera:</label>
-                        <div class="form-input-container">
-                            <select name="carrera_id" id="select-carrera" class="form-control" required>
-                                <option value="">Seleccione una carrera</option>
-                                @foreach($carreras as $carrera)
-                                    <option value="{{ $carrera->id }}"
-                                            data-clasificacion="{{ $carrera->career_classification_id }}">
-                                        {{ $carrera->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Submit Button -->
-                <div class="form-actions">
-                    <button type="submit" class="btn-submit">
-                        Registrar
-                    </button>
-                </div>
-
             </form>
         </div>
     </main>
@@ -171,38 +52,50 @@
     </footer>
 
     <script>
-        const selectClasificacion = document.getElementById('select-clasificacion');
-        const selectCarrera       = document.getElementById('select-carrera');
-        const opcionesCarrera     = Array.from(selectCarrera.querySelectorAll('option'));
+        function bindClasificacion() {
+            const selectClasificacion = document.getElementById('select-clasificacion');
+            const selectCarrera       = document.getElementById('select-carrera');
+            const grupoCarrera        = document.getElementById('grupo-carrera');
+            if (!selectClasificacion || !selectCarrera) return;
 
-        const grupoCarrera = document.getElementById('grupo-carrera');
+            const opcionesCarrera = Array.from(selectCarrera.querySelectorAll('option'));
 
-        selectClasificacion.addEventListener('change', function () {
-            const clasificacionId = this.value;
-
-            // Limpiar selección actual de carrera
-            selectCarrera.value = '';
-
-            if (!clasificacionId) {
-                // Si no hay clasificación seleccionada, ocultar el select de carrera
-                grupoCarrera.style.display = 'none';
-                return;
-            }
-
-            // Filtrar opciones
-            opcionesCarrera.forEach(option => {
-                if (!option.value) {
-                    option.style.display = '';
-                } else if (option.dataset.clasificacion === clasificacionId) {
-                    option.style.display = '';
-                } else {
-                    option.style.display = 'none';
-                }
+            selectClasificacion.addEventListener('change', function () {
+                const clasificacionId = this.value;
+                selectCarrera.value = '';
+                if (!clasificacionId) { grupoCarrera.style.display = 'none'; return; }
+                opcionesCarrera.forEach(option => {
+                    if (!option.value) { option.style.display = ''; }
+                    else if (option.dataset.clasificacion === clasificacionId) { option.style.display = ''; }
+                    else { option.style.display = 'none'; }
+                });
+                grupoCarrera.style.display = '';
             });
+        }
 
-            // Mostrar el select de carrera
-            grupoCarrera.style.display = '';
-        });
+        bindClasificacion();
+
+        // ── Polling: actualiza el formulario cuando cambia la configuración ──
+        let _formHash = null;
+
+        async function pollFormConfig() {
+            try {
+                const res  = await fetch('/registro-publico/config', { cache: 'no-store' });
+                const data = await res.json();
+                if (_formHash === null) {
+                    _formHash = data.hash;
+                } else if (data.hash !== _formHash) {
+                    _formHash = data.hash;
+                    const fragRes = await fetch('/registro-publico/fragment', { cache: 'no-store' });
+                    const html    = await fragRes.text();
+                    document.getElementById('form-fields').innerHTML = html;
+                    bindClasificacion();
+                }
+            } catch (_) {}
+            setTimeout(pollFormConfig, 2000);
+        }
+
+        pollFormConfig();
     </script>
 
 </body>

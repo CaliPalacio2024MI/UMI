@@ -36,26 +36,60 @@
             <textarea id="description" name="description" rows="4" required>{{ old('description') }}</textarea>
         </div>
 
-        {{-- Modalidad--}}
-        <div class="form-group">
-            <label for="modality">Modalidad</label>
-            <select id="modality" name="modality" required>
-                <option value="" disabled selected>Selecciona la modalidad</option>
-                <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
-                <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
-                <option value="hibrido" {{ old('modality') == 'hibrido' ? 'selected' : ''}}>Hibrido</option>
-            </select>
-        </div>
+{{-- Modalidad--}}
+<div class="form-group">
+    <label for="modality">Modalidad</label>
+    <select id="modality" name="modality" required>
+        <option value="" disabled selected>Selecciona la modalidad</option>
+        <option value="presencial" {{ old('modality') == 'presencial' ? 'selected' : ''}}>Presencial</option>
+        <option value="virtual" {{ old('modality') == 'virtual' ? 'selected' : ''}}>Virtual</option>
+        <option value="hibrida" {{ old('modality') == 'hibrida' ? 'selected' : ''}}>Híbrida</option>
+    </select>
+</div>
 
-      {{-- Campos especiales para Universidad Mundo Imperial --}}
-@if ($currentInstitution->name == 'Universidad Mundo Imperial')
+{{-- PONDERACIÓN --}}
+<div id="ponderacionContainer" style="display:none; margin-top:15px;">
+    <h3>Ponderación del curso</h3>
 
     <div class="form-row">
         <div class="form-group flex-1">
-            <label for="hours">Horas</label>
-            <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
+            <label>Virtual (%)</label>
+            <input type="number" name="virtual_percentage" min="0" max="100">
         </div>
 
+        <div class="form-group flex-1">
+            <label>Presencial (%)</label>
+            <input type="number" name="presencial_percentage" min="0" max="100">
+        </div>
+    </div>
+</div>
+{{-- HÍBRIDO --}}
+<div id="hibrido_section" style="display:none;">
+    <div class="form-group">
+        <label for="courses_select">Seleccionar cursos afiliados</label>
+        <select id="courses_select" name="selected_courses[]" multiple class="form-control" style="min-height: 150px;">
+            @foreach($courses as $c)
+                <option value="{{ $c->id }}" data-hours="{{ $c->hours }}">
+                    {{ $c->title }} ({{ $c->hours }} hrs) - {{ ucfirst($c->modality) }}
+                </option>
+            @endforeach
+        </select>
+        <small class="text-muted">Mantén presionada la tecla CTRL para seleccionar múltiples cursos</small>
+    </div>
+
+</div>
+      {{-- Campos especiales para Universidad Mundo Imperial --}}
+    @if ($currentInstitution->name == 'Universidad Mundo Imperial')
+
+<div class="form-row">
+    <div class="form-group flex-1" id="hours_container">
+        <label for="hours">Horas</label>
+        <input type="number"
+               name="hours"
+               id="hours"
+               class="form-control"
+               value="{{ old('hours') }}">
+    </div>
         <div class="form-group flex-1">
             <label for="credits">Créditos</label>
             <input type="number" name="credits" id="credits" required value="{{ old('credits') }}">
@@ -74,15 +108,15 @@
         </select>
     </div>
 
-@else
+    @else
 
-    {{-- SOLO HORAS --}}
-    <div class="form-group">
-        <label for="hours">Horas</label>
-        <input type="number" name="hours" id="hours" required value="{{ old('hours') }}">
-    </div>
+        {{-- SOLO HORAS --}}
+        <div class="form-group flex-1" id="hours_container">
+            <label for="hours">Horas</label>
+            <input type="number" name="hours" id="hours" class="form-control" value="{{ old('hours') }}">
+        </div>
 
-@endif
+    @endif
 
         <div class="form-row">
             <div class="form-group" >
@@ -132,25 +166,34 @@
 (function() {
 
     /* ============================
-       1. Datos enviados desde PHP
+       1. Datos desde PHP
     ============================ */
     const departmentWorkstations = @json($departmentWorkstationsMap);
 
     /* ============================
-       2. Selects del formulario
+       2. Elementos del DOM
     ============================ */
     const departmentSelect  = document.getElementById('department_id');
     const workstationSelect = document.getElementById('workstation_id');
-    const imageInput        = document.getElementById('image');
-    const imageNameLabel    = document.getElementById('image-name');
+
+    const modalitySelect    = document.getElementById('modality');
+    const ponderacion       = document.getElementById('ponderacionContainer');
+    const hibridoSection    = document.getElementById('hibrido_section');
+
+    const hoursContainer    = document.getElementById('hours_container')
+                          || document.getElementById('hours_manual_container');
+
+    const hoursInput        = document.getElementById('hours'); //  EL QUE SE GUARDA
+    const coursesSelect     = document.getElementById('courses_select');
 
     /* ============================
-       3. Función para cargar puestos
+       3. Cargar puestos
     ============================ */
     function populateWorkstations(departmentId) {
+
         if (!workstationSelect) return;
 
-        workstationSelect.innerHTML = ''; // limpiamos
+        workstationSelect.innerHTML = '';
         const defaultOption = new Option('', '', true, true);
 
         if (departmentId && departmentWorkstations[departmentId]) {
@@ -159,41 +202,42 @@
             defaultOption.textContent = 'Selecciona el Puesto (Opcional)';
             workstationSelect.appendChild(defaultOption);
 
-            // Opción para todos
-            workstationSelect.appendChild(new Option("Todos los Puestos del Departamento", ""));
+            workstationSelect.appendChild(
+                new Option("Todos los Puestos del Departamento", "")
+            );
 
-            // Recorrer puestos y agregarlos
+
             departmentWorkstations[departmentId].forEach(w => {
                 workstationSelect.appendChild(new Option(w.name, w.id));
             });
 
         } else {
+
             workstationSelect.disabled = true;
             defaultOption.textContent = 'Primero selecciona un departamento';
             workstationSelect.appendChild(defaultOption);
         }
     }
 
-    /* ============================
-       4. Inicializador
-    ============================ */
-    if (departmentSelect) {
 
-        departmentSelect.addEventListener('change', e => populateWorkstations(e.target.value));
+    if (departmentSelect) {
+        departmentSelect.addEventListener('change', e => {
+            populateWorkstations(e.target.value);
+        });
 
         if (departmentSelect.value) {
             populateWorkstations(departmentSelect.value);
 
-            // Restaurar valor anterior si existe
+
             const oldWorkstation = "{{ old('workstation_id') }}";
             if (oldWorkstation) workstationSelect.value = oldWorkstation;
         }
     }
 
     /* ============================
-       5. Mostrar nombre de archivo
-    ============================ */
-    /* Mostrar nombres de los archivos */
+       4. Mostrar nombre de archivos
+
+       ============================ */
     const fileInputs = [
         { input: 'image',             label: 'image-name-image' },
         { input: 'guide_material',    label: 'image-name-guide' },
@@ -206,13 +250,62 @@
         const input = document.getElementById(f.input);
         const label = document.getElementById(f.label);
 
-        if(input && label){
+        if (input && label) {
             input.addEventListener('change', () => {
                 label.textContent = input.files[0]?.name || "Ningún archivo seleccionado";
             });
         }
     });
 
+    /* ============================
+       5. MODALIDAD (HÍBRIDO)
+    ============================ */
+    function toggleHibrido() {
+
+        if (!modalitySelect) return;
+if (modalitySelect.value === 'hibrida') {
+    if (ponderacion) ponderacion.style.display = 'block';
+    if (hibridoSection) hibridoSection.style.display = 'block';
+
+    if (hoursContainer) hoursContainer.style.display = 'block';
+    if (hoursInput) hoursInput.readOnly = true;
+
+} else {
+    if (ponderacion) ponderacion.style.display = 'none';
+    if (hibridoSection) hibridoSection.style.display = 'none';
+
+    if (hoursContainer) hoursContainer.style.display = 'block';
+    if (hoursInput) {
+        hoursInput.readOnly = false;
+        hoursInput.value = '';
+    }
+
+    if (coursesSelect) coursesSelect.selectedIndex = -1;
+}
+    }
+
+    if (modalitySelect) {
+        modalitySelect.addEventListener('change', toggleHibrido);
+        toggleHibrido(); // ejecutar al cargar
+    }
+
+    /* ============================
+       6. SUMA AUTOMÁTICA DE HORAS
+    ============================ */
+if (coursesSelect) {
+    coursesSelect.addEventListener('change', function () {
+        let total = 0;
+
+        Array.from(this.selectedOptions).forEach(option => {
+            total += Number(option.dataset.hours || 0);
+        });
+
+        if (hoursInput) {
+            hoursInput.value = total;
+        }
+    });
+}
 })();
 </script>
+
 @endsection

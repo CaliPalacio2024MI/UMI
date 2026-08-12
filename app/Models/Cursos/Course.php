@@ -76,12 +76,11 @@ class Course extends Model
         'cert_sig_2_path',
         'cert_sig_1_name',
         'cert_sig_2_name',
-        'show_welcome', // ✅ AGREGAR ESTA LÍNEA
-
+        'show_welcome'
     ];
 
     protected $casts = [
-    'show_welcome' => 'boolean', // ✅ AGREGAR ESTA LÍNEA
+    'show_welcome' => 'boolean',
 ];
 
     public function instructor()
@@ -159,7 +158,7 @@ class Course extends Model
     }
 
     public function calculateUserProgress($userId)
-{
+    {
     $this->loadMissing(['topics.subtopics', 'topics.activities', 'topics.subtopics.activities']);
 
     $totalItems = 0;
@@ -202,7 +201,26 @@ class Course extends Model
     $this->users()->updateExistingPivot($userId, ['progress' => $percentage]);
 
     return $percentage;
-    return $progress;
-}
+    }
+
+    public function hybridCourses()
+    {
+    return $this->belongsToMany(
+        Course::class,
+        'hybrid_course_items',
+        'hybrid_course_id',
+        'course_id'
+    );
+    }
+
+    public function parentHybridCourses()
+    {
+    return $this->belongsToMany(
+        Course::class,
+        'hybrid_course_items',
+        'course_id',
+        'hybrid_course_id'
+    );
+    }
 
 }

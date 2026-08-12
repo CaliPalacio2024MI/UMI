@@ -34,7 +34,7 @@ class MateriaController extends Controller
             'career_classification_id', // ¡IMPORTANTE! Clave foránea para la relación
         ];
 
-        $carreras = Career::all(['id', 'name']);
+        $carreras = Career::all(['id', 'name', 'career_classification_id']);
         $clasificaciones = \App\Models\Users\CareerClassification::all(['id', 'name']); // ← agregar
         
         // Listado ordenado por nombre de materia; carrera con clasificación
@@ -117,10 +117,15 @@ class MateriaController extends Controller
         ];
         
         // 3. CREACIÓN DEL REGISTRO
-        // Asegúrate de que el modelo Materia tenga 'career_id' en $fillable
-        Materia::create($dataToSave); 
+        Materia::create($dataToSave);
 
-        // 4. REDIRECCIÓN (modal global careerSuccessModal vía ?modal=success)
+        // 4. REDIRECCIÓN — si viene desde la retícula, regresar ahí
+        $fromReticula = $request->input('from_reticula');
+        if ($fromReticula && is_numeric($fromReticula)) {
+            return Redirect::route('control.careers.reticula', (int) $fromReticula)
+                ->with('success', '¡Materia creada exitosamente!');
+        }
+
         return Redirect::route('control.subjects.index', ['modal' => 'success'])
             ->with('success', '¡Materia creada exitosamente!');
     }

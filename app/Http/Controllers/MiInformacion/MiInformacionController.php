@@ -9,6 +9,7 @@ use App\Models\AdmonCont\ClaseAsistencia;
 use App\Models\Users\User;
 use App\Models\DocumentRequirement;
 use App\Models\SubmittedDocument;
+use App\Models\Schoolar\BecaAsignacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -42,12 +43,34 @@ class MiInformacionController extends Controller
         $user = Auth::user();
         $institutionId = DocumentRequirement::resolveInstitutionId();
 
+        $becaAsignacion = BecaAsignacion::where('user_id', $user->id)
+            ->where('institution_id', $institutionId)
+            ->with('beca')
+            ->first();
+
+        // null = sin asignación (ocultar becas), [] = beca sin docs (mostrar todos), [ids] = filtrar
+        if (!$becaAsignacion) {
+            $becaReqIds = null; // sin asignación → ocultar sección
+        } elseif (!empty($becaAsignacion->beca?->documentos_requeridos)) {
+            $becaReqIds = array_map('intval', $becaAsignacion->beca->documentos_requeridos); // filtrar a los requeridos
+        } else {
+            $becaReqIds = 'all'; // asignación sin beca específica → mostrar todos
+        }
+
         $config = DocumentRequirement::query()
             ->where('institution_id', $institutionId)
             ->where('activo', true)
             ->orderBy('orden')
             ->orderBy('id')
             ->get()
+            ->filter(function ($req) use ($becaReqIds) {
+                if ($req->proceso === 'becas') {
+                    if ($becaReqIds === null) return false;
+                    if ($becaReqIds === 'all') return true;
+                    return in_array($req->id, $becaReqIds);
+                }
+                return true;
+            })
             ->groupBy('proceso');
 
         $reqIds = $config->flatten()->pluck('id');
@@ -58,9 +81,16 @@ class MiInformacionController extends Controller
             ->get()
             ->groupBy('document_requirement_id');
 
-        $procesos = DocumentRequirement::PROCESOS;
+        $procesos = [
+            'expediente_alumnos' => 'Expediente de alumnos',
+            'becas' => 'Becas',
+            'titulacion' => 'Titulación',
+            'servicio_social' => 'Servicio social',
+            'practicas_profesionales' => 'Prácticas profesionales',
+            'inscripcion' => 'Inscripción',
+        ];
 
-        return view('layouts.MiInformacion.expediente', compact('user', 'config', 'subs', 'procesos'));
+        return view('layouts.MiInformacion.expediente', compact('user', 'config', 'subs', 'procesos', 'becaAsignacion'));
     }
 
     /**
@@ -116,12 +146,24 @@ class MiInformacionController extends Controller
                 continue;
             }
 
-            // Bloquear si ya existe un envío para este requerimiento.
-            $yaExiste = SubmittedDocument::where('user_id', $user->id)
+            // Permitir re-subida solo si el documento fue rechazado; bloquear si está en revisión o aceptado.
+            $previos = SubmittedDocument::where('user_id', $user->id)
                 ->where('document_requirement_id', $req->id)
-                ->exists();
-            if ($yaExiste) {
+                ->get(['id', 'archivo_path', 'validation_status']);
+
+            $estaRechazado = $previos->contains('validation_status', 'rechazado');
+
+            if ($previos->isNotEmpty() && !$estaRechazado) {
                 continue;
+            }
+
+            if ($estaRechazado) {
+                foreach ($previos->where('validation_status', 'rechazado') as $previo) {
+                    if ($previo->archivo_path) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($previo->archivo_path);
+                    }
+                    $previo->delete();
+                }
             }
 
             foreach ($files as $file) {

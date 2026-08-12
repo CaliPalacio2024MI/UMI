@@ -76,8 +76,10 @@ class ClaseController extends Controller
             $alumnoContextIds = [(int) $rawAlumnoCtx];
         }
 
+        $periodoActivo = \Illuminate\Support\Facades\DB::table('periods')->where('is_active', 1)->value('id')
+            ?? \Illuminate\Support\Facades\DB::table('periods')->orderByDesc('id')->value('id');
+
         if ($carreraId && $materiaId) {
-            $periodoActivo = \Illuminate\Support\Facades\DB::table('periods')->orderByDesc('id')->value('id');
             $query = HorarioClase::where('career_id', $carreraId)
                 ->where('materia_id', $materiaId)
                 ->where('period_id', $periodoActivo)
@@ -105,9 +107,10 @@ class ClaseController extends Controller
         }
 
         $clases = HorarioClase::query()
-            ->where('period_id', $periodoActivo ?? \Illuminate\Support\Facades\DB::table('periods')->orderByDesc('id')->value('id'))
+            ->where('period_id', $periodoActivo)
             ->with(['carrera', 'materia', 'user', 'aula', 'franjas', 'alumnos'])
             ->when($carreraId, fn($q) => $q->where('career_id', $carreraId))
+            ->when(!$carreraId && $classificationId, fn($q) => $q->whereHas('carrera', fn($cq) => $cq->where('career_classification_id', $classificationId)))
             ->when($materiaId, fn($q) => $q->where('materia_id', $materiaId))
             ->when(!$materiaId && $semestre !== null && $semestre !== '', function ($q) use ($semestre) {
                 $q->whereHas('materia', fn($mq) => $mq->where('semestre', $semestre));

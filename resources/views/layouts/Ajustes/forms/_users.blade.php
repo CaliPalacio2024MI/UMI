@@ -33,6 +33,10 @@
             return true;
         })?->id;
     }
+
+    // En modo edición el nombre ya existe — siempre mostrar campo de texto, no el select de CRM.
+    $modoEdicion = isset($item) && !empty($item->id);
+    $nombreConTexto = $tipoCreacion !== 'alumno' || $modoEdicion;
 @endphp
 @if ($isUniversity)
 <p class="form-intro-question" style="font-weight: 600; color: #BC8A55; margin: 0 0 12px 0; font-size: 0.95rem;">
@@ -72,26 +76,26 @@
     <div class="nombre-row" style="display: flex; align-items: center; gap: 12px; width: 100%;">
         <label class="nombre-label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Nombre(s)</label>
         <div class="nombre-field-slot" style="flex: 1 1 auto; min-width: 0;">
-            <div id="nombre-wrapper-text" style="{{ $tipoCreacion === 'alumno' ? 'display: none;' : '' }}">
+            <div id="nombre-wrapper-text" style="{{ $nombreConTexto ? '' : 'display: none;' }}">
                 <input type="text"
                        class="form-control"
                        id="nombre_text"
                        style="width: 100%;"
-                       @if ($tipoCreacion !== 'alumno') name="nombre" required @endif
+                       @if ($nombreConTexto) name="nombre" required @endif
                        value="{{ $nombreValor }}"
                        maxlength="255"
                        placeholder="Escriba el nombre(s)"
                        autocomplete="given-name">
             </div>
-            <div id="nombre-wrapper-select" style="{{ $tipoCreacion === 'alumno' ? '' : 'display: none;' }}">
+            <div id="nombre-wrapper-select" style="{{ $tipoCreacion === 'alumno' && !$modoEdicion ? '' : 'display: none;' }}">
                 <input type="hidden"
                        id="nombre_alumno_submit"
                        value="{{ $nombreValor }}"
-                       @if ($tipoCreacion === 'alumno') name="nombre" required @else disabled @endif>
+                       @if ($tipoCreacion === 'alumno' && !$modoEdicion) name="nombre" required @else disabled @endif>
                 <select class="form-control"
                         id="nombre_select"
                         style="width: 100%;"
-                        @if ($tipoCreacion === 'alumno') required @endif>
+                        @if ($tipoCreacion === 'alumno' && !$modoEdicion) required @endif>
                     <option value="" disabled {{ $selectedAspiranteLeadId === null && ($nombreValor === '' || $nombreValor === null) ? 'selected' : '' }}>Seleccione el nombre</option>
                     @foreach ($aspirantesCrm as $asp)
                         <option value="{{ $asp->id }}"
@@ -612,9 +616,10 @@ setTimeout(function() {
   
     const allRoles = @json($all_roles ?? []);
     const currentRoleId = @json(old('role_id', $item->role_id ?? null));
-    const universityName = @json($universityName); 
-    const adminRoleName = @json($adminRoleName);   
+    const universityName = @json($universityName);
+    const adminRoleName = @json($adminRoleName);
     const activeInstitutionName = @json($activeInstitutionName);
+    const modoEdicion = @json($modoEdicion);
 
     
     
@@ -632,6 +637,54 @@ setTimeout(function() {
     console.log('Todos los Puestos:', allWorkstations);
    
 
+
+    // Toggle nombre text/select cuando cambia Administrativo ↔ Alumno,
+    // independiente del guard de variables para que siempre funcione.
+    (function wireNombreToggleEarly() {
+        const _chkNormal  = document.getElementById('chk_usuario_normal');
+        const _chkAlumno  = document.getElementById('chk_alumno');
+        const _tipoHidden = document.getElementById('tipo_usuario_creacion');
+        const _wrapText   = document.getElementById('nombre-wrapper-text');
+        const _wrapSelect = document.getElementById('nombre-wrapper-select');
+        const _wrapApi    = document.getElementById('nombre-wrapper-api-select');
+        const _inputText  = document.getElementById('nombre_text');
+        const _inputHidden= document.getElementById('nombre_alumno_submit');
+        const _inputSel   = document.getElementById('nombre_select');
+
+        function _switchToAdmin() {
+            if (_tipoHidden) _tipoHidden.value = 'normal';
+            if (_wrapText)   _wrapText.style.display   = '';
+            if (_wrapSelect) _wrapSelect.style.display  = 'none';
+            if (_wrapApi)    _wrapApi.style.display     = 'none';
+            if (_inputText)  { _inputText.setAttribute('name','nombre'); _inputText.setAttribute('required','required'); }
+            if (_inputHidden){ _inputHidden.removeAttribute('name'); _inputHidden.removeAttribute('required'); _inputHidden.setAttribute('disabled','disabled'); }
+            if (_inputSel)   { _inputSel.removeAttribute('name'); _inputSel.removeAttribute('required'); }
+        }
+        function _switchToAlumno() {
+            if (_tipoHidden) _tipoHidden.value = 'alumno';
+            // En edición el nombre ya existe — mantener campo de texto.
+            if (typeof modoEdicion !== 'undefined' && modoEdicion) return;
+            if (_wrapText)   _wrapText.style.display   = 'none';
+            if (_wrapSelect) _wrapSelect.style.display  = '';
+            if (_wrapApi)    _wrapApi.style.display     = 'none';
+            if (_inputText)  { _inputText.removeAttribute('name'); _inputText.removeAttribute('required'); }
+            if (_inputHidden){ _inputHidden.removeAttribute('disabled'); _inputHidden.setAttribute('name','nombre'); _inputHidden.setAttribute('required','required'); }
+            if (_inputSel)   _inputSel.setAttribute('required','required');
+        }
+
+        if (_chkNormal) {
+            _chkNormal.addEventListener('change', function () {
+                if (this.checked) { if (_chkAlumno && !_chkAlumno.disabled) _chkAlumno.checked = false; _switchToAdmin(); }
+                else this.checked = true;
+            });
+        }
+        if (_chkAlumno && !_chkAlumno.disabled) {
+            _chkAlumno.addEventListener('change', function () {
+                if (this.checked) { if (_chkNormal) _chkNormal.checked = false; _switchToAlumno(); }
+                else this.checked = true;
+            });
+        }
+    })();
 
     if (!Array.isArray(allRoles) || !universityName || !adminRoleName || !activeInstitutionName || !Array.isArray(allWorkstations)) {
         console.error('Error: Faltan variables clave de Blade (roles, nombres, o allWorkstations).');
@@ -1024,7 +1077,7 @@ setTimeout(function() {
             return;
         }
         const esAlumno = tipoHidden.value === 'alumno';
-        if (esAlumno) {
+        if (esAlumno && !modoEdicion) {
             nombreWrapperText.style.display = 'none';
             nombreWrapperSelect.style.display = '';
             if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = 'none';

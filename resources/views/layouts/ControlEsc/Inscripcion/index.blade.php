@@ -256,34 +256,54 @@
                 {{-- CARGA DE DOCUMENTOS --}}
                 <div class="docs-container" style="background: #ffffff; padding: 20px; border: 1px dashed #3498db; border-radius: 8px; margin-top: 20px;">
                     <h4 style="margin-top:0; color: #2980b9; font-size: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Documentación Requerida</h4>
-                    @if(isset($alumno) && (!empty($alumno->doc_acta_rechazado) || !empty($alumno->doc_certificado_rechazado) || !empty($alumno->doc_curp_rechazado) || !empty($alumno->doc_ine_rechazado) || !empty($alumno->doc_ficha_pago_rechazado ?? false) || !empty($alumno->doc_factura_xml_rechazado ?? false)))
+                    @php
+                        $rechazadoMap = [
+                            'doc_acta_rechazado'       => 'Acta de Nacimiento',
+                            'doc_certificado_rechazado'=> 'Certificado de Preparatoria',
+                            'doc_curp_rechazado'       => 'CURP',
+                            'doc_ine_rechazado'        => 'INE',
+                            'doc_ficha_pago_rechazado' => 'Ficha de pago / comprobante',
+                            'doc_factura_xml_rechazado'=> 'Factura XML',
+                        ];
+                        $docsRechazadosNombres = isset($alumno)
+                            ? collect($rechazadoMap)->filter(fn($_, $field) => !empty($alumno->$field))->values()->all()
+                            : [];
+                    @endphp
+                    @if(!empty($docsRechazadosNombres))
                         <div class="doc-rechazo-banner" style="background: #fdecea; border: 1px solid #e74c3c; color: #922b21; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem;">
-                            <strong>Atención:</strong> Control escolar marcó uno o más documentos como incorrectos. Sube de nuevo los archivos indicados abajo.
+                            <strong><i class="fa-solid fa-triangle-exclamation"></i> Atención:</strong>
+                            Control escolar marcó {{ count($docsRechazadosNombres) === 1 ? 'el siguiente documento' : 'los siguientes documentos' }} como incorrecto{{ count($docsRechazadosNombres) === 1 ? '' : 's' }}:
+                            <strong>{{ implode(', ', $docsRechazadosNombres) }}</strong>.
+                            Sube de nuevo únicamente los archivos marcados en rojo.
                         </div>
                     @endif
                     <div class="form-group-double">
                         <div class="form-field">
                             <label>Acta de Nacimiento (PDF)</label>
                             @if(isset($alumno) && !empty($alumno->doc_acta_rechazado))
-                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
-                            @endif
-                            <input type="file" name="doc_acta_nacimiento" accept=".pdf">
-                            @if(isset($alumno) && $alumno->doc_acta_nacimiento)
-                                <a href="{{ asset('storage/'.$alumno->doc_acta_nacimiento) }}" target="_blank" class="link-view-doc">
-                                    <i class="fa-regular fa-eye"></i> Ver Documento Actual
-                                </a>
+                                <p style="color:#c0392b; font-size:0.88rem; margin:4px 0 6px; font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                                <input type="file" name="doc_acta_nacimiento" accept=".pdf" style="border:1px solid #e74c3c; border-radius:4px; padding:2px;">
+                            @elseif(isset($alumno) && $alumno->doc_acta_nacimiento)
+                                <p style="color:#27ae60; font-size:0.88rem; margin:4px 0 6px;"><i class="fa-solid fa-circle-check"></i> Documento en archivo — válido.</p>
+                                <a href="{{ asset('storage/'.$alumno->doc_acta_nacimiento) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver Documento Actual</a>
+                                <details style="margin-top:6px;"><summary style="font-size:0.82rem; color:#888; cursor:pointer;">Reemplazar archivo</summary>
+                                <input type="file" name="doc_acta_nacimiento" accept=".pdf" style="margin-top:4px;"></details>
+                            @else
+                                <input type="file" name="doc_acta_nacimiento" accept=".pdf">
                             @endif
                         </div>
                         <div class="form-field">
                             <label>Certificado de Preparatoria (PDF)</label>
                             @if(isset($alumno) && !empty($alumno->doc_certificado_rechazado))
-                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
-                            @endif
-                            <input type="file" name="doc_certificado_prepa" accept=".pdf">
-                            @if(isset($alumno) && $alumno->doc_certificado_prepa)
-                                <a href="{{ asset('storage/'.$alumno->doc_certificado_prepa) }}" target="_blank" class="link-view-doc">
-                                    <i class="fa-regular fa-eye"></i> Ver Documento Actual
-                                </a>
+                                <p style="color:#c0392b; font-size:0.88rem; margin:4px 0 6px; font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                                <input type="file" name="doc_certificado_prepa" accept=".pdf" style="border:1px solid #e74c3c; border-radius:4px; padding:2px;">
+                            @elseif(isset($alumno) && $alumno->doc_certificado_prepa)
+                                <p style="color:#27ae60; font-size:0.88rem; margin:4px 0 6px;"><i class="fa-solid fa-circle-check"></i> Documento en archivo — válido.</p>
+                                <a href="{{ asset('storage/'.$alumno->doc_certificado_prepa) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver Documento Actual</a>
+                                <details style="margin-top:6px;"><summary style="font-size:0.82rem; color:#888; cursor:pointer;">Reemplazar archivo</summary>
+                                <input type="file" name="doc_certificado_prepa" accept=".pdf" style="margin-top:4px;"></details>
+                            @else
+                                <input type="file" name="doc_certificado_prepa" accept=".pdf">
                             @endif
                         </div>
                     </div>
@@ -291,25 +311,29 @@
                         <div class="form-field">
                             <label>CURP (PDF)</label>
                             @if(isset($alumno) && !empty($alumno->doc_curp_rechazado))
-                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
-                            @endif
-                            <input type="file" name="doc_curp" accept=".pdf">
-                            @if(isset($alumno) && $alumno->doc_curp)
-                                <a href="{{ asset('storage/'.$alumno->doc_curp) }}" target="_blank" class="link-view-doc">
-                                    <i class="fa-regular fa-eye"></i> Ver Documento Actual
-                                </a>
+                                <p style="color:#c0392b; font-size:0.88rem; margin:4px 0 6px; font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                                <input type="file" name="doc_curp" accept=".pdf" style="border:1px solid #e74c3c; border-radius:4px; padding:2px;">
+                            @elseif(isset($alumno) && $alumno->doc_curp)
+                                <p style="color:#27ae60; font-size:0.88rem; margin:4px 0 6px;"><i class="fa-solid fa-circle-check"></i> Documento en archivo — válido.</p>
+                                <a href="{{ asset('storage/'.$alumno->doc_curp) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver Documento Actual</a>
+                                <details style="margin-top:6px;"><summary style="font-size:0.82rem; color:#888; cursor:pointer;">Reemplazar archivo</summary>
+                                <input type="file" name="doc_curp" accept=".pdf" style="margin-top:4px;"></details>
+                            @else
+                                <input type="file" name="doc_curp" accept=".pdf">
                             @endif
                         </div>
                         <div class="form-field">
                             <label>INE (Opcional)</label>
                             @if(isset($alumno) && !empty($alumno->doc_ine_rechazado))
-                                <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
-                            @endif
-                            <input type="file" name="doc_ine" accept=".pdf,.jpg,.png">
-                            @if(isset($alumno) && $alumno->doc_ine)
-                                <a href="{{ asset('storage/'.$alumno->doc_ine) }}" target="_blank" class="link-view-doc">
-                                    <i class="fa-regular fa-eye"></i> Ver Documento Actual
-                                </a>
+                                <p style="color:#c0392b; font-size:0.88rem; margin:4px 0 6px; font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                                <input type="file" name="doc_ine" accept=".pdf,.jpg,.png" style="border:1px solid #e74c3c; border-radius:4px; padding:2px;">
+                            @elseif(isset($alumno) && $alumno->doc_ine)
+                                <p style="color:#27ae60; font-size:0.88rem; margin:4px 0 6px;"><i class="fa-solid fa-circle-check"></i> Documento en archivo — válido.</p>
+                                <a href="{{ asset('storage/'.$alumno->doc_ine) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver Documento Actual</a>
+                                <details style="margin-top:6px;"><summary style="font-size:0.82rem; color:#888; cursor:pointer;">Reemplazar archivo</summary>
+                                <input type="file" name="doc_ine" accept=".pdf,.jpg,.png" style="margin-top:4px;"></details>
+                            @else
+                                <input type="file" name="doc_ine" accept=".pdf,.jpg,.png">
                             @endif
                         </div>
                     </div>
@@ -317,47 +341,82 @@
 
                 {{-- CARGA DE DOCUMENTOS CONFIGURABLES (Ajustes → Expediente) --}}
                 @if(!empty($expedienteConfig) && $expedienteConfig->isNotEmpty())
+                @php
+                    $acceptMap = ['pdf' => '.pdf', 'jpg' => '.jpg,.jpeg', 'png' => '.png', 'doc' => '.doc,.docx', 'xls' => '.xls,.xlsx'];
+                    $docsExpRechazados = [];
+                    if (isset($expedienteSubs)) {
+                        foreach ($expedienteConfig as $req) {
+                            $subs = $expedienteSubs[$req->id] ?? collect();
+                            if ($subs->contains('validation_status', 'rechazado')) {
+                                $docsExpRechazados[] = $req->nombre;
+                            }
+                        }
+                    }
+                @endphp
                 <div class="docs-container" style="background: #ffffff; padding: 20px; border: 1px dashed #27ae60; border-radius: 8px; margin-top: 20px;">
                     <h4 style="margin-top:0; color: #1e7e45; font-size: 1rem;"><i class="fa-solid fa-folder-plus"></i> Documentos requeridos</h4>
-                    @php
-                        $acceptMap = ['pdf' => '.pdf', 'jpg' => '.jpg,.jpeg', 'png' => '.png', 'doc' => '.doc,.docx', 'xls' => '.xls,.xlsx'];
-                    @endphp
+                    @if(!empty($docsExpRechazados))
+                        <div style="background:#fdecea; border:1px solid #e74c3c; color:#922b21; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:0.95rem;">
+                            <strong><i class="fa-solid fa-triangle-exclamation"></i> Atención:</strong>
+                            Control escolar marcó {{ count($docsExpRechazados) === 1 ? 'el siguiente documento' : 'los siguientes documentos' }} como incorrecto{{ count($docsExpRechazados) === 1 ? '' : 's' }}:
+                            <strong>{{ implode(', ', $docsExpRechazados) }}</strong>.
+                            Sube de nuevo únicamente los archivos marcados en rojo.
+                        </div>
+                    @endif
                     <div class="form-group-double" style="flex-wrap: wrap;">
                         @foreach($expedienteConfig as $req)
                             @php
                                 $subsDelReq = isset($expedienteSubs) ? ($expedienteSubs[$req->id] ?? collect()) : collect();
-                                $exts = $req->tiposArchivoArray();
+                                $subRechazado = $subsDelReq->firstWhere('validation_status', 'rechazado');
+                                $subValido    = $subsDelReq->first(fn($s) => $s->validation_status !== 'rechazado');
+                                $exts   = $req->tiposArchivoArray();
                                 $accept = collect($exts)->map(fn ($e) => $acceptMap[$e] ?? ('.' . $e))->implode(',');
                             @endphp
                             <div class="form-field" style="flex: 1 1 45%;">
                                 <label>
                                     {{ $req->nombre }}
-                                    @if($req->obligatorio)
-                                        <span style="color:#c0392b;">*</span>
-                                    @else
-                                        <small style="color:#888; font-weight:400;">(Opcional)</small>
+                                    @if($req->obligatorio) <span style="color:#c0392b;">*</span>
+                                    @else <small style="color:#888; font-weight:400;">(Opcional)</small>
                                     @endif
                                 </label>
                                 @if($req->descripcion)
                                     <p style="color:#666; font-size:0.85rem; margin:2px 0 6px;">{{ $req->descripcion }}</p>
                                 @endif
-                                <input type="file" name="expediente_docs[{{ $req->id }}][]"
-                                       accept="{{ $accept }}" @if($req->cantidad > 1) multiple @endif>
+
+                                @if($subRechazado)
+                                    {{-- Documento rechazado: pedir nuevo archivo --}}
+                                    <p style="color:#c0392b; font-size:0.88rem; margin:4px 0 6px; font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un archivo nuevo.</p>
+                                    <input type="file" name="expediente_docs[{{ $req->id }}][]"
+                                           accept="{{ $accept }}" @if($req->cantidad > 1) multiple @endif
+                                           style="border:1px solid #e74c3c; border-radius:4px; padding:2px;">
+                                    <a href="{{ asset('storage/'.$subRechazado->archivo_path) }}" target="_blank" class="link-view-doc" style="display:block; margin-top:4px;">
+                                        <i class="fa-regular fa-eye"></i> {{ $subRechazado->nombre_original ?? 'Ver archivo rechazado' }}
+                                    </a>
+                                @elseif($subValido)
+                                    {{-- Documento válido ya en archivo --}}
+                                    <p style="color:#27ae60; font-size:0.88rem; margin:4px 0 6px;"><i class="fa-solid fa-circle-check"></i> Documento en archivo — válido.</p>
+                                    @foreach($subsDelReq->where('validation_status', '!=', 'rechazado') as $sub)
+                                        <a href="{{ asset('storage/'.$sub->archivo_path) }}" target="_blank" class="link-view-doc" style="display:block;">
+                                            <i class="fa-regular fa-eye"></i> {{ $sub->nombre_original ?? 'Ver documento actual' }}
+                                        </a>
+                                    @endforeach
+                                    <details style="margin-top:6px;"><summary style="font-size:0.82rem; color:#888; cursor:pointer;">Reemplazar archivo</summary>
+                                        <input type="file" name="expediente_docs[{{ $req->id }}][]"
+                                               accept="{{ $accept }}" @if($req->cantidad > 1) multiple @endif
+                                               style="margin-top:4px;">
+                                    </details>
+                                @else
+                                    {{-- Sin documento previo --}}
+                                    <input type="file" name="expediente_docs[{{ $req->id }}][]"
+                                           accept="{{ $accept }}" @if($req->cantidad > 1) multiple @endif>
+                                @endif
+
                                 <small style="display:block; color:#888; margin-top:4px;">
                                     Tipos: {{ strtoupper(implode(', ', $exts)) }} · Máx {{ $req->cantidad }} archivo(s)
                                 </small>
                                 @error("expediente_docs.{$req->id}")
                                     <p style="color:#c0392b; font-size:0.85rem; margin:4px 0 0;"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>
                                 @enderror
-                                @if($subsDelReq->isNotEmpty())
-                                    <div style="margin-top:6px;">
-                                        @foreach($subsDelReq as $sub)
-                                            <a href="{{ asset('storage/'.$sub->archivo_path) }}" target="_blank" class="link-view-doc" style="display:block;">
-                                                <i class="fa-regular fa-eye"></i> {{ $sub->nombre_original ?? 'Ver documento actual' }}
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -428,18 +487,26 @@
                                 </select>
                             </div>
 
-                            {{-- Archivos de facturación: fuera del bloque colapsable para poder corregir sin volver a marcar la casilla --}}
+                            {{-- Archivos de facturación --}}
+                            @php $fichaRechazada = isset($alumno) && !empty($alumno->doc_ficha_pago_rechazado); @endphp
+                            @if($fichaRechazada)
+                            {{-- Si la ficha fue rechazada, mostramos siempre el bloque para que el alumno pueda corregirla --}}
+                            <div style="margin-top: 14px; padding: 12px 14px; border: 1px solid #e74c3c; border-radius:8px; background:#fdecea;">
+                                <p style="color:#c0392b; font-size:0.95rem; font-weight:600; margin:0 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Ficha de pago / comprobante — rechazada. Adjunta un PDF nuevo.</p>
+                                <input type="file" id="modal_archivo_pdf" name="archivo" accept=".pdf" style="width: 100%;">
+                                <small style="color: #666;">Solo archivos .pdf</small>
+                                @if(isset($alumno) && ($alumno->doc_ficha_pago ?? false))
+                                    <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_ficha_pago) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver ficha anterior</a></div>
+                                @endif
+                            </div>
+                            @else
                             <div id="billing-files-block" class="billing-files-block" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(231,76,60,0.35);">
                                 <label for="modal_archivo_pdf" style="font-weight:bold; display:block; margin-top:6px;">Ficha de pago / comprobante (PDF):</label>
-                                @if(isset($alumno) && !empty($alumno->doc_ficha_pago_rechazado ?? false))
-                                    <p class="doc-rechazo-field-msg" style="color:#c0392b; font-size:0.88rem; margin:4px 0 8px;"><i class="fa-solid fa-circle-exclamation"></i> Documento rechazado — adjunta un PDF nuevo.</p>
-                                @endif
                                 <input type="file" id="modal_archivo_pdf" name="archivo" accept=".pdf" style="width: 100%;">
                                 <small style="color: #666;">Solo archivos .pdf</small>
                                 @if(isset($alumno) && $alumno->doc_ficha_pago ?? false)
                                     <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_ficha_pago) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver ficha actual</a></div>
                                 @endif
-
                                 @if(isset($alumno) && ($alumno->doc_factura_xml ?? false))
                                     <div style="margin-top:6px;"><a href="{{ asset('storage/'.$alumno->doc_factura_xml) }}" target="_blank" class="link-view-doc"><i class="fa-regular fa-eye"></i> Ver factura actual</a></div>
                                 @endif
@@ -447,6 +514,7 @@
                                     Estos archivos solo se adjuntan cuando el estado está en "Pagada".
                                 </small>
                             </div>
+                            @endif
                         </div>
                     </div>
                 </div>

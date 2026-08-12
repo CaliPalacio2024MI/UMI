@@ -184,7 +184,7 @@
                                                                                     </div>
                                                                                 </td>
                                                                                 <td class="acciones">
-                                                                                   <svg class="icon icon-toggle" title="Ver Abonos" style="cursor:pointer; width:20px; height:20px; vertical-align:middle;" viewBox="0 0 24 24" fill="#223F70" xmlns="http://www.w3.org/2000/svg" draggable="false"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                                                                   <img src="{{ asset('images/icons/eye.svg') }}" class="icon icon-toggle" title="Ver Abonos" style="cursor:pointer; width:20px; height:20px; vertical-align:middle;" draggable="false">
                                                                                     @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icon" draggable="false"></a>@endif
                                                                                     @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icon" draggable="false"></a>@endif
                                                                                      
@@ -334,7 +334,7 @@
                                                                     </div>
                                                                 </td>
                                                                 <td class="acciones" style="padding:10px;">
-                                                                    <svg class="icon icon-toggle" title="Ver Historial" style="cursor:pointer; width:20px; height:20px; vertical-align:middle;" viewBox="0 0 24 24" fill="#223F70" xmlns="http://www.w3.org/2000/svg" oncontextmenu="return false;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                                                    <img src="{{ asset('images/icons/eye.svg') }}" class="icon icon-toggle" title="Ver Historial" style="cursor:pointer; width:20px; height:20px; vertical-align:middle;" draggable="false" oncontextmenu="return false;">
                                                                     @if($billing->archivo_path)<a href="{{ Storage::url($billing->archivo_path) }}" target="_blank"><img src="{{ asset('images/icons/pdf.png') }}" class="icon" draggable="false" oncontextmenu="return false;"></a>@endif
                                                                     @if($billing->xml_path)<a href="{{ Storage::url($billing->xml_path) }}" target="_blank"><img src="{{ asset('images/icons/xml.png') }}" class="icon" draggable="false" oncontextmenu="return false;"></a>@endif
                                                                 </td>

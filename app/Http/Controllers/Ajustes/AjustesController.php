@@ -416,7 +416,7 @@ class AjustesController extends Controller
                 }
                
                
-                $user->academicProfile()->create($profileData);
+                $user->academicProfile()->updateOrCreate(['user_id' => $user->id], $profileData);
  
             } else {
                

@@ -50,9 +50,10 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             // 4. Preferencia de Contexto (Inteligente)
+            // Si el RFC es igual al CURP (usuarios creados por acceptAspirante) no se trata como contexto corporativo.
             if ($user->academicProfile && $input === $user->academicProfile->matricula) {
                 session(['context_preference' => 'university']);
-            } elseif ($input === $user->RFC) {
+            } elseif ($input === $user->RFC && $user->RFC !== $user->curp) {
                 session(['context_preference' => 'corporate']);
             }
 

@@ -9,6 +9,7 @@
             
             <form method="post" action="{{ route('control.subjects.store') }}">
                 @csrf
+                <input type="hidden" name="from_reticula" value="{{ old('from_reticula', $fromReticula ?? '') }}">
 
                 @if($errors->any())
     <div class="error-message" style="margin-bottom: 1rem;">
@@ -20,25 +21,29 @@
     </div>
 @endif
 
-                {{-- Campo: Carrera --}}
-                <div class="form-field lists">
-                    <label for="carrera_id">Carrera:</label> 
-                    <select id="carrera_id" name="carrera_id" class="select-carrera @if($errors->any()) validation-error @endif">
-                        <option value="" class="placeholder-option">Seleccione una Carrera</option> 
-                        @foreach ($carreras as $carrera)
-                            <option value="{{ $carrera->id }}" {{ old('carrera_id') == $carrera->id ? 'selected' : '' }}>{{ $carrera->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
                 {{-- Campo: Clasificación --}}
                 <div class="form-field lists">
                     <label for="career_classification_id">Clasificación:</label>
                     <select id="career_classification_id" name="career_classification_id" class="@if($errors->any()) validation-error @endif">
                         <option value="">Seleccione una Clasificación</option>
                         @foreach ($clasificaciones as $clasificacion)
-                            <option value="{{ $clasificacion->id }}" {{ old('career_classification_id') == $clasificacion->id ? 'selected' : '' }}>
+                            <option value="{{ $clasificacion->id }}" {{ old('career_classification_id', $preselectedClasifId ?? '') == $clasificacion->id ? 'selected' : '' }}>
                                 {{ $clasificacion->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Campo: Carrera (filtrada por clasificación) --}}
+                <div class="form-field lists">
+                    <label for="carrera_id">Carrera:</label>
+                    <select id="carrera_id" name="carrera_id" class="select-carrera @if($errors->any()) validation-error @endif">
+                        <option value="" class="placeholder-option">Seleccione una Carrera</option>
+                        @foreach ($carreras as $carrera)
+                            <option value="{{ $carrera->id }}"
+                                data-clasificacion="{{ $carrera->career_classification_id }}"
+                                {{ old('carrera_id', $preselectedCarreraId ?? '') == $carrera->id ? 'selected' : '' }}>
+                                {{ $carrera->name }}
                             </option>
                         @endforeach
                     </select>
@@ -130,13 +135,50 @@
         </div>
     </div>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    (function() {
         const createMateriaModal = document.getElementById('createMateriaModal');
         const hasCreateErrors = @json($errors->any());
         if (createMateriaModal && hasCreateErrors) {
             createMateriaModal.style.display = 'flex';
         }
-    });
+
+        const selClasif = document.getElementById('career_classification_id');
+        const selCarrera = document.getElementById('carrera_id');
+        if (!selClasif || !selCarrera) return;
+
+        const allCarreraOptions = Array.from(selCarrera.options).slice(1);
+
+        function filterCarreras(clasificId) {
+            const current = selCarrera.value;
+            while (selCarrera.options.length > 1) selCarrera.remove(1);
+            allCarreraOptions.forEach(function(opt) {
+                if (!clasificId || opt.dataset.clasificacion == clasificId) {
+                    selCarrera.appendChild(opt.cloneNode(true));
+                }
+            });
+            if (current && Array.from(selCarrera.options).some(function(o) { return o.value == current; })) {
+                selCarrera.value = current;
+            } else {
+                selCarrera.value = '';
+            }
+        }
+
+        selClasif.addEventListener('change', function() {
+            filterCarreras(this.value);
+        });
+
+        selCarrera.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            if (opt && opt.dataset.clasificacion) {
+                selClasif.value = opt.dataset.clasificacion;
+                filterCarreras(opt.dataset.clasificacion);
+            }
+        });
+
+        if (selClasif.value) filterCarreras(selClasif.value);
+
+        window._filterMateriasCarreras = filterCarreras;
+    })();
     function addMateriaTema(event) {
         event.preventDefault();
         const container = document.getElementById('temario-container');

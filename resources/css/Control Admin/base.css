@@ -371,6 +371,26 @@
     white-space: nowrap;
 }
 
+.carrer-card--disabled {
+    opacity: 0.6;
+}
+
+.carrer-card--disabled .card-header {
+    background: #6b7280;
+}
+
+.badge-disabled {
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .carrer-card .card-body {
     padding: 20px;
     background: #ffffff;
@@ -469,6 +489,13 @@
     letter-spacing: 0.12em;
     color: #64748b;
     margin-bottom: 8px;
+}
+
+.carrer-card .career-items {
+    max-height: 160px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #c8d8ee transparent;
 }
 
 .carrer-card .career-item {
@@ -2657,6 +2684,7 @@
 
 /* Select carrera en modal Agregar Materia: solo "Seleccione una Carrera" en #ACACAC, el resto negro */
 #createMateriaModal #carrera_id,
+#createMateriaModal #career_classification_id,
 #createMateriaModal #nombre {
     color: #212529;
     border: none;
@@ -2664,6 +2692,9 @@
     border-radius: 0;
     outline: none;
     box-shadow: none;
+    cursor: pointer;
+    background: transparent;
+    appearance: auto;
 }
 #createMateriaModal #nombre {
     text-align: left;
@@ -2820,6 +2851,9 @@ select[name="semesters"],
     border-radius: 0;
     outline: none;
     box-shadow: none;
+    cursor: pointer;
+    background: transparent;
+    appearance: auto;
 }
 [id^="editMateriaModal"] .form-field label {
     color: #BC8A55;

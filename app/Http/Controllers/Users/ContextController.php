@@ -94,7 +94,11 @@ class ContextController extends Controller
         }
         
         else {
-            $activeContext = $availableContexts[0];
+            // Preferir el rol 'estudiante' si el usuario lo tiene,
+            // para evitar que un usuario con varios roles entre como admin al usar su CURP.
+            $studentContext = collect($availableContexts)
+                ->first(fn ($c) => strtolower($c['role_name'] ?? '') === 'estudiante');
+            $activeContext = $studentContext ?? $availableContexts[0];
         }
 
         
@@ -116,6 +120,7 @@ class ContextController extends Controller
         $request->session()->put('active_institution_name', $activeContext['institution_name']);
         $request->session()->put('active_role_display_name', $activeContext['display_name']);
         $request->session()->put('active_institution_logo', $activeContext['logo_path']);
+        $request->session()->put('active_institution_is_universidad', (bool) ($activeContext['is_universidad'] ?? false));
         Log::info('Cambio de contexto exitoso', [
             'user_id' => $user->id,
             'email' => $user->email,

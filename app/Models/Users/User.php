@@ -259,6 +259,7 @@ class User extends Authenticatable
             'institutions.id as institution_id',
             'institutions.name as institution_name',
             'institutions.logo_path',
+            'institutions.is_universidad',
             'roles.id as role_id',
             'roles.name as role_name',
             'roles.display_name',
@@ -320,10 +321,10 @@ class User extends Authenticatable
             'ctp' => 95,
             'coordinador_ctp' => 93,
             'gerente_capacitacion' => 90,
-            'control_administrativo' => 85,
             'control_escolar' => 80,
             'docente' => 50,
-            'estudiante' => 45,
+            'estudiante' => 48,
+            'control_administrativo' => 45,
             'anfitrion' => 40,
         ];
 

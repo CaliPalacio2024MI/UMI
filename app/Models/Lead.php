@@ -43,9 +43,12 @@ class Lead extends Model
         'doc_ine_rechazado',
         'doc_ficha_pago_rechazado',
         'doc_factura_xml_rechazado',
+
+        'datos_adicionales',
     ];
 
     protected $casts = [
+        'datos_adicionales' => 'array',
         'doc_acta_rechazado' => 'boolean',
         'doc_certificado_rechazado' => 'boolean',
         'doc_curp_rechazado' => 'boolean',

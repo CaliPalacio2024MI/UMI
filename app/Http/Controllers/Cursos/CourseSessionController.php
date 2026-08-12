@@ -10,8 +10,8 @@ use App\Models\Users\Department;
 use Carbon\Carbon;
 use App\Models\Group;
 use App\Models\Users\User;
-
-
+use App\Services\ExternalApiService;
+use Illuminate\Support\Facades\DB;
 
 class CourseSessionController extends Controller
 {
@@ -21,14 +21,10 @@ class CourseSessionController extends Controller
             abort(403, 'Este curso no permite gestión de horarios');
         }
 
-        // sesiones
         $sessions = $course->sessions()->orderBy('date')->get();
-        // departamentos
         $departments = Department::where('institution_id', session('active_institution_id'))->get();
-        // GRUPOS DEL CURSO
         $groups = $course->groups;
         $users = User::where('institution_id', session('active_institution_id'))->get();
-
 
         return view('layouts.Cursos.sessions.index', compact(
             'course',
@@ -38,15 +34,13 @@ class CourseSessionController extends Controller
             'users'
         ));
     }
+
     public function assignGroup(Request $request)
     {
         $session = CourseSession::findOrFail($request->session_id);
         $session->groups()->syncWithoutDetaching([$request->group_id]);
 
-        return back()->with(
-        'success',
-        'Grupo asignado'
-        );
+        return back()->with('success', 'Grupo asignado');
     }
 
     public function destroy($courseId, $sessionId)
@@ -85,21 +79,27 @@ class CourseSessionController extends Controller
             'date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required',
+            'instructor_name' => 'required|string|max:255',
         ]);
 
         $start = Carbon::parse($request->start_time);
         $end = Carbon::parse($request->end_time);
 
         if ($end <= $start) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser mayor a la hora inicio'
-            ]);
+            return back()->withErrors(['error' => 'La hora fin debe ser mayor a la hora inicio']);
+        }
+
+        $expectedEnd = $start->copy()->addHours($course->hours);
+
+        if (!$end->equalTo($expectedEnd)) {
+            return back()->withErrors(['error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')]);
         }
 
         $session->update([
             'date' => $request->date,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
+            'instructor_name' => $request->instructor_name,
         ]);
 
         return back()->with('success', 'Horario actualizado correctamente');
@@ -111,15 +111,20 @@ class CourseSessionController extends Controller
             'date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required',
+            'instructor_name' => 'required|string|max:255',
         ]);
 
         $start = Carbon::parse($request->start_time);
         $end = Carbon::parse($request->end_time);
 
         if ($end <= $start) {
-            return back()->withErrors([
-                'error' => 'La hora fin debe ser mayor a la hora inicio'
-            ]);
+            return back()->withErrors(['error' => 'La hora fin debe ser mayor a la hora inicio']);
+        }
+
+        $expectedEnd = $start->copy()->addHours($course->hours);
+
+        if (!$end->equalTo($expectedEnd)) {
+            return back()->withErrors(['error' => 'La hora fin debe ser exactamente ' . $expectedEnd->format('H:i')]);
         }
 
         CourseSession::create([
@@ -127,7 +132,9 @@ class CourseSessionController extends Controller
             'date' => $request->date,
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
+            'instructor_name' => $request->instructor_name,
             'attendance_enabled' => false,
+
         ]);
 
         return back()->with('success', 'Horario creado correctamente');
@@ -159,12 +166,10 @@ class CourseSessionController extends Controller
 
         return back()->with('success', 'Grupo asignado correctamente al horario');
     }
+
     public function getGroupData($id)
     {
-        $session = CourseSession::with([
-            'groups.departments',
-            'groups.workstations'
-        ])->find($id);
+        $session = CourseSession::with(['groups.departments', 'groups.workstations'])->find($id);
 
         if (!$session || $session->groups->isEmpty()) {
             return response()->json([]);
@@ -177,4 +182,83 @@ class CourseSessionController extends Controller
             'workstations' => $group->workstations,
         ]);
     }
+
+public function groups($session)
+{
+    $session = CourseSession::findOrFail($session);
+
+    $institutionId = session('active_institution_id');
+
+    // =========================
+    // DEPARTAMENTOS SOLO
+    // DE LA UNIDAD ACTIVA
+    // =========================
+    $departments = Department::with('workstations')
+
+        ->where('institution_id', $institutionId)
+
+        ->get();
+
+    // =========================
+    // ANFITRIONES
+    // SOLO DE ESA UNIDAD
+    // =========================
+    $hosts = User::where('institution_id', $institutionId)
+
+        ->whereHas('roles', function($q) {
+
+            $q->where('name', 'anfitrion');
+        })
+
+        ->get();
+
+    $group = $session->groups()->first();
+
+    return view('groups.index', [
+
+        'session' => $session,
+
+        'departments' => $departments,
+
+        'hosts' => $hosts,
+
+        'selectedDepartments' => $group
+            ? $group->departments->pluck('id')->toArray()
+            : [],
+
+        'selectedWorkstations' => $group
+            ? $group->workstations->pluck('id')->toArray()
+            : [],
+
+        'selectedHosts' => $group && method_exists($group, 'hosts')
+            ? $group->hosts->pluck('id')->toArray()
+            : [],
+    ]);
+}
+public function storeQrAttendance(Request $request, CourseSession $session)
+{
+    $request->validate([
+        'rfc' => 'required|string',
+    ]);
+
+    $rfc = strtoupper(trim($request->rfc));
+
+    DB::table('course_session_attendances')->updateOrInsert(
+        [
+            'course_session_id' => $session->id,
+            'rfc' => $rfc,
+        ],
+        [
+            'attended_at' => now(),
+            'updated_at' => now(),
+            'created_at' => now(),
+        ]
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Asistencia registrada correctamente',
+        'attended_at' => now()->format('H:i:s'),
+    ]);
+}
 }

@@ -9,8 +9,6 @@ use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Course;
 
-
-
 class CourseSession extends Model
 {
     use HasFactory;
@@ -21,7 +19,8 @@ class CourseSession extends Model
         'start_time',
         'end_time',
         'attendance_enabled',
-        'qr_token'
+        'qr_token',
+        'instructor_name'
     ];
 
     public function course()

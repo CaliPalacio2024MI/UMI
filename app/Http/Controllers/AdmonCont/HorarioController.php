@@ -100,7 +100,8 @@ class HorarioController extends Controller
     {
         $carreras = Career::with('classification')->get();
         $aulas = Facility::orderedForHorarios()->get();
-        $periodoActivo = DB::table('periods')->orderByDesc('id')->first();
+        $periodoActivo = DB::table('periods')->where('is_active', 1)->first()
+            ?? DB::table('periods')->orderByDesc('id')->first();
         $query = HorarioClase::with(['carrera.classification', 'materia', 'user', 'aula', 'franjas'])
             ->where('period_id', $periodoActivo?->id);
         $search = $request->search_query;
@@ -188,20 +189,36 @@ class HorarioController extends Controller
 
         $this->assertAulaCoincideCarreraMateria($request);
 
-        // Validar que no exista un horario duplicado (misma carrera + materia + docente)
-        $duplicado = HorarioClase::where('career_id', $request->carrera_id)
+        $franjasData = json_decode($request->franjas_json, true);
+
+        // Validar solapamiento de día+hora con horarios existentes (misma carrera+materia+docente+periodo)
+        $periodId = DB::table('periods')->where('is_active', 1)->value('id') ?? DB::table('periods')->orderByDesc('id')->value('id');
+        $existingHorarios = HorarioClase::where('career_id', $request->carrera_id)
             ->where('materia_id', $request->materia_id)
             ->where('user_id', $request->docente_id)
-            ->where('period_id', DB::table('periods')->orderByDesc('id')->value('id'))
-            ->exists();
-        if ($duplicado) {
-            if ($request->expectsJson()) {
-                return response()->json(['ok' => false, 'message' => 'Ya existe un horario con esta combinación de carrera, materia y docente.'], 422);
-            }
-            return redirect()->back()->withInput()->withErrors(['error' => 'Ya existe un horario con esta combinación de carrera, materia y docente.']);
-        }
+            ->where('period_id', $periodId)
+            ->with('franjas')
+            ->get();
 
-        $franjasData = json_decode($request->franjas_json, true);
+        foreach ($existingHorarios as $existingHorario) {
+            foreach ($existingHorario->franjas as $exFranja) {
+                $exDays = array_map('intval', is_array($exFranja->dias_semana) ? $exFranja->dias_semana : [$exFranja->dias_semana]);
+                $exInicio = substr($exFranja->hora_inicio, 0, 5);
+                $exFin    = substr($exFranja->hora_fin,    0, 5);
+                foreach ($franjasData as $newFranja) {
+                    $newDays   = array_map('intval', is_array($newFranja['dias_semana']) ? $newFranja['dias_semana'] : [$newFranja['dias_semana']]);
+                    $newInicio = substr($newFranja['hora_inicio'], 0, 5);
+                    $newFin    = substr($newFranja['hora_fin'],    0, 5);
+                    if (!empty(array_intersect($exDays, $newDays)) && $newInicio < $exFin && $exInicio < $newFin) {
+                        $msg = 'El docente ya tiene esta materia asignada en el mismo día y horario.';
+                        if ($request->expectsJson()) {
+                            return response()->json(['ok' => false, 'message' => $msg], 422);
+                        }
+                        return redirect()->back()->withInput()->withErrors(['error' => $msg]);
+                    }
+                }
+            }
+        }
 
         if (empty($franjasData)) {
             if ($request->expectsJson()) {
@@ -220,7 +237,7 @@ class HorarioController extends Controller
                 'career_id'  => $request->carrera_id,
                 'user_id'    => $request->docente_id,
                 'aula_id'    => $request->aula_id ?: null,
-                'period_id'  => DB::table('periods')->orderByDesc('id')->value('id'),
+                'period_id'  => DB::table('periods')->where('is_active', 1)->value('id') ?? DB::table('periods')->orderByDesc('id')->value('id'),
             ]);
 
             $franjasAGuardar = [];
@@ -345,20 +362,35 @@ class HorarioController extends Controller
 
         $this->assertAulaCoincideCarreraMateria($request);
 
-        // Validar que no exista un horario duplicado (excluyendo el actual)
-        $duplicado = HorarioClase::where('career_id', $request->carrera_id)
+        $franjasData = json_decode($request->franjas_json, true);
+
+        // Validar solapamiento de día+hora con otros horarios (misma carrera+materia+docente, excluyendo el actual)
+        $existingHorarios = HorarioClase::where('career_id', $request->carrera_id)
             ->where('materia_id', $request->materia_id)
             ->where('user_id', $request->docente_id)
             ->where('id', '!=', $horario->id)
-            ->exists();
-        if ($duplicado) {
-            if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
-                return response()->json(['ok' => false, 'message' => 'Ya existe un horario con esta combinación de carrera, materia y docente.'], 422);
-            }
-            return redirect()->back()->withInput()->withErrors(['error' => 'Ya existe un horario con esta combinación de carrera, materia y docente.']);
-        }
+            ->with('franjas')
+            ->get();
 
-        $franjasData = json_decode($request->franjas_json, true);
+        foreach ($existingHorarios as $existingHorario) {
+            foreach ($existingHorario->franjas as $exFranja) {
+                $exDays = array_map('intval', is_array($exFranja->dias_semana) ? $exFranja->dias_semana : [$exFranja->dias_semana]);
+                $exInicio = substr($exFranja->hora_inicio, 0, 5);
+                $exFin    = substr($exFranja->hora_fin,    0, 5);
+                foreach ($franjasData as $newFranja) {
+                    $newDays   = array_map('intval', is_array($newFranja['dias_semana']) ? $newFranja['dias_semana'] : [$newFranja['dias_semana']]);
+                    $newInicio = substr($newFranja['hora_inicio'], 0, 5);
+                    $newFin    = substr($newFranja['hora_fin'],    0, 5);
+                    if (!empty(array_intersect($exDays, $newDays)) && $newInicio < $exFin && $exInicio < $newFin) {
+                        $msg = 'El docente ya tiene esta materia asignada en el mismo día y horario.';
+                        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+                            return response()->json(['ok' => false, 'message' => $msg], 422);
+                        }
+                        return redirect()->back()->withInput()->withErrors(['error' => $msg]);
+                    }
+                }
+            }
+        }
 
         if (empty($franjasData)) {
             if ($request->expectsJson()) {

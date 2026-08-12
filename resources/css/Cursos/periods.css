@@ -1,0 +1,188 @@
+.periods-container{
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.periods-header{
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 18px;
+    padding: 30px;
+    color: white;
+    margin-bottom: 30px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.periods-card{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.08);
+    margin-bottom:30px;
+}
+
+.periods-title{
+    margin:0 0 25px 0;
+    font-size:1.5em;
+    color:#333;
+}
+
+.periods-form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:20px;
+    align-items:end;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    margin-bottom:8px;
+    font-weight:600;
+    color:#444;
+}
+
+.form-group input{
+    padding:12px;
+    border:1px solid #dcdcdc;
+    border-radius:10px;
+    font-size:14px;
+}
+
+.btn-primary-period{
+    background:linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color:white;
+    border:none;
+    padding:13px 22px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+    height:46px;
+}
+
+.periods-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.periods-table thead{
+    background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.periods-table th{
+    padding:18px;
+    text-align:center;
+    color:white;
+    font-weight:700;
+}
+
+.periods-table td{
+    padding:18px;
+    text-align:center;
+    border-bottom:1px solid #f0f0f0;
+}
+
+.status-badge{
+    padding:6px 14px;
+    border-radius:6px;
+    font-size:0.9em;
+    font-weight:600;
+}
+
+.actions-container{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+}
+
+.btn-users{
+    background:linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.9em;
+    font-weight:600;
+}
+
+.btn-delete{
+    background:linear-gradient(135deg, #dc3545 0%, #ff4d6d 100%);
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.9em;
+    font-weight:600;
+}
+
+.horarios-form-section{
+    width: 340px;
+    flex-shrink: 0;
+}
+
+.horarios-tabla-section{
+    flex:1;
+}
+
+.table-responsive{
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table-custom-sessions{
+    width: 100%;
+}
+
+.actions-container{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+}
+
+.horarios-form-section .card-custom{
+    padding-bottom: 20px;
+}
+
+.btn-salir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-width: 160px;
+    height: 48px;
+
+    background: #2f4b7c;
+    color: #ffffff !important;
+
+    border: none;
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: all .25s ease;
+}
+
+.btn-salir:hover {
+    background: #3b82f6;
+    color: #ffffff !important;
+
+    transform: translateY(-2px);
+}
+
+.btn-salir i {
+    font-size: 14px;
+}

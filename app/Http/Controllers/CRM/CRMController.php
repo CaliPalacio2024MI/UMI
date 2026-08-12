@@ -11,6 +11,7 @@ use App\Models\Users\User;
 use Carbon\Carbon;
 use App\Models\Carrera;
 use App\Models\Users\CareerClassification;
+use App\Models\FormularioCampo;
 use App\Exports\EstadisticasExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -43,8 +44,9 @@ class CRMController extends Controller
     $logoPath = public_path('images/LogoUMI-Blanco.png');
     $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
     $clasificaciones = \App\Models\Users\CareerClassification::orderBy('name')->get();
+    $camposFormulario = FormularioCampo::where('activo', true)->orderBy('orden')->get(['nombre_campo', 'etiqueta', 'tipo', 'seccion']);
 
-    return view('crm.leads', compact('leads', 'ctps', 'logoBase64', 'clasificaciones'));
+    return view('crm.leads', compact('leads', 'ctps', 'logoBase64', 'clasificaciones', 'camposFormulario'));
     }
 
     public function exportar(Request $request)

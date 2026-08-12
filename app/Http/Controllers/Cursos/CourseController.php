@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Cursos;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\StoreCourseRequest; 
+use App\Http\Requests\StoreCourseRequest;
 use App\Models\Cursos\Course;
 use App\Models\Users\Institution;
 use App\Models\Schedule;
@@ -24,6 +24,7 @@ use App\Models\SubtopicTemplate;
 use App\Models\Cursos\Topics;
 use App\Models\Cursos\Subtopic;
 use App\Models\Cursos\CoursePeriod;
+
 
 class CourseController extends Controller
 {
@@ -51,408 +52,571 @@ class CourseController extends Controller
     /**
      * Mostrar formulario de creación de curso
      */
-    public function create(): View
-    {
-         // Obtenemos el ID de la institución de la sesión actual del usuario
-        $institutionId = session('active_institution_id');
+public function create(): View
+{
+    // Institución activa
+    $institutionId = session('active_institution_id');
 
-        // Cargamos la institución actual con sus relaciones (carreras, departamentos, etc.)
-        $currentInstitution = Institution::with(['careers', 'departments.workstations'])->find($institutionId);
+    // Institución con relaciones
+    $currentInstitution = Institution::with([
+        'careers',
+        'departments.workstations'
+    ])->find($institutionId);
 
-        $departmentWorkstationsMap = [];
-        if ($currentInstitution->departments) {
-            $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
-                return [$department->id => $department->workstations->toArray()];
+    // Mapa departamentos -> puestos
+    $departmentWorkstationsMap = [];
+
+    if ($currentInstitution && $currentInstitution->departments) {
+
+        $departmentWorkstationsMap =
+            $currentInstitution->departments->mapWithKeys(function ($department) {
+
+                return [
+                    $department->id => $department->workstations->toArray()
+                ];
             });
-        }
+    }
 
-        //Para traer los temas de la biblioteca
-        $templates = TopicTemplate::orderBy('title')->get();
-        // Pasamos solo la institución actual a la vista.
-        return view('layouts.Cursos.create', compact('currentInstitution', 'departmentWorkstationsMap', 'templates'));
+    // Temas
+    $templates = TopicTemplate::orderBy('title')->get();
 
-         // Traer todos los horarios registrados
-        $schedules = Schedule::all();
+    // Horarios
+    $schedules = Schedule::all();
 
-        // Enviar también $schedules a la vista
-        return view('layouts.Cursos.create', compact(
+    // CURSOS PARA HÍBRIDOS
+    $courses = Course::where('institution_id', $institutionId)
+        ->whereIn('modality', ['presencial', 'virtual'])
+        ->get();
+
+    return view('layouts.Cursos.create', compact(
         'currentInstitution',
         'departmentWorkstationsMap',
         'templates',
-        'schedules'
-     ));
-    }
-
+        'schedules',
+        'courses'
+    ));
+}
     /**
      * Guardar un nuevo curso
      */
-    public function store(StoreCourseRequest $request): RedirectResponse
-    {
-        $activeInstitutionId = session('active_institution_id');
-        $activeRoleName = session('active_role_name');
+public function store(StoreCourseRequest $request): RedirectResponse
+{
+    $activeInstitutionId = session('active_institution_id');
+    $activeRoleName = session('active_role_name');
 
-        // VALIDACIÓN DE SEGURIDAD: Verificar que la institución proporcionada coincida con la activa
-        $validatedData = $request->validated();
+    // VALIDACIÓN DE SEGURIDAD: Verificar que la institución proporcionada coincida con la activa
+    $validatedData = $request->validated();
 
-        // SEGURIDAD: Forzar que el curso se cree en la institución activa
-        if ($validatedData['institution_id'] != $activeInstitutionId) {
-            Log::warning('Intento de crear curso en institución no autorizada', [
-                'user_id' => Auth::id(),
-                'active_institution_id' => $activeInstitutionId,
-                'attempted_institution_id' => $validatedData['institution_id'],
-                'ip' => $request->ip()
-            ]);
-
-            return redirect()->back()->withErrors([
-                'institution_id' => 'No tienes autorización para crear cursos en esa institución.'
-            ])->withInput();
-        }
-
-        $courseData = $validatedData;
-        $courseData['instructor_id'] = Auth::id();
-
-        // Manejo de imagen
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('courses', 'public');
-            $courseData['image'] = $path;
-        }
-        // Material de apoyo
-        if ($request->hasFile('guide_material')) {
-            $path = $request->file('guide_material')->store('courses/guides', 'public');
-            $courseData['guide_material_path'] = $path;
-        }
-        // 2. Manejo de subida de archivos
-        if ($request->hasFile('cert_bg_image')) {
-            // Guardar en storage/app/public/certificates/backgrounds
-            $path = $request->file('cert_bg_image')->store('certificates/backgrounds', 'public');
-            $courseData['cert_bg_path'] = $path;
-        }
-
-        if ($request->hasFile('cert_sig_1_image')) {
-            $path = $request->file('cert_sig_1_image')->store('certificates/signatures', 'public');
-            $courseData['cert_sig_1_path'] = $path;
-        }
-
-        if ($request->hasFile('cert_sig_2_image')) {
-            $path = $request->file('cert_sig_2_image')->store('certificates/signatures', 'public');
-            $courseData['cert_sig_2_path'] = $path;
-        }
-
-        $course = Course::create($courseData);
-
-        //Copiar plantillas de tema
-        if ($request->has('template_topics')) {
-
-            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
-
-            foreach ($selectedTemplates as $template){
-                Topics::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
-            }
-        }
-
-        //Copiar plantillas de subtema
-        if ($request->has('template_subtopics')) {
-
-            $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
-
-            foreach ($selectedTemplates as $template){
-                Subtopic::create(['course_id' => $course->id, 'title' => $template->title, 'description' => $template->description,]);
-            }
-        }
-
-        if ($request->filled('career_id')) {
-            // sync() adjunta el ID y quita cualquier otro que no esté en el array
-            $course->careers()->sync([$request->career_id]);
-        } 
-         elseif ($request->filled('department_ids')) {
-
-           // Guardar múltiples departamentos
-           $course->departments()->sync($request->department_ids);
-
-          // Guardar múltiples puestos (opcional)
-          if ($request->filled('workstation_ids')) {
-
-             $cleanIds = array_filter($request->workstation_ids);
-
-            if (!empty($cleanIds)) {
-             $course->workstations()->sync($cleanIds);
-        }
-    }
-
-}
-
-        Log::info('Curso creado exitosamente', [
-            'course_id' => $course->id,
-            'instructor_id' => Auth::id(),
-            'institution_id' => $activeInstitutionId,
-            'role' => $activeRoleName
+    // SEGURIDAD: Forzar que el curso se cree en la institución activa
+    if ($validatedData['institution_id'] != $activeInstitutionId) {
+        Log::warning('Intento de crear curso en institución no autorizada', [
+            'user_id' => Auth::id(),
+            'active_institution_id' => $activeInstitutionId,
+            'attempted_institution_id' => $validatedData['institution_id'],
+            'ip' => $request->ip()
         ]);
 
-        return redirect()->route('course.topic.create', ['course' => $course->id])
+        return redirect()->back()->withErrors([
+            'institution_id' => 'No tienes autorización para crear cursos en esa institución.'
+        ])->withInput();
+    }
+
+    $courseData = $validatedData;
+    if ($request->modality !== 'presencial') {
+        $courseData['instructor_name'] = null;
+    }
+    $courseData['instructor_id'] = Auth::id();
+
+
+    //  Para cursos híbridos, calcular horas totales de los cursos seleccionados
+    if ($request->modality === 'hibrida' && $request->has('selected_courses')) {
+        $selectedCourses = $request->selected_courses;
+        $totalHours = 0;
+
+        foreach ($selectedCourses as $courseId) {
+            $childCourse = Course::find($courseId);
+            if ($childCourse) {
+                $totalHours += $childCourse->hours;
+            }
+        }
+
+        $courseData['hours'] = $totalHours;
+    }
+
+    // Manejo de imagen
+    if ($request->hasFile('image')) {
+        $path = $request->file('image')->store('courses', 'public');
+        $courseData['image'] = $path;
+    }
+
+    // Material de apoyo
+    if ($request->hasFile('guide_material')) {
+        $path = $request->file('guide_material')->store('courses/guides', 'public');
+        $courseData['guide_material_path'] = $path;
+    }
+
+    // Manejo de subida de archivos del certificado
+    if ($request->hasFile('cert_bg_image')) {
+        $path = $request->file('cert_bg_image')->store('certificates/backgrounds', 'public');
+        $courseData['cert_bg_path'] = $path;
+    }
+
+    if ($request->hasFile('cert_sig_1_image')) {
+        $path = $request->file('cert_sig_1_image')->store('certificates/signatures', 'public');
+        $courseData['cert_sig_1_path'] = $path;
+    }
+
+    if ($request->hasFile('cert_sig_2_image')) {
+        $path = $request->file('cert_sig_2_image')->store('certificates/signatures', 'public');
+        $courseData['cert_sig_2_path'] = $path;
+    }
+
+    // Crear el curso
+    $course = Course::create($courseData);
+
+    //  GUARDAR CURSOS AFILIADOS PARA HÍBRIDOS
+    if ($request->modality === 'hibrida' && $request->has('selected_courses')) {
+        $selectedCourses = $request->selected_courses;
+
+        // Usar sync para guardar la relación (esto inserta en hybrid_course_items)
+        $course->hybridCourses()->sync($selectedCourses);
+
+        Log::info('Cursos afiliados guardados para curso híbrido', [
+            'hybrid_course_id' => $course->id,
+            'child_courses' => $selectedCourses,
+            'total_hours' => $course->hours
+        ]);
+    }
+
+    // Grupos (si existen)
+    if ($request->has('groups')) {
+        foreach ($request->groups as $groupData) {
+            $group = $course->groups()->create([
+                'name' => $groupData['name'],
+                'type' => $groupData['type'] ?? 'abierto',
+                'min_participants' => $groupData['min'] ?? 1,
+                'max_participants' => $groupData['max'] ?? 50,
+            ]);
+
+            // relaciones
+            if (!empty($groupData['departments'])) {
+                $group->departments()->sync($groupData['departments']);
+            }
+
+            if (!empty($groupData['workstations'])) {
+                $group->workstations()->sync($groupData['workstations']);
+            }
+        }
+    }
+
+    // Copiar plantillas de tema
+    if ($request->has('template_topics')) {
+        $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+
+        foreach ($selectedTemplates as $template) {
+            Topics::create([
+                'course_id' => $course->id,
+                'title' => $template->title,
+                'description' => $template->description,
+            ]);
+        }
+    }
+
+    // Copiar plantillas de subtema
+    if ($request->has('template_subtopics')) {
+        $selectedTemplates = TopicTemplate::whereIn('id', $request->template_topics)->get();
+
+        foreach ($selectedTemplates as $template) {
+            Subtopic::create([
+                'course_id' => $course->id,
+                'title' => $template->title,
+                'description' => $template->description,
+            ]);
+        }
+    }
+
+    // Guardar carrera o departamentos/puestos
+    if ($request->filled('career_id')) {
+        $course->careers()->sync([$request->career_id]);
+    } elseif ($request->filled('department_ids')) {
+        // Guardar múltiples departamentos
+        $course->departments()->sync($request->department_ids);
+
+        // Guardar múltiples puestos (opcional)
+        if ($request->filled('workstation_ids')) {
+            $cleanIds = array_filter($request->workstation_ids);
+            if (!empty($cleanIds)) {
+                $course->workstations()->sync($cleanIds);
+            }
+        }
+    }
+
+    Log::info('Curso creado exitosamente', [
+        'course_id' => $course->id,
+        'instructor_id' => Auth::id(),
+        'institution_id' => $activeInstitutionId,
+        'role' => $activeRoleName,
+        'modality' => $course->modality
+    ]);
+
+    // Redirección según modalidad
+    if ($course->modality === 'presencial') {
+        return redirect()->route('Cursos.index')
             ->with('success', 'Curso creado exitosamente.');
     }
+
+    if ($course->modality === 'hibrida') {
+        return redirect()->route('Cursos.index')
+            ->with('success', 'Curso híbrido creado exitosamente con ' . ($course->hybridCourses()->count() ?? 0) . ' cursos afiliados.');
+    }
+
+    return redirect()->route('course.topic.create', ['course' => $course->id])
+        ->with('success', 'Curso virtual creado exitosamente. Ahora puedes agregar los temas y actividades.');
+
+}
 
     /**
      * Mostrar detalles de un curso
      */
-public function show(Course $course)
-{
-    $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
+    public function show(Course $course)
+    {
+        $course->load('topics.subtopics.activities', 'topics.activities', 'finalExam');
 
-    $user = Auth::user();
-    $departments = Department::with('workstations')->get();
+        $user = Auth::user();
+        $departments = Department::with('workstations')->get();
 
-    $progress = 0;
-    $isEnrolled = false;
-    $finalExamData = null;
-    $finalExamActivity = null;
-    $userCompletions = collect();
-    $totalItems = 0;
+        $course->load([
+            'sessions.groups.hosts.department',
+            'sessions.groups.hosts.workstation'
+        ]);
 
-    if ($user) {
+        $attendanceMap = \Illuminate\Support\Facades\DB::table('course_session_attendances')
+            ->whereIn('course_session_id', $course->sessions->pluck('id'))
+            ->get()
+            ->groupBy('course_session_id');
 
-        $isEnrolled = $user->courses()
-    ->where('course_id', $course->id)
-    ->exists();
+        $hybridCourses = $course->hybridCourses()->get();
 
-        if (!$isEnrolled) {
-    // ✅ Buscar período activo HOY
-    $currentPeriod = $course->periods()
-        ->whereDate('start_date', '<=', now())
-        ->whereDate('end_date', '>=', now())
-        ->first();
-    
-    \Log::info('🔍 Período encontrado para inscripción:', [
-        'course_id' => $course->id,
-        'period_id' => $currentPeriod?->id,
-        'period_name' => $currentPeriod?->name,
-        'today' => now()->format('Y-m-d')
-    ]);
-    
-    // ✅ Primera vez - inscribir con período actual
-    $user->courses()->attach($course->id, [
-        'progress' => 0,
-        'started_at' => now(),
-        'period_id' => $currentPeriod ? $currentPeriod->id : null
-    ]);
-    
-    $progress = 0;
-    
-} else {
-    // ✅ Ya inscrito - SOLO leer el progreso guardado
-    $pivotRow = $user->courses()->where('course_id', $course->id)->first();
-    if ($pivotRow && $pivotRow->pivot) {
-        $progress = $pivotRow->pivot->progress;
-        
-        // ✅ Si no tiene started_at, agregarlo UNA VEZ
-        if (!$pivotRow->pivot->started_at) {
-            $user->courses()->updateExistingPivot($course->id, [
-                'started_at' => now()
-            ]);
-        }
-        
-        // ✅ Si no tiene period_id pero existe un período activo, asignarlo
-        if (!$pivotRow->pivot->period_id) {
-            $currentPeriod = $course->periods()
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
-                ->first();
-            
-            if ($currentPeriod) {
-                $user->courses()->updateExistingPivot($course->id, [
-                    'period_id' => $currentPeriod->id
-                ]);
-                
-                \Log::info('✅ Período asignado a usuario existente:', [
-                    'user_id' => $user->id,
+        $progress = 0;
+        $isEnrolled = false;
+        $finalExamData = null;
+        $finalExamActivity = null;
+        $userCompletions = collect();
+        $totalItems = 0;
+
+        if ($user) {
+            $isEnrolled = $user->courses()
+                ->where('course_id', $course->id)
+                ->exists();
+
+            if (!$isEnrolled) {
+                // Buscar período activo HOY
+                $currentPeriod = $course->periods()
+                    ->whereDate('start_date', '<=', now())
+                    ->whereDate('end_date', '>=', now())
+                    ->first();
+
+                \Log::info('🔍 Período encontrado para inscripción:', [
                     'course_id' => $course->id,
-                    'period_id' => $currentPeriod->id
+                    'period_id' => $currentPeriod?->id,
+                    'period_name' => $currentPeriod?->name,
+                    'today' => now()->format('Y-m-d')
                 ]);
+
+                // Primera vez - inscribir con período actual
+                $user->courses()->attach($course->id, [
+                    'progress' => 0,
+                    'started_at' => now(),
+                    'period_id' => $currentPeriod ? $currentPeriod->id : null
+                ]);
+
+                $progress = 0;
+                $isEnrolled = true;
+
+            } else {
+                // Ya inscrito - leer el progreso guardado
+                $pivotRow = $user->courses()->where('course_id', $course->id)->first();
+                if ($pivotRow && $pivotRow->pivot) {
+                    $progress = $pivotRow->pivot->progress;
+
+                    // Si no tiene started_at, agregarlo UNA VEZ
+                    if (!$pivotRow->pivot->started_at) {
+                        $user->courses()->updateExistingPivot($course->id, [
+                            'started_at' => now()
+                        ]);
+                    }
+
+                   // Si no tiene period_id pero existe un período activo, asignarlo
+                    if (!$pivotRow->pivot->period_id) {
+                        $currentPeriod = $course->periods()
+                            ->whereDate('start_date', '<=', now())
+                            ->whereDate('end_date', '>=', now())
+                            ->first();
+
+                        if ($currentPeriod) {
+                            $user->courses()->updateExistingPivot($course->id, [
+                                'period_id' => $currentPeriod->id
+                            ]);
+
+                            \Log::info('✅ Período asignado a usuario existente:', [
+                                'user_id' => $user->id,
+                                'course_id' => $course->id,
+                                'period_id' => $currentPeriod->id
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Completions del usuario
+            $userCompletions = $user->completions->map(function ($item) {
+                return [
+                    'type' => class_basename($item->completable_type),
+                    'id'   => $item->completable_id
+                ];
+            });
+
+            // Examen final
+            $finalExamActivity = $course->finalExam;
+
+            if ($finalExamActivity) {
+                $finalExamData = $user->completions()
+                    ->where('completable_type', Activities::class)
+                    ->where('completable_id', $finalExamActivity->id)
+                    ->first();
             }
         }
-    }
-}
-        // completions del usuario
-        $userCompletions = $user->completions->map(function ($item) {
-            return [
-                'type' => class_basename($item->completable_type),
-                'id'   => $item->completable_id
-            ];
-        });
 
-        // examen final
-        $finalExamActivity = $course->finalExam;
+        $topics = $course->topics;
 
-        if ($finalExamActivity) {
-            $finalExamData = $user->completions()
-                ->where('completable_type', Activities::class)
-                ->where('completable_id', $finalExamActivity->id)
-                ->first();
-                
-                
-        }
-    }
+        $periods = $course->periods;
 
-    $topics = $course->topics;
-
-    return view('layouts.Cursos.show', compact(
-        'departments',
-        'course',
-        'topics',
-        'progress',
-        'totalItems',
-        'isEnrolled',
-        'finalExamActivity',
-        'finalExamData',
-        'userCompletions'
-    ));
-}
-
-
-    /**
-     * Mostrar formulario de edición
-     */
-    public function edit(Course $course): View
-    {
-        $activeInstitutionId = session('active_institution_id');
-
-        // VALIDACIÓN DE SEGURIDAD: Verificar institución
-        if ($course->institution_id != $activeInstitutionId) {
-            Log::warning('Intento de editar curso de otra institución', [
-                'user_id' => Auth::id(),
-                'course_id' => $course->id,
-                'course_institution_id' => $course->institution_id,
-                'user_active_institution_id' => $activeInstitutionId
-            ]);
-
-            abort(403, 'No puedes editar cursos de otra institución.');
-        }
-
-        // Autorización adicional: Verificar que el usuario es el instructor o master
-        $this->authorize('update', $course);
-        $course->load('institution');
-
-        // 1. Cargar la institución actual y sus relaciones
-        $currentInstitution = Institution::with(['careers', 'departments.workstations'])
-                                ->find($activeInstitutionId);
-
-        // 2. Crear el mapa para el JS de departamentos/puestos
-        $departmentWorkstationsMap = [];
-        if ($currentInstitution->departments) {
-            $departmentWorkstationsMap = $currentInstitution->departments->mapWithKeys(function ($department) {
-                return [$department->id => $department->workstations->toArray()];
-            });
-        }
-
-        // 3. Cargar los filtros que el curso YA tiene seleccionados
-        //    Usamos pluck('id') para obtener un array simple de IDs [1, 3]
-        $course->load('careers', 'departments', 'workstations');
-        
-        $selectedFilters = [
-            'career_id' => $course->careers->pluck('id')->first(), // Asumimos que solo es una carrera
-            'department_id' => $course->departments->pluck('id')->first(), // Asumimos que solo es un depto
-            'workstation_id' => $course->workstations->pluck('id')->first(), // Asumimos que solo es un puesto
-        ];
-
-        return view('layouts.Cursos.edit', compact(
-            'course', 
-            'currentInstitution', // Necesario para los filtros
-            'departmentWorkstationsMap', // Necesario para el JS
-            'selectedFilters' // Necesario para pre-seleccionar
+        // Retornar vista con TODAS las variables
+        return view('layouts.Cursos.show', compact(
+            'departments',
+            'course',
+            'topics',
+            'progress',
+            'totalItems',
+            'isEnrolled',
+            'finalExamActivity',
+            'finalExamData',
+            'userCompletions',
+            'hybridCourses',
+            'periods'
         ));
     }
 
     /**
-     * Actualizar curso
+     * Mostrar formulario de edición
      */
-    public function update(Request $request, Course $course): RedirectResponse
-    {
-        $activeInstitutionId = session('active_institution_id');
+ public function edit(Course $course): View
+{
+    $activeInstitutionId = session('active_institution_id');
 
-        // VALIDACIÓN DE SEGURIDAD: Verificar institución
-        if ($course->institution_id != $activeInstitutionId) {
-            Log::warning('Intento de actualizar curso de otra institución', [
-                'user_id' => Auth::id(),
-                'course_id' => $course->id,
-                'course_institution_id' => $course->institution_id,
-                'user_active_institution_id' => $activeInstitutionId
-            ]);
+    // VALIDACIÓN DE SEGURIDAD
+    if ($course->institution_id != $activeInstitutionId) {
 
-            abort(403, 'No puedes actualizar cursos de otra institución.');
-        }
-
-        // Autorización: Policy
-        $this->authorize('update', $course);
-
-        $institution = Institution::find($course->institution_id);
-        $creditsRule = 'nullable|integer|min:0';
-        if ($institution && $institution->name === 'Universidad Mundo Imperial') {
-            $creditsRule = 'required|integer|min:0';
-        }
-
-        // Validación
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'credits' => $creditsRule,
-            'modality' => 'required|in:presencial,virtual,hibrida',
-            'hours' => 'required|integer|min:0|max:1000',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960', 
-            'institution_id' => 'required|exists:institutions,id', // Lo usamos pero no lo actualizamos
-            'career_id' => 'nullable|exists:careers,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'workstation_id' => 'nullable|exists:workstations,id',
+        Log::warning('Intento de editar curso de otra institución', [
+            'user_id' => Auth::id(),
+            'course_id' => $course->id,
+            'course_institution_id' => $course->institution_id,
+            'user_active_institution_id' => $activeInstitutionId
         ]);
 
-        // Manejo de imagen
-        if ($request->hasFile('image')) {
-            if ($course->image) {
-                Storage::disk('public')->delete($course->image);
-            }
-            $validatedData['image'] = $request->file('image')->store('courses', 'public');
-        }
-
-        // Manejo de material de guía
-        if ($request->hasFile('guide_material')) {
-            // Eliminar archivo anterior si existe
-            if ($course->guide_material_path) {
-                Storage::disk('public')->delete($course->guide_material_path);
-            }
-            // Guardar el nuevo archivo
-            $validatedData['guide_material_path'] = $request->file('guide_material')->store('courses/guides', 'public');
-        }
-
-        $course->update($validatedData);
-
-        if ($request->filled('career_id')) {
-            $course->careers()->sync([$request->career_id]);
-            $course->departments()->sync([]); // Limpiar el otro filtro
-            $course->workstations()->sync([]);
-        } 
-        elseif ($request->filled('department_id')) {
-            $course->departments()->sync([$request->department_id]);
-            $course->careers()->sync([]); // Limpiar el otro filtro
-            
-            // Si se especificó un puesto, guardarlo. Si no, limpiarlo.
-            if ($request->filled('workstation_id')) {
-                $course->workstations()->sync([$request->workstation_id]);
-            } else {
-                $course->workstations()->sync([]);
-            }
-        }
-
-        Log::info('Curso actualizado', ['course_id' => $course->id, 'user_id' => Auth::id()]);
-
-        // Redirigir según la acción solicitada
-        if ($request->input('action') == 'save_and_continue') {
-            return redirect()->route('course.topic.create', ['course' => $course->id])
-                ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
-        }
-
-        return redirect()->route('Cursos.index')
-            ->with('success', 'Curso actualizado exitosamente.');
+        abort(403, 'No puedes editar cursos de otra institución.');
     }
+
+    // AUTORIZACIÓN
+    $this->authorize('update', $course);
+
+    // CARGAR RELACIONES
+    $course->load(
+        'institution',
+        'careers',
+        'departments',
+        'workstations',
+        'hybridCourses'
+    );
+
+    // INSTITUCIÓN ACTUAL
+    $currentInstitution = Institution::with([
+        'careers',
+        'departments.workstations'
+    ])->find($activeInstitutionId);
+
+    // MAPA DE DEPARTAMENTOS -> PUESTOS
+    $departmentWorkstationsMap = [];
+
+    if ($currentInstitution && $currentInstitution->departments) {
+
+        $departmentWorkstationsMap =
+            $currentInstitution->departments->mapWithKeys(function ($department) {
+
+                return [
+                    $department->id => $department->workstations->toArray()
+                ];
+
+            });
+
+    }
+
+    // FILTROS SELECCIONADOS
+    $selectedFilters = [
+
+        'career_id' =>
+            $course->careers->pluck('id')->first(),
+
+        'department_id' =>
+            $course->departments->pluck('id')->first(),
+
+        'workstation_id' =>
+            $course->workstations->pluck('id')->first(),
+
+    ];
+
+    // CURSOS DISPONIBLES PARA HÍBRIDO
+    $courses = Course::where('institution_id', $activeInstitutionId)
+        ->where('id', '!=', $course->id)
+        ->get();
+
+    // CURSOS YA SELECCIONADOS
+    $selectedCourses = $course->hybridCourses
+        ->pluck('id')
+        ->toArray();
+
+    // RETORNAR VISTA
+    return view('layouts.Cursos.edit', compact(
+        'course',
+        'currentInstitution',
+        'departmentWorkstationsMap',
+        'selectedFilters',
+        'courses',
+        'selectedCourses'
+    ));
+}
+    /**
+     * Actualizar curso
+     */
+public function update(Request $request, Course $course): RedirectResponse
+{
+    $activeInstitutionId = session('active_institution_id');
+
+    // VALIDACIÓN DE SEGURIDAD
+    if ($course->institution_id != $activeInstitutionId) {
+        Log::warning('Intento de actualizar curso de otra institución', [
+            'user_id' => Auth::id(),
+            'course_id' => $course->id,
+            'course_institution_id' => $course->institution_id,
+            'user_active_institution_id' => $activeInstitutionId
+        ]);
+
+        abort(403, 'No puedes actualizar cursos de otra institución.');
+    }
+
+    // AUTORIZACIÓN
+    $this->authorize('update', $course);
+
+    $institution = Institution::find($course->institution_id);
+
+    $creditsRule = 'nullable|integer|min:0';
+
+    if ($institution && $institution->name === 'Universidad Mundo Imperial') {
+        $creditsRule = 'required|integer|min:0';
+    }
+
+    // VALIDACIÓN
+    $validatedData = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'credits' => $creditsRule,
+        'modality' => 'required|in:presencial,virtual,hibrida',
+        'hours' => 'required|integer|min:0|max:1000',
+
+        'virtual_percentage' => 'nullable|integer|min:0|max:100',
+        'presencial_percentage' => 'nullable|integer|min:0|max:100',
+        'selected_courses' => 'nullable|array',
+        'selected_courses.*' => 'exists:courses,id',
+
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        'guide_material' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx|max:40960',
+
+        'institution_id' => 'required|exists:institutions,id',
+        'career_id' => 'nullable|exists:careers,id',
+        'department_id' => 'nullable|exists:departments,id',
+        'workstation_id' => 'nullable|exists:workstations,id',
+
+    ]);
+
+    // NO actualizar institution_id desde el request
+    unset($validatedData['institution_id']);
+
+    // NO guardar selected_courses directo en courses
+    unset($validatedData['selected_courses']);
+
+    // MANEJO DE IMAGEN
+    if ($request->hasFile('image')) {
+        if ($course->image) {
+            Storage::disk('public')->delete($course->image);
+        }
+
+        $validatedData['image'] = $request->file('image')->store('courses', 'public');
+    }
+
+    // MANEJO DE MATERIAL DE GUÍA
+    if ($request->hasFile('guide_material')) {
+        if ($course->guide_material_path) {
+            Storage::disk('public')->delete($course->guide_material_path);
+        }
+
+        $validatedData['guide_material_path'] =
+            $request->file('guide_material')->store('courses/guides', 'public');
+    }
+
+
+    // ACTUALIZAR CURSO
+    $course->update($validatedData);
+
+    // ACTUALIZAR CURSOS HÍBRIDOS
+    if ($request->modality === 'hibrida') {
+        $course->hybridCourses()->sync($request->selected_courses ?? []);
+    } else {
+        $course->hybridCourses()->detach();
+    }
+
+    // FILTROS
+    if ($request->filled('career_id')) {
+        $course->careers()->sync([$request->career_id]);
+        $course->departments()->sync([]);
+        $course->workstations()->sync([]);
+    } elseif ($request->filled('department_id')) {
+        $course->departments()->sync([$request->department_id]);
+        $course->careers()->sync([]);
+
+        if ($request->filled('workstation_id')) {
+            $course->workstations()->sync([$request->workstation_id]);
+        } else {
+            $course->workstations()->sync([]);
+        }
+    }
+
+    Log::info('Curso actualizado', [
+        'course_id' => $course->id,
+        'user_id' => Auth::id()
+    ]);
+
+    // REDIRECCIÓN
+if (
+    $request->input('action') == 'save_and_continue' &&
+    in_array(strtolower($course->modality), ['virtual', 'hibrida'])
+) {
+    return redirect()->route('course.topic.create', ['course' => $course->id])
+        ->with('success', 'Curso actualizado. Ahora puedes editar sus temas.');
+}
+
+    return redirect()->route('Cursos.index')
+        ->with('success', 'Curso actualizado exitosamente.');
+}
 
     public function updateWelcome(Request $request, Course $course)
 {
@@ -533,7 +697,7 @@ public function show(Course $course)
             $this->authorize('view', $course);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'No tienes permiso para inscribirte en este curso.'
             ], 403);
         }
@@ -543,12 +707,12 @@ public function show(Course $course)
         $user->courses()->syncWithoutDetaching($course->id);
 
         Log::info('Usuario inscrito en curso', [
-            'user_id' => $user->id, 
+            'user_id' => $user->id,
             'course_id' => $course->id
         ]);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => '¡Inscripción exitosa!'
         ]);
     }
@@ -566,12 +730,12 @@ public function show(Course $course)
         $user->courses()->detach($course->id);
 
         Log::info('Usuario dado de baja de curso', [
-            'user_id' => $user->id, 
+            'user_id' => $user->id,
             'course_id' => $course->id
         ]);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Has sido dado de baja del curso.'
         ]);
     }
@@ -579,10 +743,10 @@ public function show(Course $course)
     public function showCertificate(Course $course)
     {
         $user = Auth::user();
-        
+
         // 1. Buscar el examen final del curso
         $finalExam = $course->finalExam;
-        
+
         if (!$finalExam) {
             return redirect()->route('course.show', $course)
                 ->with('error', 'Este curso no tiene certificado disponible.');
@@ -603,7 +767,7 @@ public function show(Course $course)
         // ---------------------------------------------------------
         // 2. PREPARACIÓN DE DATOS
         // ---------------------------------------------------------
-        
+
         // Formatear fecha elegante: "24 de Noviembre de 2025"
         // Si tu Laravel no está en español, esto ayuda a forzarlo.
         $completionDate = $completion->created_at->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
@@ -621,7 +785,7 @@ public function show(Course $course)
         // ---------------------------------------------------------
         // 3. GENERACIÓN DEL PDF
         // ---------------------------------------------------------
-        
+
         // Cargamos la vista de diseño que creamos (Cursos.template_v1)
         $pdf = Pdf::loadView('layouts.Cursos.template_v1', $data);
 
@@ -650,7 +814,7 @@ public function show(Course $course)
             ->with('completable.course') // Cargar curso para ver su institución
             ->get()
             ->filter(function ($completion) use ($activeInstitutionId) {
-                
+
                 // Verificaciones de seguridad (que exista la actividad y el curso)
                 if (!$completion->completable || !$completion->completable->course) {
                     return false;
@@ -696,30 +860,30 @@ public function attendance(Course $course)
             $finalExam = $course->finalExam;
             $finalScore = null;
             $completedAt = null;
-            
+
             if ($finalExam) {
                 $completion = $user->completions()
                     ->where('completable_type', Activities::class)
                     ->where('completable_id', $finalExam->id)
                     ->first();
-                
+
                 if ($completion) {
                     $finalScore = $completion->score;
                     $completedAt = $completion->created_at;
                 }
             }
-            
+
             // ✅ Si completó el examen final, progreso = 100%
             $progress = $finalScore !== null ? 100 : $user->pivot->progress;
             $status = $finalScore !== null ? 'Completado' : 'En progreso';
-            
+
             // ✅ Obtener nombre del período
             $periodName = null;
             if ($user->pivot->period_id) {
                 $period = CoursePeriod::find($user->pivot->period_id);
                 $periodName = $period ? $period->name : null;
             }
-            
+
             return [
                 'id' => $user->id,
                 'nombre' => $user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno,
@@ -736,36 +900,37 @@ public function attendance(Course $course)
 
     return view('layouts.Cursos.attendance', compact('course', 'attendances', 'periods'));
 }
+
 /**
  * Guardar progreso del usuario en el curso
  */
 public function saveProgress(Request $request, Course $course)
 {
     $user = Auth::user();
-    
+
     if (!$user) {
         return response()->json(['success' => false, 'message' => 'No autenticado'], 401);
     }
-    
+
     $validated = $request->validate([
         'progress' => 'required|numeric|min:0|max:100'
     ]);
-    
+
     // Obtener progreso actual
     $pivotRow = $user->courses()->where('course_id', $course->id)->first();
     $currentProgress = $pivotRow ? $pivotRow->pivot->progress : 0;
-    
+
     if ($validated['progress'] > $currentProgress) {
     $user->courses()->updateExistingPivot($course->id, [
         'progress' => $validated['progress'] // ✅ SOLO progreso, nada más
     ]);
-        
+
         return response()->json([
             'success' => true,
             'progress' => $validated['progress']
         ]);
     }
-    
+
     return response()->json([
         'success' => true,
         'progress' => $currentProgress,
@@ -806,22 +971,22 @@ public function exportAttendancePDF(Request $request, Course $course)
             $finalExam = $course->finalExam;
             $finalScore = null;
             $fechaFin = null;
-            
+
             if ($finalExam) {
                 $completion = $user->completions()
                     ->where('completable_type', Activities::class)
                     ->where('completable_id', $finalExam->id)
                     ->first();
-                
+
                 if ($completion) {
                     $finalScore = $completion->score;
                     $fechaFin = $completion->created_at->format('d/m/Y H:i');
                 }
             }
-            
+
             $progress = $finalScore !== null ? 100 : $user->pivot->progress;
             $status = $finalScore !== null ? 'Completado' : 'En progreso';
-            
+
             return [
                 'nombre' => $user->nombre . ' ' . $user->apellido_paterno . ' ' . $user->apellido_materno,
                 'puesto' => $user->workstation?->name ?? 'N/A',

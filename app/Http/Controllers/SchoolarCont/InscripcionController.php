@@ -309,19 +309,19 @@ class InscripcionController extends Controller
                     'institution_id' => 4,
                     'department_id' => null,
                     'workstation_id' => null,
-                    'role_id' => 7,
+                    'role_id' => 9,
                     'is_active' => 1
                 ]);
             }
 
             // B. ROLES
             $yaEsEstudiante = $user->roles()
-                                   ->where('roles.id', 7)
+                                   ->where('roles.id', 9)
                                    ->wherePivot('institution_id', 4)
                                    ->exists();
 
             if (!$yaEsEstudiante) {
-                $user->roles()->attach(7, ['institution_id' => 4, 'is_active' => 1]);
+                $user->roles()->attach(9, ['institution_id' => 4, 'is_active' => 1]);
             }
 
             // C. PERFIL Y DOCUMENTOS
@@ -381,6 +381,10 @@ class InscripcionController extends Controller
 
             // Documentos configurados dinámicamente (Ajustes → Expediente).
             $this->guardarDocumentosExpediente($request, $user);
+
+            // Refleja los docs básicos (acta, certificado, CURP, INE) en submitted_documents
+            // para que aparezcan en el expediente del alumno.
+            $this->mirrorDocumentosBasicosAlExpediente($request, $user, $rutasDocs);
 
             $this->syncLeadFromStudentDocumentUpload($user, $rutasDocs, $docRechazoPorCampo);
 
@@ -633,6 +637,67 @@ class InscripcionController extends Controller
     }
 
     /**
+     * Después de guardar los docs básicos en academic_profiles,
+     * los refleja en submitted_documents para que aparezcan en el expediente.
+     * Usa el slug para encontrar el document_requirement correspondiente.
+     */
+    private function mirrorDocumentosBasicosAlExpediente(Request $request, User $user, array $rutasDocs): void
+    {
+        $slugPorCampo = [
+            'doc_acta_nacimiento'   => 'acta_nacimiento',
+            'doc_certificado_prepa' => 'certificado_prepa',
+            'doc_curp'              => 'curp',
+            'doc_ine'               => 'ine',
+        ];
+
+        $institutionId = $this->universityInstitutionId();
+        $slugsSubidos  = array_intersect_key($slugPorCampo, $rutasDocs);
+
+        if (empty($slugsSubidos)) {
+            return;
+        }
+
+        $reqs = DocumentRequirement::where('institution_id', $institutionId)
+            ->where('proceso', 'inscripcion')
+            ->whereIn('slug', array_values($slugsSubidos))
+            ->get()
+            ->keyBy('slug');
+
+        foreach ($slugsSubidos as $campo => $slug) {
+            $req  = $reqs->get($slug);
+            $path = $rutasDocs[$campo] ?? null;
+
+            if (! $req || ! $path) {
+                continue;
+            }
+
+            $file = $request->hasFile($campo) ? $request->file($campo) : null;
+
+            $existing = SubmittedDocument::where('user_id', $user->id)
+                ->where('document_requirement_id', $req->id)
+                ->first();
+
+            $attrs = [
+                'archivo_path'    => $path,
+                'nombre_original' => $file?->getClientOriginalName() ?? basename($path),
+                'mime_type'       => $file?->getClientMimeType() ?? 'application/octet-stream',
+                'tamano_bytes'    => $file?->getSize() ?? 0,
+                'validation_status' => null,
+                'uploaded_by'     => Auth::id(),
+            ];
+
+            if ($existing) {
+                $existing->update($attrs);
+            } else {
+                SubmittedDocument::create(array_merge($attrs, [
+                    'document_requirement_id' => $req->id,
+                    'user_id'                 => $user->id,
+                ]));
+            }
+        }
+    }
+
+    /**
      * Misma convención que expediente, en carpeta facturacion (PDF ficha + PDF factura).
      * Si ya se usó generar_factura + subirArchivosFactura, no llamar esto en el mismo request.
      */
@@ -722,8 +787,11 @@ class InscripcionController extends Controller
     /** Config + envíos previos para pintar la sección dinámica en la vista. */
     private function expedienteInscripcionData(?User $alumno): array
     {
+        // Los docs con slug son los básicos (acta, certificado, CURP, INE) que ya se muestran
+        // hardcodeados en el formulario — se excluyen de la sección dinámica para evitar duplicados.
         $config = DocumentRequirement::query()
             ->forProcess($this->universityInstitutionId(), 'inscripcion')
+            ->whereNull('slug')
             ->get();
 
         $subs = collect();

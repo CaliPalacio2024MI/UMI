@@ -14,11 +14,7 @@
   <title>@yield('title','Dashboard')</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   {{-- Vite inyecta los enlaces a CSS/JS de resources --}}
-  @vite(['resources/css/CRM/leads.css'])
-  @vite(['resources/css/CRM/prospectos.css'])
-  @vite(['resources/css/CRM/estadisticas.css'])
-  @vite(['resources/css/CRM/comisiones.css'])
-    @vite(['resources/css/app.css', 'resources/css/uniform.css', 'resources/js/app.js'])
+  @vite(['resources/css/app.css', 'resources/css/uniform.css', 'resources/js/app.js'])
   @stack('css')
 
 </head>

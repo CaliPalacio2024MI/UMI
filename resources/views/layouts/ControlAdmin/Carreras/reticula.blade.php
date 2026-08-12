@@ -247,14 +247,40 @@
         <div class="reticula-footer-box">
             <span class="reticula-stat">Materias: {{ $totalMaterias }}</span>
             <span class="reticula-stat">Créditos: {{ $totalCreditos > 0 ? $totalCreditos : '—' }}</span>
+            @if(Auth::user()->hasAnyRole(['master', 'control_escolar']))
+                <button type="button" id="openReticulaAddMateriaBtn" class="btn btn--primary" style="border-radius:999px; padding:8px 18px; font-size:0.85rem;">+ Agregar Materia</button>
+            @endif
         </div>
     </div>
 </div>
+
+@if(session('success'))
+    <div id="reticulaSuccessToast" style="position:fixed;bottom:28px;right:28px;background:#223F70;color:#fff;padding:14px 24px;border-radius:12px;z-index:9999;font-size:0.95rem;box-shadow:0 4px 16px rgba(0,0,0,0.18);">
+        {{ session('success') }}
+    </div>
+    <script>setTimeout(function(){var t=document.getElementById('reticulaSuccessToast');if(t)t.remove();},3500);</script>
+@endif
+
+@if(Auth::user()->hasAnyRole(['master', 'control_escolar']))
+    @include('layouts.ControlAdmin.Listas.materias.create', [
+        'fromReticula'          => $carrera->id,
+        'preselectedCarreraId'  => $carrera->id,
+        'preselectedClasifId'   => $carrera->career_classification_id,
+    ])
+@endif
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var addBtn = document.getElementById('openReticulaAddMateriaBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            var modal = document.getElementById('createMateriaModal');
+            if (modal) modal.style.display = 'flex';
+        });
+    }
+
     document.querySelectorAll('.js-open-reticula-materia').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var id = btn.getAttribute('data-reticula-materia-id');
@@ -263,17 +289,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    document.querySelectorAll('.reticula-materia-modal .close-custom').forEach(function(btn) {
+    // Cierre de todos los modales (info de materia + crear materia)
+    document.querySelectorAll('.modal-overlay .close-custom, .modal-overlay .btn-secondary').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var modal = btn.closest('.modal-overlay');
             if (modal) modal.style.display = 'none';
         });
     });
 
-    document.querySelectorAll('.reticula-materia-modal').forEach(function(modal) {
+    document.querySelectorAll('.modal-overlay').forEach(function(modal) {
         modal.addEventListener('click', function(e) {
             if (e.target === modal) modal.style.display = 'none';
         });
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(function(modal) {
+                if (modal.style.display === 'flex') modal.style.display = 'none';
+            });
+        }
     });
 });
 </script>

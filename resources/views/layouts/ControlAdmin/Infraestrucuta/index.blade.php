@@ -56,13 +56,11 @@
     @else
         <div class="aulas-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
             @foreach ($data as $item)
-                <div class="aula-card" data-search-text="{{ strtolower($item->nombre_aula . ' ' . $item->careers->pluck('name')->join(' ') . ' ' . $item->materias->pluck('nombre')->join(' ') . ' ' . ($item->classification->name ?? '')) }}" style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; transition: box-shadow 0.2s;">
+                <div class="aula-card" data-search-text="{{ strtolower($item->nombre_aula . ' ' . $item->careers->pluck('name')->join(' ') . ' ' . $item->materias->pluck('nombre')->join(' ') . ' ' . ($item->classification?->name ?? 'uso general')) }}" style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; transition: box-shadow 0.2s;">
                     <!-- Header de la tarjeta -->
                     <div style="background: #2f4b7c; color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
                         <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">{{ $item->nombre_aula ?? '—' }}</h4>
-                        @if($item->classification)
-                            <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;">{{ $item->classification->name }}</span>
-                        @endif
+                        <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;">{{ $item->classification?->name ?? 'Uso General' }}</span>
                     </div>
 
                     <!-- Cuerpo de la tarjeta -->

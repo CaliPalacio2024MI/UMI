@@ -40,9 +40,11 @@ use App\Http\Controllers\SchoolarCont\MatriculaController;
 use App\Http\Controllers\SchoolarCont\BoletaCalificacionController; 
 use App\Http\Controllers\SchoolarCont\BecasController;
 use App\Http\Controllers\SchoolarCont\TitulacionController;
+use App\Http\Controllers\SchoolarCont\ModuloExpedienteController;
 
 // --- Controladores CRM ---
 use App\Http\Controllers\CRM\CRMController;
+use App\Http\Controllers\CRM\FormularioController;
 
 // --- Formulario CRM ---
 use App\Http\Controllers\Public\LeadPublicController;
@@ -71,7 +73,9 @@ Route::redirect('/', '/registro-publico');
 
 // FORMULARIO PÚBLICO
 
-Route::get('/registro-publico', [LeadPublicController::class, 'create'])->name('public.inscripcion.create');
+Route::get('/registro-publico',          [LeadPublicController::class, 'create'])->name('public.inscripcion.create');
+Route::get('/registro-publico/config',   [LeadPublicController::class, 'config'])->name('public.inscripcion.config');
+Route::get('/registro-publico/fragment', [LeadPublicController::class, 'fragment'])->name('public.inscripcion.fragment');
 
 Route::post('/registro-publico', [LeadPublicController::class, 'store'])
     ->middleware('throttle:3,15')
@@ -174,13 +178,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [CoursePeriodsController::class, 'index'])->name('index');
         Route::post('/', [CoursePeriodsController::class, 'store'])->name('store');
         Route::delete('/{period}', [CoursePeriodsController::class, 'destroy'])->name('destroy');
-    
-        // Gestión de usuarios del período
+        Route::put('/{period}', [CoursePeriodsController::class, 'update'])->name('update');
+        Route::patch('/{period}/toggle', [CoursePeriodsController::class, 'toggle'])->name('toggle');
+
+        // Gestión de usuarios del período (JSON para modal)
         Route::get('/{period}/usuarios', [CoursePeriodsController::class, 'users'])->name('users');
         Route::post('/{period}/usuarios/toggle', [CoursePeriodsController::class, 'toggleUser'])->name('toggleUser');
-    
+
         // Asistencia del período
-        Route::get('/{period}/asistencia', [CoursePeriodsController::class, 'attendance'])->name('attendance');})->middleware(['role:master,docente,gerente_capacitacion']);
+        Route::get('/{period}/asistencia', [CoursePeriodsController::class, 'attendance'])->name('attendance');
+        })->middleware(['role:master,docente,gerente_capacitacion']);
+
+        // Gestión de usuarios del período (vista)
+        Route::get('/cursos/{course}/periodos/{period}/usuarios', [CoursePeriodsController::class, 'usersIndex'])->name('courses.periods.users.index')->middleware(['role:master,docente,gerente_capacitacion']);
+        Route::post('/cursos/periodos/usuarios/guardar', [CoursePeriodsController::class, 'usersStore'])->name('courses.periods.users.store')->middleware(['role:master,docente,gerente_capacitacion']);
+        Route::get('/cursos/{course}/asistencias/virtual/pdf', [CoursePeriodsController::class, 'attendancePdf'])->name('courses.attendance.virtual.pdf')->middleware(['role:master,docente,gerente_capacitacion']);
 
         //Biblioteca de Temas (Plantillas)
         Route::get('/biblioteca-temas', [\App\Http\Controllers\TopicTemplateController::class, 'index'])->name('templates.index');
@@ -253,6 +265,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/courses/{course}/sessions/{session}',[CourseSessionController::class, 'destroy'])->name('courses.sessions.destroy');
     Route::patch('/cursos/{course}/horarios/{session}/toggle',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'toggle'])->name('courses.sessions.toggle');
     Route::put('/cursos/{course}/horarios/{session}',[\App\Http\Controllers\Cursos\CourseSessionController::class, 'update'])->name('courses.sessions.update');
+    Route::post('/sessions/{session}/attendance/qr', [CourseSessionController::class, 'storeQrAttendance'])->name('sessions.attendance.qr');
     // --- Módulo: Cursos (Vista y Realización - Alumnos y General) ---
     // Estas rutas atrapan {course}, por eso van AL FINAL de la sección de cursos
     Route::get('/cursos', [CourseController::class, 'index'])->name('Cursos.index');
@@ -270,8 +283,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cursos/{course}/inscribir', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/cursos/{course}/desinscribir', [CourseController::class, 'unenroll'])->name('courses.unenroll');
     Route::post('/completions/mark', [CompletionController::class, 'mark'])->name('completions.mark');
-    Route::post('/actividades/{activity}/submit', [ActivitiesController::class, 'submit'])->name('activities.submit');
-    
 
 
     // ======================================================================
@@ -333,13 +344,22 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/becas/documentos/{id}', [BecasController::class, 'update'])->name('becas.update');
             Route::delete('/becas/documentos/{id}', [BecasController::class, 'destroy'])->name('becas.destroy');
             Route::get('/becas/documentos/{id}/download', [BecasController::class, 'download'])->name('becas.download');
+            Route::post('/becas/toggle', [BecasController::class, 'toggleBeca'])->name('becas.toggle');
+            Route::delete('/becas/asignacion/{userId}', [BecasController::class, 'destroyAsignacion'])->name('becas.asignacion.destroy');
+            Route::post('/becas/catalogo', [BecasController::class, 'storeBeca'])->name('becas.catalogo.store');
+            Route::put('/becas/catalogo/{id}', [BecasController::class, 'updateBeca'])->name('becas.catalogo.update');
+            Route::delete('/becas/catalogo/{id}', [BecasController::class, 'destroyBeca'])->name('becas.catalogo.destroy');
+            Route::get('/becas/catalogo/{id}/documentos', [BecasController::class, 'getBecaDocumentos'])->name('becas.catalogo.documentos');
 
-            Route::get('/titulacion', [TitulacionController::class, 'index'])->name('titulacion.index');
-            Route::post('/titulacion/documentos', [TitulacionController::class, 'store'])->name('titulacion.store');
-            Route::get('/titulacion/documentos/{id}', [TitulacionController::class, 'show'])->name('titulacion.show');
-            Route::put('/titulacion/documentos/{id}', [TitulacionController::class, 'update'])->name('titulacion.update');
-            Route::delete('/titulacion/documentos/{id}', [TitulacionController::class, 'destroy'])->name('titulacion.destroy');
-            Route::get('/titulacion/documentos/{id}/download', [TitulacionController::class, 'download'])->name('titulacion.download');
+            Route::get('/titulacion', [ModuloExpedienteController::class, 'index'])->name('titulacion.index')->defaults('modulo', 'titulacion');
+            Route::post('/titulacion/toggle', [ModuloExpedienteController::class, 'toggleAsignacion'])->name('modulo.toggle.titulacion')->defaults('modulo', 'titulacion');
+
+            Route::get('/servicio-social', [ModuloExpedienteController::class, 'index'])->name('servicio_social.index')->defaults('modulo', 'servicio_social');
+            Route::post('/servicio-social/toggle', [ModuloExpedienteController::class, 'toggleAsignacion'])->name('modulo.toggle.servicio_social')->defaults('modulo', 'servicio_social');
+
+            Route::get('/practicas-profesionales', [ModuloExpedienteController::class, 'index'])->name('practicas_profesionales.index')->defaults('modulo', 'practicas_profesionales');
+            Route::post('/practicas-profesionales/toggle', [ModuloExpedienteController::class, 'toggleAsignacion'])->name('modulo.toggle.practicas_profesionales')->defaults('modulo', 'practicas_profesionales');
+
 
             Route::get('/boletas-calificaciones', [BoletaCalificacionController::class, 'index'])->name('boletas.index');
             Route::get('/boletas-calificaciones/export', [BoletaCalificacionController::class, 'export'])->name('boletas.export');
@@ -376,8 +396,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/carreras/clasificaciones', [careerController::class, 'storeClassification'])->name('careers.classifications.store');
             Route::delete('/carreras/clasificaciones/{careerClassification}', [careerController::class, 'destroyClassification'])->name('careers.classifications.destroy');
             Route::post('/carreras/clasificaciones/{careerClassification}/toggle', [careerController::class, 'toggleLanding'])->name('careers.classifications.toggle');
+            Route::post('/carreras/clasificaciones/{careerClassification}/toggle-active', [careerController::class, 'toggleClassificationActive'])->name('careers.classifications.toggle-active');
             Route::get('/carreras/por-clasificacion/{careerClassification}', [careerController::class, 'careersByClassification'])->name('careers.byClassification');
             Route::post('/carreras/{carrera}/toggle', [careerController::class, 'toggleCareerLanding'])->name('careers.toggle');
+            Route::post('/carreras/{carrera}/toggle-active', [careerController::class, 'toggleCareerActive'])->name('careers.toggle-active');
             Route::put('/carreras/{carrera}', [careerController::class, 'update'])->name('careers.update');
             Route::delete('/carreras/{carrera}', [careerController::class, 'destroy'])->name('careers.destroy');
 
@@ -521,6 +543,19 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/crm/estadisticas/data', [EstadisticasController::class, 'data'])->name('crm.estadisticas.data');
 
                 Route::get('/estadisticas/exportar', [CRMController::class, 'exportar'])->name('estadisticas.exportar');
+
+                // FORMULARIO DE REGISTRO (solo master y control admin)
+                Route::middleware(['role:master,control_administrativo'])->group(function () {
+                    Route::get('/formulario', [FormularioController::class, 'index'])->name('formulario.index');
+                    Route::post('/formulario', [FormularioController::class, 'store'])->name('formulario.store');
+                    Route::patch('/formulario/base/{campo}/toggle', [FormularioController::class, 'toggleBase'])->name('formulario.base.toggle');
+                    Route::patch('/formulario/base/{campo}', [FormularioController::class, 'updateBase'])->name('formulario.base.update');
+                    Route::get('/formulario/{id}', [FormularioController::class, 'show'])->name('formulario.show');
+                    Route::put('/formulario/{id}', [FormularioController::class, 'update'])->name('formulario.update');
+                    Route::delete('/formulario/{id}', [FormularioController::class, 'destroy'])->name('formulario.destroy');
+                    Route::patch('/formulario/{id}/toggle', [FormularioController::class, 'toggle'])->name('formulario.toggle');
+                    Route::patch('/formulario/{id}/reorder', [FormularioController::class, 'reorder'])->name('formulario.reorder');
+                });
 
             });
 

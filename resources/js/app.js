@@ -471,6 +471,14 @@ function showCareerSuccessModalIfMessagePresent() {
     if (typeof window.careerSuccessMessage === 'string' && window.careerSuccessMessage) {
         successModalMessage.textContent = window.careerSuccessMessage;
         successModal.style.display = 'flex';
+        // Remove ?modal=success from URL so bfcache doesn't re-trigger the modal
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('modal')) {
+                url.searchParams.delete('modal');
+                history.replaceState(null, '', url.toString());
+            }
+        } catch (_) {}
     }
 }
 
@@ -514,10 +522,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.navigateTo = (url) => window.spaNav.navigateTo(url);
 });
 
-// Tras restauración desde bfcache u orden de ejecución, el aviso debe mostrarse aunque no coincida con DOMContentLoaded solo.
-window.addEventListener('pageshow', () => {
+// No mostrar el modal al restaurar desde bfcache (el mensaje ya fue visto o la sesión expiró).
+window.addEventListener('pageshow', (event) => {
     bindCareerSuccessModalOkOnce();
-    showCareerSuccessModalIfMessagePresent();
+    if (!event.persisted) {
+        showCareerSuccessModalIfMessagePresent();
+    }
 });
 
 // Limpiar al cerrar
@@ -994,6 +1004,10 @@ document.addEventListener('click', (e) => {
         modal.style.display = 'flex';
         const sel = document.getElementById('carrera_id');
         if (sel) sel.classList.toggle('placeholder', sel.value === '');
+        const selClasif = document.getElementById('career_classification_id');
+        if (selClasif && selClasif.value && typeof window._filterMateriasCarreras === 'function') {
+            window._filterMateriasCarreras(selClasif.value);
+        }
     }
 });
 

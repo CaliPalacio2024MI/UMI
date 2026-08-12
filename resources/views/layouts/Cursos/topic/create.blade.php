@@ -20,7 +20,7 @@
             <h1>Añadir Temas y Actividades</h1>
             <h2>Curso: {{ $course->title }}</h2>
         </div>
-        <a href="{{ route('Cursos.index') }}" class="btn-secondary">
+        <a href="{{ route('courses.periods.index', $course) }}" class="btn-secondary">
             Finalizar
         </a>
     </div>
