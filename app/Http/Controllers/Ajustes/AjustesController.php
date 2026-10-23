@@ -172,14 +172,65 @@ class AjustesController extends Controller
                 $message = 'Institución creada exitosamente.';
                 break;
             
-            case 'departments':
-                $request->validate([
-                    'name' => 'required|string|max:255',
-                    'institution_id' => 'required|exists:institutions,id'
-                ]);
-                Department::create($data);
-                $message = 'Departamento creado exitosamente.';
-                break;
+
+
+
+case 'departments':
+    $validatedData = $request->validate([
+        'name' => 'required|string|max:255',
+        'institution_id' => 'required|integer|exists:institutions,id',
+    ]);
+
+    $user = Auth::user();
+    $isMaster = $user && $user->hasActiveRole('master');
+
+    $institutionIds = collect($request->input('institution_ids', []))
+        ->map(fn ($id) => (int) $id)
+        ->unique()
+        ->values();
+
+    // La Universidad conserva su registro individual.
+    if (!$institutionIds->isNotEmpty()) {
+        $department = Department::create([
+            'name' => $validatedData['name'],
+            'institution_id' => (int) $validatedData['institution_id'],
+        ]);
+
+        $department->institutions()->sync([
+            (int) $validatedData['institution_id']
+        ]);
+
+        $message = 'Departamento creado exitosamente.';
+        break;
+    }
+
+    // Solo el master puede registrar un departamento en varias propiedades.
+    if (!$isMaster) {
+        abort(403, 'No tienes permiso para registrar departamentos en varias propiedades.');
+    }
+
+    $request->validate([
+        'institution_ids' => 'required|array|min:1',
+        'institution_ids.*' => 'required|integer|distinct|exists:institutions,id',
+    ]);
+
+    $primaryInstitutionId = (int) $validatedData['institution_id'];
+
+    if (!$institutionIds->contains($primaryInstitutionId)) {
+        $institutionIds->push($primaryInstitutionId);
+    }
+
+    $department = Department::create([
+        'name' => $validatedData['name'],
+        'institution_id' => $primaryInstitutionId,
+    ]);
+
+    $department->institutions()->sync($institutionIds->all());
+
+    $message = 'Departamento creado exitosamente.';
+    break;
+
+
 
             case 'workstations':
                  $request->validate([
@@ -457,12 +508,62 @@ public function update(Request $request, $seccion, $id)
                 $item->update($data);
                 break;
             
-            case 'departments':
-                $item->update($request->validate([
-                    'name' => 'required', 
-                    'institution_id' => 'required'
-                ]));
-                break;
+
+case 'departments':
+
+$validatedData = $request->validate([
+    'name' => 'required|string|max:255',
+    'institution_id' => 'required|exists:institutions,id',
+    'institution_ids' => 'nullable|array',
+    'institution_ids.*' => 'required|integer|distinct|exists:institutions,id',
+]);
+
+$primaryInstitutionId = (int) $validatedData['institution_id'];
+
+$user = Auth::user();
+$isMaster = $user && $user->hasActiveRole('master');
+
+if (!$isMaster) {
+    $activeInstitutionId = (int) session('active_institution_id');
+
+    if ($primaryInstitutionId !== $activeInstitutionId) {
+        abort(403, 'No tienes permiso para modificar esta propiedad.');
+    }
+
+    $institutionIds = collect([$activeInstitutionId]);
+} else {
+    // Si no se envían casillas, conservar las propiedades actuales.
+    if ($request->exists('institution_ids')) {
+        $institutionIds = collect($validatedData['institution_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+    } else {
+        $institutionIds = $item->institutions()
+            ->pluck('institutions.id')
+            ->push($primaryInstitutionId)
+            ->unique()
+            ->values();
+    }
+}
+
+if (!$institutionIds->contains($primaryInstitutionId)) {
+    $institutionIds->push($primaryInstitutionId);
+}
+
+
+    $item->update([
+        'name' => $validatedData['name'],
+        'institution_id' => $primaryInstitutionId,
+    ]);
+
+    // Actualiza las propiedades asociadas sin crear otro departamento.
+    $item->institutions()->sync($institutionIds->all());
+
+    $message = 'Departamento actualizado exitosamente.';
+    break;
+
+
             
             case 'workstations':
                 $validatedData = $request->validate([
@@ -722,10 +823,14 @@ public function update(Request $request, $seccion, $id)
                 $query = Institution::query();
                 if ($search) $query->where('name', 'like', "%{$search}%");
                 break;
+
             case 'departments':
-                $query = Department::with('institution');
-                if ($search) $query->where('name', 'like', "%{$search}%");
+                $query = Department::with(['institution', 'institutions']);
+                if ($search) {
+                    $query->where('name', 'like', "%{$search}%");
+                }
                 break;
+                
             case 'workstations':
                 $query = Workstation::with('department');
                 if ($search) $query->where('name', 'like', "%{$search}%");
@@ -766,6 +871,144 @@ public function update(Request $request, $seccion, $id)
                 break;
         }
         return $query;
+    }
+
+    /**
+     * Registro masivo de departamentos (como MyQuality).
+     * Recibe los nombres que el formulario ya trajo de la API y registra los que
+     * no existan en la unidad activa. Devuelve un resumen.
+     */
+    public function bulkDepartments(Request $request)
+    {
+        $data = $request->validate([
+            'names' => 'required|array|min:1',
+            'names.*' => 'required|string|max:255',
+            'institution_ids' => 'nullable|array',
+            'institution_ids.*' => 'integer|exists:institutions,id',
+        ]);
+
+        // Igual que el registro individual: solo el master registra en varias propiedades.
+        if (! Auth::user()?->hasActiveRole('master')) {
+            return response()->json(['ok' => false, 'message' => 'No tienes permiso para el registro masivo de departamentos.'], 403);
+        }
+
+        $activeInstitutionId = (int) session('active_institution_id');
+        $institutionIds = collect($data['institution_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->push($activeInstitutionId)
+            ->unique()
+            ->values()
+            ->all();
+
+        $names = collect($data['names'])
+            ->map(fn ($name) => trim($name))
+            ->filter()
+            ->unique(fn ($name) => mb_strtolower($name, 'UTF-8'))
+            ->values();
+
+        $registrados = [];
+        $omitidos = [];
+
+        DB::transaction(function () use ($names, $activeInstitutionId, $institutionIds, &$registrados, &$omitidos) {
+            foreach ($names as $name) {
+                $exists = Department::where(function ($query) use ($activeInstitutionId) {
+                        $query->where('institution_id', $activeInstitutionId)
+                            ->orWhereHas('institutions', fn ($q) => $q->where('institutions.id', $activeInstitutionId));
+                    })
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($name, 'UTF-8')])
+                    ->exists();
+
+                if ($exists) {
+                    $omitidos[] = $name;
+                    continue;
+                }
+
+                $department = Department::create([
+                    'name' => $name,
+                    'institution_id' => $activeInstitutionId,
+                ]);
+                $department->institutions()->sync($institutionIds);
+                $registrados[] = $name;
+            }
+        });
+
+        return response()->json([
+            'ok' => true,
+            'total' => $names->count(),
+            'registrados' => $registrados,
+            'omitidos' => $omitidos,
+        ]);
+    }
+
+    /**
+     * Registro masivo de puestos (como MyQuality).
+     * Recibe, por cada departamento local, los nombres de puestos que el formulario
+     * ya trajo de la API y registra los que no existan. Devuelve un resumen.
+     */
+    public function bulkWorkstations(Request $request)
+    {
+        $data = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.department_id' => 'required|integer|exists:departments,id',
+            'items.*.names' => 'present|array',
+            'items.*.names.*' => 'required|string|max:255',
+        ]);
+
+        $activeInstitutionId = (int) session('active_institution_id');
+        $resumen = [
+            'departamentos' => 0,
+            'total_api' => 0,
+            'registrados' => 0,
+            'omitidos' => 0,
+            'detalle' => [],
+        ];
+
+        DB::transaction(function () use ($data, $activeInstitutionId, &$resumen) {
+            foreach ($data['items'] as $item) {
+                $department = Department::find($item['department_id']);
+                $institutionId = (int) ($department->institution_id ?: $activeInstitutionId);
+
+                $names = collect($item['names'])
+                    ->map(fn ($name) => trim($name))
+                    ->filter()
+                    ->unique(fn ($name) => mb_strtolower($name, 'UTF-8'))
+                    ->values();
+
+                $registrados = 0;
+                $omitidos = 0;
+
+                foreach ($names as $name) {
+                    $exists = Workstation::where('department_id', $department->id)
+                        ->whereRaw('LOWER(name) = ?', [mb_strtolower($name, 'UTF-8')])
+                        ->exists();
+
+                    if ($exists) {
+                        $omitidos++;
+                        continue;
+                    }
+
+                    Workstation::create([
+                        'name' => $name,
+                        'department_id' => $department->id,
+                        'institution_id' => $institutionId,
+                    ]);
+                    $registrados++;
+                }
+
+                $resumen['departamentos']++;
+                $resumen['total_api'] += $names->count();
+                $resumen['registrados'] += $registrados;
+                $resumen['omitidos'] += $omitidos;
+                $resumen['detalle'][] = [
+                    'departamento' => $department->name,
+                    'api' => $names->count(),
+                    'registrados' => $registrados,
+                    'omitidos' => $omitidos,
+                ];
+            }
+        });
+
+        return response()->json(['ok' => true, 'resumen' => $resumen]);
     }
 
     private function resolveCorporateCatalogIdsFromApiNames(Request $request): void
@@ -890,9 +1133,20 @@ public function update(Request $request, $seccion, $id)
                     $q->where('institutions.id', $activeInstitutionId);
                 });
             }
+
+        } elseif ($seccion === 'departments') {
+            if (!$user->hasActiveRole('master')) {
+                $query->where(function ($q) use ($activeInstitutionId) {
+                    $q->where('institution_id', $activeInstitutionId)
+                    ->orWhereHas('institutions', function ($institutionQuery) use ($activeInstitutionId) {
+                        $institutionQuery->where('institutions.id', $activeInstitutionId);
+                    });
+                });
+            }
         } elseif ($seccion !== 'institutions') {
             $query->where('institution_id', $activeInstitutionId);
         }
+
 
         
         if ($user->hasActiveRole('control_administrativo')) {
@@ -994,10 +1248,72 @@ public function update(Request $request, $seccion, $id)
         }
         
         switch ($seccion) {
-            case 'departments':
+case 'institutions':
+    $data['registeredPropertyNames'] = Institution::where(function ($query) {
+        $query->whereNull('is_universidad')
+            ->orWhere('is_universidad', false);
+    })
+        ->where('name', '!=', 'Universidad Mundo Imperial')
+        ->pluck('name')
+        ->values()
+        ->all();
+    break;
 
-                 $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
-                break;
+case 'departments':
+
+if (Auth::user()->hasActiveRole('master')) {
+    $data['institutions'] = Institution::all();
+} else {
+    $data['institutions'] = Institution::where(
+        'id',
+        $activeInstitutionId
+    )->get();
+}
+
+
+    $data['registeredDepartmentNames'] = Department::where(function ($query) use ($activeInstitutionId) {
+        $query->where('institution_id', $activeInstitutionId)
+            ->orWhereHas('institutions', function ($institutionQuery) use ($activeInstitutionId) {
+                $institutionQuery->where('institutions.id', $activeInstitutionId);
+            });
+    })
+        ->pluck('name')
+        ->unique()
+        ->values()
+        ->all();
+
+    // Departamentos ya registrados por unidad (para las que no existen en la API externa).
+    $localDepartmentsByInstitution = [];
+    Department::with('institutions:institutions.id')
+        ->get(['id', 'name', 'institution_id'])
+        ->each(function ($department) use (&$localDepartmentsByInstitution) {
+            $ids = $department->institutions->pluck('id')
+                ->push($department->institution_id)
+                ->filter()
+                ->unique();
+            foreach ($ids as $institutionId) {
+                $localDepartmentsByInstitution[$institutionId][] = $department->name;
+            }
+        });
+    $data['localDepartmentsByInstitution'] = collect($localDepartmentsByInstitution)
+        ->map(fn ($names) => array_values(array_unique($names)))
+        ->all();
+
+    if (isset($data['item'])) {
+        $data['selectedInstitutionIds'] = $data['item']->institutions()
+            ->pluck('institutions.id')
+            ->all();
+
+        // Conservar la propiedad principal actual.
+        if (!in_array($data['item']->institution_id, $data['selectedInstitutionIds'])) {
+            $data['selectedInstitutionIds'][] = $data['item']->institution_id;
+        }
+    } else {
+        $data['selectedInstitutionIds'] = [$activeInstitutionId];
+    }
+
+    break;
+
             case 'expediente':
                 $data['procesos'] = DocumentRequirement::PROCESOS;
                 $data['tiposArchivo'] = DocumentRequirement::TIPOS_ARCHIVO;
@@ -1009,6 +1325,22 @@ public function update(Request $request, $seccion, $id)
             case 'workstations':
                 
                 $data['departments'] = Department::where('institution_id', $activeInstitutionId)->get();
+                $data['registeredWorkstationNames'] = Workstation::where('institution_id', $activeInstitutionId)
+    ->pluck('name')
+    ->values()
+    ->all();
+                // Para Calidad (no existe en la API): todos los puestos ya registrados
+                // y los que ya tiene cada departamento (para no duplicarlos).
+                $data['allWorkstationNames'] = Workstation::orderBy('name')
+                    ->pluck('name')
+                    ->map(fn ($name) => trim($name))
+                    ->unique()
+                    ->values()
+                    ->all();
+                $data['workstationNamesByDepartment'] = Workstation::get(['name', 'department_id'])
+                    ->groupBy('department_id')
+                    ->map(fn ($items) => $items->pluck('name')->values()->all())
+                    ->all();
                 break;
             case 'periods':
                  
@@ -1024,6 +1356,11 @@ public function update(Request $request, $seccion, $id)
                                       ->where('name', '!=', $data['universityName']);
                 }
                 $data['all_institutions'] = $institutionsQuery->get();
+
+                // Mantener la unidad principal del usuario al editar.
+                $data['selectedInstitutionId'] = isset($data['item'])
+                    ? (int) $data['item']->institution_id
+                    : (int) $activeInstitutionId;
 
                 if ($user->hasActiveRole('master') && $data['isActiveInstitutionUniversity']) {
                     $data['institutions'] = Institution::where('id', $activeInstitutionId)->get();
@@ -1042,7 +1379,16 @@ public function update(Request $request, $seccion, $id)
                 
                 $data['departments'] = Department::where('institution_id', $activeInstitutionId)->orderBy('name')->get();
                 $data['workstations'] = Workstation::where('institution_id', $activeInstitutionId)->orderBy('name')->get();
+\Log::info('DEBUG PUESTOS UMI', [
+    'departments' => $data['departments']
+        ->map(fn ($d) => $d->id . ' = ' . $d->name)
+        ->implode(' | '),
 
+    'workstations' => $data['workstations']
+        ->map(fn ($w) => $w->id . ' = ' . $w->name
+            . ' | department_id=' . $w->department_id)
+        ->implode(' | '),
+]);
                 // Aspirantes CRM (id + datos para autocompletar apellidos y CURP en el modal de usuario)
                 $data['aspirantes_crm_list'] = Lead::queryBaseAspirantesControlEscolar()
                     ->whereNotNull('alumno_nombre')

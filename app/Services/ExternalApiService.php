@@ -63,7 +63,9 @@ class ExternalApiService
     {
         $token = $this->generateToken();
 
-        $response = Http::withToken($token)->$method($url, $data);
+        $response = Http::withOptions([
+    'verify' => storage_path('certs/cacert.pem')
+    ])->withToken($token)->$method($url, $data);
 
         if ($response->successful()) {
             return $response->json();

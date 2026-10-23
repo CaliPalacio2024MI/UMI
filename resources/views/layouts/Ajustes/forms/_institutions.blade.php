@@ -133,6 +133,20 @@
         }
 
         function populateSelect(propiedades) {
+            const registeredPropertyNames = @json($registeredPropertyNames ?? []);
+
+const normalizeName = (name) =>
+    String(name ?? '')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+const registeredNames = new Set(
+    registeredPropertyNames.map(normalizeName)
+);
+
+
             const raw = Array.isArray(propiedades)
                 ? propiedades
                 : (propiedades?.propiedades ?? propiedades?.data ?? propiedades);
@@ -140,6 +154,7 @@
             if (!Array.isArray(raw)) {
                 console.warn('Respuesta inesperada al cargar propiedades:', propiedades);
                 return;
+                
             }
 
             nameSelect.innerHTML = '';
@@ -152,6 +167,12 @@
                 const optionValue = (p?.nombre ?? p?.name ?? p?.descripcion ?? String(p?.id ?? '')).trim();
                 const optionText = (p?.nombre ?? p?.name ?? p?.descripcion ?? `ID ${p?.id ?? ''}`).toString();
                 if (!optionValue) return;
+                if (
+    registeredNames.has(normalizeName(optionValue)) &&
+    normalizeName(optionValue) !== normalizeName(currentValue)
+) {
+    return;
+}
 
                 const opt = document.createElement('option');
                 opt.value = optionValue;

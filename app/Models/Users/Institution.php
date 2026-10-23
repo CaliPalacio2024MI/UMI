@@ -73,10 +73,10 @@ class Institution extends Model
         return $this->hasMany(Career::class);
     }
 
-    public function departments(): HasMany
+    public function departments(): BelongsToMany
     {
-        return $this->hasMany(Department::class);
-    }
+        return $this->belongsToMany(Department::class, 'department_institution');
+    }  
 
     public function workstations(): HasManyThrough
     {

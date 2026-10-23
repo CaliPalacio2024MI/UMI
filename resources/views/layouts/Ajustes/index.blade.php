@@ -17,9 +17,11 @@
                     <input type="hidden" name="proceso" value="{{ request('proceso') }}">
                 @endif
             </form>
-            <button id="openModalBtn" class="btn-primary">
-                + Agregar {{ $singular_title }}
-            </button>
+<button id="openModalBtn" type="button" class="btn-primary">
+    + Agregar {{ $singular_title }}
+</button>
+
+
         </div>
     </header>
 
@@ -93,7 +95,15 @@
                             </td>
                         @elseif ($seccion === 'departments')
                             <td>{{ $item->name }}</td>
-                            <td>{{ $item->institution->name ?? 'N/A' }}</td>
+                            <td>
+                                @php
+                                    $propertyNames = $item->institutions->pluck('name')->filter()->unique()->values();
+                                @endphp
+
+                                {{ $propertyNames->isNotEmpty()
+                                    ? $propertyNames->implode(', ')
+                                    : ($item->institution->name ?? 'N/A') }}
+                            </td>
                         @elseif ($seccion === 'workstations')
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->department->name ?? 'N/A' }}</td>
@@ -267,6 +277,72 @@
     .exp-badge--opt { background: #eef1f6; color: #46536b; }
     .exp-badge--on  { background: #e6f6ec; color: #1e7e45; }
     .exp-badge--off { background: #f1f1f1; color: #8a8a8a; }
+/* Diseño del modal de usuarios estilo My Quality */
+#formModal .modal-content {
+    background: #fff;
+    border: 1px solid #d7dce4;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 12px 35px rgba(13, 34, 64, 0.18);
+}
+
+#formModal #modalTitle {
+    color: #0d2240;
+    font-size: 1.35rem;
+    font-weight: 700;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e5e9f0;
+}
+
+#formModal #modalBody .form-group {
+    margin-bottom: 18px;
+}
+
+#formModal #modalBody label {
+    color: #0d2240;
+    font-weight: 600;
+}
+
+#formModal #modalBody .form-control {
+    min-height: 42px;
+    border: 1px solid #cfd6e6;
+    border-radius: 7px;
+    padding: 9px 12px;
+    box-shadow: none;
+}
+
+#formModal #modalBody .form-control:focus {
+    border-color: #0d2240;
+    box-shadow: 0 0 0 3px rgba(13, 34, 64, 0.10);
+}
+
+#formModal button.btn-primary {
+    display: block;
+    min-width: 120px;
+    margin: 24px 0 0 auto;
+    padding: 10px 22px;
+    border: 1px solid #0d2240;
+    border-radius: 7px;
+    background: #0d2240;
+    color: #fff;
+    font-weight: 600;
+}
+
+#formModal button.btn-primary:hover {
+    background: #17385f;
+    border-color: #17385f;
+}
+.main-content-area .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+}
+
+.main-content-area .header-actions #openModalBtn {
+    margin-left: auto;
+}
 </style>
 <div id="formModal" class="modal">
     <div class="modal-content">
@@ -283,7 +359,6 @@
     </div>
 </div>
 
-
 <script>
    (function initAjustesModalScript() {
         
@@ -295,14 +370,23 @@
         const closeModal = document.querySelector('.close-modal');
         
         
-        function executeScriptsIn(container) {
-            const scripts = container.querySelectorAll('script');
-            scripts.forEach(oldScript => {
-                const newScript = document.createElement('script');
-                if (oldScript.textContent) newScript.textContent = oldScript.textContent;
-                oldScript.parentNode.replaceChild(newScript, oldScript);
-            });
+function executeScriptsIn(container) {
+    const scripts = container.querySelectorAll('script');
+
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+
+        for (const attr of oldScript.attributes) {
+            newScript.setAttribute(attr.name, attr.value);
         }
+
+        newScript.textContent = oldScript.textContent;
+
+        if (oldScript.parentNode) {
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        }
+    });
+}
         
         if (!modal || !openModalBtn) return;
         

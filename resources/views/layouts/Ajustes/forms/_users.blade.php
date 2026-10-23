@@ -49,6 +49,16 @@
     </div>
 @endif
 <input type="hidden" name="tipo_usuario_creacion" id="tipo_usuario_creacion" value="{{ $tipoCreacion }}">
+
+@php
+    $selectedInstitutionId = old('institution_id');
+    if ($selectedInstitutionId === null) {
+        $selectedInstitutionId = isset($item) ? (optional($item->institutions)->first()->id ?? $item->institution_id ?? null) : null;
+        $selectedInstitutionId = $selectedInstitutionId ?? session('active_institution_id');
+    }
+    $selectedInstitutionName = collect($institutions ?? [])->firstWhere('id', (int) $selectedInstitutionId)->name ?? '';
+@endphp
+
 @if ($isUniversity)
 <div class="form-group" style="margin-bottom: 14px;">
     <div class="tipo-usuario-inline" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
@@ -72,159 +82,20 @@
     @enderror
 </div>
 @endif
-<div class="form-group" id="nombre-form-group">
-    <div class="nombre-row" style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label class="nombre-label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Nombre(s)</label>
-        <div class="nombre-field-slot" style="flex: 1 1 auto; min-width: 0;">
-            <div id="nombre-wrapper-text" style="{{ $nombreConTexto ? '' : 'display: none;' }}">
-                <input type="text"
-                       class="form-control"
-                       id="nombre_text"
-                       style="width: 100%;"
-                       @if ($nombreConTexto) name="nombre" required @endif
-                       value="{{ $nombreValor }}"
-                       maxlength="255"
-                       placeholder="Escriba el nombre(s)"
-                       autocomplete="given-name">
-            </div>
-            <div id="nombre-wrapper-select" style="{{ $tipoCreacion === 'alumno' && !$modoEdicion ? '' : 'display: none;' }}">
-                <input type="hidden"
-                       id="nombre_alumno_submit"
-                       value="{{ $nombreValor }}"
-                       @if ($tipoCreacion === 'alumno' && !$modoEdicion) name="nombre" required @else disabled @endif>
-                <select class="form-control"
-                        id="nombre_select"
-                        style="width: 100%;"
-                        @if ($tipoCreacion === 'alumno' && !$modoEdicion) required @endif>
-                    <option value="" disabled {{ $selectedAspiranteLeadId === null && ($nombreValor === '' || $nombreValor === null) ? 'selected' : '' }}>Seleccione el nombre</option>
-                    @foreach ($aspirantesCrm as $asp)
-                        <option value="{{ $asp->id }}"
-                                data-nombre="{{ e($asp->alumno_nombre) }}"
-                                data-paterno="{{ e($asp->alumno_paterno ?? '') }}"
-                                data-materno="{{ e($asp->alumno_materno ?? '') }}"
-                                data-curp="{{ e(strtoupper(preg_replace('/\s+/', '', (string) ($asp->alumno_curp ?? '')))) }}"
-                            {{ (int) $selectedAspiranteLeadId === (int) $asp->id ? 'selected' : '' }}>
-                            {{ $asp->alumno_nombre }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div id="nombre-wrapper-api-select" style="{{ ! $isUniversity ? '' : 'display: none;' }}">
-                <input type="hidden"
-                       id="nombre_api_submit"
-                       value="{{ $nombreValor }}"
-                       @if (! $isUniversity) name="nombre" required @else disabled @endif>
-                <select class="form-control"
-                        id="nombre_api_select"
-                        style="width: 100%;"
-                        @if (! $isUniversity) required @endif>
-                    <option value="" selected disabled>Seleccione el nombre</option>
-                </select>
-            </div>
-        </div>
-    </div>
-    @error('nombre')
-        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
-            <strong>{{ $message }}</strong>
-        </span>
-    @enderror
-    <style>
-        /* Contorno ovalado tipo “píldora” + sombra */
-        #nombre-form-group #nombre_text,
-        #nombre-form-group #nombre_select {
-            border-radius: 999px;
-            padding-left: 1rem;
-            padding-right: 1rem;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        #nombre-form-group #nombre_text:focus,
-        #nombre-form-group #nombre_select:focus {
-            border-color: #cfd6e6;
-            box-shadow: 0 4px 14px rgba(34, 63, 112, 0.16);
-            outline: none;
-        }
-        /* Texto gris mientras no hay nombre elegido (placeholder del select) */
-        #nombre-form-group #nombre_select:invalid {
-            color: #888;
-        }
-        #nombre-form-group #nombre_select:valid {
-            color: #212529;
-        }
-    </style>
-</div>
+{{-- 1. Unidad de negocio (propiedad) --}}
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="apellido_paterno" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Apellido Paterno</label>
-        <div style="flex: 1 1 auto; min-width: 0;">
-            <input type="text"
-                   id="apellido_paterno"
-                   name="apellido_paterno"
-                   class="form-control"
-                   style="width: 100%;"
-                   required
-                   value="{{ old('apellido_paterno', $item->apellido_paterno ?? '') }}">
-        </div>
-    </div>
-    <style>
-        #modalBody #apellido_paterno.form-control,
-        #modalBody #apellido_materno.form-control,
-        #modalBody #nombre_api_select.form-control,
-        #modalBody #RFC.form-control,
-        #modalBody #password.form-control {
-            border: none;
-            border-bottom: 2px solid #dc3545;
-            border-radius: 0;
-            box-shadow: none;
-            transform: translateY(-5px);
-        }
-        #modalBody #apellido_paterno.form-control:focus,
-        #modalBody #apellido_materno.form-control:focus,
-        #modalBody #nombre_api_select.form-control:focus,
-        #modalBody #RFC.form-control:focus,
-        #modalBody #password.form-control:focus {
-            border: none;
-            border-bottom: 2px solid #b02a37;
-            box-shadow: none;
-            outline: none;
-        }
-    </style>
-</div>
-<div class="form-group">
-    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="apellido_materno" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Apellido Materno</label>
-        <div style="flex: 1 1 auto; min-width: 0;">
-            <input type="text"
-                   id="apellido_materno"
-                   name="apellido_materno"
-                   class="form-control"
-                   style="width: 100%;"
-                   value="{{ old('apellido_materno', $item->apellido_materno ?? '') }}">
-        </div>
-    </div>
-</div>
-
-@php
-    $selectedInstitutionId = old('institution_id');
-    if ($selectedInstitutionId === null) {
-        $selectedInstitutionId = isset($item) ? (optional($item->institutions)->first()->id ?? $item->institution_id ?? null) : null;
-        $selectedInstitutionId = $selectedInstitutionId ?? session('active_institution_id');
-    }
-    $selectedInstitutionName = collect($institutions ?? [])->firstWhere('id', (int) $selectedInstitutionId)->name ?? '';
-@endphp
-<div class="form-group">
-    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="institution_id" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Unidad de Negocio</label>
+        <label for="institution_id" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">{{ $isUniversity ? 'Unidad de Negocio' : 'Propiedad' }}</label>
         <div style="flex: 1 1 auto; min-width: 0;">
             <input type="text"
                    id="institution_id_display"
                    value="{{ $selectedInstitutionName }}"
-                   style="width: 100%; margin-bottom: 8px; background-color: transparent; color: #444; cursor: not-allowed; border: none; border-bottom: 2px solid #dc3545; border-radius: 0; box-shadow: none; padding: 0.375rem 0;"
+                   style="{{ $isUniversity ? '' : 'display: none;' }} width: 100%; margin-bottom: 8px; background-color: transparent; color: #444; cursor: not-allowed; border: none; border-bottom: 2px solid #dc3545; border-radius: 0; box-shadow: none; padding: 0.375rem 0;"
                    readonly>
             <input type="hidden" id="institution_id_hidden" name="institution_id" value="{{ $selectedInstitutionId }}">
-            <div class="umi-form-select-pill" id="institution_id_pill" style="display: none;">
+            <div class="umi-form-select-pill" id="institution_id_pill" style="{{ $isUniversity ? 'display: none;' : '' }}">
                 <select id="institution_id" class="form-control umi-form-select-pill-inner" style="width: 100%;">
-                    <option value="">Seleccione la ud. de negocio</option>
+                    <option value="">{{ $isUniversity ? 'Seleccione la ud. de negocio' : 'Seleccione una propiedad' }}</option>
                     @foreach($institutions ?? [] as $inst)
                         <option value="{{ $inst->id }}" {{ $selectedInstitutionId == $inst->id ? 'selected' : '' }}>
                             {{ $inst->name }}
@@ -260,6 +131,41 @@
             padding-left: 1rem;
             padding-right: 1rem;
         }
+        /* Igual que los demás campos del modal (Departamento, Puesto...) */
+        #modalBody #institution_id_pill,
+        #modalBody #role_id_select_pill {
+            border-radius: 8px;
+            border: none;
+            box-shadow: none;
+            overflow: visible;
+        }
+        #modalBody #role_id_select_pill select#role_id_select,
+        #modalBody #institution_id_pill select#institution_id {
+            width: 100%;
+            min-height: 42px;
+            padding: 10px 12px !important;
+            border: 1px solid #cfd6e6 !important;
+            border-radius: 8px;
+            background-color: #fff !important;
+        }
+        #modalBody #role_id_select_pill select#role_id_select:focus,
+        #modalBody #institution_id_pill select#institution_id:focus {
+            border-color: #223f70 !important;
+            box-shadow: 0 0 0 2px rgba(34, 63, 112, 0.12) !important;
+            outline: none;
+        }
+        /* La clase global .form-control quita la flechita (appearance: none); aquí se regresa */
+        #modalBody select.form-control,
+        #modalBody select#institution_id {
+            appearance: auto !important;
+            -webkit-appearance: menulist !important;
+            -moz-appearance: menulist !important;
+        }
+        /* Guardar a todo el ancho, como en Departamentos y Puestos */
+        #modalForm:has(#nombre-form-group) > button[type="submit"] {
+            width: 100%;
+            margin: 24px 0 0;
+        }
         #institution_id:invalid {
             color: #888;
         }
@@ -268,7 +174,224 @@
         }
     </style>
 </div>
+{{-- 2-6. Departamento, Puesto, Nombre, Apellidos --}}
+<div id="department-field-wrapper" class="form-group" 
+     style="{{ $isUniversity ? 'display: none;' : '' }}">
+    <label for="department_id">Departamento</label>
+    <input type="hidden" id="department_api_name" name="department_api_name" value="">
+    <select id="department_id" name="department_id" class="form-control">
+        <option value="">N/A</option>
+@foreach ($departments as $department)
+    <option value="{{ $department->id }}"
+        {{ (string) old('department_id', $item->department_id ?? '') === (string) $department->id ? 'selected' : '' }}>
+        {{ $department->name }}
+    </option>
+@endforeach
+    </select>
+</div>
+<div id="workstation-field-wrapper" class="form-group">
+    <label for="workstation_id">Puesto</label>
+    <input type="hidden" id="workstation_api_name"
+           name="workstation_api_name" value="">
 
+    <select id="workstation_id" name="workstation_id"
+            class="form-control">
+        <option value="">Selecciona un puesto</option>
+    </select>
+</div>
+<div class="form-group" id="nombre-form-group">
+        <div class="nombre-row" style="display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 8px;">
+        <label class="nombre-label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Nombre(s)</label>
+        <div class="nombre-field-slot" style="flex: 1 1 auto; min-width: 0;">
+            <div id="nombre-wrapper-text" style="{{ $nombreConTexto ? '' : 'display: none;' }}">
+            <input type="text"
+                class="form-control"
+                id="nombre_text"
+                name="nombre"
+                required
+                style="width: 100%;"
+                value="{{ $nombreValor }}"
+                maxlength="255"
+                placeholder="Escriba el nombre(s)"
+                autocomplete="given-name">
+            </div>
+            <div id="nombre-wrapper-select" style="{{ $tipoCreacion === 'alumno' && !$modoEdicion ? '' : 'display: none;' }}">
+                <input type="hidden"
+                       id="nombre_alumno_submit"
+                       value="{{ $nombreValor }}"
+                       @if ($tipoCreacion === 'alumno' && !$modoEdicion) name="nombre" required @else disabled @endif>
+                <select class="form-control"
+                        id="nombre_select"
+                        style="width: 100%;"
+                        @if ($tipoCreacion === 'alumno' && !$modoEdicion) required @endif>
+                    @foreach ($aspirantesCrm as $asp)
+                        <option value="{{ $asp->id }}"
+                                data-nombre="{{ e($asp->alumno_nombre) }}"
+                                data-paterno="{{ e($asp->alumno_paterno ?? '') }}"
+                                data-materno="{{ e($asp->alumno_materno ?? '') }}"
+                                data-curp="{{ e(strtoupper(preg_replace('/\s+/', '', (string) ($asp->alumno_curp ?? '')))) }}"
+                            {{ (int) $selectedAspiranteLeadId === (int) $asp->id ? 'selected' : '' }}>
+                            {{ $asp->alumno_nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div id="nombre-wrapper-api-select" style="{{ ! $isUniversity && !$modoEdicion ? '' : 'display: none;' }}">
+                <input type="hidden"
+                       id="nombre_api_submit"
+                       value="{{ $nombreValor }}"
+                        @if (! $isUniversity && !$modoEdicion) name="nombre" required @else disabled @endif>
+                <select class="form-control"
+                        id="nombre_api_select"
+                        style="width: 100%;"
+                        @if (! $isUniversity && !$modoEdicion) required @endif>
+                </select>
+            </div>
+        </div>
+    </div>
+    @error('nombre')
+        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+    <style>
+        /* Contorno ovalado tipo “píldora” + sombra */
+        #nombre-form-group #nombre_text,
+        #nombre-form-group #nombre_select {
+            border-radius: 999px;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #nombre-form-group #nombre_text:focus,
+        #nombre-form-group #nombre_select:focus {
+            border-color: #cfd6e6;
+            box-shadow: 0 4px 14px rgba(34, 63, 112, 0.16);
+            outline: none;
+        }
+        /* Texto gris mientras no hay nombre elegido (placeholder del select) */
+        #nombre-form-group #nombre_select:invalid {
+            color: #888;
+        }
+        #nombre-form-group #nombre_select:valid {
+            color: #212529;
+        }
+    </style>
+</div>
+<div class="form-group" style="margin-bottom: 18px;">
+    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+        <label for="apellido_paterno" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Apellido Paterno</label>
+        <div style="flex: 1 1 auto; min-width: 0;">
+            <input type="text"
+                   id="apellido_paterno"
+                   name="apellido_paterno"
+                   class="form-control"
+                   style="width: 100%;"
+                   required
+                   value="{{ old('apellido_paterno', $item->apellido_paterno ?? '') }}">
+        </div>
+    </div>
+    <style>
+            #modalBody #nombre_text.form-control,
+            #modalBody #apellido_paterno.form-control,
+            #modalBody #apellido_materno.form-control,
+            #modalBody #nombre_api_select.form-control,
+            #modalBody #RFC.form-control,
+            #modalBody #password.form-control {
+                border: 1px solid #cfd6e6;
+                border-radius: 8px;
+                box-shadow: none;
+                transform: none;
+                margin-top: 0;
+                padding: 10px 12px;
+                min-height: 42px;
+                box-sizing: border-box;
+                background-color: #fff;
+            }
+
+            #modalBody #nombre_text.form-control:focus,
+            #modalBody #apellido_paterno.form-control:focus,
+            #modalBody #apellido_materno.form-control:focus,
+            #modalBody #nombre_api_select.form-control:focus,
+            #modalBody #RFC.form-control:focus,
+            #modalBody #password.form-control:focus {
+                border: 1px solid #223f70;
+                box-shadow: 0 0 0 2px rgba(34, 63, 112, 0.12);
+                outline: none;
+            }
+    </style>
+</div>
+<div class="form-group" style="margin-bottom: 18px;">
+    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+        <label for="apellido_materno" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Apellido Materno</label>
+        <div style="flex: 1 1 auto; min-width: 0;">
+            <input type="text"
+                   id="apellido_materno"
+                   name="apellido_materno"
+                   class="form-control"
+                   style="width: 100%;"
+                   value="{{ old('apellido_materno', $item->apellido_materno ?? '') }}">
+        </div>
+    </div>
+</div>
+
+{{-- 7. RFC --}}
+<div class="form-group">
+    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+        <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Usuario (RFC o CURP)</label>
+        <div style="flex: 1 1 auto; min-width: 0;">
+            <input type="text"
+                   id="RFC"
+                   name="RFC"
+                   required
+                   maxlength="18"
+                   minlength="12"
+                   class="form-control @error('RFC') is-invalid @enderror"
+                   value="{{ old('RFC', $item->RFC ?? '') }}"
+                   style="width: 100%; text-transform: uppercase;"
+                   autocomplete="username">
+        </div>
+    </div>
+    @error('RFC')
+        <span class="invalid-feedback" role="alert" style="color: #dc3545; font-size: 0.85em; display: block; margin-top: 5px;">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+</div>
+<hr style="margin: 15px 0;">
+
+{{-- 8. Contraseña --}}
+{{-- Campo: Contraseña --}}
+<div class="form-group">
+    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+        <label for="password" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Contraseña</label>
+        <div style="flex: 1 1 auto; min-width: 0;">
+            <input type="password"
+                   id="password"
+                   name="password"
+                   class="form-control @error('password') is-invalid @enderror"
+                   minlength="8"
+                   style="width: 100%;"
+                   {{ isset($item) ? '' : 'required' }}>
+        </div>
+    </div>
+    @error('password')
+        <span class="invalid-feedback" role="alert" style="color: #dc3545; font-size: 0.85em; display: block; margin-top: 5px;">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+    
+    @if(isset($item))
+        <small style="display: block; color: #555; margin-top: 6px;">Dejar en blanco para no cambiar la contraseña. Si capturas una nueva: mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
+    @else
+        <small style="display: block; color: #555; margin-top: 6px;">Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
+    @endif
+</div>
+
+<hr style="margin: 15px 0;">
+
+{{-- 9. Rol y módulos --}}
 <div class="form-group">
     <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
         <label for="role_id_select" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Rol</label>
@@ -281,6 +404,22 @@
         </div>
     </div>
     <style>
+            #modalBody #role_id_select.form-control {
+            width: 100%;
+            min-height: 42px;
+            padding: 10px 12px;
+            border: 1px solid #cfd6e6;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #212529;
+            box-shadow: none;
+        }
+
+        #modalBody #role_id_select.form-control:focus {
+            border-color: #223f70;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(34, 63, 112, 0.12);
+        }
         #role_id_select:invalid {
             color: #888;
         }
@@ -289,16 +428,43 @@
         }
     </style>
 </div>
-<div class="form-group" style="margin-top: -4px;">
-    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%;">
-        <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 6px;">
-            <label for="role_switch_ui" style="position: relative; display: inline-block; width: 46px; height: 24px; margin: 0; cursor: pointer;">
-                <input type="checkbox" id="role_switch_ui" style="opacity: 0; width: 0; height: 0;">
-                <span style="position: absolute; inset: 0; background-color: #c6c6c6; border-radius: 999px; transition: 0.2s;"></span>
-                <span style="position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); transition: 0.2s;"></span>
-            </label>
-            <label id="role_switch_state" for="role_switch_ui" style="font-size: 0.9rem; color: #BC8A55; margin: 0; cursor: pointer;">Accesos</label>
-        </div>
+<div id="admin-modules-wrapper" class="form-group" style="display: none; border: 1px solid #eee; padding: 10px; border-radius: 4px; background-color: #f9f9f9;">
+    <label>Módulos a Habilitar para Control Administrativo:</label>
+    @php
+        $modules = old('modules_enabled', $enabled_modules ?? []);
+    @endphp
+    <div class="checkbox-line">
+        <input type="checkbox" id="module_control_academico" name="modules_enabled[]" value="control_academico"
+               {{ in_array('control_academico', $modules) ? 'checked' : '' }}>
+        <label for="module_control_academico">Control Académico</label>
+    </div>
+    <div class="checkbox-line">
+        <input type="checkbox" id="module_planeacion_vinculacion" name="modules_enabled[]" value="planeacion_vinculacion"
+               {{ in_array('planeacion_vinculacion', $modules) ? 'checked' : '' }}>
+        <label for="module_planeacion_vinculacion">Planeación y Vinculación</label>
+    </div>
+    <div class="checkbox-line">
+        <input type="checkbox" id="module_control_escolar" name="modules_enabled[]" value="control_escolar"
+               {{ in_array('control_escolar', $modules) ? 'checked' : '' }}>
+        <label for="module_control_escolar">Control Escolar</label>
+    </div>
+
+    @error('modules_enabled')
+        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
+            <strong>{{ $message }}</strong>
+        </span>
+    @enderror
+</div>
+
+{{-- 10. Agregar propiedades adicionales --}}
+<div class="form-group" id="extra-properties-switch" style="margin-top: 6px;">
+    <div style="display: flex; align-items: center; gap: 14px; width: 100%;">
+        <label id="role_switch_state" for="role_switch_ui" style="margin: 0; font-weight: 600; white-space: nowrap; cursor: pointer;">Agregar Propiedades Adicionales</label>
+        <label for="role_switch_ui" style="position: relative; display: inline-block; width: 46px; height: 24px; margin: 0; cursor: pointer; flex: 0 0 auto;">
+            <input type="checkbox" id="role_switch_ui" style="opacity: 0; width: 0; height: 0;">
+            <span style="position: absolute; inset: 0; background-color: #c6c6c6; border-radius: 999px; transition: 0.2s;"></span>
+            <span style="position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); transition: 0.2s;"></span>
+        </label>
     </div>
 </div>
 <div class="form-group" id="institution-access-wrapper" style="margin-top: 6px;">
@@ -425,7 +591,7 @@
                 container.style.backgroundColor = roleSwitch.checked ? '#e0b84f' : '#c6c6c6';
                 knob.style.transform = roleSwitch.checked ? 'translateX(22px)' : 'translateX(0)';
             }
-            roleSwitchState.textContent = 'Accesos';
+            roleSwitchState.textContent = 'Agregar Propiedades Adicionales';
 
             // Solo mostrar/ocultar la lista de propiedades extra; la principal no cambia.
             if (institutionAccessWrapper) {
@@ -479,124 +645,6 @@
     })();
 </script>
 
-<div class="form-group">
-    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="RFC" id="rfc_field_label" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Usuario (RFC o CURP)</label>
-        <div style="flex: 1 1 auto; min-width: 0;">
-            <input type="text"
-                   id="RFC"
-                   name="RFC"
-                   required
-                   maxlength="18"
-                   minlength="12"
-                   class="form-control @error('RFC') is-invalid @enderror"
-                   value="{{ old('RFC', $item->RFC ?? '') }}"
-                   style="width: 100%; text-transform: uppercase;"
-                   autocomplete="username">
-        </div>
-    </div>
-    @error('RFC')
-        <span class="invalid-feedback" role="alert" style="color: #dc3545; font-size: 0.85em; display: block; margin-top: 5px;">
-            <strong>{{ $message }}</strong>
-        </span>
-    @enderror
-</div>
-<hr style="margin: 15px 0;">
-
-
-{{-- Campo: Contraseña --}}
-<div class="form-group">
-    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-        <label for="password" style="flex: 0 0 auto; margin: 0; font-weight: 600; white-space: nowrap;">Contraseña</label>
-        <div style="flex: 1 1 auto; min-width: 0;">
-            <input type="password"
-                   id="password"
-                   name="password"
-                   class="form-control @error('password') is-invalid @enderror"
-                   minlength="8"
-                   style="width: 100%;"
-                   {{ isset($item) ? '' : 'required' }}>
-        </div>
-    </div>
-    @error('password')
-        <span class="invalid-feedback" role="alert" style="color: #dc3545; font-size: 0.85em; display: block; margin-top: 5px;">
-            <strong>{{ $message }}</strong>
-        </span>
-    @enderror
-    
-    @if(isset($item))
-        <small style="display: block; color: #555; margin-top: 6px;">Dejar en blanco para no cambiar la contraseña. Si capturas una nueva: mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
-    @else
-        <small style="display: block; color: #555; margin-top: 6px;">Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
-    @endif
-</div>
-
-<hr style="margin: 15px 0;">
-
-
-<div id="admin-modules-wrapper" class="form-group" style="display: none; border: 1px solid #eee; padding: 10px; border-radius: 4px; background-color: #f9f9f9;">
-    <label>Módulos a Habilitar para Control Administrativo:</label>
-    @php
-        $modules = old('modules_enabled', $enabled_modules ?? []);
-    @endphp
-    <div class="checkbox-line">
-        <input type="checkbox" id="module_control_academico" name="modules_enabled[]" value="control_academico"
-               {{ in_array('control_academico', $modules) ? 'checked' : '' }}>
-        <label for="module_control_academico">Control Académico</label>
-    </div>
-    <div class="checkbox-line">
-        <input type="checkbox" id="module_planeacion_vinculacion" name="modules_enabled[]" value="planeacion_vinculacion"
-               {{ in_array('planeacion_vinculacion', $modules) ? 'checked' : '' }}>
-        <label for="module_planeacion_vinculacion">Planeación y Vinculación</label>
-    </div>
-    <div class="checkbox-line">
-        <input type="checkbox" id="module_control_escolar" name="modules_enabled[]" value="control_escolar"
-               {{ in_array('control_escolar', $modules) ? 'checked' : '' }}>
-        <label for="module_control_escolar">Control Escolar</label>
-    </div>
-
-    @error('modules_enabled')
-        <span class="invalid-feedback" style="display: block; color: #dc3545; font-size: 0.85em; margin-top: 5px;">
-            <strong>{{ $message }}</strong>
-        </span>
-    @enderror
-</div>
-
-<div id="department-field-wrapper" class="form-group" 
-     style="{{ $isUniversity ? 'display: none;' : '' }}">
-    <label for="department_id">Departamento (Opcional)</label>
-    <input type="hidden" id="department_api_name" name="department_api_name" value="">
-    <select id="department_id" name="department_id">
-        <option value="">N/A</option>
-        @if ($isUniversity)
-            @foreach($departments as $department)
-                <option value="{{ $department->id }}"
-                        {{ (isset($item) && $item->department_id == $department->id) ? 'selected' : '' }}>
-                    {{ $department->name }}
-                </option>
-            @endforeach
-        @elseif(isset($item) && $item->department_id)
-            <option value="{{ $item->department_id }}" selected>{{ optional($item->department)->name ?? 'Departamento' }}</option>
-        @endif
-    </select>
-</div>
-
-
-<div id="workstation-field-wrapper" class="form-group" 
-     style="{{ $isUniversity ? 'display: none;' : '' }}">
-    <label for="workstation_id">Puesto (Opcional)</label>
-    <input type="hidden" id="workstation_api_name" name="workstation_api_name" value="">
-    
-    
-    <select id="workstation_id" name="workstation_id">
-        <option value="">N/A</option>
-        
-     
-        
-    </select>
-</div>
-
-
 <script>
 setTimeout(function() {
     
@@ -625,6 +673,7 @@ setTimeout(function() {
     
     const allWorkstations = @json($workstations ?? []);
     const allDepartments = @json($departments ?? []);
+    
 
     const currentDepartmentId = @json(old('department_id', $item->department_id ?? null));
     const currentWorkstationId = @json(old('workstation_id', $item->workstation_id ?? null));
@@ -766,17 +815,59 @@ setTimeout(function() {
         return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    function anfitrionDepartamentoNombre(a) {
-        const v = a?.departamento_nombre ?? a?.departamentoNombre ?? a?.DepartamentoNombre
-            ?? a?.department_nombre ?? a?.department_name ?? a?.departamento ?? a?.Departamento ?? '';
-        return v.toString().trim();
+
+function anfitrionDepartamentoNombre(a) {
+    const v =
+        a?.departamento_nombre ??
+        a?.departamentoNombre ??
+        a?.DepartamentoNombre ??
+        a?.department_nombre ??
+        a?.department_name ??
+        a?.departamento?.nombre ??
+        a?.departamento?.name ??
+        a?.Departamento?.Nombre ??
+        a?.Departamento?.nombre ??
+        a?.department?.name ??
+        a?.department?.nombre ??
+        a?.departamento ??
+        a?.Departamento ??
+        '';
+
+    if (typeof v === 'object' && v !== null) {
+        return String(v.nombre ?? v.name ?? v.descripcion ?? '').trim();
     }
 
-    function anfitrionPuestoNombre(a) {
-        const v = a?.puesto_nombre ?? a?.puestoNombre ?? a?.PuestoNombre ?? a?.nombre_puesto ?? a?.nombrePuesto
-            ?? a?.puesto ?? a?.Puesto ?? a?.posicion_nombre ?? a?.posicion ?? a?.cargo ?? '';
-        return v.toString().trim();
+    return String(v).trim();
+}
+
+
+function anfitrionPuestoNombre(a) {
+    const v =
+        a?.puesto_nombre ??
+        a?.puestoNombre ??
+        a?.PuestoNombre ??
+        a?.nombre_puesto ??
+        a?.nombrePuesto ??
+        a?.puesto?.nombre ??
+        a?.puesto?.name ??
+        a?.Puesto?.Nombre ??
+        a?.Puesto?.nombre ??
+        a?.position?.name ??
+        a?.position?.nombre ??
+        a?.posicion_nombre ??
+        a?.posicion ??
+        a?.cargo ??
+        a?.puesto ??
+        a?.Puesto ??
+        '';
+
+    if (typeof v === 'object' && v !== null) {
+        return String(v.nombre ?? v.name ?? v.descripcion ?? '').trim();
     }
+
+    return String(v).trim();
+}
+
 
     function findLocalDepartmentId(apiDeptName) {
         const n = normalizeCatalogLabel(apiDeptName);
@@ -796,49 +887,49 @@ setTimeout(function() {
         if (activeInstitutionName === universityName) return;
         if (departmentApiHidden) {
             const depOpt = departmentSelect ? departmentSelect.options[departmentSelect.selectedIndex] : null;
-            const depName = (depOpt?.dataset?.apiDeptName || depOpt?.textContent || '').trim();
+            const depName = (depOpt?.dataset?.apiDeptName || '').trim();
             departmentApiHidden.value = depName && depName !== 'N/A' ? depName : '';
         }
         if (workstationApiHidden) {
             const wsOpt = workstationSelect ? workstationSelect.options[workstationSelect.selectedIndex] : null;
-            const wsName = (wsOpt?.dataset?.apiPuestoName || wsOpt?.textContent || '').trim();
+            const wsName = (wsOpt?.dataset?.apiPuestoName || '').trim();
             workstationApiHidden.value = wsName && wsName !== 'N/A' ? wsName : '';
         }
     }
 
-    function populateDepartmentWorkstationSelectsFromAnfitriones(list) {
-        if (activeInstitutionName === universityName || !departmentSelect) return;
-        anfitrionesCatalogList = Array.isArray(list) ? list : [];
-        const uniqueApiDepts = [];
-        const seen = new Set();
-        anfitrionesCatalogList.forEach((a) => {
-            const d = anfitrionDepartamentoNombre(a);
-            const key = normalizeCatalogLabel(d);
-            if (!d || seen.has(key)) return;
-            seen.add(key);
-            uniqueApiDepts.push(d);
-        });
-        uniqueApiDepts.sort((a, b) => a.localeCompare(b, 'es'));
-        departmentSelect.innerHTML = '<option value="">N/A</option>';
-        uniqueApiDepts.forEach((apiDept) => {
-            const localId = findLocalDepartmentId(apiDept);
-            const opt = document.createElement('option');
-            opt.value = localId || '';
-            opt.textContent = apiDept;
-            opt.dataset.apiDeptName = apiDept;
-            departmentSelect.appendChild(opt);
-        });
-        if (currentDepartmentId) {
-            const asStr = String(currentDepartmentId);
-            for (let i = 0; i < departmentSelect.options.length; i++) {
-                if (departmentSelect.options[i].value === asStr) {
-                    departmentSelect.selectedIndex = i;
-                    break;
-                }
-            }
-        }
-        updateWorkstationDropdown();
+function populateDepartmentWorkstationSelectsFromAnfitriones(list) {
+    if (activeInstitutionName === universityName || !departmentSelect) return;
+
+    anfitrionesCatalogList = Array.isArray(list) ? list : [];
+
+    const apiDepartments = anfitrionesCatalogList
+        .map(a => anfitrionDepartamentoNombre(a))
+        .filter(Boolean);
+
+    const departments = apiDepartments.length
+        ? [...new Map(apiDepartments.map(name => [
+            normalizeCatalogLabel(name), name
+        ])).values()]
+        : allDepartments.map(d => d.name);
+
+    departmentSelect.replaceChildren(new Option('Selecciona un departamento', ''));
+
+    departments.sort((a, b) => a.localeCompare(b, 'es')).forEach(name => {
+        const local = allDepartments.find(
+            d => normalizeCatalogLabel(d.name) === normalizeCatalogLabel(name)
+        );
+
+        const option = new Option(name, local ? local.id : '');
+        option.dataset.apiDeptName = name;
+        departmentSelect.appendChild(option);
+    });
+
+    if (currentDepartmentId) {
+        departmentSelect.value = String(currentDepartmentId);
     }
+
+    updateWorkstationDropdown();
+}
 
     function applyAnfitrionFromApiSelect() {
         if (!nombreApiSelect || !nombreApiHidden) return;
@@ -992,7 +1083,7 @@ setTimeout(function() {
                 if (!Array.isArray(list) || list.length === 0) throw (lastErr || new Error('Sin anfitriones'));
             }
 
-            nombreApiSelect.innerHTML = '<option value="" selected disabled>Seleccione el nombre</option>';
+            nombreApiSelect.innerHTML = '';
             list.forEach((a, i) => {
                 const rfc = (
                     a?.RFC ??
@@ -1044,38 +1135,200 @@ setTimeout(function() {
                 opt.dataset.apiPuesto = anfitrionPuestoNombre(a);
                 nombreApiSelect.appendChild(opt);
             });
+            console.log('Anfitriones recibidos:', list.length, list[0]);
+
+            populateDepartmentWorkstationSelectsFromAnfitriones(list);
+            filtrarNombresPorDepartamentoYPuesto();
+
             if (nombreApiSelect.options.length <= 1) {
                 throw new Error('API sin anfitriones válidos (requiere RFC y Nombre)');
             }
-            populateDepartmentWorkstationSelectsFromAnfitriones(list);
-        } catch (e) {
-            console.error('No se pudieron cargar nombres desde API:', e);
-            nombreApiSelect.innerHTML = '<option value="" selected disabled>No se pudieron cargar nombres</option>';
-        }
+
+} catch (e) {
+    console.error('No se pudieron cargar nombres desde API:', e);
+
+    // Usar los catálogos locales de UMI como alternativa.
+    if (departmentSelect) {
+        departmentSelect.innerHTML =
+            '<option value="">Selecciona un departamento</option>';
+
+        allDepartments.forEach(department => {
+            const option = document.createElement('option');
+            option.value = String(department.id);
+            option.textContent = department.name;
+
+            if (
+                currentDepartmentId &&
+                String(currentDepartmentId) === String(department.id)
+            ) {
+                option.selected = true;
+            }
+
+            departmentSelect.appendChild(option);
+        });
     }
 
-    function updateNombreFieldMode() {
-        if (!tipoHidden || !nombreText || !nombreSelect || !nombreWrapperText || !nombreWrapperSelect) return;
-        if (activeInstitutionName !== universityName) {
-            nombreWrapperText.style.display = 'none';
-            nombreWrapperSelect.style.display = 'none';
-            if (nombreWrapperApiSelect) nombreWrapperApiSelect.style.display = '';
-            nombreText.removeAttribute('name');
-            nombreText.removeAttribute('required');
-            nombreSelect.removeAttribute('name');
-            nombreSelect.removeAttribute('required');
-            if (nombreAlumnoHidden) {
-                nombreAlumnoHidden.removeAttribute('name');
-                nombreAlumnoHidden.removeAttribute('required');
-                nombreAlumnoHidden.setAttribute('disabled', 'disabled');
-            }
-            if (nombreApiHidden) {
-                nombreApiHidden.removeAttribute('disabled');
-                nombreApiHidden.setAttribute('name', 'nombre');
-                nombreApiHidden.setAttribute('required', 'required');
-            }
-            return;
+    if (workstationSelect) {
+        updateWorkstationDropdown();
+    }
+
+    syncApiCatalogHiddenNames();
+
+    if (nombreApiSelect) {
+        nombreApiSelect.innerHTML =
+            '<option value="" selected disabled>La lista de nombres requiere conexión con la API</option>';
+    }
+}
+
+    }
+
+
+function filtrarNombresPorDepartamentoYPuesto() {
+    if (!nombreApiSelect) return;
+
+    const departamentoOption =
+        departmentSelect.options[departmentSelect.selectedIndex];
+
+    const puestoOption =
+        workstationSelect.options[workstationSelect.selectedIndex];
+
+    const departamentoSeleccionado = normalizeCatalogLabel(
+        departamentoOption?.dataset?.apiDeptName ||
+        departamentoOption?.textContent ||
+        ''
+    );
+
+    const puestoSeleccionado = normalizeCatalogLabel(
+        puestoOption?.dataset?.apiPuestoName ||
+        puestoOption?.textContent ||
+        ''
+    );
+
+    const opciones = Array.from(nombreApiSelect.options);
+
+    // Quitar mensajes anteriores sin borrar los nombres originales.
+    opciones.forEach(option => {
+        if (option.dataset.mensajeFiltro === '1') {
+            option.remove();
         }
+    });
+
+    let coincidencias = 0;
+
+    opciones.forEach(option => {
+        if (!option.value) return;
+
+        const departamentoPersona = normalizeCatalogLabel(
+            option.dataset.apiDepartamento || ''
+        );
+
+        const puestoPersona = normalizeCatalogLabel(
+            option.dataset.apiPuesto || ''
+        );
+
+        const mostrar =
+            departamentoSeleccionado !== '' &&
+            departamentoSeleccionado !== 'n/a' &&
+            puestoSeleccionado !== '' &&
+            puestoSeleccionado !== 'n/a' &&
+            departamentoPersona === departamentoSeleccionado &&
+            puestoPersona === puestoSeleccionado;
+
+        option.hidden = !mostrar;
+        option.disabled = !mostrar;
+
+        if (mostrar) coincidencias++;
+    });
+
+    const seleccionActual = nombreApiSelect.selectedOptions[0];
+
+    if (
+        !seleccionActual ||
+        seleccionActual.disabled ||
+        seleccionActual.hidden ||
+        !seleccionActual.value
+    ) {
+        nombreApiSelect.value = '';
+
+        if (nombreApiHidden) nombreApiHidden.value = '';
+        if (apellidoPaternoInput) apellidoPaternoInput.value = '';
+        if (apellidoMaternoInput) apellidoMaternoInput.value = '';
+        if (rfcInput) rfcInput.value = '';
+    }
+
+    if (coincidencias === 0) {
+        const mensaje = document.createElement('option');
+        mensaje.value = '';
+        mensaje.textContent =
+            'Selecciona un departamento y puesto con personas registradas';
+        mensaje.disabled = true;
+        mensaje.selected = true;
+        mensaje.dataset.mensajeFiltro = '1';
+
+        nombreApiSelect.insertBefore(mensaje, nombreApiSelect.firstChild);
+    }
+}
+
+
+    function updateNombreFieldMode() {
+    if (!tipoHidden || !nombreText || !nombreSelect ||
+        !nombreWrapperText || !nombreWrapperSelect) return;
+
+    if (modoEdicion) {
+        nombreWrapperText.style.display = '';
+        nombreWrapperSelect.style.display = 'none';
+
+        if (nombreWrapperApiSelect) {
+            nombreWrapperApiSelect.style.display = 'none';
+        }
+
+        nombreText.setAttribute('name', 'nombre');
+        nombreText.setAttribute('required', 'required');
+
+        if (nombreApiHidden) {
+            nombreApiHidden.removeAttribute('name');
+            nombreApiHidden.removeAttribute('required');
+            nombreApiHidden.disabled = true;
+        }
+
+        if (nombreAlumnoHidden) {
+            nombreAlumnoHidden.removeAttribute('name');
+            nombreAlumnoHidden.removeAttribute('required');
+            nombreAlumnoHidden.disabled = true;
+        }
+
+        return;
+    }
+
+if (activeInstitutionName !== universityName) {
+    nombreWrapperText.style.display = 'none';
+    nombreWrapperSelect.style.display = 'none';
+
+    if (nombreWrapperApiSelect) {
+        nombreWrapperApiSelect.style.display = '';
+    }
+
+    nombreText.removeAttribute('name');
+    nombreText.removeAttribute('required');
+
+    nombreSelect.removeAttribute('name');
+    nombreSelect.removeAttribute('required');
+
+    if (nombreAlumnoHidden) {
+        nombreAlumnoHidden.removeAttribute('name');
+        nombreAlumnoHidden.removeAttribute('required');
+        nombreAlumnoHidden.disabled = true;
+    }
+
+    if (nombreApiHidden) {
+        nombreApiHidden.disabled = false;
+        nombreApiHidden.setAttribute('name', 'nombre');
+        nombreApiHidden.setAttribute('required', 'required');
+    }
+
+    return;
+}
+        
         const esAlumno = tipoHidden.value === 'alumno';
         if (esAlumno && !modoEdicion) {
             nombreWrapperText.style.display = 'none';
@@ -1190,86 +1443,355 @@ setTimeout(function() {
     }
 
 
-    function updateWorkstationDropdown() {
-        const selectedDepartmentId = departmentSelect.value;
-        workstationSelect.innerHTML = '<option value="">N/A</option>';
 
-        if (activeInstitutionName !== universityName && anfitrionesCatalogList.length > 0) {
-            const selOpt = departmentSelect.selectedOptions[0];
-            let apiDeptName = selOpt && selOpt.dataset ? (selOpt.dataset.apiDeptName || '').trim() : '';
-            if (!apiDeptName && nombreApiSelect) {
-                const selectedNombreOpt = nombreApiSelect.options[nombreApiSelect.selectedIndex];
-                apiDeptName = (selectedNombreOpt?.dataset?.apiDepartamento || '').trim();
+function updateWorkstationDropdown() {
+    const selectedOption =
+        departmentSelect.options[departmentSelect.selectedIndex];
+    const departmentId = departmentSelect.value;
+    const apiDepartmentName = selectedOption?.dataset?.apiDeptName || '';
+
+    workstationSelect.innerHTML = '<option value="">N/A</option>';
+
+ if (
+    activeInstitutionName !== universityName &&
+    !departmentId &&
+    apiDepartmentName &&
+    anfitrionesCatalogList.length > 0
+) {
+        const puestos = new Map();
+
+        anfitrionesCatalogList.forEach(a => {
+            const departamento = anfitrionDepartamentoNombre(a);
+            const puesto = anfitrionPuestoNombre(a);
+
+            if (
+                normalizeCatalogLabel(departamento) ===
+                    normalizeCatalogLabel(apiDepartmentName) &&
+                puesto
+            ) {
+                puestos.set(normalizeCatalogLabel(puesto), puesto);
             }
-            if (!apiDeptName) return;
+        });
 
-            const puestos = [];
-            const seenP = new Set();
-            anfitrionesCatalogList.forEach((a) => {
-                if (normalizeCatalogLabel(anfitrionDepartamentoNombre(a)) !== normalizeCatalogLabel(apiDeptName)) return;
-                const p = anfitrionPuestoNombre(a);
-                if (!p) return;
-                const k = normalizeCatalogLabel(p);
-                if (seenP.has(k)) return;
-                seenP.add(k);
-                puestos.push(p);
+        [...puestos.values()]
+            .sort((a, b) => a.localeCompare(b, 'es'))
+            .forEach(puesto => {
+                const option = document.createElement('option');
+                option.value = puesto;
+                option.textContent = puesto;
+                option.dataset.apiPuestoName = puesto;
+                workstationSelect.appendChild(option);
             });
-            puestos.sort((a, b) => a.localeCompare(b, 'es'));
-            puestos.forEach((apiPuesto) => {
-                const wsId = findLocalWorkstationId(apiDeptName, apiPuesto);
-                const opt = document.createElement('option');
-                opt.value = wsId || '';
-                opt.textContent = apiPuesto;
-                opt.dataset.apiPuestoName = apiPuesto;
-                if (currentWorkstationId && wsId && String(wsId) === String(currentWorkstationId)) {
-                    opt.selected = true;
+
+        if (puestos.size > 0) {
+    syncApiCatalogHiddenNames();
+    return;
+}
+    }
+
+    if (departmentId) {
+        allWorkstations
+            .filter(w => String(w.department_id) === String(departmentId))
+            .forEach(w => {
+                const option = document.createElement('option');
+                option.value = w.id;
+                option.textContent = w.name;
+
+                if (
+                    currentWorkstationId &&
+                    String(w.id) === String(currentWorkstationId)
+                ) {
+                    option.selected = true;
                 }
-                workstationSelect.appendChild(opt);
+
+                workstationSelect.appendChild(option);
             });
+    }
+
+    syncApiCatalogHiddenNames();
+}
+    
+
+    // =====================================================================
+    // CASCADA (no universidad): Propiedad -> Departamento -> Puesto -> Nombre
+    // Todo sale de la API externa, filtrado por la propiedad elegida.
+    // Al elegir el nombre se llenan apellidos y RFC.
+    // =====================================================================
+    const propertySelect = document.getElementById('institution_id');
+    const apiCache = new Map();
+
+    async function apiGet(endpoint) {
+        if (apiCache.has(endpoint)) return apiCache.get(endpoint);
+        const promise = fetch('/external-data?endpoint=' + encodeURIComponent(endpoint), {
+            method: 'GET',
+            cache: 'no-store',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        }).then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data?.error) throw new Error(data?.error || ('HTTP ' + res.status));
+            return data;
+        });
+        apiCache.set(endpoint, promise);
+        promise.catch(() => apiCache.delete(endpoint));
+        return promise;
+    }
+
+    function apiArray(data, keys) {
+        if (Array.isArray(data)) return data;
+        for (const k of keys) if (Array.isArray(data?.[k])) return data[k];
+        if (Array.isArray(data?.data)) return data.data;
+        for (const k of keys) if (Array.isArray(data?.data?.[k])) return data.data[k];
+        return [];
+    }
+
+    const sameId = (a, b) => String(a ?? '').replace(/^0+/, '') === String(b ?? '').replace(/^0+/, '');
+
+    function setOptions(select, placeholder, items, selectedName) {
+        select.innerHTML = '';
+        select.add(new Option(placeholder, ''));
+        items.forEach((item) => {
+            const opt = new Option(item.label, '');
+            Object.entries(item.data || {}).forEach(([k, v]) => { opt.dataset[k] = v ?? ''; });
+            select.add(opt);
+            if (selectedName && normalizeCatalogLabel(item.label) === normalizeCatalogLabel(selectedName)) {
+                opt.selected = true;
+            }
+        });
+        select.disabled = false;
+    }
+
+    function setMessage(select, message) {
+        select.innerHTML = '';
+        select.add(new Option(message, ''));
+    }
+
+    // Nombres actuales (al editar) para preseleccionar.
+    const currentDeptName = (allDepartments.find(d => String(d.id) === String(currentDepartmentId)) || {}).name || '';
+    const currentPuestoName = (allWorkstations.find(w => String(w.id) === String(currentWorkstationId)) || {}).name || '';
+
+    let apiPropertyId = null;
+    let propertyAnfitriones = [];
+
+    async function getApiPropertyId(localName) {
+        const props = apiArray(await apiGet('/api/external/propiedades'), ['propiedades', 'properties', 'items', 'results']);
+        const wanted = normalizeCatalogLabel(localName);
+        const getId = p => p?.id_propiedad ?? p?.id ?? p?.propiedad_id ?? p?.property_id;
+        const getName = p => p?.nombre ?? p?.propiedad_nombre ?? p?.name ?? p?.descripcion ?? '';
+        const found = props.find(p => normalizeCatalogLabel(getName(p)) === wanted);
+        return found ? String(getId(found)) : null;
+    }
+
+    async function getAnfitriones(propId) {
+        const endpoints = [
+            '/api/external/propiedades/' + propId + '/anfitriones',
+            '/api/external/anfitriones?propiedad_id=' + propId,
+            '/api/external/propiedades/' + propId + '/usuarios',
+            '/api/external/propiedades/' + propId + '/empleados'
+        ];
+        for (const ep of endpoints) {
+            try {
+                const list = extractAnfitrionesList(await apiGet(ep));
+                if (list.length) return list;
+            } catch (e) { /* probar el siguiente */ }
+        }
+        console.warn('No se encontraron anfitriones para la propiedad', propId);
+        return [];
+    }
+
+    function selectedData(select) {
+        const opt = select.options[select.selectedIndex];
+        return opt ? opt.dataset : {};
+    }
+
+    async function onPropertyChange() {
+        const propOpt = propertySelect.options[propertySelect.selectedIndex];
+        const localName = propOpt && propOpt.value ? propOpt.textContent.trim() : '';
+
+        apiPropertyId = null;
+        propertyAnfitriones = [];
+        setMessage(workstationSelect, 'Esperando selección previa...');
+        setMessage(nombreApiSelect, 'Esperando selección previa...');
+        clearPersonFields();
+
+        if (!localName) {
+            setMessage(departmentSelect, 'Esperando selección previa...');
             syncApiCatalogHiddenNames();
             return;
         }
 
-        if (selectedDepartmentId) {
-            const filteredWorkstations = allWorkstations.filter(workstation => {
-                return String(workstation.department_id) === String(selectedDepartmentId);
-            });
+        setMessage(departmentSelect, 'Cargando departamentos...');
+        try {
+            apiPropertyId = await getApiPropertyId(localName);
+            if (!apiPropertyId) {
+                setMessage(departmentSelect, '-- Esta propiedad no está en la API --');
+                syncApiCatalogHiddenNames();
+                return;
+            }
 
-            console.log('Puestos filtrados:', filteredWorkstations);
+            const [deptData, anfitriones] = await Promise.all([
+                apiGet('/api/external/propiedades/' + apiPropertyId + '/departamentos'),
+                getAnfitriones(apiPropertyId)
+            ]);
+            propertyAnfitriones = anfitriones;
 
-            filteredWorkstations.forEach(workstation => {
-                const option = document.createElement('option');
-                option.value = workstation.id;
-                option.textContent = workstation.name;
+            const departments = apiArray(deptData, ['departamentos', 'departments', 'items', 'results'])
+                .map(d => ({
+                    label: String(d?.departamento_nombre ?? d?.nombre ?? d?.name ?? '').trim(),
+                    data: { apiDeptName: String(d?.departamento_nombre ?? d?.nombre ?? d?.name ?? '').trim(),
+                            apiDeptId: String(d?.id_departamento ?? d?.departamento_id ?? d?.id ?? '') }
+                }))
+                .filter(d => d.label)
+                .sort((a, b) => a.label.localeCompare(b.label, 'es'));
 
-                if (currentWorkstationId && String(workstation.id) === String(currentWorkstationId)) {
-                    option.selected = true;
-                }
-                workstationSelect.appendChild(option);
-            });
+            if (!departments.length) {
+                setMessage(departmentSelect, '-- Sin departamentos en esta propiedad --');
+            } else {
+                setOptions(departmentSelect, 'Seleccione un departamento', departments, currentDeptName);
+            }
+        } catch (e) {
+            console.error('Error al cargar departamentos de la propiedad:', e);
+            setMessage(departmentSelect, '-- Error al cargar departamentos --');
         }
-        syncApiCatalogHiddenNames();
-    }
-    
 
-    
+        syncApiCatalogHiddenNames();
+        if (departmentSelect.selectedIndex > 0) await onDepartmentChange();
+    }
+
+    async function onDepartmentChange() {
+        const dept = selectedData(departmentSelect);
+        setMessage(nombreApiSelect, 'Esperando selección previa...');
+        clearPersonFields();
+        syncApiCatalogHiddenNames();
+
+        if (!apiPropertyId || !dept.apiDeptId) {
+            setMessage(workstationSelect, 'Esperando selección previa...');
+            return;
+        }
+
+        setMessage(workstationSelect, 'Cargando puestos...');
+        try {
+            const data = await apiGet('/api/external/propiedades/' + apiPropertyId +
+                '/departamentos/' + encodeURIComponent(dept.apiDeptId) + '/posiciones');
+            const puestos = [...new Map(
+                apiArray(data, ['posiciones', 'positions', 'puestos', 'items', 'results'])
+                    .map(p => {
+                        const label = String(p?.posicion_nombre ?? p?.puesto_nombre ?? p?.nombre ?? p?.name ?? '').trim();
+                        return [normalizeCatalogLabel(label), {
+                            label,
+                            data: { apiPuestoName: label,
+                                    apiPuestoId: String(p?.id_posicion ?? p?.posicion_id ?? p?.id_puesto ?? p?.id ?? '') }
+                        }];
+                    })
+                    .filter(([k]) => k)
+            ).values()].sort((a, b) => a.label.localeCompare(b.label, 'es'));
+
+            if (!puestos.length) {
+                setMessage(workstationSelect, '-- Este departamento no tiene puestos --');
+            } else {
+                setOptions(workstationSelect, 'Seleccione un puesto', puestos, currentPuestoName);
+            }
+        } catch (e) {
+            console.error('Error al cargar puestos:', e);
+            setMessage(workstationSelect, '-- Error al cargar puestos --');
+        }
+
+        syncApiCatalogHiddenNames();
+        if (workstationSelect.selectedIndex > 0) onPuestoChange();
+    }
+
+    function anfitrionField(a, keys) {
+        for (const k of keys) {
+            const v = a?.[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+        }
+        return '';
+    }
+
+    function onPuestoChange() {
+        const dept = selectedData(departmentSelect);
+        const puesto = selectedData(workstationSelect);
+        clearPersonFields();
+        syncApiCatalogHiddenNames();
+
+        if (!puesto.apiPuestoName) {
+            setMessage(nombreApiSelect, 'Esperando selección previa...');
+            return;
+        }
+
+        const people = propertyAnfitriones.filter(a => {
+            const estatus = normalizeCatalogLabel(a?.estatus ?? 'activo');
+            if (estatus && estatus !== 'activo') return false;
+
+            const aDeptId = anfitrionField(a, ['departamento_id', 'id_departamento', 'department_id']);
+            const aPuestoId = anfitrionField(a, ['id_posicion', 'posicion_id', 'id_puesto', 'puesto_id']);
+            const deptOk = (aDeptId && dept.apiDeptId && sameId(aDeptId, dept.apiDeptId))
+                || normalizeCatalogLabel(anfitrionDepartamentoNombre(a)) === normalizeCatalogLabel(dept.apiDeptName);
+            const puestoOk = (aPuestoId && puesto.apiPuestoId && sameId(aPuestoId, puesto.apiPuestoId))
+                || normalizeCatalogLabel(anfitrionPuestoNombre(a)) === normalizeCatalogLabel(puesto.apiPuestoName);
+            return deptOk && puestoOk;
+        });
+
+        const items = people.map(a => {
+            const nombre = anfitrionField(a, ['Nombre', 'nombre', 'nombres', 'name', 'first_name']);
+            const paterno = anfitrionField(a, ['apellido_paterno', 'ApellidoPaterno', 'primer_apellido', 'paterno']);
+            const materno = anfitrionField(a, ['apellido_materno', 'ApellidoMaterno', 'segundo_apellido', 'materno']);
+            const rfc = anfitrionField(a, ['RFC', 'rfc', 'Rfc', 'curp']).toUpperCase();
+            return {
+                label: nombre, // solo el nombre; los apellidos se llenan en sus campos
+                data: { nombre, paterno, materno, rfc }
+            };
+        }).filter(i => i.data.nombre)
+          .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+
+        if (!items.length) {
+            setMessage(nombreApiSelect, '-- No hay personas con este puesto --');
+            if (!propertyAnfitriones.length) console.warn('La API no devolvió anfitriones para esta propiedad.');
+            return;
+        }
+        setOptions(nombreApiSelect, 'Seleccione un nombre', items, '');
+    }
+
+    function clearPersonFields() {
+        if (nombreApiHidden) nombreApiHidden.value = '';
+        if (apellidoPaternoInput) apellidoPaternoInput.value = '';
+        if (apellidoMaternoInput) apellidoMaternoInput.value = '';
+        if (rfcInput) rfcInput.value = '';
+    }
+
+    function onNombreChange() {
+        const d = selectedData(nombreApiSelect);
+        if (!d.nombre) { clearPersonFields(); return; }
+        if (nombreApiHidden) nombreApiHidden.value = d.nombre;
+        if (apellidoPaternoInput) apellidoPaternoInput.value = d.paterno || '';
+        if (apellidoMaternoInput) apellidoMaternoInput.value = d.materno || '';
+        if (rfcInput) rfcInput.value = d.rfc || '';
+    }
+
+    function initPropertyCascade() {
+        if (!propertySelect || !nombreApiSelect) return;
+        propertySelect.addEventListener('change', onPropertyChange);
+        departmentSelect.addEventListener('change', onDepartmentChange);
+        workstationSelect.addEventListener('change', onPuestoChange);
+        nombreApiSelect.addEventListener('change', onNombreChange);
+        onPropertyChange();
+    }
+
     roleSelect.addEventListener('change', updateModuleVisibility);
     
     
+
+if (activeInstitutionName === universityName) {
     departmentSelect.addEventListener('change', updateWorkstationDropdown);
-    departmentSelect.addEventListener('change', syncApiCatalogHiddenNames);
-    workstationSelect.addEventListener('change', syncApiCatalogHiddenNames);
+    // Cargar los puestos al abrir el formulario, también al editar.
+    updateWorkstationDropdown();
+}
 
     wireTipoUsuarioCheckboxes();
 
     if (nombreSelect) {
         nombreSelect.addEventListener('change', function () {
             aplicarDatosAspiranteDesdeSelect();
-        });
-    }
-    if (nombreApiSelect) {
-        nombreApiSelect.addEventListener('change', function () {
-            applyAnfitrionFromApiSelect();
         });
     }
 
@@ -1279,7 +1801,7 @@ setTimeout(function() {
         applyAlumnoRole();
     }
 
-    loadAnfitrionesForBusinessUnit();
+    if (activeInstitutionName !== universityName) initPropertyCascade();
     updateNombreFieldMode();
 
     if (activeInstitutionName === universityName) {

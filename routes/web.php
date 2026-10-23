@@ -455,6 +455,9 @@ Route::middleware(['auth'])->group(function () {
             // Acciones Específicas (Toggles)
             Route::post('users/{id}/toggle-status', [AjustesController::class, 'toggleUserStatus'])->name('users.toggleStatus');
             Route::post('periods/{id}/toggle-status', [AjustesController::class, 'togglePeriodStatus'])->name('periods.toggleStatus');
+            // Registro masivo (como MyQuality)
+            Route::post('departments/bulk', [AjustesController::class, 'bulkDepartments'])->name('departments.bulk');
+            Route::post('workstations/bulk', [AjustesController::class, 'bulkWorkstations'])->name('workstations.bulk');
             
             // CRUD Dinámico (Usuarios, Periodos, Departamentos, Puestos)
             Route::get('/{seccion}/create-form', [AjustesController::class, 'getCreateForm'])->name('getCreateForm');
@@ -558,4 +561,7 @@ Route::middleware(['auth'])->group(function () {
                 });
 
             });
+
+            Route::get('/external-data', [ExternalDataController::class, 'index'])
+    ->name('external.data');
 

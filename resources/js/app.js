@@ -398,7 +398,7 @@ async loadPage(url, updateHistory = true) {
     }
 
     preloadCriticalPages() {
-        const criticalPages = ['/cursos', '/mi-informacion', '/ajustes'];
+        const criticalPages = ['/cursos', '/mi-informacion']; // '/ajustes' no tiene ruta raíz (daba 404)
         setTimeout(() => {
             criticalPages.forEach(page => {
                 if (page !== this.currentPage) {
