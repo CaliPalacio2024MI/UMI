@@ -85,7 +85,7 @@ $selectedInstitutionIds = array_map(
     @if($currentValue === '')
     <div class="bulk-actions">
         <button type="submit" class="btn-primary">Guardar</button>
-        <button type="button" id="btnBulkDepartments" class="btn-primary">Registro Masivo</button>
+        <button type="button" id="btnBulkDepartments" class="btn-primary">Registro Masivo de Departamentos</button>
     </div>
     <style>
     /* Solo en este formulario: ocultar el Guardar del modal (se usa el de abajo, a todo el ancho) */
@@ -385,7 +385,7 @@ $selectedInstitutionIds = array_map(
                 console.error('Error en registro masivo de departamentos:', error);
                 alert('No se pudo completar el registro masivo: ' + error.message);
                 bulkBtn.disabled = false;
-                bulkBtn.textContent = 'Registro Masivo';
+                bulkBtn.textContent = 'Registro Masivo de Departamentos';
             }
         });
     }
