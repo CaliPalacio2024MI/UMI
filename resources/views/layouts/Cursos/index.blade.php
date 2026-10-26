@@ -31,7 +31,9 @@
         @forelse ($course as $courses)
             <div class="course-card {{ !$courses->active ? 'course-disabled' : '' }}">
                 <a href="{{ route('course.show', $courses) }}" class="course-card-show">
-                    <img src="{{ $courses->image ? asset('storage/' . $courses->image) : asset('storage/curso-default.jpg') }}" alt="Imagen del curso">
+                    <img src="{{ $courses->image ? asset('storage/' . $courses->image) : asset('images/curso-default.jpg') }}"
+                         onerror="this.onerror=null; this.src='{{ asset('images/curso-default.jpg') }}';"
+                         alt="Imagen del curso">
                     <div class="course-info">
                         <h3 class="course-title">{{ $courses->title }}</h3>
                         <p class="course-description">{{ $courses->description }}</p>
