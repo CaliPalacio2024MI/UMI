@@ -338,7 +338,7 @@
 {{-- ===== VIEWER ===== --}}
 <main class="course-viewer">
     @if($course->modality === 'presencial')
-<div class="course-controls presencial-actions">
+<div class="course-controls presencial-actions" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;">
 
     <a id="btn-download-session-pdf"
        href="#"
@@ -356,11 +356,13 @@
         <i class="fa-solid fa-qrcode"></i>
         Escanear QR
     </button>
-    <button class="btn-presencial-action"
+    {{-- Salir: siempre en la esquina superior derecha --}}
+    <button type="button"
+            class="btn-presencial-action btn-presencial-exit"
+            style="margin-left: auto;"
             onclick="window.location.href='{{ route('Cursos.index') }}'">
-
+        <i class="fa-solid fa-right-from-bracket"></i>
         Salir
-
     </button>
 
 </div>
@@ -422,6 +424,11 @@
                         $attendance = $sessionAttendances->firstWhere('rfc', $hostRfc);
 
                         $hasAttendance = $attendance ? true : false;
+
+                        // Fecha y hora en que se escaneó su QR (asistencia)
+                        $attendedAt = ($attendance && !empty($attendance->attended_at))
+                            ? \Carbon\Carbon::parse($attendance->attended_at)->format('d/m/Y H:i')
+                            : null;
                     @endphp
 
                     <tr data-rfc="{{ $hostRfc }}"
@@ -467,6 +474,10 @@
                             <span class="attendance-badge {{ $hasAttendance ? 'present' : 'pending' }}">
                                 {{ $hasAttendance ? 'Asistió' : 'Pendiente' }}
                             </span>
+                            <small class="attendance-time"
+                                   style="display:{{ $attendedAt ? 'block' : 'none' }}; margin-top:4px; color:#555; font-size:.8rem; white-space:nowrap;">
+                                {{ $attendedAt }}
+                            </small>
                         </td>
 
                     </tr>
@@ -1594,6 +1605,13 @@ async function validarAsistenciaPorRFC(valorQR) {
             badge.textContent = 'Asistió';
             badge.classList.remove('pending');
             badge.classList.add('present');
+        }
+
+        // Mostrar fecha y hora del escaneo en la lista
+        const timeCell = fila.querySelector('.attendance-time');
+        if (timeCell) {
+            timeCell.textContent = data.attended_full || ((data.attended_date || '') + ' ' + (data.attended_at || '')).trim();
+            timeCell.style.display = 'block';
         }
 
         fila.classList.add('attendance-row-present');

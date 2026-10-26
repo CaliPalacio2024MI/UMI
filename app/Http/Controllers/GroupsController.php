@@ -6,6 +6,8 @@ use App\Models\Group;
 use App\Models\Users\Department;
 use Illuminate\Http\Request;
 use App\Models\Cursos\CourseSession;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class GroupsController extends Controller
 {
@@ -82,7 +84,31 @@ class GroupsController extends Controller
     }
 
     // Guardar participantes
-    $group->participants()->syncWithoutDetaching($request->users);
+    $group->participants()->syncWithoutDetaching($request->input('users', []));
         return back()->with('success', 'Participantes agregados');
+    }
+
+    /**
+     * Descarga en PDF la lista de participantes de un horario, con su asistencia.
+     * (Se había perdido en la migración del módulo de Cursos.)
+     */
+    public function exportPdf($sessionId)
+    {
+        $session = CourseSession::with([
+            'course',
+            'groups.hosts.department',
+            'groups.hosts.workstation',
+        ])->findOrFail($sessionId);
+
+        $group = $session->groups->first();
+        $hosts = $group ? $group->hosts : collect();
+
+        $attendanceMap = DB::table('course_session_attendances')
+            ->where('course_session_id', $session->id)
+            ->get()
+            ->keyBy(fn ($item) => strtoupper(trim($item->rfc)));
+
+        return Pdf::loadView('pdf.group-list', compact('session', 'hosts', 'attendanceMap'))
+            ->download('lista-participantes.pdf');
     }
 }

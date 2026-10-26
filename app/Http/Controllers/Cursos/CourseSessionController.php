@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Cursos\Course;
 use App\Models\Cursos\CourseSession;
 use App\Models\Users\Department;
+use App\Models\Users\Institution;
 use Carbon\Carbon;
 use App\Models\Group;
 use App\Models\Users\User;
@@ -59,14 +60,11 @@ class CourseSessionController extends Controller
         $session->attendance_enabled = !$session->attendance_enabled;
         $session->save();
 
-        $activeSessions = $course->sessions()
-            ->where('attendance_enabled', true)
-            ->count();
+        // (Se quitó la actualización de courses.active: esa columna no existe en la tabla de cursos)
 
-        $course->active = $activeSessions > 0;
-        $course->save();
-
-        return back()->with('success', 'Estado del horario actualizado');
+        return back()->with('success', $session->attendance_enabled
+            ? 'Asistencia activada: ya se puede escanear el QR en este horario.'
+            : 'Asistencia desactivada para este horario.');
     }
 
     public function update(Request $request, Course $course, CourseSession $session)
@@ -140,31 +138,250 @@ class CourseSessionController extends Controller
         return back()->with('success', 'Horario creado correctamente');
     }
 
+    private const UNIVERSITY_NAME = 'Universidad Mundo Imperial';
+
+    /** ¿La institución es una universidad? */
+    private function isUniversity(?Institution $institution): bool
+    {
+        return $institution && ((bool) ($institution->is_universidad ?? false) || $institution->name === self::UNIVERSITY_NAME);
+    }
+
+    /**
+     * Guarda el grupo de un horario presencial: unidad, filtros elegidos,
+     * lista de participantes, tipo y mínimo/máximo. La lista se reemplaza
+     * con lo que viene seleccionado.
+     */
     public function storeGroup(Request $request)
     {
-        $session = CourseSession::find($request->session_id);
+        $data = $request->validate([
+            'session_id'       => 'required|exists:course_sessions,id',
+            'institution_id'   => 'nullable|integer|exists:institutions,id',
+            'selections'       => 'nullable|array',
+            'selections.*'     => 'array',
+            'selections.*.*'   => 'integer',
+            'departments'      => 'nullable|array',
+            'departments.*'    => 'integer|exists:departments,id',
+            'workstations'     => 'nullable|array',
+            'workstations.*'   => 'integer|exists:workstations,id',
+            'users'            => 'nullable|array',
+            'users.*'          => 'integer|exists:users,id',
+            'type'             => 'nullable|in:abierto,cerrado',
+            'min_participants' => 'nullable|integer|min:1',
+            'max_participants' => 'nullable|integer|min:1|gte:min_participants',
+        ], [
+            'max_participants.gte' => 'El máximo de participantes debe ser mayor o igual al mínimo.',
+        ]);
 
-        if (!$session) {
-            return response()->json(['error' => 'Session not found'], 404);
+        $session = CourseSession::findOrFail($data['session_id']);
+        $institutionId = (int) ($data['institution_id'] ?? session('active_institution_id'));
+
+        $selections = collect($data['selections'] ?? [])
+            ->only(['departments', 'workstations', 'classifications', 'careers', 'materias'])
+            ->map(fn ($ids) => array_values(array_unique(array_map('intval', $ids))))
+            ->all();
+
+        // Compatibilidad: departamentos/puestos también pueden venir sueltos
+        $departments = $data['departments'] ?? ($selections['departments'] ?? []);
+        $workstations = $data['workstations'] ?? ($selections['workstations'] ?? []);
+
+        $group = DB::transaction(function () use ($session, $data, $institutionId, $selections, $departments, $workstations) {
+            $group = $session->groups()->first();
+
+            $attributes = [
+                'type'             => $data['type'] ?? 'abierto',
+                'min_participants' => $data['min_participants'] ?? null,
+                'max_participants' => $data['max_participants'] ?? null,
+                'institution_id'   => $institutionId,
+                'filters'          => $selections ?: null,
+            ];
+
+            if ($group) {
+                $group->update($attributes);
+            } else {
+                $group = Group::create($attributes);
+                $group->sessions()->attach($session->id);
+            }
+
+            $group->departments()->sync(Department::whereIn('id', $departments)->pluck('id'));
+            $group->workstations()->sync(\App\Models\Users\Workstation::whereIn('id', $workstations)->pluck('id'));
+            $group->participants()->sync($data['users'] ?? []);
+
+            return $group;
+        });
+
+        $message = 'Grupo guardado: ' . $group->participants()->count() . ' participante(s).';
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message]);
         }
 
-        $group = $session->groups()->first();
+        return back()->with('success', $message);
+    }
 
-        if (!$group) {
-            $group = Group::create([
-                'type' => $request->type,
-                'min_participants' => $request->min_participants,
-                'max_participants' => $request->max_participants,
-                'institution_id' => session('active_institution_id'),
-            ]);
+    /**
+     * Catálogo para la ventana "Lista de participantes" de un horario.
+     *  - Propiedad:   Departamentos → Puestos → Anfitriones
+     *  - Universidad: Clasificaciones → Carreras → Materias → Alumnos
+     * Solo aparece lo registrado en la unidad elegida. También regresa lo
+     * que ya tiene guardado el grupo del horario.
+     */
+    public function participantsCatalog(Request $request, CourseSession $session)
+    {
+        $user = auth()->user();
+        $activeId = (int) session('active_institution_id');
+        $active = Institution::find($activeId);
+        $universityMode = $this->isUniversity($active);
 
-            $group->sessions()->attach($session->id);
+        // Unidades del mismo tipo (propiedades o universidades) a las que tiene acceso
+        $accessIds = ($user ? $user->institutions()->pluck('institutions.id') : collect())->push($activeId)->unique();
+        $units = Institution::whereIn('id', $accessIds)->orderBy('name')->get()
+            ->filter(fn ($i) => $this->isUniversity($i) === $universityMode)
+            ->values();
+
+        $group = $session->groups()->with(['departments:id', 'workstations:id', 'participants:id'])->first();
+
+        $institutionId = (int) ($request->query('institution_id') ?: ($group->institution_id ?? null) ?: $activeId);
+        if (! $units->contains('id', $institutionId) && $units->isNotEmpty()) {
+            $institutionId = $units->first()->id;
         }
 
-        $group->departments()->sync($request->departments);
-        $group->workstations()->sync($request->workstations);
+        [$levels, $people, $peopleTitle] = $universityMode
+            ? $this->universityCatalog($institutionId)
+            : $this->propertyCatalog($institutionId);
 
-        return back()->with('success', 'Grupo asignado correctamente al horario');
+        $savedSelections = $group ? ($group->filters ?: [
+            'departments'  => $group->departments->pluck('id')->all(),
+            'workstations' => $group->workstations->pluck('id')->all(),
+        ]) : [];
+
+        return response()->json([
+            'mode'           => $universityMode ? 'university' : 'property',
+            'unit_label'     => $universityMode ? 'Universidad' : 'Propiedad',
+            'people_title'   => $peopleTitle,
+            'properties'     => $units->map(fn ($i) => ['id' => $i->id, 'name' => $i->name])->values(),
+            'institution_id' => $institutionId,
+            'levels'         => $levels,
+            'people'         => $people,
+            'group'          => $group ? [
+                'institution_id'   => $group->institution_id,
+                'type'             => $group->type,
+                'min_participants' => $group->min_participants,
+                'max_participants' => $group->max_participants,
+                'selections'       => $savedSelections,
+                'participants'     => $group->participants->pluck('id'),
+            ] : null,
+        ]);
+    }
+
+    /** Propiedad: departamentos creados en ella → sus puestos → anfitriones con esos puestos (sin Master). */
+    private function propertyCatalog(int $institutionId): array
+    {
+        $departments = Department::query()
+            ->where(function ($q) use ($institutionId) {
+                $q->where('institution_id', $institutionId)
+                  ->orWhereHas('institutions', fn ($i) => $i->where('institutions.id', $institutionId));
+            })
+            ->with(['workstations' => fn ($q) => $q->orderBy('name')->select('id', 'name', 'department_id')])
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $wsName = [];
+        $workstations = [];
+        foreach ($departments as $d) {
+            foreach ($d->workstations as $w) {
+                $wsName[$w->id] = $w->name;
+                $workstations[] = ['id' => $w->id, 'name' => $w->name, 'parent' => $d->id];
+            }
+        }
+
+        $hosts = User::query()
+            ->where(function ($q) use ($institutionId) {
+                $q->where('institution_id', $institutionId)
+                  ->orWhereHas('institutions', fn ($i) => $i->where('institutions.id', $institutionId));
+            })
+            ->whereIn('department_id', $departments->pluck('id'))
+            ->whereNotNull('workstation_id')
+            ->whereDoesntHave('roles', fn ($q) => $q->whereRaw('LOWER(roles.name) = ?', ['master']))
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'RFC', 'department_id', 'workstation_id'])
+            ->map(fn ($h) => [
+                'id'    => $h->id,
+                'name'  => trim("{$h->nombre} {$h->apellido_paterno} {$h->apellido_materno}"),
+                'sub'   => trim(($wsName[$h->workstation_id] ?? '') . ' · ' . ($h->RFC ?: 'Sin RFC'), ' ·'),
+                'links' => ['departments' => [$h->department_id], 'workstations' => [$h->workstation_id]],
+            ])
+            ->values();
+
+        $levels = [
+            ['key' => 'departments', 'title' => 'Departamentos', 'empty' => 'Esta propiedad no tiene departamentos registrados (Ajustes → Departamentos).',
+             'items' => $departments->map(fn ($d) => ['id' => $d->id, 'name' => $d->name, 'parent' => null])->values()],
+            ['key' => 'workstations', 'title' => 'Puestos', 'empty' => 'Los departamentos elegidos no tienen puestos registrados.',
+             'items' => $workstations],
+        ];
+
+        return [$levels, $hosts, 'Anfitriones'];
+    }
+
+    /** Universidad: clasificaciones → carreras → materias → alumnos de esas carreras/materias. */
+    private function universityCatalog(int $institutionId): array
+    {
+        $classifications = \App\Models\Users\CareerClassification::where('institution_id', $institutionId)
+            ->orderBy('name')->get(['id', 'name']);
+
+        $careers = \App\Models\Users\Career::where('institution_id', $institutionId)
+            ->orderBy('name')->get(['id', 'name', 'career_classification_id']);
+
+        // Carreras sin clasificación: se agrupan en "Sin clasificación" (id 0)
+        $classificationItems = $classifications->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'parent' => null]);
+        if ($careers->contains(fn ($c) => empty($c->career_classification_id))) {
+            $classificationItems->push(['id' => 0, 'name' => 'Sin clasificación', 'parent' => null]);
+        }
+        $classOf = $careers->mapWithKeys(fn ($c) => [$c->id => (int) ($c->career_classification_id ?: 0)]);
+
+        $materias = \App\Models\AdmonCont\Materia::whereIn('career_id', $careers->pluck('id'))
+            ->orderBy('nombre')->get(['id', 'nombre', 'career_id']);
+
+        // Alumnos (rol estudiante) cuya carrera está en la universidad
+        $students = User::query()
+            ->whereHas('roles', fn ($q) => $q->where('roles.name', 'estudiante'))
+            ->join('academic_profiles', 'academic_profiles.user_id', '=', 'users.id')
+            ->whereIn('academic_profiles.career_id', $careers->pluck('id'))
+            ->orderBy('users.nombre')
+            ->get(['users.id', 'users.nombre', 'users.apellido_paterno', 'users.apellido_materno', 'users.RFC', 'academic_profiles.career_id']);
+
+        // Materias en las que cada alumno está inscrito (clases → alumnos)
+        $materiasByStudent = DB::table('horario_clase_user')
+            ->join('horario_clases', 'horario_clases.id', '=', 'horario_clase_user.horario_clase_id')
+            ->whereIn('horario_clase_user.user_id', $students->pluck('id'))
+            ->whereIn('horario_clases.materia_id', $materias->pluck('id'))
+            ->get(['horario_clase_user.user_id', 'horario_clases.materia_id'])
+            ->groupBy('user_id')
+            ->map(fn ($rows) => $rows->pluck('materia_id')->unique()->values()->all());
+
+        $careerName = $careers->pluck('name', 'id');
+
+        $people = $students->map(fn ($u) => [
+            'id'    => $u->id,
+            'name'  => trim("{$u->nombre} {$u->apellido_paterno} {$u->apellido_materno}"),
+            'sub'   => trim(($careerName[$u->career_id] ?? '') . ' · ' . ($u->RFC ?: 'Sin matrícula/RFC'), ' ·'),
+            'links' => [
+                'classifications' => [$classOf[$u->career_id] ?? 0],
+                'careers'         => [(int) $u->career_id],
+                // Si el alumno aún no está inscrito en clases, se filtra solo por carrera
+                'materias'        => $materiasByStudent[$u->id] ?? [],
+            ],
+        ])->values();
+
+        $levels = [
+            ['key' => 'classifications', 'title' => 'Clasificaciones', 'empty' => 'La universidad no tiene clasificaciones registradas.',
+             'items' => $classificationItems->values()],
+            ['key' => 'careers', 'title' => 'Carreras', 'empty' => 'Las clasificaciones elegidas no tienen carreras.',
+             'items' => $careers->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'parent' => (int) ($c->career_classification_id ?: 0)])->values()],
+            ['key' => 'materias', 'title' => 'Materias', 'empty' => 'Las carreras elegidas no tienen materias.',
+             'items' => $materias->map(fn ($m) => ['id' => $m->id, 'name' => $m->nombre, 'parent' => $m->career_id])->values()],
+        ];
+
+        return [$levels, $people, 'Alumnos'];
     }
 
     public function getGroupData($id)
@@ -242,6 +459,7 @@ public function storeQrAttendance(Request $request, CourseSession $session)
     ]);
 
     $rfc = strtoupper(trim($request->rfc));
+    $now = now();
 
     DB::table('course_session_attendances')->updateOrInsert(
         [
@@ -249,16 +467,18 @@ public function storeQrAttendance(Request $request, CourseSession $session)
             'rfc' => $rfc,
         ],
         [
-            'attended_at' => now(),
-            'updated_at' => now(),
-            'created_at' => now(),
+            'attended_at' => $now,
+            'updated_at' => $now,
+            'created_at' => $now,
         ]
     );
 
     return response()->json([
         'success' => true,
         'message' => 'Asistencia registrada correctamente',
-        'attended_at' => now()->format('H:i:s'),
+        'attended_at' => $now->format('H:i:s'),
+        'attended_date' => $now->format('d/m/Y'),
+        'attended_full' => $now->format('d/m/Y H:i'),
     ]);
 }
 }

@@ -151,17 +151,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Carrera</label>
-                <select name="career_id" required>
-                    @foreach($currentInstitution->careers as $career)
-                        <option value="{{ $career->id }}"
-                            {{ old('career_id', $course->career_id) == $career->id ? 'selected' : '' }}>
-                            {{ $career->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            {{-- Carrera: campo retirado (la carrera se define en la lista de participantes) --}}
 
         @else
 

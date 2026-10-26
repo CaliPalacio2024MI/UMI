@@ -342,60 +342,58 @@
 
         <tbody>
 
-            @foreach($hosts as $index => $host)
+            @php
+                // Desglose: primero quienes asistieron (por hora de llegada), después quienes no
+                $rfcDe = fn ($h) => strtoupper(trim($h->RFC ?? $h->rfc ?? ''));
+                $asistieron = $hosts->filter(fn ($h) => isset($attendanceMap[$rfcDe($h)]))
+                    ->sortBy(fn ($h) => $attendanceMap[$rfcDe($h)]->attended_at)->values();
+                $faltaron = $hosts->reject(fn ($h) => isset($attendanceMap[$rfcDe($h)]))
+                    ->sortBy(fn ($h) => mb_strtolower(trim($h->nombre . ' ' . $h->apellido_paterno . ' ' . $h->apellido_materno)))->values();
+                $secciones = [
+                    ['titulo' => 'Asistieron', 'lista' => $asistieron, 'color' => '#166534', 'fondo' => '#dcfce7'],
+                    ['titulo' => 'No asistieron', 'lista' => $faltaron, 'color' => '#991b1b', 'fondo' => '#fee2e2'],
+                ];
+            @endphp
+
+            @foreach($secciones as $seccion)
 
                 <tr>
-
-                    <td>
-                        {{ $index + 1 }}
+                    <td colspan="5" style="background: {{ $seccion['fondo'] }}; color: {{ $seccion['color'] }}; font-weight: bold; text-align: left;">
+                        {{ $seccion['titulo'] }} ({{ $seccion['lista']->count() }})
                     </td>
-
-                    <td>
-
-                        {{ $host->nombre }}
-                        {{ $host->apellido_paterno }}
-                        {{ $host->apellido_materno }}
-
-                    </td>
-
-                    <td>
-                        {{ optional($host->workstation)->name ?? 'N/A' }}
-                    </td>
-
-                    <td>
-                        {{ $host->RFC ?? $host->rfc ?? 'N/A' }}
-                    </td>
-
-                    <td>
-
-                        @php
-
-                            $hostRfc = strtoupper(
-                                trim($host->RFC ?? $host->rfc ?? '')
-                            );
-
-                            $attendance =
-                            $attendanceMap[$hostRfc] ?? null;
-
-                        @endphp
-
-                        @if($attendance)
-
-                        {{
-                            \Carbon\Carbon::parse(
-                                $attendance->attended_at
-                            )->format('h:i:s a')
-                        }}
-
-                        @else
-
-                            No asistió
-
-                        @endif
-
-                    </td>
-
                 </tr>
+
+                @forelse($seccion['lista'] as $index => $host)
+
+                    @php
+                        $attendance = $attendanceMap[$rfcDe($host)] ?? null;
+                    @endphp
+
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>
+                            {{ $host->nombre }}
+                            {{ $host->apellido_paterno }}
+                            {{ $host->apellido_materno }}
+                        </td>
+                        <td>{{ optional($host->workstation)->name ?? 'N/A' }}</td>
+                        <td>{{ $host->RFC ?? $host->rfc ?? 'N/A' }}</td>
+                        <td>
+                            @if($attendance)
+                                {{ \Carbon\Carbon::parse($attendance->attended_at)->format('d/m/Y h:i a') }}
+                            @else
+                                No asistió
+                            @endif
+                        </td>
+                    </tr>
+
+                @empty
+
+                    <tr>
+                        <td colspan="5" style="color: #888; text-align: center;">Sin registros</td>
+                    </tr>
+
+                @endforelse
 
             @endforeach
 

@@ -245,7 +245,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/groups/{group}', [GroupsController::class, 'update'])->name('groups.update');
         Route::get('/session/{id}/participants', function ($id) {$group = \App\Models\Group::whereHas('sessions', function ($q) use ($id) {$q->where('course_session_id', $id);})->with('participants')->first();return response()->json($group ? $group->participants : []);});
         Route::post('/groups/add-participants', [App\Http\Controllers\GroupsController::class, 'addParticipants'])->name('groups.addParticipants');
+        Route::get('/groups/{session}/export-pdf', [GroupsController::class, 'exportPdf'])->name('groups.export.pdf');
         Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
+        Route::get('/sessions/{session}/participants-catalog', [CourseSessionController::class, 'participantsCatalog'])->name('sessions.participants.catalog');
         // Vista principal
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
 

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\Attendance;
-use App\Models\Course;
+// Course está en este mismo namespace (App\Models\Cursos\Course)
 
 class CourseSession extends Model
 {

@@ -260,14 +260,15 @@ public function store(StoreCourseRequest $request): RedirectResponse
     ]);
 
     // Redirección según modalidad
+    // Presencial e híbrido: llevar directo a registrar sus horarios
     if ($course->modality === 'presencial') {
-        return redirect()->route('Cursos.index')
-            ->with('success', 'Curso creado exitosamente.');
+        return redirect()->route('courses.sessions.index', $course)
+            ->with('success', 'Curso creado exitosamente. Ahora registra sus horarios.');
     }
 
     if ($course->modality === 'hibrida') {
-        return redirect()->route('Cursos.index')
-            ->with('success', 'Curso híbrido creado exitosamente con ' . ($course->hybridCourses()->count() ?? 0) . ' cursos afiliados.');
+        return redirect()->route('courses.sessions.index', $course)
+            ->with('success', 'Curso híbrido creado exitosamente con ' . ($course->hybridCourses()->count() ?? 0) . ' cursos afiliados. Ahora registra sus horarios.');
     }
 
     return redirect()->route('course.topic.create', ['course' => $course->id])
