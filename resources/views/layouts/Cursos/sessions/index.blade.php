@@ -195,18 +195,18 @@
 
                         <div class="form-group-custom">
                             <label class="label-custom">Fecha de la sesión</label>
-                            <input type="date" name="date" class="form-control-custom" value="{{ old('date') }}" required>
+                            <input type="date" name="date" class="form-control-custom" value="{{ old('date') }}" required oninvalid="this.setCustomValidity('Por favor, selecciona una fecha.')" oninput="this.setCustomValidity('')">
                         </div>
 
                         <div style="display:flex; gap:10px;">
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora inicio</label>
-                                <input type="time" name="start_time" id="start_time" class="form-control-custom" value="{{ old('start_time') }}" required>
+                                <input type="time" name="start_time" id="start_time" class="form-control-custom" value="{{ old('start_time') }}" required oninvalid="this.setCustomValidity('Falta la hora de inicio.')" oninput="this.setCustomValidity('')">
                             </div>
 
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora fin</label>
-                                <input type="time" name="end_time" id="end_time" class="form-control-custom" value="{{ old('end_time') }}" required>
+                                <input type="time" name="end_time" id="end_time" class="form-control-custom" value="{{ old('end_time') }}" required oninvalid="this.setCustomValidity('Falta la hora de término.')" oninput="this.setCustomValidity('')">
                             </div>
                         </div>
 
@@ -218,7 +218,9 @@
                                 placeholder="Nombre del instructor"
                                 maxlength="255"
                                 value="{{ old('instructor_name') }}"
-                                required>
+                                required
+                                oninvalid="this.setCustomValidity('Por favor, ingresa el nombre del instructor.')"
+                                oninput="this.setCustomValidity('')">
                         </div>
 
                         <button type="submit" class="btn-primary-custom">
