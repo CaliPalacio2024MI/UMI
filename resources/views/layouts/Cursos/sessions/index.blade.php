@@ -40,176 +40,32 @@
     {{-- LAYOUT PRINCIPAL --}}
     <div class="horarios-layout">
 
-        {{-- ================= TABLA ================= --}}
-        <div class="horarios-tabla-section">
-
-            <div class="card-custom">
-
-            <div class="card-header-custom">
-                <i class="fas fa-list-ul"></i>
-                <strong>Sesiones Registradas</strong>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table-custom-sessions">
-
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Inicio</th>
-                        <th>Fin</th>
-                        <th>Instructor</th>
-                        <th class="text-center">Asist.</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($sessions as $session)
-
-                        {{-- FILA NORMAL --}}
-                        <tr>
-                            <td>{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}</td>
-                            <td>{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}</td>
-                            <td>{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}</td>
-                            <td>{{ $session->instructor_name }}</td>
-
-                            {{-- ASISTENCIA --}}
-                            <td class="text-center">
-                                {{-- Activar / desactivar la asistencia (QR) de este horario --}}
-                                <form action="{{ route('courses.sessions.toggle', [$course, $session]) }}" method="POST" style="display:inline; margin:0;">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit"
-                                            title="{{ $session->attendance_enabled ? 'Asistencia activa — clic para desactivar' : 'Asistencia inactiva — clic para activar' }}"
-                                            style="border:none; background:none; padding:0; cursor:pointer; font-size:1.6rem; line-height:1;">
-                                        <i class="fas {{ $session->attendance_enabled ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted' }}"></i>
-                                    </button>
-                                </form>
-                            </td>
-
-                            {{-- ACCIONES --}}
-                            <td class="text-center" style="display:flex; gap:6px; justify-content:center;">
-
-                                {{-- EDITAR --}}
-                                <button onclick="toggleEditRow(event, '{{ $session->id }}')"
-                                        class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                @php
-                                    $horarioLabel = \Carbon\Carbon::parse($session->date)->format('d/m/Y') . ' · '
-                                        . \Carbon\Carbon::parse($session->start_time)->format('H:i') . ' - '
-                                        . \Carbon\Carbon::parse($session->end_time)->format('H:i');
-                                    $grupoHorario = $session->groups->first();
-                                    $totalParticipantes = $grupoHorario ? $grupoHorario->participants()->count() : 0;
-                                @endphp
-
-                                {{-- GRUPO / LISTA DE PARTICIPANTES (Propiedad → Departamento → Puesto → Anfitriones) --}}
-                                <button type="button"
-                                        class="btn btn-sm btn-warning"
-                                        title="Configurar grupo y lista de participantes"
-                                        onclick="abrirListaParticipantes('{{ $session->id }}', @js($horarioLabel))">
-                                    <i class="fa-solid fa-users"></i>
-                                    {{ $grupoHorario ? 'Grupo (' . $totalParticipantes . ')' : '+ Grupo' }}
-                                </button>
-
-                                <button type="button"
-                                        class="btn btn-sm btn-success"
-                                        title="Agregar o quitar participantes"
-                                        onclick="abrirListaParticipantes('{{ $session->id }}', @js($horarioLabel))">
-                                    <i class="fa-solid fa-user-plus"></i>
-                                </button>
-
-                                <form id="delete-session-form-{{ $session->id }}"
-                                      action="{{ route('courses.sessions.destroy', [$course->id, $session->id]) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-
-                                    {{-- Abre el modal de advertencia antes de eliminar --}}
-                                    <button type="button" class="btn-delete-session"
-                                        onclick="confirmarEliminarHorario(
-                                        '{{ $session->id }}',
-                                        '{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}',
-                                        '{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}',
-                                        '{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}'
-                                        )">
-                                        <i class="fa-solid fa-delete-left"></i>
-                                    </button>
-                                </form>
-
-                            </td>
-                        </tr>
-
-                        {{-- FILA EDIT --}}
-                        <tr id="edit-row-{{ $session->id }}" style="display:none;" class="edit-row-active">
-                            <td colspan="6">
-                                <form action="{{ route('courses.sessions.update', [$course, $session]) }}" method="POST" style="display:flex; gap:10px;">
-                                    @csrf
-                                    @method('PUT')
-
-                                    <input type="date" name="date" class="form-control-custom" value="{{ $session->date }}">
-                                    <input type="time" name="start_time" class="form-control-custom" value="{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}" onchange="autoCalcEditTime(this, {{ $course->hours ?? 0 }})">
-                                    <input type="time" name="end_time" class="form-control-custom" value="{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}">
-                                    <input type="text" name="instructor_name" class="form-control-custom" value="{{ $session->instructor_name }}" placeholder="Instructor" maxlength="255" required>
-
-                                    <button class="btn btn-primary btn-sm">OK</button>
-                                </form>
-                            </td>
-                        </tr>
-
-                    @endforeach
-
-                    @if(count($sessions) === 0)
-                        <tr>
-                            <td colspan="6" style="padding: 40px; text-align: center; color: #999;">
-                                <div style="font-size: 2.5em; margin-bottom: 10px;">📅</div>
-                                <div style="font-size: 1.1em;">No hay sesiones registradas aún.</div>
-                            </td>
-                        </tr>
-                    @endif
-                </tbody>
-
-                </table>
-            </div>
-
-        </div>
-    </div>
-
-        {{-- ================= FORMULARIO ================= --}}
-
+        {{-- ================= FORMULARIO (AHORA A LA IZQUIERDA) ================= --}}
         <div class="horarios-form-section">
-
             <div class="card-custom">
-
                 {{-- HEADER --}}
                 <div class="header-accent-blue">
                     <i class="fas fa-plus-circle"></i>
                     <span>Nuevo Horario</span>
                 </div>
-
                 {{-- BODY --}}
                 <div style="padding:20px;">
-
                     <form action="{{ route('courses.sessions.store', $course) }}" method="POST">
                         @csrf
-
                         <div class="form-group-custom">
                             <label class="label-custom">Fecha de la sesión</label>
                             <input type="date" name="date" class="form-control-custom" value="{{ old('date') }}" required oninvalid="this.setCustomValidity('Por favor, selecciona una fecha.')" oninput="this.setCustomValidity('')">
                         </div>
-
                         <div style="display:flex; gap:10px;">
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora inicio</label>
                                 <input type="time" name="start_time" id="start_time" class="form-control-custom" value="{{ old('start_time') }}" required oninvalid="this.setCustomValidity('Falta la hora de inicio.')" oninput="this.setCustomValidity('')">
                             </div>
-
                             <div class="form-group-custom" style="flex:1;">
                                 <label class="label-custom">Hora fin</label>
                                 <input type="time" name="end_time" id="end_time" class="form-control-custom" value="{{ old('end_time') }}" required oninvalid="this.setCustomValidity('Falta la hora de término.')" oninput="this.setCustomValidity('')">
                             </div>
                         </div>
-
                         <div class="form-group-custom">
                             <label class="label-custom">Instructor</label>
                             <input type="text"
@@ -222,21 +78,122 @@
                                 oninvalid="this.setCustomValidity('Por favor, ingresa el nombre del instructor.')"
                                 oninput="this.setCustomValidity('')">
                         </div>
-
                         <button type="submit" class="btn-primary-custom">
                             <i class="fas fa-save"></i>
                             Registrar Horario
                         </button>
-
                     </form>
-
                 </div>
-
             </div>
         </div>
 
+        {{-- ================= TABLA (AHORA A LA DERECHA) ================= --}}
+        <div class="horarios-tabla-section">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <i class="fas fa-list-ul"></i>
+                    <strong>Sesiones Registradas</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-custom-sessions">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Inicio</th>
+                                <th>Fin</th>
+                                <th>Instructor</th>
+                                <th class="text-center">Asist.</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($sessions as $session)
+                                {{-- FILA NORMAL --}}
+                                <tr>
+                                    <td>{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}</td>
+                                    <td>{{ $session->instructor_name }}</td>
+                                    
+                                    {{-- ASISTENCIA --}}
+                                    <td class="text-center">
+                                        <form action="{{ route('courses.sessions.toggle', [$course, $session]) }}" method="POST" style="display:inline; margin:0;">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                    title="{{ $session->attendance_enabled ? 'Asistencia activa — clic para desactivar' : 'Asistencia inactiva — clic para activar' }}"
+                                                    style="border:none; background:none; padding:0; cursor:pointer; font-size:1.6rem; line-height:1;">
+                                                <i class="fas {{ $session->attendance_enabled ? 'fa-toggle-on text-success' : 'fa-toggle-off text-muted' }}"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                    
+                                    {{-- ACCIONES --}}
+                                    <td class="text-center" style="display:flex; gap:6px; justify-content:center;">
+                                        {{-- EDITAR --}}
+                                        <button onclick="toggleEditRow(event, '{{ $session->id }}')" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @php
+                                            $horarioLabel = \Carbon\Carbon::parse($session->date)->format('d/m/Y') . ' · '
+                                                . \Carbon\Carbon::parse($session->start_time)->format('H:i') . ' - '
+                                                . \Carbon\Carbon::parse($session->end_time)->format('H:i');
+                                        @endphp
+                                        
+                                        {{-- BOTON VERDE CONSERVADO, BOTON AMARILLO ELIMINADO --}}
+                                        <button type="button"
+                                                class="btn btn-sm btn-success"
+                                                title="Agregar o quitar participantes"
+                                                onclick="abrirListaParticipantes('{{ $session->id }}', @js($horarioLabel))">
+                                            <i class="fa-solid fa-user-plus"></i>
+                                        </button>
+                                        
+                                        <form id="delete-session-form-{{ $session->id }}" action="{{ route('courses.sessions.destroy', [$course->id, $session->id]) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn-delete-session"
+                                                onclick="confirmarEliminarHorario(
+                                                '{{ $session->id }}',
+                                                '{{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}',
+                                                '{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}',
+                                                '{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}'
+                                                )">
+                                                <i class="fa-solid fa-delete-left"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                
+                                {{-- FILA EDIT --}}
+                                <tr id="edit-row-{{ $session->id }}" style="display:none;" class="edit-row-active">
+                                    <td colspan="6">
+                                        <form action="{{ route('courses.sessions.update', [$course, $session]) }}" method="POST" style="display:flex; gap:10px;">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="date" name="date" class="form-control-custom" value="{{ $session->date }}">
+                                            <input type="time" name="start_time" class="form-control-custom" value="{{ \Carbon\Carbon::parse($session->start_time)->format('H:i') }}" onchange="autoCalcEditTime(this, {{ $course->hours ?? 0 }})">
+                                            <input type="time" name="end_time" class="form-control-custom" value="{{ \Carbon\Carbon::parse($session->end_time)->format('H:i') }}">
+                                            <input type="text" name="instructor_name" class="form-control-custom" value="{{ $session->instructor_name }}" placeholder="Instructor" maxlength="255" required>
+                                            <button class="btn btn-primary btn-sm">OK</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            
+                            @if(count($sessions) === 0)
+                                <tr>
+                                    <td colspan="6" style="padding: 40px; text-align: center; color: #999;">
+                                        <div style="font-size: 2.5em; margin-bottom: 10px;">📅</div>
+                                        <div style="font-size: 1.1em;">No hay sesiones registradas aún.</div>
+                                    </td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
- </div>
 {{-- MODAL: ADVERTENCIA AL ELIMINAR HORARIO (no depende de Bootstrap JS) --}}
 <div id="deleteSessionModal" class="umi-confirm-overlay" role="dialog" aria-modal="true"
      aria-labelledby="deleteSessionModalTitle" aria-hidden="true">

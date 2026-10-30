@@ -137,11 +137,15 @@
                                                 <i class="fa-solid fa-user-plus"></i>
                                             </button>
                                             
-                                            {{-- Botón Eliminar --}}
-                                            <form action="{{ route('courses.periods.destroy', [$course->id, $period->id]) }}" method="POST" onsubmit="return confirm('¿Eliminar este período? Los usuarios asignados perderán acceso.');">
+                                            {{-- Botón Eliminar modificado para usar el nuevo Modal --}}
+                                            <form id="delete-period-form-{{ $period->id }}" action="{{ route('courses.periods.destroy', [$course->id, $period->id]) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn-delete-session" title="Eliminar">
+                                                <button type="button" class="btn-delete-session" title="Eliminar"
+                                                    onclick="confirmarEliminarPeriodo(
+                                                    '{{ $period->id }}',
+                                                    '{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}'
+                                                    )">
                                                     <i class="fa-solid fa-delete-left"></i>
                                                 </button>
                                             </form>
@@ -176,6 +180,75 @@
         </div>
     </div>
 </div>
+
+{{-- MODAL: ADVERTENCIA AL ELIMINAR PERIODO (Sin dependencias externas) --}}
+<div id="deletePeriodModal" class="umi-confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="umi-confirm-box">
+        <div class="umi-confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h5>¿Eliminar este período?</h5>
+        <p class="umi-confirm-info"><strong id="deletePeriodInfo"></strong></p>
+        <p class="umi-confirm-text">Los usuarios asignados perderán acceso. Esta acción no se puede deshacer.</p>
+        <div class="umi-confirm-actions">
+            <button type="button" id="btnCancelDeletePeriod" class="umi-confirm-cancel">Cancelar</button>
+            <button type="button" id="btnConfirmDeletePeriod" class="umi-confirm-danger">Sí, eliminar</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .umi-confirm-overlay { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; background: rgba(13, 34, 64, .45); padding: 16px; }
+    .umi-confirm-overlay.is-open { display: flex; }
+    .umi-confirm-box { width: 100%; max-width: 420px; background: #fff; border-radius: 12px; padding: 28px; text-align: center; box-shadow: 0 12px 35px rgba(13, 34, 64, .25); }
+    .umi-confirm-icon { font-size: 42px; color: #E74C3C; line-height: 1; margin-bottom: 12px; }
+    .umi-confirm-box h5 { font-weight: 700; color: #0d2240; margin: 0 0 10px; font-size: 1.2rem; }
+    .umi-confirm-info { margin: 0 0 6px; color: #444; }
+    .umi-confirm-text { margin: 0; color: #666; font-size: .92rem; }
+    .umi-confirm-actions { display: flex; justify-content: center; gap: 10px; margin-top: 22px; }
+    .umi-confirm-actions button { min-width: 120px; padding: 9px 16px; border-radius: 7px; font-weight: 600; cursor: pointer; }
+    .umi-confirm-cancel { background: #fff; color: #0d2240; border: 1px solid #0d2240; }
+    .umi-confirm-danger { background: #E74C3C; color: #fff; border: 1px solid #E74C3C; }
+    .umi-confirm-danger:disabled { opacity: .7; cursor: wait; }
+</style>
+
+<script>
+    (function () {
+        const overlay = document.getElementById('deletePeriodModal');
+        const info = document.getElementById('deletePeriodInfo');
+        const btnConfirm = document.getElementById('btnConfirmDeletePeriod');
+        const btnCancel = document.getElementById('btnCancelDeletePeriod');
+        let periodoPorEliminar = null;
+
+        function cerrar() {
+            overlay.classList.remove('is-open');
+            overlay.setAttribute('aria-hidden', 'true');
+            periodoPorEliminar = null;
+        }
+
+        window.confirmarEliminarPeriodo = function (periodId, fechas) {
+            periodoPorEliminar = periodId;
+            info.textContent = fechas;
+            btnConfirm.disabled = false;
+            btnConfirm.textContent = 'Sí, eliminar';
+            overlay.classList.add('is-open');
+            overlay.setAttribute('aria-hidden', 'false');
+            btnCancel.focus();
+        };
+
+        btnCancel.addEventListener('click', cerrar);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) cerrar(); });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && overlay.classList.contains('is-open')) cerrar();
+        });
+
+        btnConfirm.addEventListener('click', function () {
+            const form = periodoPorEliminar && document.getElementById('delete-period-form-' + periodoPorEliminar);
+            if (!form) return;
+            btnConfirm.disabled = true;
+            btnConfirm.textContent = 'Eliminando...';
+            form.submit();
+        });
+    })();
+</script>
 
 {{-- Modal Asignar Usuarios --}}
 <div id="usersModal" style="display: none; position: fixed; top: 0; right: 0; width: 450px; height: 100vh; background: white; box-shadow: -2px 0 15px rgba(0,0,0,0.3); z-index: 9999; overflow-y: auto;">
@@ -321,3 +394,4 @@ document.addEventListener('keydown', function(e) {
 }
 </style>
 @endsection
+```eof

@@ -97,10 +97,12 @@
                     <th style="padding: 15px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Nombre Completo</th>
                     <th style="padding: 15px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Email</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Período</th>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Fecha Inicio</th>
+                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Fecha Asist.</th>
+                    {{-- NUEVA COLUMNA DE HORA AQUI --}}
+                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Hora</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Fecha Fin</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Progreso</th>
-                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Calificación Final</th>
+                    <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Calificación</th>
                     <th style="padding: 15px; text-align: center; font-weight: 600; color: #333; border-bottom: 2px solid #dee2e6;">Estado</th>
                 </tr>
             </thead>
@@ -113,14 +115,26 @@
                     <td style="padding: 15px; text-align: center; font-size: 0.85em; color: #666;">
                         {{ $attendance['period_name'] ?? 'Sin período' }}
                     </td>
+                    
+                    {{-- FECHA INICIO (ASISTENCIA) --}}
                     <td style="padding: 15px; text-align: center;">
                         @if($attendance['started_at'])
                             <div style="font-weight: 500;">{{ \Carbon\Carbon::parse($attendance['started_at'])->format('d/m/Y') }}</div>
-                            <div style="font-size: 0.85em; color: #999;">{{ \Carbon\Carbon::parse($attendance['started_at'])->format('H:i') }}</div>
                         @else
                             <span style="color: #999;">-</span>
                         @endif
                     </td>
+
+                    {{-- HORA EXACTA DE LA ASISTENCIA (NUEVO DATO SEPARADO) --}}
+                    <td style="padding: 15px; text-align: center;">
+                        @if($attendance['started_at'])
+                            <div style="font-weight: bold; color: #0c35d9;">{{ \Carbon\Carbon::parse($attendance['started_at'])->format('H:i') }}</div>
+                        @else
+                            <span style="color: #999;">-</span>
+                        @endif
+                    </td>
+
+                    {{-- FECHA FIN --}}
                     <td style="padding: 15px; text-align: center;">
                         @if($attendance['completed_at'])
                             <div style="font-weight: 500;">{{ \Carbon\Carbon::parse($attendance['completed_at'])->format('d/m/Y') }}</div>
@@ -129,12 +143,14 @@
                             <span style="color: #999;">En progreso</span>
                         @endif
                     </td>
+                    
                     <td style="padding: 15px; text-align: center;">
                         <div style="background: #e9ecef; border-radius: 10px; height: 8px; overflow: hidden; max-width: 100px; margin: 0 auto;">
                             <div style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: {{ $attendance['progress'] }}%;"></div>
                         </div>
                         <div style="margin-top: 5px; font-size: 0.9em; font-weight: 600; color: #667eea;">{{ round($attendance['progress']) }}%</div>
                     </td>
+                    
                     <td style="padding: 15px; text-align: center;">
                         @if($attendance['final_score'] !== null)
                             <div style="display: inline-block; background: {{ $attendance['final_score'] >= 60 ? '#d4edda' : '#f8d7da' }}; color: {{ $attendance['final_score'] >= 60 ? '#155724' : '#721c24' }}; padding: 6px 12px; border-radius: 6px; font-weight: 600;">
@@ -144,6 +160,7 @@
                             <span style="color: #999;">Sin calificación</span>
                         @endif
                     </td>
+                    
                     <td style="padding: 15px; text-align: center;">
                         @if($attendance['progress'] >= 100 && $attendance['final_score'] !== null)
                             <span style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9em;">✓ Completado</span>
@@ -154,7 +171,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" style="padding: 40px; text-align: center; color: #999;">
+                    <td colspan="10" style="padding: 40px; text-align: center; color: #999;">
                         <div style="font-size: 3em; margin-bottom: 10px;">📭</div>
                         <div style="font-size: 1.2em;">Aún no hay estudiantes inscritos en este curso</div>
                     </td>
@@ -181,8 +198,8 @@ function filterTable() {
         const nombre = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
         const fechaInicio = row.querySelector('td:nth-child(5) div:first-child')?.textContent || '';
         const periodId = row.dataset.periodId || '';
-        const estado = row.querySelector('td:nth-child(9) span')?.textContent.includes('Completado');
-        const scoreText = row.querySelector('td:nth-child(8) div')?.textContent || '';
+        const estado = row.querySelector('td:nth-child(10) span')?.textContent.includes('Completado'); // Ajustado a la columna 10
+        const scoreText = row.querySelector('td:nth-child(9) div')?.textContent || ''; // Ajustado a la columna 9
         const score = parseFloat(scoreText.replace('%', ''));
         
         // Convertir fecha de d/m/Y a Y-m-d para comparar
