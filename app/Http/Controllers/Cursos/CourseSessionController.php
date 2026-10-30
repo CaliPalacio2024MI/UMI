@@ -141,7 +141,7 @@ class CourseSessionController extends Controller
     private const UNIVERSITY_NAME = 'Universidad Mundo Imperial';
 
     /** ¿La institución es una universidad? */
-    private function isUniversity(?Institution $institution): bool
+    public function isUniversity(?Institution $institution): bool
     {
         return $institution && ((bool) ($institution->is_universidad ?? false) || $institution->name === self::UNIVERSITY_NAME);
     }
@@ -227,6 +227,36 @@ class CourseSessionController extends Controller
      */
     public function participantsCatalog(Request $request, CourseSession $session)
     {
+        $group = $session->groups()->with(['departments:id', 'workstations:id', 'participants:id'])->first();
+
+        $catalog = $this->buildCatalog(
+            (int) $request->query('institution_id') ?: null,
+            $group->institution_id ?? null
+        );
+
+        $savedSelections = $group ? ($group->filters ?: [
+            'departments'  => $group->departments->pluck('id')->all(),
+            'workstations' => $group->workstations->pluck('id')->all(),
+        ]) : [];
+
+        $catalog['group'] = $group ? [
+            'institution_id'   => $group->institution_id,
+            'type'             => $group->type,
+            'min_participants' => $group->min_participants,
+            'max_participants' => $group->max_participants,
+            'selections'       => $savedSelections,
+            'participants'     => $group->participants->pluck('id'),
+        ] : null;
+
+        return response()->json($catalog);
+    }
+
+    /**
+     * Arma el catálogo de la ventana "Lista de participantes". Lo usan Horarios
+     * (presencial/híbrido) y Periodos (virtual), para que todo funcione igual.
+     */
+    public function buildCatalog(?int $requestedInstitutionId = null, ?int $savedInstitutionId = null): array
+    {
         $user = auth()->user();
         $activeId = (int) session('active_institution_id');
         $active = Institution::find($activeId);
@@ -238,9 +268,7 @@ class CourseSessionController extends Controller
             ->filter(fn ($i) => $this->isUniversity($i) === $universityMode)
             ->values();
 
-        $group = $session->groups()->with(['departments:id', 'workstations:id', 'participants:id'])->first();
-
-        $institutionId = (int) ($request->query('institution_id') ?: ($group->institution_id ?? null) ?: $activeId);
+        $institutionId = (int) ($requestedInstitutionId ?: $savedInstitutionId ?: $activeId);
         if (! $units->contains('id', $institutionId) && $units->isNotEmpty()) {
             $institutionId = $units->first()->id;
         }
@@ -249,12 +277,7 @@ class CourseSessionController extends Controller
             ? $this->universityCatalog($institutionId)
             : $this->propertyCatalog($institutionId);
 
-        $savedSelections = $group ? ($group->filters ?: [
-            'departments'  => $group->departments->pluck('id')->all(),
-            'workstations' => $group->workstations->pluck('id')->all(),
-        ]) : [];
-
-        return response()->json([
+        return [
             'mode'           => $universityMode ? 'university' : 'property',
             'unit_label'     => $universityMode ? 'Universidad' : 'Propiedad',
             'people_title'   => $peopleTitle,
@@ -262,15 +285,7 @@ class CourseSessionController extends Controller
             'institution_id' => $institutionId,
             'levels'         => $levels,
             'people'         => $people,
-            'group'          => $group ? [
-                'institution_id'   => $group->institution_id,
-                'type'             => $group->type,
-                'min_participants' => $group->min_participants,
-                'max_participants' => $group->max_participants,
-                'selections'       => $savedSelections,
-                'participants'     => $group->participants->pluck('id'),
-            ] : null,
-        ]);
+        ];
     }
 
     /** Propiedad: departamentos creados en ella → sus puestos → anfitriones con esos puestos (sin Master). */
@@ -479,6 +494,63 @@ public function storeQrAttendance(Request $request, CourseSession $session)
         'attended_at' => $now->format('H:i:s'),
         'attended_date' => $now->format('d/m/Y'),
         'attended_full' => $now->format('d/m/Y H:i'),
+    ]);
+}
+
+/**
+ * Panel lateral "Asignar Usuarios" (botón verde de Horarios, igual que en virtual).
+ * Lista los anfitriones/alumnos de la unidad con la marca de si ya están asignados al horario.
+ */
+public function sessionUsers(CourseSession $session)
+{
+    $group = $session->groups()->with('participants:id')->first();
+    $catalog = $this->buildCatalog(null, $group->institution_id ?? null);
+    $assigned = $group ? $group->participants->pluck('id')->map(fn ($id) => (int) $id)->all() : [];
+
+    return response()->json([
+        'success'            => true,
+        'attendance_enabled' => (bool) $session->attendance_enabled,
+        'users'              => $this->usersForPanel($catalog['people'], $assigned),
+    ]);
+}
+
+/** Lista para el panel "Asignar Usuarios": asignados primero. */
+public function usersForPanel($people, array $assigned)
+{
+    return collect($people)->map(fn ($p) => [
+        'id'       => $p['id'],
+        'nombre'   => $p['name'],
+        'detalle'  => $p['sub'],
+        'assigned' => in_array((int) $p['id'], $assigned, true),
+    ])->sortByDesc('assigned')->values();
+}
+
+/** Asigna o quita un usuario del horario (lista de participantes del grupo del horario). */
+public function toggleSessionUser(Request $request, CourseSession $session)
+{
+    $data = $request->validate([
+        'user_id'  => 'required|integer|exists:users,id',
+        'assigned' => 'required|boolean',
+    ]);
+
+    $group = $session->groups()->first();
+    if (! $group) {
+        $group = Group::create([
+            'type'           => 'cerrado',
+            'institution_id' => (int) session('active_institution_id'),
+        ]);
+        $group->sessions()->attach($session->id);
+    }
+
+    if ($data['assigned']) {
+        $group->participants()->syncWithoutDetaching([$data['user_id']]);
+    } else {
+        $group->participants()->detach($data['user_id']);
+    }
+
+    return response()->json([
+        'success' => true,
+        'total'   => $group->participants()->count(),
     ]);
 }
 }

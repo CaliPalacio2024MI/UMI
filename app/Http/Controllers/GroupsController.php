@@ -108,7 +108,19 @@ class GroupsController extends Controller
             ->get()
             ->keyBy(fn ($item) => strtoupper(trim($item->rfc)));
 
-        return Pdf::loadView('pdf.group-list', compact('session', 'hosts', 'attendanceMap'))
+        // Universidad: en lugar de "Puesto" se muestra la carrera del alumno
+        $institution = \App\Models\Users\Institution::find(
+            ($group->institution_id ?? null) ?: ($session->course->institution_id ?? null) ?: session('active_institution_id')
+        );
+        $esUniversidad = app(\App\Http\Controllers\Cursos\CourseSessionController::class)->isUniversity($institution);
+        $carreraDe = $esUniversidad
+            ? DB::table('academic_profiles')
+                ->join('careers', 'careers.id', '=', 'academic_profiles.career_id')
+                ->whereIn('academic_profiles.user_id', $hosts->pluck('id'))
+                ->pluck('careers.name', 'academic_profiles.user_id')
+            : collect();
+
+        return Pdf::loadView('pdf.group-list', compact('session', 'hosts', 'attendanceMap', 'esUniversidad', 'carreraDe'))
             ->download('lista-participantes.pdf');
     }
 }

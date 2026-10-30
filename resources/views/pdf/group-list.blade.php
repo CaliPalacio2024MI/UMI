@@ -105,6 +105,11 @@
         table.participants {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .participants td {
+            word-wrap: break-word;
         }
 
         .participants thead tr {
@@ -133,23 +138,23 @@
         }
 
         .col-num {
-            width: 35px;
+            width: 5%;
         }
 
         .col-name {
-            width: 240px;
+            width: 33%;
         }
 
         .col-puesto {
-            width: 170px;
+            width: 24%;
         }
 
         .col-rfc {
-            width: 120px;
+            width: 20%;
         }
 
         .col-hour {
-            width: 120px;
+            width: 18%;
         }
 
         .footer {
@@ -325,7 +330,7 @@
                 </th>
 
                 <th class="col-puesto">
-                    Puesto
+                    {{ ($esUniversidad ?? false) ? 'Carrera' : 'Puesto' }}
                 </th>
 
                 <th class="col-rfc">
@@ -376,11 +381,19 @@
                             {{ $host->apellido_paterno }}
                             {{ $host->apellido_materno }}
                         </td>
-                        <td>{{ optional($host->workstation)->name ?? 'N/A' }}</td>
+                        <td>
+                            @if($esUniversidad ?? false)
+                                {{ $carreraDe[$host->id] ?? 'N/A' }}
+                            @else
+                                {{ optional($host->workstation)->name ?? 'N/A' }}
+                            @endif
+                        </td>
                         <td>{{ $host->RFC ?? $host->rfc ?? 'N/A' }}</td>
                         <td>
                             @if($attendance)
-                                {{ \Carbon\Carbon::parse($attendance->attended_at)->format('d/m/Y h:i a') }}
+                                {{-- Fecha y hora en dos renglones para que no se corte --}}
+                                {{ \Carbon\Carbon::parse($attendance->attended_at)->format('d/m/Y') }}<br>
+                                {{ \Carbon\Carbon::parse($attendance->attended_at)->format('h:i a') }}
                             @else
                                 No asistió
                             @endif

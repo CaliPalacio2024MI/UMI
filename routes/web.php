@@ -185,6 +185,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{period}/usuarios', [CoursePeriodsController::class, 'users'])->name('users');
         Route::post('/{period}/usuarios/toggle', [CoursePeriodsController::class, 'toggleUser'])->name('toggleUser');
 
+        // Lista de participantes del período (botón gris, igual que en Horarios)
+        // JSON del panel "Asignar Usuarios" (la URL /usuarios la ocupa también la vista usersIndex de abajo y chocaban)
+        Route::get('/{period}/asignar-usuarios', [CoursePeriodsController::class, 'users'])->name('users.panel');
+        Route::get('/{period}/participantes-catalogo', [CoursePeriodsController::class, 'participantsCatalog'])->name('participants.catalog');
+        Route::post('/{period}/participantes', [CoursePeriodsController::class, 'storeParticipants'])->name('participants.store');
+
         // Asistencia del período
         Route::get('/{period}/asistencia', [CoursePeriodsController::class, 'attendance'])->name('attendance');
         })->middleware(['role:master,docente,gerente_capacitacion']);
@@ -248,6 +254,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/groups/{session}/export-pdf', [GroupsController::class, 'exportPdf'])->name('groups.export.pdf');
         Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
         Route::get('/sessions/{session}/participants-catalog', [CourseSessionController::class, 'participantsCatalog'])->name('sessions.participants.catalog');
+        // Panel lateral "Asignar Usuarios" (botón verde de Horarios)
+        Route::get('/sessions/{session}/usuarios', [CourseSessionController::class, 'sessionUsers'])->name('sessions.users');
+        Route::post('/sessions/{session}/usuarios/toggle', [CourseSessionController::class, 'toggleSessionUser'])->name('sessions.users.toggle');
         // Vista principal
         Route::get('/groups', [GroupsController::class, 'index'])->name('groups.index');
 

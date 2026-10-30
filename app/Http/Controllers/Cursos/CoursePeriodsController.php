@@ -79,59 +79,126 @@ class CoursePeriodsController extends Controller
     }
 
 
+/**
+ * Panel lateral "Asignar Usuarios" (botón verde). Igual que en Horarios:
+ * usa los anfitriones/alumnos registrados en UMI para la unidad activa
+ * (antes leía la API con la propiedad 1 fija y un campo que la API no manda).
+ */
 public function users($courseId, $periodId)
 {
-    try {
-        $baseUrl = env('EXTERNAL_API_BASE_URL');
-        $endpoint = "/api/external/propiedades/1/anfitriones";
+    $period = CoursePeriod::where('course_id', $courseId)->findOrFail($periodId);
+    $sessions = app(CourseSessionController::class);
 
-        $service = new ExternalApiService(
-            env('EXTERNAL_API_ACCESS_KEY'),
-            env('EXTERNAL_API_SECRET_KEY')
-        );
+    $catalog = $sessions->buildCatalog();
+    $assigned = $this->assignedUserIds($period);
 
-        $response = $service->execute($baseUrl . $endpoint);
-
-        if (!isset($response['success']) || !$response['success']) {
-            throw new \Exception($response['message'] ?? 'Error en API');
-        }
-
-        $users = collect($response['data'])->map(function ($u) {
-            return [
-                'id' => $u['no_anfitrion'],
-                'nombre' => trim(
-                    ($u['nombre'] ?? '') . ' ' .
-                    ($u['primer_apellido'] ?? '') . ' ' .
-                    ($u['segundo_apellido'] ?? '')
-                ),
-                'assigned' => false
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'users' => $users->values()
-        ]);
-
-    } catch (\Exception $e) {
-        \Log::error('Error cargando usuarios:', [
-            'course_id' => $courseId,
-            'period_id' => $periodId,
-            'error' => $e->getMessage()
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
-    }
+    return response()->json([
+        'success' => true,
+        'users'   => $sessions->usersForPanel($catalog['people'], $assigned),
+    ]);
 }
 
+/** Asigna o quita un usuario del período (tabla period_user). */
 public function toggleUser(Request $request, $courseId, $periodId)
 {
-    return response()->json([
-        'success' => true
+    $period = CoursePeriod::where('course_id', $courseId)->findOrFail($periodId);
+    $data = $request->validate([
+        'user_id'  => 'required|integer|exists:users,id',
+        'assigned' => 'required|boolean',
     ]);
+
+    $query = DB::table('period_user')
+        ->where('course_id', $period->course_id)
+        ->where('period_id', $period->id)
+        ->where('user_id', $data['user_id']);
+
+    if ($data['assigned']) {
+        if (! $query->exists()) {
+            DB::table('period_user')->insert([
+                'course_id'  => $period->course_id,
+                'period_id'  => $period->id,
+                'user_id'    => $data['user_id'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    } else {
+        $query->delete();
+    }
+
+    return response()->json(['success' => true, 'total' => count($this->assignedUserIds($period))]);
+}
+
+/**
+ * Botón gris: catálogo de la ventana "Lista de participantes" del período
+ * (mismo que Horarios). Lo ya guardado se reconstruye a partir de los usuarios asignados.
+ */
+public function participantsCatalog(Request $request, $courseId, $periodId)
+{
+    $period = CoursePeriod::where('course_id', $courseId)->findOrFail($periodId);
+    $catalog = app(CourseSessionController::class)->buildCatalog((int) $request->query('institution_id') ?: null);
+
+    $assigned = $this->assignedUserIds($period);
+    $selections = [];
+    foreach ($catalog['people'] as $p) {
+        if (! in_array((int) $p['id'], $assigned, true)) continue;
+        foreach ($p['links'] ?? [] as $key => $ids) {
+            foreach ($ids as $id) $selections[$key][] = (int) $id;
+        }
+    }
+    $selections = array_map(fn ($ids) => array_values(array_unique($ids)), $selections);
+
+    $catalog['group'] = $assigned ? [
+        'institution_id' => $catalog['institution_id'],
+        'type'           => null,
+        'selections'     => $selections,
+        'participants'   => $assigned,
+    ] : null;
+
+    return response()->json($catalog);
+}
+
+/** Guarda la lista de participantes del período (reemplaza los asignados). */
+public function storeParticipants(Request $request, $courseId, $periodId)
+{
+    $period = CoursePeriod::where('course_id', $courseId)->findOrFail($periodId);
+    $data = $request->validate([
+        'users'   => 'nullable|array',
+        'users.*' => 'integer|exists:users,id',
+    ]);
+    $users = array_values(array_unique(array_map('intval', $data['users'] ?? [])));
+
+    DB::transaction(function () use ($period, $users) {
+        DB::table('period_user')
+            ->where('course_id', $period->course_id)
+            ->where('period_id', $period->id)
+            ->delete();
+
+        $now = now();
+        DB::table('period_user')->insert(array_map(fn ($id) => [
+            'course_id'  => $period->course_id,
+            'period_id'  => $period->id,
+            'user_id'    => $id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], $users));
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Lista guardada: ' . count($users) . ' participante(s).',
+    ]);
+}
+
+private function assignedUserIds(CoursePeriod $period): array
+{
+    return DB::table('period_user')
+        ->where('course_id', $period->course_id)
+        ->where('period_id', $period->id)
+        ->whereNotNull('user_id')
+        ->pluck('user_id')
+        ->map(fn ($id) => (int) $id)
+        ->all();
 }
 
 /**

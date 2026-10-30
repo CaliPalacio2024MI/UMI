@@ -91,119 +91,15 @@
 </div>
 
 
-{{-- ===== SOLO HÍBRIDA ===== --}}
-@if(in_array($course->modality, ['hibrida']))
-
-        <h2>📚 {{ $course->title }}</h2>
-        <p>Cursos disponibles</p>
-        <div class="course-controls" style="justify-content: flex-end;">
-            <button class="exit" onclick="window.location.href='{{ route('Cursos.index') }}'">
-                Salir
-            </button>
-        </div>
-    @endif
-    {{-- ===== CURSOS DENTRO DE HÍBRIDO (FULL FUNCIONAL) ===== --}}
-@if($course->modality === 'hibrida')
-
-    @php
-        $hybridCourses = $course->hybridCourses()->get();
-    @endphp
-
-    @if($hybridCourses->count() > 0)
-
-        <div class="courses-container">
-
-            @foreach ($hybridCourses as $courses)
-
-                <div class="course-card {{ !$courses->active ? 'course-disabled' : '' }}">
-
-                    <a href="{{ route('course.show', $courses) }}" class="course-card-show">
-
-                        {{-- IMAGEN --}}
-                        @if($courses->image)
-                            <img src="{{ asset('storage/' . $courses->image) }}" alt="Curso">
-                        @else
-                            <img src="https://via.placeholder.com/400x200?text=Curso" alt="Curso">
-                        @endif
-
-                        {{-- INFO --}}
-                        <div class="course-info">
-                            <h3 class="course-title">{{ $courses->title }}</h3>
-                            <p class="course-description">{{ $courses->description }}</p>
-
-                            <div class="course-meta">
-                                <span>Horas: {{ $courses->hours }}</span>
-                            </div>
-                        </div>
-
-                    </a>
-
-                    {{-- ACCIONES (IGUAL QUE INDEX) --}}
-                    <div class="btn-display">
-
-                        {{-- HORARIOS --}}
-                        @if(in_array($courses->modality, ['presencial', 'hibrida']))
-                            <a href="{{ route('courses.sessions.index', $courses) }}" class="btn-action">
-                                <i class="fa-regular fa-clock"></i>
-                            </a>
-                        @endif
-
-                        {{-- EDITAR --}}
-                        @can('update', $courses)
-                            <a href="{{ route('courses.edit', $courses) }}" class="btn-edit">
-                                <img src="{{asset('images/icons/pen-to-square-solid-full.svg')}}"
-                                     style="width:27px;height:27px">
-                            </a>
-                        @endcan
-
-                        {{-- ELIMINAR --}}
-                        @can('delete', $courses)
-                            <form action="{{ route('courses.destroy', $courses) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="submit"
-                                    class="btn-delete"
-                                    onclick="return confirm('¿Eliminar el curso?')">
-                                    <img src="{{asset('images/icons/Vector.svg')}}"
-                                         style="width:27px;height:19px">
-                                </button>
-                            </form>
-                        @endcan
-
-                        {{-- ICONO MODALIDAD --}}
-                        @php
-                            $icon = match($courses->modality) {
-                               'virtual' => 'fa-solid fa-computer',
-                               'presencial' => 'fa-solid fa-user',
-                               'hibrida' => 'fa-solid fa-book-open-reader',
-                               default => 'fa-solid fa-book'
-                            };
-                        @endphp
-
-                        <span class="course-modality">
-                            <i class="{{ $icon }}"></i>
-                        </span>
-
-                    </div>
-
-                </div>
-
-            @endforeach
-
-        </div>
-
-    @else
-        <div class="no-courses-message">
-            <p>No hay cursos afiliados.</p>
-        </div>
-    @endif
-@endif
-
-
-
-
-@if($course->modality !== 'hibrida')
+{{-- Todas las modalidades (presencial, virtual e híbrido) usan el mismo diseño de dos paneles --}}
+<style>
+    .hybrid-courses-box { margin: 12px 0 16px; }
+    .hybrid-courses-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; margin: 6px 0 8px; }
+    .hybrid-course-link { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 8px; border-radius: 10px; text-decoration: none; color: #1e293b; background: #f8fafc; border: 1px solid #e2e8f0; transition: all .2s; }
+    .hybrid-course-link:hover { background: #32459a; color: #fff; border-color: #32459a; }
+    .course-empty-note { padding: 14px; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b; font-size: .92rem; text-align: center; }
+    .course-empty-note a { display: block; margin-top: 6px; font-weight: 600; color: #1e40af; }
+</style>
 <div class="course-layout">
 
     {{-- ===== MENU ===== --}}
@@ -274,13 +170,54 @@
     @endforeach
 
 
-@if($course->modality === 'presencial')
+{{-- VIRTUAL sin temas: mismo aviso que los cursos sin horarios --}}
+@if($course->modality === 'virtual' && $allItems->isEmpty())
+    <div class="course-empty-note">
+        Este curso aún no tiene temas registrados.
+        @can('update', $course)
+            <a href="{{ route('course.topic.create', $course) }}">Agregar temas</a>
+        @endcan
+    </div>
+@endif
+
+{{-- HÍBRIDO: cursos que lo conforman --}}
+@if($course->modality === 'hibrida')
+    <div class="hybrid-courses-box">
+        <div class="hybrid-courses-title">Cursos que lo conforman</div>
+        @forelse(($hybridCourses ?? collect()) as $hc)
+            @php
+                $hcIcon = ['virtual' => 'fa-solid fa-computer', 'presencial' => 'fa-solid fa-user'][$hc->modality] ?? 'fa-solid fa-book';
+            @endphp
+            <a href="{{ route('course.show', $hc) }}" class="hybrid-course-link">
+                <i class="{{ $hcIcon }}"></i>
+                {{ $hc->title }}
+            </a>
+        @empty
+            <div class="course-empty-note">No hay cursos afiliados.</div>
+        @endforelse
+    </div>
+@endif
+
+@if(in_array($course->modality, ['presencial', 'hibrida']))
 
     <div class="course-sessions-box">
 
+        @if($course->modality === 'hibrida')
+            <div class="hybrid-courses-title">Horarios</div>
+        @endif
+
+        @if($course->sessions->isEmpty())
+            <div class="course-empty-note">
+                Este curso aún no tiene horarios registrados.
+                @can('update', $course)
+                    <a href="{{ route('courses.sessions.index', $course) }}">Registrar horarios</a>
+                @endcan
+            </div>
+        @endif
+
         @foreach($course->sessions as $session)
 
-            <div class="course-session-item"
+            <div class="course-session-item" data-session-id="{{ $session->id }}"
                  onclick="showSessionTable(
                     '{{ $session->id }}',
                     '{{ $session->date }}',
@@ -337,7 +274,7 @@
 
 {{-- ===== VIEWER ===== --}}
 <main class="course-viewer">
-    @if($course->modality === 'presencial')
+    @if(in_array($course->modality, ['presencial', 'hibrida']))
 <div class="course-controls presencial-actions" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;">
 
     <a id="btn-download-session-pdf"
@@ -369,7 +306,7 @@
     <div id="session-table-container" class="presencial-table-viewer">
 
         <div class="empty-session-message">
-            Selecciona un horario para ver el grupo
+            Selecciona un horario para ver la lista de participantes
         </div>
 
     </div>
@@ -530,7 +467,12 @@
                 </button>
             @endif
 
-            <button class="exit" onclick="window.history.back()">Salir</button>
+            {{-- Salir: mismo botón que en presencial e híbrido --}}
+            <button type="button" class="btn-presencial-action btn-presencial-exit"
+                    onclick="window.location.href='{{ route('Cursos.index') }}'">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Salir
+            </button>
 
         </div>
     </div>
@@ -1446,7 +1388,7 @@
     @endif
 </section>
 @endif
-@endif
+
 
 
     </main>
@@ -1471,6 +1413,17 @@ let selectedSessionData = {
 
 let cameraStream = null;
 let scanning = false;
+
+// Si se llega desde el botón gris "Asistencia" de Horarios (?session=ID), abre ese horario automáticamente
+document.addEventListener('DOMContentLoaded', function () {
+    const sessionId = new URLSearchParams(window.location.search).get('session');
+    if (!sessionId) return;
+    const item = document.querySelector('.course-session-item[data-session-id="' + sessionId + '"]');
+    if (item) {
+        item.click();
+        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
 
 function showSessionTable(sessionId, sessionDate, startTime, endTime, isActive) {
     const source = document.getElementById('session-table-data-' + sessionId);
@@ -1501,16 +1454,35 @@ function showSessionTable(sessionId, sessionDate, startTime, endTime, isActive) 
     }
 }
 
+// Aviso dentro de la página (sin alert del navegador), para el escáner QR
+function avisoQR(mensaje) {
+    let box = document.getElementById('aviso-qr');
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'aviso-qr';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:3000; max-width:min(520px, calc(100vw - 32px)); padding:14px 20px; border-radius:10px; color:#fff; font-weight:600; box-shadow:0 10px 30px rgba(13,34,64,.3); white-space:pre-line; text-align:center; transition:opacity .25s;';
+        document.body.appendChild(box);
+    }
+    const ok = /^Asistencia registrada/.test(mensaje);
+    box.style.background = ok ? '#1e8449' : '#dc3545';
+    box.textContent = (ok ? '✔ ' : '⚠ ') + mensaje;
+    box.style.opacity = '1';
+    box.style.display = 'block';
+    clearTimeout(box._t);
+    box._t = setTimeout(() => { box.style.opacity = '0'; setTimeout(() => { box.style.display = 'none'; }, 260); }, 3500);
+}
+
 function abrirModalQR() {
     const qrModal = document.getElementById('qrModal');
 
     if (!selectedSessionData.id) {
-        alert('Selecciona primero un horario.');
+        avisoQR('Selecciona primero un horario.');
         return;
     }
 
     if (!qrModal) {
-        alert('No se encontró el modal QR.');
+        avisoQR('No se encontró el modal QR.');
         return;
     }
 
@@ -1530,17 +1502,17 @@ async function validarAsistenciaPorRFC(valorQR) {
     const rfc = extraerRFC(valorQR);
 
     if (!rfc) {
-        alert('QR inválido. No contiene RFC.');
+        avisoQR('QR inválido. No contiene RFC.');
         return false;
     }
 
     if (!selectedSessionData.id) {
-        alert('Selecciona primero un horario.');
+        avisoQR('Selecciona primero un horario.');
         return false;
     }
 
     if (!selectedSessionData.active) {
-        alert('No cumple: este horario no está activo.');
+        avisoQR('No cumple: este horario no está activo.');
         return false;
     }
 
@@ -1548,7 +1520,7 @@ async function validarAsistenciaPorRFC(valorQR) {
     const fechaHoy = ahora.toLocaleDateString('en-CA');
 
     if (fechaHoy !== selectedSessionData.date) {
-        alert('No cumple: este horario no corresponde a la fecha de hoy.');
+        avisoQR('No cumple: este horario no corresponde a la fecha de hoy.');
         return false;
     }
 
@@ -1556,12 +1528,12 @@ async function validarAsistenciaPorRFC(valorQR) {
     const fin = new Date(`${selectedSessionData.date}T${selectedSessionData.end}`);
 
     if (ahora < inicio) {
-        alert('No cumple: aún no inicia el horario.');
+        avisoQR('No cumple: aún no inicia el horario.');
         return false;
     }
 
     if (ahora > fin) {
-        alert('No cumple: el horario ya terminó.');
+        avisoQR('No cumple: el horario ya terminó.');
         return false;
     }
 
@@ -1570,14 +1542,14 @@ async function validarAsistenciaPorRFC(valorQR) {
     );
 
     if (!fila) {
-        alert('No cumple: el RFC no está en la lista de este horario.');
+        avisoQR('No cumple: el RFC no está en la lista de este horario.');
         return false;
     }
 
     const badge = fila.querySelector('.attendance-badge');
 
     if (badge && badge.classList.contains('present')) {
-        alert('Este RFC ya tiene asistencia registrada.');
+        avisoQR('Este RFC ya tiene asistencia registrada.');
         return false;
     }
 
@@ -1597,7 +1569,7 @@ async function validarAsistenciaPorRFC(valorQR) {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-            alert(data.message || 'No se pudo guardar la asistencia.');
+            avisoQR(data.message || 'No se pudo guardar la asistencia.');
             return false;
         }
 
@@ -1616,12 +1588,12 @@ async function validarAsistenciaPorRFC(valorQR) {
 
         fila.classList.add('attendance-row-present');
 
-        alert('Asistencia registrada correctamente.');
+        avisoQR('Asistencia registrada correctamente.');
         return true;
 
     } catch (error) {
         console.error('Error al guardar asistencia:', error);
-        alert('Error al guardar la asistencia.');
+        avisoQR('Error al guardar la asistencia.');
         return false;
     }
 }
@@ -1664,12 +1636,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const video = document.getElementById('camera-preview');
 
         if (!video) {
-            alert('No se encontró el video de cámara.');
+            avisoQR('No se encontró el video de cámara.');
             return;
         }
 
         if (typeof jsQR === 'undefined') {
-            alert('No se cargó la librería jsQR.');
+            avisoQR('No se cargó la librería jsQR.');
             return;
         }
 
@@ -1721,10 +1693,11 @@ document.addEventListener("DOMContentLoaded", function () {
                             return;
                         }
 
+                        // Pausa para que se lea el aviso antes de volver a escanear
                         setTimeout(() => {
                             scanning = true;
                             requestAnimationFrame(scanLoop);
-                        }, 1200);
+                        }, 2500);
 
                         return;
                     }
@@ -1738,7 +1711,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (error) {
             console.error("ERROR CÁMARA:", error);
 
-            alert(
+            avisoQR(
                 "Error cámara:\n" +
                 error.name + "\n" +
                 error.message

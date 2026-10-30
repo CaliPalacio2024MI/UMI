@@ -124,24 +124,29 @@
                                                 <i class="fas fa-edit"></i>
                                             </button>
 
-                                            {{-- Botón Ver Asistencia --}}
-                                            <a href="{{ route('courses.periods.attendance', [$course->id, $period->id]) }}" 
-                                               class="btn btn-sm btn-outline-secondary" title="Asistencia">
+                                            @php
+                                                $periodoLabel = $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y');
+                                            @endphp
+
+                                            {{-- Lista de participantes (gris): mismos filtros que en Horarios --}}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Lista de participantes"
+                                                    onclick="abrirListaParticipantes('{{ $period->id }}', @js($periodoLabel))">
                                                 <i class="fas fa-chart-bar"></i>
-                                            </a>
-                                            
-                                            {{-- Botón Asignar Usuarios (Le inyectamos la variable $estado) --}}
-                                            <button 
-                                                onclick="openUsersModal({{ $period->id }}, '{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}', '{{ $estado }}')"
-                                                class="btn btn-sm btn-success" title="Asignar Usuarios">
+                                            </button>
+
+                                            {{-- Asignar Usuarios (verde): panel lateral --}}
+                                            <button type="button" class="btn btn-sm btn-success" title="Asignar Usuarios"
+                                                    onclick="openUsersModal('{{ $period->id }}', @js($periodoLabel), {{ $estado === 'Activo' ? 'true' : 'false' }})">
                                                 <i class="fa-solid fa-user-plus"></i>
                                             </button>
-                                            
+
                                             {{-- Botón Eliminar --}}
-                                            <form action="{{ route('courses.periods.destroy', [$course->id, $period->id]) }}" method="POST" onsubmit="return confirm('¿Eliminar este período? Los usuarios asignados perderán acceso.');">
+                                            <form id="delete-period-form-{{ $period->id }}" action="{{ route('courses.periods.destroy', [$course->id, $period->id]) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn-delete-session" title="Eliminar">
+                                                {{-- Abre el modal de advertencia (sin confirm del navegador) --}}
+                                                <button type="button" class="btn-delete-session" title="Eliminar"
+                                                        onclick="confirmarEliminarPeriodo('{{ $period->id }}', @js($periodoLabel))">
                                                     <i class="fa-solid fa-delete-left"></i>
                                                 </button>
                                             </form>
@@ -177,29 +182,6 @@
     </div>
 </div>
 
-{{-- Modal Asignar Usuarios --}}
-<div id="usersModal" style="display: none; position: fixed; top: 0; right: 0; width: 450px; height: 100vh; background: white; box-shadow: -2px 0 15px rgba(0,0,0,0.3); z-index: 9999; overflow-y: auto;">
-    <div style="padding: 25px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
-            <div>
-                <h3 style="margin: 0; color: #333;">👥 Asignar Usuarios</h3>
-                <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;" id="periodRange"></p>
-            </div>
-            <button onclick="closeUsersModal()" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #999;">✕</button>
-        </div>
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="searchUsers" placeholder="🔍 Buscar usuario..." onkeyup="filterUsers()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-        </div>
-        <div id="usersLoading" style="text-align: center; padding: 40px; color: #999;">
-            <div style="font-size: 2em; margin-bottom: 10px;">⏳</div>
-            <div>Cargando usuarios...</div>
-        </div>
-        <div id="usersList" style="display: none;"></div>
-    </div>
-</div>
-
-<div id="modalOverlay" onclick="closeUsersModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9998;"></div>
-
 <script>
 // Lógica de Edición Rápida (Toggle)
 function toggleEditRow(e, id) {
@@ -208,116 +190,14 @@ function toggleEditRow(e, id) {
     if (!row) return;
     row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
 }
-
-let currentPeriodId = null;
-let currentPeriodStatus = '';
-let allUsers = [];
-
-function openUsersModal(periodId, periodRange, status) {
-    currentPeriodId = periodId;
-    currentPeriodStatus = status; // Almacenamos el estado (Activo, Finalizado, No iniciado)
-    
-    document.getElementById('periodRange').textContent = periodRange;
-    
-    // Inyectamos el texto de advertencia rojo si el período no está activo
-    if(status !== 'Activo') {
-        document.getElementById('periodRange').innerHTML += `<br><span style="color:#dc3545; font-weight:bold; font-size: 0.9em;">⚠️ Asistencia bloqueada (Período ${status})</span>`;
-    }
-
-    document.getElementById('usersModal').style.display = 'block';
-    document.getElementById('modalOverlay').style.display = 'block';
-    document.getElementById('usersLoading').style.display = 'block';
-    document.getElementById('usersList').style.display = 'none';
-    
-    const url = `/cursos/{{ $course->id }}/periodos/${periodId}/usuarios`;
-    
-    fetch(url)
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.json();
-        })
-        .then(data => {
-            if (data.success === false) throw new Error(data.error || 'Error desconocido');
-            allUsers = data.users || [];
-            renderUsers();
-            document.getElementById('usersLoading').style.display = 'none';
-            document.getElementById('usersList').style.display = 'block';
-        })
-        .catch(err => {
-            document.getElementById('usersLoading').innerHTML = `
-                <div style="color: #dc3545; text-align: center; padding: 20px;">
-                    <div style="font-size: 2em; margin-bottom: 10px;">⚠️</div>
-                    <div><strong>Error:</strong> ${err.message}</div>
-                </div>
-            `;
-        });
-}
-
-function closeUsersModal() {
-    document.getElementById('usersModal').style.display = 'none';
-    document.getElementById('modalOverlay').style.display = 'none';
-    currentPeriodId = null;
-    currentPeriodStatus = '';
-}
-
-function renderUsers(filteredUsers = null) {
-    const users = filteredUsers || allUsers;
-    const container = document.getElementById('usersList');
-    
-    if (users.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No hay anfitriones disponibles</div>';
-        return;
-    }
-    
-    // Lógica para bloquear visualmente y funcionalmente si el período no está Activo
-    const isLocked = currentPeriodStatus !== 'Activo';
-    const disableAttr = isLocked ? 'disabled' : '';
-    const opacityStyle = isLocked ? 'opacity: 0.55; filter: grayscale(100%);' : '';
-    const cursorStyle = isLocked ? 'not-allowed' : 'pointer';
-    
-    container.innerHTML = users.map(user => `
-        <div class="user-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; ${opacityStyle}">
-            <div style="flex: 1;">
-                <div style="font-weight: 600; color: #333; margin-bottom: 3px;">${user.nombre}</div>
-                <div style="font-size: 0.85em; color: #666; margin-bottom: 2px;">📋 No. Anfitrión: ${user.no_anfitrion}</div>
-                <div style="font-size: 0.8em; color: #999;">${user.departamento} | ${user.posicion}</div>
-            </div>
-            <label style="cursor: ${cursorStyle}; display: flex; align-items: center;">
-                <input type="checkbox" ${user.assigned ? 'checked' : ''} ${disableAttr} onchange="toggleUser(${user.id}, this.checked)" style="width: 20px; height: 20px; cursor: ${cursorStyle};">
-            </label>
-        </div>
-    `).join('');
-}
-
-function filterUsers() {
-    const search = document.getElementById('searchUsers').value.toLowerCase();
-    const filtered = allUsers.filter(user => user.nombre.toLowerCase().includes(search));
-    renderUsers(filtered);
-}
-
-function toggleUser(userId, assigned) {
-    fetch(`/cursos/{{ $course->id }}/periodos/${currentPeriodId}/usuarios/toggle`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ user_id: userId, assigned: assigned })
-    }).then(res => res.json()).catch(err => alert('Error al actualizar usuario'));
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeUsersModal();
-});
 </script>
 
-<style>
-.user-item {
-    transition: all 0.2s ease-in-out;
-}
-.user-item:hover {
-    background: #f8f9fa;
-    border-color: #667eea !important;
-}
-</style>
+{{-- Ventanas compartidas con Horarios: eliminar, lista de participantes y asignar usuarios --}}
+@include('layouts.Cursos.partials.participantes', [
+    'pp_entity'     => 'período',
+    'pp_catalogUrl' => url('/cursos/' . $course->id . '/periodos/__ID__/participantes-catalogo'),
+    'pp_storeUrl'   => url('/cursos/' . $course->id . '/periodos/__ID__/participantes'),
+    'pp_usersUrl'   => url('/cursos/' . $course->id . '/periodos/__ID__/asignar-usuarios'),
+    'pp_toggleUrl'  => url('/cursos/' . $course->id . '/periodos/__ID__/usuarios/toggle'),
+])
 @endsection
