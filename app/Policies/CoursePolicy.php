@@ -39,7 +39,7 @@ class CoursePolicy
     {
         $activeInstitutionId = session('active_institution_id');
 
-        if ($course->institution_id != $activeInstitutionId) {
+        if (! $course->isAvailableIn($activeInstitutionId)) {
             return false;
         }
 
@@ -97,7 +97,7 @@ class CoursePolicy
     {
         $activeInstitutionId = session('active_institution_id');
 
-        if ($course->institution_id != $activeInstitutionId) {
+        if (! $course->isAvailableIn($activeInstitutionId)) {
             return false;
         }
         
@@ -114,7 +114,7 @@ class CoursePolicy
     {
         $activeInstitutionId = session('active_institution_id');
 
-        if ($course->institution_id != $activeInstitutionId) {
+        if (! $course->isAvailableIn($activeInstitutionId)) {
             return false;
         }
 

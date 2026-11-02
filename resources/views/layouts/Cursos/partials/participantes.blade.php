@@ -2,15 +2,12 @@
     Ventanas compartidas por Horarios (presencial / híbrido) y Periodos (virtual)
     para que todas las modalidades se vean y funcionen igual:
       - Modal de advertencia al eliminar
-      - Botón gris  → "Lista de participantes" (Propiedad → Departamento → Puesto → Anfitriones
+      - Botón verde → "Asignar participantes" (Propiedad → Departamento → Puesto → Anfitriones
                                                / Clasificación → Carrera → Materia → Alumnos)
-      - Botón verde → panel lateral "Asignar Usuarios"
     Variables:
       $pp_entity      'horario' | 'período'
       $pp_catalogUrl  URL del catálogo (con __ID__)
       $pp_storeUrl    URL para guardar la lista (con __ID__ si aplica)
-      $pp_usersUrl    URL del panel Asignar Usuarios (con __ID__)
-      $pp_toggleUrl   URL para asignar/quitar un usuario (con __ID__)
 --}}
 {{-- MODAL: ADVERTENCIA AL ELIMINAR (sin Bootstrap). Colores: advertencia y "Sí, eliminar" en rojo con triángulo, Cancelar blanco con borde y texto azul marino --}}
 <div id="deleteSessionModal" class="umi-confirm-overlay" role="dialog" aria-modal="true"
@@ -121,7 +118,7 @@
     <div class="umi-gm-box">
         <div class="umi-gm-header">
             <div>
-                <h5 id="groupModalTitle">Lista de participantes</h5>
+                <h5 id="groupModalTitle">Asignar participantes</h5>
                 <span id="groupModalHorario" class="umi-gm-sub"></span>
             </div>
             <button type="button" class="umi-gm-close" id="groupModalClose" aria-label="Cerrar">&times;</button>
@@ -503,122 +500,3 @@
     window.abrirListaParticipantes = open;
 })();
 </script>
-
-{{-- ================= PANEL LATERAL "ASIGNAR USUARIOS" (igual que en Periodos de virtual) ================= --}}
-<div id="usersModal" style="display: none; position: fixed; top: 0; right: 0; width: 450px; max-width: 100vw; height: 100vh; background: white; box-shadow: -2px 0 15px rgba(0,0,0,0.3); z-index: 9999; overflow-y: auto;">
-    <div style="padding: 25px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
-            <div>
-                <h3 style="margin: 0; color: #333;">👥 Asignar Usuarios</h3>
-                <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;" id="sessionRange"></p>
-            </div>
-            <button type="button" onclick="closeUsersModal()" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #999;">✕</button>
-        </div>
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="searchUsers" placeholder="🔍 Buscar usuario..." onkeyup="filterUsers()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-        </div>
-        <div id="usersLoading" style="text-align: center; padding: 40px; color: #999;">
-            <div style="font-size: 2em; margin-bottom: 10px;">⏳</div>
-            <div>Cargando usuarios...</div>
-        </div>
-        <div id="usersList" style="display: none;"></div>
-    </div>
-</div>
-<div id="usersOverlay" onclick="closeUsersModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9998;"></div>
-
-<script>
-(function () {
-    let currentSessionId = null;
-    let allUsers = [];
-    let changed = false;
-    const usersTpl = @json($pp_usersUrl);
-    const toggleTpl = @json($pp_toggleUrl);
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || @json(csrf_token());
-    const $id = (x) => document.getElementById(x);
-    const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-    window.openUsersModal = function (sessionId, label, attendanceEnabled) {
-        currentSessionId = sessionId;
-        changed = false;
-        $id('sessionRange').innerHTML = esc(label) + (attendanceEnabled ? '' :
-            '<br><span style="color:#dc3545; font-weight:bold; font-size:0.9em;">⚠️ Asistencia desactivada para este ' + esc(@json($pp_entity)) + '</span>');
-        $id('searchUsers').value = '';
-        $id('usersModal').style.display = 'block';
-        $id('usersOverlay').style.display = 'block';
-        $id('usersLoading').style.display = 'block';
-        $id('usersLoading').innerHTML = '<div style="font-size: 2em; margin-bottom: 10px;">⏳</div><div>Cargando usuarios...</div>';
-        $id('usersList').style.display = 'none';
-
-        fetch(usersTpl.replace('__ID__', sessionId), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-            .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
-            .then((data) => {
-                if (data.success === false) throw new Error(data.error || 'Error desconocido');
-                allUsers = data.users || [];
-                renderUsers();
-                $id('usersLoading').style.display = 'none';
-                $id('usersList').style.display = 'block';
-            })
-            .catch((err) => {
-                $id('usersLoading').innerHTML = `<div style="color:#dc3545; padding:20px;"><div style="font-size:2em; margin-bottom:10px;">⚠️</div><div><strong>Error:</strong> ${esc(err.message)}</div></div>`;
-            });
-    };
-
-    window.closeUsersModal = function () {
-        $id('usersModal').style.display = 'none';
-        $id('usersOverlay').style.display = 'none';
-        currentSessionId = null;
-        if (changed) window.location.reload(); // refresca el contador de participantes
-    };
-
-    function renderUsers(list) {
-        const users = list || allUsers;
-        const container = $id('usersList');
-        if (!users.length) {
-            container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;">No hay usuarios disponibles</div>';
-            return;
-        }
-        container.innerHTML = users.map((u) => `
-            <div class="user-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid #e0e0e0; border-radius:8px; margin-bottom:10px;">
-                <div style="flex:1;">
-                    <div style="font-weight:600; color:#333; margin-bottom:3px;">${esc(u.nombre)}</div>
-                    <div style="font-size:0.8em; color:#999;">${esc(u.detalle)}</div>
-                </div>
-                <label style="cursor:pointer; display:flex; align-items:center;">
-                    <input type="checkbox" ${u.assigned ? 'checked' : ''} onchange="toggleUser(${Number(u.id)}, this)" style="width:20px; height:20px; cursor:pointer;">
-                </label>
-            </div>`).join('');
-    }
-
-    window.filterUsers = function () {
-        const q = $id('searchUsers').value.toLowerCase();
-        renderUsers(allUsers.filter((u) => (u.nombre + ' ' + (u.detalle || '')).toLowerCase().includes(q)));
-    };
-
-    window.toggleUser = function (userId, checkbox) {
-        const assigned = checkbox.checked;
-        checkbox.disabled = true;
-        fetch(toggleTpl.replace('__ID__', currentSessionId), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-            credentials: 'same-origin',
-            body: JSON.stringify({ user_id: userId, assigned: assigned }),
-        })
-            .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
-            .then(() => {
-                const u = allUsers.find((x) => Number(x.id) === userId);
-                if (u) u.assigned = assigned;
-                changed = true;
-            })
-            .catch(() => { checkbox.checked = !assigned; })
-            .finally(() => { checkbox.disabled = false; });
-    };
-
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $id('usersModal').style.display === 'block') closeUsersModal(); });
-})();
-</script>
-
-<style>
-.user-item { transition: all 0.2s ease-in-out; }
-.user-item:hover { background: #f8f9fa; border-color: #667eea !important; }
-</style>
-

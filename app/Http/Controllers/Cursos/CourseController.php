@@ -28,6 +28,33 @@ use App\Models\Cursos\CoursePeriod;
 
 class CourseController extends Controller
 {
+    /**
+     * Propiedades/universidades del mismo tipo que la activa a las que el usuario tiene acceso
+     * (la suya + "Agregar propiedades adicionales"). Se usan en "Propiedad(es)" del curso.
+     */
+    private function accessibleUnits()
+    {
+        $activeId = (int) session('active_institution_id');
+        $sessions = app(\App\Http\Controllers\Cursos\CourseSessionController::class);
+        $universityMode = $sessions->isUniversity(Institution::find($activeId));
+        $user = Auth::user();
+
+        $ids = ($user ? $user->institutions()->pluck('institutions.id') : collect())->push($activeId)->unique();
+
+        return Institution::whereIn('id', $ids)->orderBy('name')->get()
+            ->filter(fn ($i) => $sessions->isUniversity($i) === $universityMode)
+            ->values();
+    }
+
+    /** Ids de propiedades elegidas, limitadas a las permitidas (si no elige ninguna, la activa). */
+    private function chosenUnitIds(Request $request): array
+    {
+        $allowed = $this->accessibleUnits()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $chosen = array_values(array_intersect(array_map('intval', (array) $request->input('institution_ids', [])), $allowed));
+
+        return $chosen ?: [(int) session('active_institution_id')];
+    }
+
     use AuthorizesRequests;
     /**
      * Mostrar lista de cursos
@@ -39,7 +66,13 @@ class CourseController extends Controller
 
         // CORREGIDO: Usar la variable correcta y filtrada
         $course = Course::with('instructor', 'institution')
-            ->where('institution_id', $activeInstitutionId)
+            ->where(function ($q) use ($activeInstitutionId) {
+                // Cursos creados en esta unidad o marcados también para ella
+                $q->where('institution_id', $activeInstitutionId);
+                if (\Illuminate\Support\Facades\Schema::hasTable('course_institution')) {
+                    $q->orWhereHas('institutions', fn ($i) => $i->where('institutions.id', $activeInstitutionId));
+                }
+            })
             ->latest()
             ->paginate(12);
 
@@ -88,7 +121,13 @@ public function create(): View
         ->whereIn('modality', ['presencial', 'virtual'])
         ->get();
 
+    // Propiedades a las que el usuario puede asignar el curso
+    $unitOptions = $this->accessibleUnits();
+    $selectedUnits = [(int) $institutionId];
+
     return view('layouts.Cursos.create', compact(
+        'unitOptions',
+        'selectedUnits',
         'currentInstitution',
         'departmentWorkstationsMap',
         'templates',
@@ -107,8 +146,14 @@ public function store(StoreCourseRequest $request): RedirectResponse
     // VALIDACIÓN DE SEGURIDAD: Verificar que la institución proporcionada coincida con la activa
     $validatedData = $request->validated();
 
-    // SEGURIDAD: Forzar que el curso se cree en la institución activa
-    if ($validatedData['institution_id'] != $activeInstitutionId) {
+    // Propiedades elegidas (solo las que el usuario tiene asignadas)
+    $unitIds = $this->chosenUnitIds($request);
+    unset($validatedData['institution_ids']);
+    // Unidad principal: la activa si se eligió; si no, la primera elegida
+    $validatedData['institution_id'] = in_array((int) $activeInstitutionId, $unitIds, true) ? (int) $activeInstitutionId : $unitIds[0];
+
+    // SEGURIDAD: la unidad principal debe ser una de las permitidas
+    if (! in_array((int) $validatedData['institution_id'], $this->accessibleUnits()->pluck('id')->map(fn ($id) => (int) $id)->all(), true)) {
         Log::warning('Intento de crear curso en institución no autorizada', [
             'user_id' => Auth::id(),
             'active_institution_id' => $activeInstitutionId,
@@ -173,6 +218,11 @@ public function store(StoreCourseRequest $request): RedirectResponse
 
     // Crear el curso
     $course = Course::create($courseData);
+
+    // Guardar las propiedades donde aparecerá el curso
+    if (\Illuminate\Support\Facades\Schema::hasTable('course_institution')) {
+        $course->institutions()->sync($unitIds);
+    }
 
     //  GUARDAR CURSOS AFILIADOS PARA HÍBRIDOS
     if ($request->modality === 'hibrida' && $request->has('selected_courses')) {
@@ -416,7 +466,7 @@ public function store(StoreCourseRequest $request): RedirectResponse
     $activeInstitutionId = session('active_institution_id');
 
     // VALIDACIÓN DE SEGURIDAD
-    if ($course->institution_id != $activeInstitutionId) {
+    if (! $course->isAvailableIn($activeInstitutionId)) {
 
         Log::warning('Intento de editar curso de otra institución', [
             'user_id' => Auth::id(),
@@ -486,8 +536,15 @@ public function store(StoreCourseRequest $request): RedirectResponse
         ->pluck('id')
         ->toArray();
 
+    // Propiedades del curso
+    $unitOptions = $this->accessibleUnits();
+    $selectedUnits = (\Illuminate\Support\Facades\Schema::hasTable('course_institution') ? $course->institutions()->pluck('institutions.id')->map(fn ($id) => (int) $id)->all() : [])
+        ?: [(int) $course->institution_id];
+
     // RETORNAR VISTA
     return view('layouts.Cursos.edit', compact(
+        'unitOptions',
+        'selectedUnits',
         'course',
         'currentInstitution',
         'departmentWorkstationsMap',
@@ -504,7 +561,7 @@ public function update(Request $request, Course $course): RedirectResponse
     $activeInstitutionId = session('active_institution_id');
 
     // VALIDACIÓN DE SEGURIDAD
-    if ($course->institution_id != $activeInstitutionId) {
+    if (! $course->isAvailableIn($activeInstitutionId)) {
         Log::warning('Intento de actualizar curso de otra institución', [
             'user_id' => Auth::id(),
             'course_id' => $course->id,
@@ -578,6 +635,15 @@ public function update(Request $request, Course $course): RedirectResponse
     // ACTUALIZAR CURSO
     $course->update($validatedData);
 
+    // Propiedades donde aparece el curso
+    if (\Illuminate\Support\Facades\Schema::hasTable('course_institution') && $request->has('institution_ids')) {
+        $unitIds = $this->chosenUnitIds($request);
+        if (! in_array((int) $course->institution_id, $unitIds, true)) {
+            $unitIds[] = (int) $course->institution_id; // la unidad principal siempre se conserva
+        }
+        $course->institutions()->sync($unitIds);
+    }
+
     // ACTUALIZAR CURSOS HÍBRIDOS
     if ($request->modality === 'hibrida') {
         $course->hybridCourses()->sync($request->selected_courses ?? []);
@@ -623,7 +689,7 @@ if (
 {
     $activeInstitutionId = session('active_institution_id');
 
-    if ($course->institution_id != $activeInstitutionId) {
+    if (! $course->isAvailableIn($activeInstitutionId)) {
         abort(403, 'No autorizado.');
     }
 
@@ -644,7 +710,7 @@ if (
         $activeInstitutionId = session('active_institution_id');
 
         // VALIDACIÓN DE SEGURIDAD: Verificar institución
-        if ($course->institution_id != $activeInstitutionId) {
+        if (! $course->isAvailableIn($activeInstitutionId)) {
             Log::warning('Intento de eliminar curso de otra institución', [
                 'user_id' => Auth::id(),
                 'course_id' => $course->id,
@@ -843,7 +909,7 @@ public function attendance(Course $course)
 {
     $activeInstitutionId = session('active_institution_id');
 
-    if ($course->institution_id != $activeInstitutionId) {
+    if (! $course->isAvailableIn($activeInstitutionId)) {
         abort(403, 'No puedes ver la asistencia de cursos de otra institución.');
     }
 
@@ -952,7 +1018,7 @@ public function exportAttendancePDF(Request $request, Course $course)
 {
     $activeInstitutionId = session('active_institution_id');
 
-    if ($course->institution_id != $activeInstitutionId) {
+    if (! $course->isAvailableIn($activeInstitutionId)) {
         abort(403, 'No puedes ver la asistencia de cursos de otra institución.');
     }
 

@@ -254,6 +254,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/groups/{session}/export-pdf', [GroupsController::class, 'exportPdf'])->name('groups.export.pdf');
         Route::post('/sessions/group/store', [CourseSessionController::class, 'storeGroup'])->name('sessions.group.store');
         Route::get('/sessions/{session}/participants-catalog', [CourseSessionController::class, 'participantsCatalog'])->name('sessions.participants.catalog');
+        // Lista de asistencia del horario (ventana del botón gris en Horarios)
+        Route::get('/sessions/{session}/asistencia', [CourseSessionController::class, 'sessionAttendance'])->name('sessions.attendance.list');
         // Panel lateral "Asignar Usuarios" (botón verde de Horarios)
         Route::get('/sessions/{session}/usuarios', [CourseSessionController::class, 'sessionUsers'])->name('sessions.users');
         Route::post('/sessions/{session}/usuarios/toggle', [CourseSessionController::class, 'toggleSessionUser'])->name('sessions.users.toggle');

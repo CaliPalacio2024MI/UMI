@@ -128,15 +128,15 @@
                                                 $periodoLabel = $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y');
                                             @endphp
 
-                                            {{-- Lista de participantes (gris): mismos filtros que en Horarios --}}
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Lista de participantes"
-                                                    onclick="abrirListaParticipantes('{{ $period->id }}', @js($periodoLabel))">
+                                            {{-- Lista de asistencia (gris): vista de asistencia del período (la adapta Erick) --}}
+                                            <a href="{{ route('courses.periods.attendance', [$course->id, $period->id]) }}"
+                                               class="btn btn-sm btn-outline-secondary" title="Lista de asistencia">
                                                 <i class="fas fa-chart-bar"></i>
-                                            </button>
+                                            </a>
 
-                                            {{-- Asignar Usuarios (verde): panel lateral --}}
-                                            <button type="button" class="btn btn-sm btn-success" title="Asignar Usuarios"
-                                                    onclick="openUsersModal('{{ $period->id }}', @js($periodoLabel), {{ $estado === 'Activo' ? 'true' : 'false' }})">
+                                            {{-- Asignar participantes (verde): mismos filtros que en Horarios --}}
+                                            <button type="button" class="btn btn-sm btn-success" title="Asignar participantes"
+                                                    onclick="abrirListaParticipantes('{{ $period->id }}', @js($periodoLabel))">
                                                 <i class="fa-solid fa-user-plus"></i>
                                             </button>
 
@@ -192,12 +192,10 @@ function toggleEditRow(e, id) {
 }
 </script>
 
-{{-- Ventanas compartidas con Horarios: eliminar, lista de participantes y asignar usuarios --}}
+{{-- Ventanas compartidas con Horarios: eliminar y asignar participantes --}}
 @include('layouts.Cursos.partials.participantes', [
     'pp_entity'     => 'período',
     'pp_catalogUrl' => url('/cursos/' . $course->id . '/periodos/__ID__/participantes-catalogo'),
     'pp_storeUrl'   => url('/cursos/' . $course->id . '/periodos/__ID__/participantes'),
-    'pp_usersUrl'   => url('/cursos/' . $course->id . '/periodos/__ID__/asignar-usuarios'),
-    'pp_toggleUrl'  => url('/cursos/' . $course->id . '/periodos/__ID__/usuarios/toggle'),
 ])
 @endsection

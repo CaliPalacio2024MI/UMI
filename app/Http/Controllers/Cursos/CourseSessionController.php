@@ -553,4 +553,54 @@ public function toggleSessionUser(Request $request, CourseSession $session)
         'total'   => $group->participants()->count(),
     ]);
 }
+
+/**
+ * Lista de asistencia de un horario (botón gris de Horarios, se abre en ventana).
+ * Regresa: total inscritos, asistieron, % y la lista (primero quienes asistieron).
+ */
+public function sessionAttendance(CourseSession $session)
+{
+    $group = $session->groups()->with(['participants.department', 'participants.workstation'])->first();
+    $participants = $group ? $group->participants : collect();
+    $esUniversidad = $this->isUniversity(Institution::find(($group->institution_id ?? null) ?: (int) session('active_institution_id')));
+
+    $attendanceMap = DB::table('course_session_attendances')
+        ->where('course_session_id', $session->id)
+        ->get()
+        ->keyBy(fn ($a) => strtoupper(trim($a->rfc)));
+
+    $carreraDe = $esUniversidad
+        ? DB::table('academic_profiles')
+            ->join('careers', 'careers.id', '=', 'academic_profiles.career_id')
+            ->whereIn('academic_profiles.user_id', $participants->pluck('id'))
+            ->pluck('careers.name', 'academic_profiles.user_id')
+        : collect();
+
+    $rows = $participants->map(function ($u) use ($attendanceMap, $esUniversidad, $carreraDe) {
+        $rfc = strtoupper(trim($u->RFC ?? $u->rfc ?? ''));
+        $att = $attendanceMap[$rfc] ?? null;
+        $hora = $att && $att->attended_at ? Carbon::parse($att->attended_at) : null;
+        return [
+            'nombre'  => trim("{$u->nombre} {$u->apellido_paterno} {$u->apellido_materno}"),
+            'rfc'     => $rfc ?: 'Sin RFC',
+            'area'    => $esUniversidad ? ($carreraDe[$u->id] ?? 'Sin carrera') : (optional($u->department)->name ?? 'Sin departamento'),
+            'puesto'  => $esUniversidad ? null : (optional($u->workstation)->name ?? 'Sin puesto'),
+            'asistio' => (bool) $att,
+            'hora'    => $hora ? $hora->format('d/m/Y H:i') : null,
+            '_orden'  => $hora ? '0' . $hora->format('YmdHis') : '1' . mb_strtolower(trim("{$u->nombre} {$u->apellido_paterno}")),
+        ];
+    })->sortBy('_orden')->values()->map(function ($r) { unset($r['_orden']); return $r; });
+
+    $total = $rows->count();
+    $asistieron = $rows->where('asistio', true)->count();
+
+    return response()->json([
+        'universidad' => $esUniversidad,
+        'total'       => $total,
+        'asistieron'  => $asistieron,
+        'porcentaje'  => $total ? round($asistieron * 100 / $total, 1) : 0,
+        'rows'        => $rows,
+        'pdf_url'     => route('groups.export.pdf', $session->id),
+    ]);
+}
 }
