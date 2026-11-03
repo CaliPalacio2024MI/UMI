@@ -726,4 +726,220 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+
+
+{{-- ================= VENTANA: LISTA DE ASISTENCIA DEL HORARIO (botón gris) ================= --}}
+@php
+    $puedeDescargarLista = in_array(strtolower((string) session('active_role_name')), ['master', 'gerente_capacitacion', 'docente'], true);
+    // Horarios del curso, para los filtros de fecha y horario de la ventana
+    $horariosAsistencia = $sessions->map(function ($h) {
+        return [
+            'id'         => $h->id,
+            'fecha'      => \Carbon\Carbon::parse($h->date)->format('Y-m-d'),
+            'label'      => \Carbon\Carbon::parse($h->date)->format('d/m/Y') . ' · ' . \Carbon\Carbon::parse($h->start_time)->format('H:i') . ' - ' . \Carbon\Carbon::parse($h->end_time)->format('H:i'),
+            'instructor' => $h->instructor_name,
+        ];
+    })->values();
+@endphp
+<div id="asisModal" class="umi-gm-overlay" role="dialog" aria-modal="true" aria-labelledby="asisModalTitle" aria-hidden="true">
+    <div class="umi-gm-box">
+        <div class="umi-gm-header">
+            <div>
+                <h5 id="asisModalTitle">Lista de asistencia</h5>
+                <span id="asisModalHorario" class="umi-gm-sub"></span>
+            </div>
+            <button type="button" class="umi-gm-close" onclick="cerrarListaAsistencia()" aria-label="Cerrar">&times;</button>
+        </div>
+
+        <div class="umi-gm-body">
+            <div id="asisLoading" class="umi-gm-loading">Cargando información…</div>
+            <div id="asisError" class="umi-gm-error" style="display:none;"></div>
+
+            <div id="asisContent" style="display:none;">
+                <div class="asis-stats">
+                    <div class="asis-card">
+                        <span class="asis-card-label" style="color:#2f4b7c;"><i class="fa-solid fa-users"></i> Total inscritos</span>
+                        <strong class="asis-card-value" id="asisTotal">0</strong>
+                    </div>
+                    <div class="asis-card">
+                        <span class="asis-card-label" style="color:#1e8449;"><i class="fa-solid fa-user-check"></i> Asistieron</span>
+                        <strong class="asis-card-value" id="asisPresentes">0</strong>
+                    </div>
+                    <div class="asis-card">
+                        <span class="asis-card-label" style="color:#b7791f;"><i class="fa-solid fa-percent"></i> Porcentaje de asistencia</span>
+                        <strong class="asis-card-value" id="asisPorcentaje">0%</strong>
+                        <div class="asis-bar"><div id="asisBarra" style="width:0%;"></div></div>
+                    </div>
+                </div>
+
+                <div class="asis-filters">
+                    <div class="asis-filter">
+                        <label for="asisBuscar">Buscar por nombre o RFC</label>
+                        <input type="text" id="asisBuscar" class="umi-gm-input" placeholder="Escribe un nombre o RFC…">
+                    </div>
+                    <div class="asis-filter asis-filter-sm">
+                        <label for="asisFecha">Fecha</label>
+                        <input type="date" id="asisFecha" class="umi-gm-input">
+                    </div>
+                    <div class="asis-filter">
+                        <label for="asisHorario">Horario</label>
+                        <select id="asisHorario" class="umi-gm-input"></select>
+                    </div>
+                    @if($puedeDescargarLista)
+                        <div class="asis-filter asis-filter-btn">
+                            <a id="asisPdf" href="#" class="asis-btn-pdf">
+                                <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+                            </a>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="asis-table-title" id="asisTitulo"></div>
+                <div class="asis-table-wrap">
+                    <table class="table-custom-sessions asis-table">
+                        <thead id="asisHead"></thead>
+                        <tbody id="asisBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="umi-gm-footer">
+            <button type="button" class="umi-gm-btn-outline" onclick="cerrarListaAsistencia()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .asis-stats { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:14px; margin-bottom:14px; }
+    .asis-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 18px; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+    .asis-card-label { display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:700; }
+    .asis-card-value { display:block; font-size:1.8rem; color:#1e293b; margin-top:4px; }
+    .asis-bar { height:7px; background:#edf2f7; border-radius:99px; overflow:hidden; margin-top:6px; }
+    .asis-bar > div { height:100%; background:#2f4b7c; border-radius:99px; }
+    .asis-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; margin-bottom:14px; }
+    .asis-filter { flex:1 1 220px; display:flex; flex-direction:column; gap:5px; }
+    .asis-filter label { font-size:.8rem; font-weight:600; color:#475569; }
+    .asis-filter-sm { flex:0 1 180px; }
+    .asis-filter-btn { flex:0 0 auto; }
+    .asis-btn-pdf { display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:0 18px; border-radius:8px; background:#2f4b7c; color:#fff !important; font-weight:700; text-decoration:none; white-space:nowrap; }
+    .asis-btn-pdf:hover { background:#0d2240; }
+    .asis-btn-pdf.is-disabled { opacity:.5; pointer-events:none; cursor:not-allowed; }
+    .asis-table-title { font-weight:700; color:#1e293b; padding:12px 4px 10px; }
+    .asis-table-wrap { max-height: 42vh; overflow:auto; border:1px solid #e2e8f0; border-radius:10px; }
+    .asis-table thead th { position: sticky; top: 0; z-index: 1; }
+    .asis-badge { display:inline-block; padding:4px 12px; border-radius:99px; font-size:.8rem; font-weight:700; white-space:nowrap; }
+    .asis-badge.is-ok { background:#dcfce7; color:#166534; }
+    .asis-badge.is-no { background:#fee2e2; color:#991b1b; }
+    .asis-empty { padding:30px !important; text-align:center; color:#94a3b8; }
+    @media (max-width: 768px) { .asis-stats { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+(function () {
+    const overlay = document.getElementById('asisModal');
+    const $ = (id) => document.getElementById(id);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let filas = [];
+    let universidad = false;
+    // Horarios del curso, para los filtros de fecha y horario
+    const horarios = @json($horariosAsistencia);
+
+    function llenarHorarios(fecha, seleccionado) {
+        const sel = $('asisHorario');
+        const lista = horarios.filter((h) => !fecha || h.fecha === fecha);
+        sel.innerHTML = lista.length
+            ? lista.map((h) => `<option value="${h.id}" ${String(h.id) === String(seleccionado) ? 'selected' : ''}>${esc(h.label)}</option>`).join('')
+            : '<option value="">Sin horarios en esa fecha</option>';
+        return lista;
+    }
+
+    window.abrirListaAsistencia = async function (sessionId, label) {
+        const h = horarios.find((x) => String(x.id) === String(sessionId));
+        $('asisModalHorario').textContent = label || '';
+        $('asisTitulo').textContent = h ? `Horario del ${h.label}${h.instructor ? ' · Instructor: ' + h.instructor : ''}` : '';
+        $('asisFecha').value = h ? h.fecha : '';
+        llenarHorarios(h ? h.fecha : '', sessionId);
+        $('asisBuscar').value = '';
+        $('asisLoading').style.display = 'block';
+        $('asisError').style.display = 'none';
+        $('asisContent').style.display = 'none';
+        if ($('asisPdf')) $('asisPdf').classList.add('is-disabled');
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+
+        try {
+            const res = await fetch(`/sessions/${sessionId}/asistencia`, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            filas = data.rows || [];
+            universidad = !!data.universidad;
+            $('asisTotal').textContent = data.total;
+            $('asisPresentes').textContent = data.asistieron;
+            $('asisPorcentaje').textContent = data.porcentaje + '%';
+            $('asisBarra').style.width = Math.min(100, data.porcentaje) + '%';
+            if ($('asisPdf')) {
+                // Siempre visible para quien puede descargar; desactivado si el horario no tiene participantes
+                $('asisPdf').href = filas.length ? data.pdf_url : '#';
+                $('asisPdf').classList.toggle('is-disabled', !filas.length);
+                $('asisPdf').title = filas.length ? 'Descargar la lista de asistencia en PDF' : 'Asigna participantes (botón verde) para poder descargar la lista';
+            }
+            pintar('');
+            $('asisLoading').style.display = 'none';
+            $('asisContent').style.display = 'block';
+        } catch (e) {
+            console.error('Lista de asistencia:', e);
+            $('asisLoading').style.display = 'none';
+            $('asisError').textContent = 'No se pudo cargar la lista de asistencia. Intenta de nuevo.';
+            $('asisError').style.display = 'block';
+        }
+    };
+
+    function pintar(q) {
+        const cols = universidad ? ['#', 'Nombre completo', 'RFC', 'Carrera', 'Fecha y hora', 'Estado']
+                                 : ['#', 'Nombre completo', 'RFC', 'Departamento', 'Puesto', 'Fecha y hora', 'Estado'];
+        $('asisHead').innerHTML = '<tr>' + cols.map((c) => `<th>${c}</th>`).join('') + '</tr>';
+        const lista = filas.filter((r) => !q || (r.nombre + ' ' + r.rfc).toLowerCase().includes(q));
+        if (!filas.length) {
+            $('asisBody').innerHTML = `<tr><td colspan="${cols.length}" class="asis-empty">Este horario aún no tiene participantes asignados (botón verde).</td></tr>`;
+            return;
+        }
+        if (!lista.length) {
+            $('asisBody').innerHTML = `<tr><td colspan="${cols.length}" class="asis-empty">No hay coincidencias con la búsqueda.</td></tr>`;
+            return;
+        }
+        $('asisBody').innerHTML = lista.map((r, i) => `<tr>
+            <td>${i + 1}</td>
+            <td>${esc(r.nombre)}</td>
+            <td>${esc(r.rfc)}</td>
+            <td>${esc(r.area)}</td>
+            ${universidad ? '' : `<td>${esc(r.puesto)}</td>`}
+            <td>${r.hora ? esc(r.hora) : '—'}</td>
+            <td><span class="asis-badge ${r.asistio ? 'is-ok' : 'is-no'}">${r.asistio ? 'Asistió' : 'No asistió'}</span></td>
+        </tr>`).join('');
+    }
+
+    $('asisBuscar').addEventListener('input', function () { pintar(this.value.trim().toLowerCase()); });
+
+    // Cambiar de horario dentro de la misma ventana
+    $('asisHorario').addEventListener('change', function () {
+        const h = horarios.find((x) => String(x.id) === this.value);
+        if (h) abrirListaAsistencia(h.id, h.label);
+    });
+
+    // Fecha: deja solo los horarios de ese día y abre el primero
+    $('asisFecha').addEventListener('change', function () {
+        const lista = llenarHorarios(this.value, null);
+        if (lista.length) abrirListaAsistencia(lista[0].id, lista[0].label);
+    });
+
+    window.cerrarListaAsistencia = function () {
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+    };
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) cerrarListaAsistencia(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('is-open')) cerrarListaAsistencia(); });
+})();
+</script>
+
 @endsection

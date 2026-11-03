@@ -93,6 +93,30 @@ class Course extends Model
         return $this->belongsTo(Institution::class);
     }
 
+    /**
+     * Propiedades/unidades adicionales donde también aparece el curso.
+     */
+    public function institutions()
+    {
+        return $this->belongsToMany(Institution::class, 'course_institution')->withTimestamps();
+    }
+
+    /**
+     * ¿El curso pertenece a esta unidad? (la principal o una de las adicionales)
+     */
+    public function isAvailableIn($institutionId): bool
+    {
+        if ((int) $this->institution_id === (int) $institutionId) {
+            return true;
+        }
+
+        try {
+            return $this->institutions()->where('institutions.id', $institutionId)->exists();
+        } catch (\Throwable $e) {
+            return false; // si aún no existe la tabla course_institution
+        }
+    }
+
     public function topics(): HasMany
     {
         return $this->hasMany(Topics::class, 'course_id');

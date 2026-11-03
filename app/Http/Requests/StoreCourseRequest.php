@@ -39,6 +39,9 @@ class StoreCourseRequest extends FormRequest
             'description' => 'nullable|string',
             'instructor_name' => 'nullable|string|max:255',
             'institution_id' => 'required|exists:institutions,id',
+            // Propiedades donde aparecerá el curso (una o varias de las que tiene asignadas)
+            'institution_ids' => 'nullable|array',
+            'institution_ids.*' => 'integer|exists:institutions,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:20480',
             'credits' => $creditsRule,
             'modality' => 'required|in:presencial,virtual,hibrida',

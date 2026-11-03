@@ -6,7 +6,14 @@
 @vite(['resources/css/Cursos/editCourses.css'])
 
 <div class="create-course-container">
-    <h1 class="page-title">Editar Curso</h1>
+    <div class="course-form-head">
+        <h1 class="page-title">Editar Curso</h1>
+        {{-- Salir: regresa a Cursos sin guardar --}}
+        <a href="{{ route('Cursos.index') }}" class="btn-salir-curso">
+            <i class="fas fa-arrow-left"></i>
+            Salir
+        </a>
+    </div>
 
     {{-- ERRORES --}}
     @if ($errors->any())
@@ -25,6 +32,34 @@
         @method('PUT')
 
         <input type="hidden" name="institution_id" value="{{ $currentInstitution->id }}">
+
+        {{-- PROPIEDAD(ES): según las que el usuario tiene asignadas (su propiedad + propiedades adicionales) --}}
+        <div class="form-group">
+            <label>{{ $unitOptions->count() > 1 ? 'Propiedad(es) del curso' : 'Propiedad del curso' }}</label>
+            @if($unitOptions->count() > 1)
+                {{-- Desplegable: solo las propiedades que esta persona tiene asignadas --}}
+                <div class="unit-dd" id="unitDd">
+                    <button type="button" class="unit-dd-toggle" onclick="document.getElementById('unitDd').classList.toggle('is-open')">
+                        <span id="unitDdLabel">Selecciona la propiedad</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="unit-dd-menu">
+                        @foreach($unitOptions as $unit)
+                            <label class="unit-dd-item">
+                                <input type="checkbox" name="institution_ids[]" value="{{ $unit->id }}" data-name="{{ $unit->name }}"
+                                    @checked(in_array($unit->id, old('institution_ids', $selectedUnits)))>
+                                <span>{{ $unit->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                @php $unicaUnidad = $unitOptions->first(); @endphp
+                <input type="text" value="{{ $unicaUnidad->name ?? session('active_institution_name') }}" disabled>
+                <input type="hidden" name="institution_ids[]" value="{{ $unicaUnidad->id ?? session('active_institution_id') }}">
+            @endif
+        </div>
+
 
         {{-- TÍTULO --}}
         <div class="form-group">
@@ -399,4 +434,36 @@ function toggleHibrido() {
 });
 </script>
 
+
+<style>
+    .course-form-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .course-form-head .page-title { margin: 0; }
+    .btn-salir-curso { display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border-radius:8px; background:#2f4b7c; color:#fff !important; font-weight:700; text-decoration:none; }
+    .btn-salir-curso:hover { background:#0d2240; }
+    .unit-dd { position: relative; }
+    .unit-dd-toggle { width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 16px; border:1px solid #cbd5e0; border-radius:8px; background:#fff; font-size:1rem; color:#1e293b; cursor:pointer; text-align:left; }
+    .unit-dd.is-open .unit-dd-toggle { border-color:#2f4b7c; }
+    .unit-dd-menu { display:none; position:absolute; z-index:50; left:0; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #cbd5e0; border-radius:8px; box-shadow:0 10px 25px rgba(13,34,64,.15); padding:6px; max-height:260px; overflow-y:auto; }
+    .unit-dd.is-open .unit-dd-menu { display:block; }
+    .unit-dd-item { display:flex !important; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer; font-weight:500 !important; margin:0 !important; }
+    .unit-dd-item:hover { background:#eef2f8; }
+    .unit-dd-item input { width:auto !important; margin:0; }
+</style>
+
+<script>
+// Desplegable de propiedades: muestra las elegidas y se cierra al dar clic fuera
+(function () {
+    const dd = document.getElementById('unitDd');
+    if (!dd) return;
+    const label = document.getElementById('unitDdLabel');
+    const checks = [...dd.querySelectorAll('input[type="checkbox"]')];
+    function actualizar() {
+        const nombres = checks.filter((c) => c.checked).map((c) => c.dataset.name);
+        label.textContent = nombres.length ? nombres.join(', ') : 'Selecciona la propiedad';
+    }
+    checks.forEach((c) => c.addEventListener('change', actualizar));
+    document.addEventListener('click', (e) => { if (!dd.contains(e.target)) dd.classList.remove('is-open'); });
+    actualizar();
+})();
+</script>
 @endsection

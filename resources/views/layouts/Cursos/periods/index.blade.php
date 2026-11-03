@@ -124,28 +124,27 @@
                                                 <i class="fas fa-edit"></i>
                                             </button>
 
-                                            {{-- Botón Ver Asistencia --}}
-                                            <a href="{{ route('courses.periods.attendance', [$course->id, $period->id]) }}" 
-                                               class="btn btn-sm btn-outline-secondary" title="Asistencia">
+                                            @php
+                                                $periodoLabel = $period->start_date->format('d/m/Y') . ' - ' . $period->end_date->format('d/m/Y');
+                                            @endphp
+
+                                            {{-- Lista de asistencia (gris): se abre aquí mismo, igual que en Horarios de presencial --}}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Lista de asistencia"
+                                                    onclick="abrirListaAsistencia('{{ $period->id }}', @js($periodoLabel), true)">
                                                 <i class="fas fa-chart-bar"></i>
-                                            </a>
-                                            
-                                            {{-- Botón Asignar Usuarios (Le inyectamos la variable $estado) --}}
-                                            <button 
-                                                onclick="openUsersModal({{ $period->id }}, '{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}', '{{ $estado }}')"
-                                                class="btn btn-sm btn-success" title="Asignar Usuarios">
+                                            </button>
+
+                                            {{-- Asignar participantes (verde): mismos filtros que en Horarios --}}
+                                            <button type="button" class="btn btn-sm btn-success" title="Asignar participantes"
+                                                    onclick="abrirListaParticipantes('{{ $period->id }}', @js($periodoLabel))">
                                                 <i class="fa-solid fa-user-plus"></i>
                                             </button>
                                             
-                                            {{-- Botón Eliminar modificado para usar el nuevo Modal --}}
-                                            <form id="delete-period-form-{{ $period->id }}" action="{{ route('courses.periods.destroy', [$course->id, $period->id]) }}" method="POST">
+                                            {{-- Botón Eliminar --}}
+                                            <form action="{{ route('courses.periods.destroy', [$course->id, $period->id]) }}" method="POST" onsubmit="return confirm('¿Eliminar este período? Los usuarios asignados perderán acceso.');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="button" class="btn-delete-session" title="Eliminar"
-                                                    onclick="confirmarEliminarPeriodo(
-                                                    '{{ $period->id }}',
-                                                    '{{ $period->start_date->format('d/m/Y') }} - {{ $period->end_date->format('d/m/Y') }}'
-                                                    )">
+                                                <button type="submit" class="btn-delete-session" title="Eliminar">
                                                     <i class="fa-solid fa-delete-left"></i>
                                                 </button>
                                             </form>
@@ -181,75 +180,6 @@
     </div>
 </div>
 
-{{-- MODAL: ADVERTENCIA AL ELIMINAR PERIODO (Sin dependencias externas) --}}
-<div id="deletePeriodModal" class="umi-confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="umi-confirm-box">
-        <div class="umi-confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <h5>¿Eliminar este período?</h5>
-        <p class="umi-confirm-info"><strong id="deletePeriodInfo"></strong></p>
-        <p class="umi-confirm-text">Los usuarios asignados perderán acceso. Esta acción no se puede deshacer.</p>
-        <div class="umi-confirm-actions">
-            <button type="button" id="btnCancelDeletePeriod" class="umi-confirm-cancel">Cancelar</button>
-            <button type="button" id="btnConfirmDeletePeriod" class="umi-confirm-danger">Sí, eliminar</button>
-        </div>
-    </div>
-</div>
-
-<style>
-    .umi-confirm-overlay { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; background: rgba(13, 34, 64, .45); padding: 16px; }
-    .umi-confirm-overlay.is-open { display: flex; }
-    .umi-confirm-box { width: 100%; max-width: 420px; background: #fff; border-radius: 12px; padding: 28px; text-align: center; box-shadow: 0 12px 35px rgba(13, 34, 64, .25); }
-    .umi-confirm-icon { font-size: 42px; color: #E74C3C; line-height: 1; margin-bottom: 12px; }
-    .umi-confirm-box h5 { font-weight: 700; color: #0d2240; margin: 0 0 10px; font-size: 1.2rem; }
-    .umi-confirm-info { margin: 0 0 6px; color: #444; }
-    .umi-confirm-text { margin: 0; color: #666; font-size: .92rem; }
-    .umi-confirm-actions { display: flex; justify-content: center; gap: 10px; margin-top: 22px; }
-    .umi-confirm-actions button { min-width: 120px; padding: 9px 16px; border-radius: 7px; font-weight: 600; cursor: pointer; }
-    .umi-confirm-cancel { background: #fff; color: #0d2240; border: 1px solid #0d2240; }
-    .umi-confirm-danger { background: #E74C3C; color: #fff; border: 1px solid #E74C3C; }
-    .umi-confirm-danger:disabled { opacity: .7; cursor: wait; }
-</style>
-
-<script>
-    (function () {
-        const overlay = document.getElementById('deletePeriodModal');
-        const info = document.getElementById('deletePeriodInfo');
-        const btnConfirm = document.getElementById('btnConfirmDeletePeriod');
-        const btnCancel = document.getElementById('btnCancelDeletePeriod');
-        let periodoPorEliminar = null;
-
-        function cerrar() {
-            overlay.classList.remove('is-open');
-            overlay.setAttribute('aria-hidden', 'true');
-            periodoPorEliminar = null;
-        }
-
-        window.confirmarEliminarPeriodo = function (periodId, fechas) {
-            periodoPorEliminar = periodId;
-            info.textContent = fechas;
-            btnConfirm.disabled = false;
-            btnConfirm.textContent = 'Sí, eliminar';
-            overlay.classList.add('is-open');
-            overlay.setAttribute('aria-hidden', 'false');
-            btnCancel.focus();
-        };
-
-        btnCancel.addEventListener('click', cerrar);
-        overlay.addEventListener('click', function (e) { if (e.target === overlay) cerrar(); });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && overlay.classList.contains('is-open')) cerrar();
-        });
-
-        btnConfirm.addEventListener('click', function () {
-            const form = periodoPorEliminar && document.getElementById('delete-period-form-' + periodoPorEliminar);
-            if (!form) return;
-            btnConfirm.disabled = true;
-            btnConfirm.textContent = 'Eliminando...';
-            form.submit();
-        });
-    })();
-</script>
-
 {{-- Modal Asignar Usuarios --}}
 <div id="usersModal" style="display: none; position: fixed; top: 0; right: 0; width: 450px; height: 100vh; background: white; box-shadow: -2px 0 15px rgba(0,0,0,0.3); z-index: 9999; overflow-y: auto;">
     <div style="padding: 25px;">
@@ -281,117 +211,233 @@ function toggleEditRow(e, id) {
     if (!row) return;
     row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
 }
-
-let currentPeriodId = null;
-let currentPeriodStatus = '';
-let allUsers = [];
-
-function openUsersModal(periodId, periodRange, status) {
-    currentPeriodId = periodId;
-    currentPeriodStatus = status; // Almacenamos el estado (Activo, Finalizado, No iniciado)
-    
-    document.getElementById('periodRange').textContent = periodRange;
-    
-    // Inyectamos el texto de advertencia rojo si el período no está activo
-    if(status !== 'Activo') {
-        document.getElementById('periodRange').innerHTML += `<br><span style="color:#dc3545; font-weight:bold; font-size: 0.9em;">⚠️ Asistencia bloqueada (Período ${status})</span>`;
-    }
-
-    document.getElementById('usersModal').style.display = 'block';
-    document.getElementById('modalOverlay').style.display = 'block';
-    document.getElementById('usersLoading').style.display = 'block';
-    document.getElementById('usersList').style.display = 'none';
-    
-    const url = `/cursos/{{ $course->id }}/periodos/${periodId}/usuarios`;
-    
-    fetch(url)
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.json();
-        })
-        .then(data => {
-            if (data.success === false) throw new Error(data.error || 'Error desconocido');
-            allUsers = data.users || [];
-            renderUsers();
-            document.getElementById('usersLoading').style.display = 'none';
-            document.getElementById('usersList').style.display = 'block';
-        })
-        .catch(err => {
-            document.getElementById('usersLoading').innerHTML = `
-                <div style="color: #dc3545; text-align: center; padding: 20px;">
-                    <div style="font-size: 2em; margin-bottom: 10px;">⚠️</div>
-                    <div><strong>Error:</strong> ${err.message}</div>
-                </div>
-            `;
-        });
-}
-
-function closeUsersModal() {
-    document.getElementById('usersModal').style.display = 'none';
-    document.getElementById('modalOverlay').style.display = 'none';
-    currentPeriodId = null;
-    currentPeriodStatus = '';
-}
-
-function renderUsers(filteredUsers = null) {
-    const users = filteredUsers || allUsers;
-    const container = document.getElementById('usersList');
-    
-    if (users.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No hay anfitriones disponibles</div>';
-        return;
-    }
-    
-    // Lógica para bloquear visualmente y funcionalmente si el período no está Activo
-    const isLocked = currentPeriodStatus !== 'Activo';
-    const disableAttr = isLocked ? 'disabled' : '';
-    const opacityStyle = isLocked ? 'opacity: 0.55; filter: grayscale(100%);' : '';
-    const cursorStyle = isLocked ? 'not-allowed' : 'pointer';
-    
-    container.innerHTML = users.map(user => `
-        <div class="user-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; ${opacityStyle}">
-            <div style="flex: 1;">
-                <div style="font-weight: 600; color: #333; margin-bottom: 3px;">${user.nombre}</div>
-                <div style="font-size: 0.85em; color: #666; margin-bottom: 2px;">📋 No. Anfitrión: ${user.no_anfitrion}</div>
-                <div style="font-size: 0.8em; color: #999;">${user.departamento} | ${user.posicion}</div>
-            </div>
-            <label style="cursor: ${cursorStyle}; display: flex; align-items: center;">
-                <input type="checkbox" ${user.assigned ? 'checked' : ''} ${disableAttr} onchange="toggleUser(${user.id}, this.checked)" style="width: 20px; height: 20px; cursor: ${cursorStyle};">
-            </label>
-        </div>
-    `).join('');
-}
-
-function filterUsers() {
-    const search = document.getElementById('searchUsers').value.toLowerCase();
-    const filtered = allUsers.filter(user => user.nombre.toLowerCase().includes(search));
-    renderUsers(filtered);
-}
-
-function toggleUser(userId, assigned) {
-    fetch(`/cursos/{{ $course->id }}/periodos/${currentPeriodId}/usuarios/toggle`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ user_id: userId, assigned: assigned })
-    }).then(res => res.json()).catch(err => alert('Error al actualizar usuario'));
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeUsersModal();
-});
 </script>
 
+{{-- Ventanas compartidas con Horarios: eliminar y asignar participantes --}}
+@include('layouts.Cursos.partials.participantes', [
+    'pp_entity'     => 'período',
+    'pp_catalogUrl' => url('/cursos/' . $course->id . '/periodos/__ID__/participantes-catalogo'),
+    'pp_storeUrl'   => url('/cursos/' . $course->id . '/periodos/__ID__/participantes'),
+])
+
+{{-- ================= VENTANA: LISTA DE ASISTENCIA DEL PERÍODO (botón gris, igual que en presencial) ================= --}}
+@php
+    $puedeDescargarLista = in_array(strtolower((string) session('active_role_name')), ['master', 'gerente_capacitacion', 'docente'], true);
+    $periodosAsistencia = collect($periods)->map(function ($pp) {
+        return [
+            'id'     => $pp->id,
+            'inicio' => $pp->start_date->format('Y-m-d'),
+            'fin'    => $pp->end_date->format('Y-m-d'),
+            'label'  => $pp->start_date->format('d/m/Y') . ' - ' . $pp->end_date->format('d/m/Y'),
+        ];
+    })->values();
+@endphp
+<div id="asisModal" class="umi-gm-overlay" role="dialog" aria-modal="true" aria-labelledby="asisModalTitle" aria-hidden="true">
+    <div class="umi-gm-box">
+        <div class="umi-gm-header">
+            <div>
+                <h5 id="asisModalTitle">Lista de asistencia</h5>
+                <span id="asisModalPeriodo" class="umi-gm-sub"></span>
+            </div>
+            <button type="button" class="umi-gm-close" onclick="cerrarListaAsistencia()" aria-label="Cerrar">&times;</button>
+        </div>
+
+        <div class="umi-gm-body">
+            <div id="asisLoading" class="umi-gm-loading">Cargando información…</div>
+            <div id="asisError" class="umi-gm-error" style="display:none;"></div>
+
+            <div id="asisContent" style="display:none;">
+                <div class="asis-stats">
+                    <div class="asis-card">
+                        <span class="asis-card-label" style="color:#2f4b7c;"><i class="fa-solid fa-users"></i> Total inscritos</span>
+                        <strong class="asis-card-value" id="asisTotal">0</strong>
+                    </div>
+                    <div class="asis-card">
+                        <span class="asis-card-label" style="color:#1e8449;"><i class="fa-solid fa-circle-check"></i> Completados</span>
+                        <strong class="asis-card-value" id="asisCompletados">0</strong>
+                    </div>
+                    <div class="asis-card">
+                        <span class="asis-card-label" style="color:#b7791f;"><i class="fa-solid fa-hourglass-half"></i> En progreso</span>
+                        <strong class="asis-card-value" id="asisProgreso">0</strong>
+                    </div>
+                </div>
+
+                <div class="asis-filters">
+                    <div class="asis-filter">
+                        <label for="asisBuscar">Buscar por nombre o RFC</label>
+                        <input type="text" id="asisBuscar" class="umi-gm-input" placeholder="Escribe un nombre o RFC…">
+                    </div>
+                    <div class="asis-filter asis-filter-sm">
+                        <label for="asisDesde">Fecha inicio</label>
+                        <input type="date" id="asisDesde" class="umi-gm-input">
+                    </div>
+                    <div class="asis-filter asis-filter-sm">
+                        <label for="asisHasta">Fecha fin</label>
+                        <input type="date" id="asisHasta" class="umi-gm-input">
+                    </div>
+                    <div class="asis-filter">
+                        <label for="asisPeriodo">Período</label>
+                        <select id="asisPeriodo" class="umi-gm-input"></select>
+                    </div>
+                    @if($puedeDescargarLista)
+                        <div class="asis-filter asis-filter-btn">
+                            <a id="asisPdf" href="#" class="asis-btn-pdf">
+                                <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+                            </a>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="asis-table-title" id="asisTitulo"></div>
+                <div class="asis-table-wrap">
+                    <table class="table-custom-sessions asis-table">
+                        <thead id="asisHead"></thead>
+                        <tbody id="asisBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="umi-gm-footer">
+            <button type="button" class="umi-gm-btn-outline" onclick="cerrarListaAsistencia()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <style>
-.user-item {
-    transition: all 0.2s ease-in-out;
-}
-.user-item:hover {
-    background: #f8f9fa;
-    border-color: #667eea !important;
-}
+    .asis-stats { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:14px; margin-bottom:14px; }
+    .asis-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 18px; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+    .asis-card-label { display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:700; }
+    .asis-card-value { display:block; font-size:1.8rem; color:#1e293b; margin-top:4px; }
+    .asis-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; margin-bottom:14px; }
+    .asis-filter { flex:1 1 200px; display:flex; flex-direction:column; gap:5px; }
+    .asis-filter label { font-size:.8rem; font-weight:600; color:#475569; }
+    .asis-filter-sm { flex:0 1 165px; }
+    .asis-filter-btn { flex:0 0 auto; }
+    .asis-btn-pdf { display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:0 18px; border-radius:8px; background:#2f4b7c; color:#fff !important; font-weight:700; text-decoration:none; white-space:nowrap; }
+    .asis-btn-pdf:hover { background:#0d2240; }
+    .asis-btn-pdf.is-disabled { opacity:.5; pointer-events:none; cursor:not-allowed; }
+    .asis-table-title { font-weight:700; color:#1e293b; padding:12px 4px 10px; }
+    .asis-table-wrap { max-height: 42vh; overflow:auto; border:1px solid #e2e8f0; border-radius:10px; }
+    .asis-table thead th { position: sticky; top: 0; z-index: 1; }
+    .asis-badge { display:inline-block; padding:4px 12px; border-radius:99px; font-size:.8rem; font-weight:700; white-space:nowrap; }
+    .asis-badge.is-ok { background:#dcfce7; color:#166534; }
+    .asis-badge.is-mid { background:#fef3c7; color:#92400e; }
+    .asis-badge.is-no { background:#fee2e2; color:#991b1b; }
+    .asis-prog { display:flex; align-items:center; gap:8px; min-width:110px; }
+    .asis-prog-bar { flex:1; height:7px; background:#edf2f7; border-radius:99px; overflow:hidden; }
+    .asis-prog-bar > div { height:100%; background:#2f4b7c; }
+    .asis-empty { padding:30px !important; text-align:center; color:#94a3b8; }
+    @media (max-width: 768px) { .asis-stats { grid-template-columns: 1fr; } }
 </style>
+
+<script>
+(function () {
+    const overlay = document.getElementById('asisModal');
+    const $ = (id) => document.getElementById(id);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const urlTpl = @json(url('/cursos/' . $course->id . '/periodos/__ID__/asistencia-lista'));
+    const periodos = @json($periodosAsistencia);
+    let filas = [];
+    let universidad = false;
+
+    // Períodos que se cruzan con el rango de fechas elegido
+    function llenarPeriodos(seleccionado) {
+        const desde = $('asisDesde').value, hasta = $('asisHasta').value;
+        const lista = periodos.filter((p) => (!desde || p.fin >= desde) && (!hasta || p.inicio <= hasta));
+        $('asisPeriodo').innerHTML = lista.length
+            ? lista.map((p) => `<option value="${p.id}" ${String(p.id) === String(seleccionado) ? 'selected' : ''}>${esc(p.label)}</option>`).join('')
+            : '<option value="">Sin períodos en esas fechas</option>';
+        return lista;
+    }
+
+    window.abrirListaAsistencia = async function (periodId, label, reiniciarFechas) {
+        if (reiniciarFechas) { $('asisDesde').value = ''; $('asisHasta').value = ''; }
+        const p = periodos.find((x) => String(x.id) === String(periodId));
+        $('asisModalPeriodo').textContent = label || (p ? p.label : '');
+        $('asisTitulo').textContent = p ? `Período del ${p.label}` : '';
+        llenarPeriodos(periodId);
+        $('asisBuscar').value = '';
+        $('asisLoading').style.display = 'block';
+        $('asisError').style.display = 'none';
+        $('asisContent').style.display = 'none';
+        if ($('asisPdf')) $('asisPdf').classList.add('is-disabled');
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+
+        try {
+            const res = await fetch(urlTpl.replace('__ID__', periodId), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            filas = data.rows || [];
+            universidad = !!data.universidad;
+            $('asisTotal').textContent = data.total;
+            $('asisCompletados').textContent = data.completados;
+            $('asisProgreso').textContent = data.en_progreso;
+            if ($('asisPdf')) {
+                $('asisPdf').href = filas.length ? data.pdf_url : '#';
+                $('asisPdf').classList.toggle('is-disabled', !filas.length);
+                $('asisPdf').title = filas.length ? 'Descargar la lista de asistencia en PDF' : 'Asigna participantes (botón verde) para poder descargar la lista';
+            }
+            pintar('');
+            $('asisLoading').style.display = 'none';
+            $('asisContent').style.display = 'block';
+        } catch (e) {
+            console.error('Lista de asistencia:', e);
+            $('asisLoading').style.display = 'none';
+            $('asisError').textContent = 'No se pudo cargar la lista de asistencia. Intenta de nuevo.';
+            $('asisError').style.display = 'block';
+        }
+    };
+
+    function pintar(q) {
+        const cols = universidad ? ['#', 'Nombre completo', 'RFC', 'Carrera', 'Progreso', 'Calificación', 'Estado']
+                                 : ['#', 'Nombre completo', 'RFC', 'Departamento', 'Puesto', 'Progreso', 'Calificación', 'Estado'];
+        $('asisHead').innerHTML = '<tr>' + cols.map((c) => `<th>${c}</th>`).join('') + '</tr>';
+        if (!filas.length) {
+            $('asisBody').innerHTML = `<tr><td colspan="${cols.length}" class="asis-empty">Este período aún no tiene participantes asignados (botón verde).</td></tr>`;
+            return;
+        }
+        const lista = filas.filter((r) => !q || (r.nombre + ' ' + r.rfc).toLowerCase().includes(q));
+        if (!lista.length) {
+            $('asisBody').innerHTML = `<tr><td colspan="${cols.length}" class="asis-empty">No hay coincidencias con la búsqueda.</td></tr>`;
+            return;
+        }
+        const clase = { 'Completado': 'is-ok', 'En progreso': 'is-mid', 'Sin iniciar': 'is-no' };
+        $('asisBody').innerHTML = lista.map((r, i) => `<tr>
+            <td>${i + 1}</td>
+            <td>${esc(r.nombre)}</td>
+            <td>${esc(r.rfc)}</td>
+            <td>${esc(r.area)}</td>
+            ${universidad ? '' : `<td>${esc(r.puesto)}</td>`}
+            <td><div class="asis-prog"><div class="asis-prog-bar"><div style="width:${Number(r.progreso) || 0}%"></div></div><span>${Number(r.progreso) || 0}%</span></div></td>
+            <td>${r.calificacion !== null && r.calificacion !== undefined ? esc(r.calificacion) : '—'}</td>
+            <td><span class="asis-badge ${clase[r.estado] || 'is-no'}">${esc(r.estado)}</span></td>
+        </tr>`).join('');
+    }
+
+    $('asisBuscar').addEventListener('input', function () { pintar(this.value.trim().toLowerCase()); });
+
+    $('asisPeriodo').addEventListener('change', function () {
+        const p = periodos.find((x) => String(x.id) === this.value);
+        if (p) abrirListaAsistencia(p.id, p.label);
+    });
+
+    // Fecha inicio / fin: deja solo los períodos que caen en ese rango y abre el primero
+    ['asisDesde', 'asisHasta'].forEach((id) => $(id).addEventListener('change', function () {
+        const actual = $('asisPeriodo').value;
+        const lista = llenarPeriodos(actual);
+        if (lista.length && !lista.some((p) => String(p.id) === String(actual))) abrirListaAsistencia(lista[0].id, lista[0].label);
+    }));
+
+    window.cerrarListaAsistencia = function () {
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+    };
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) cerrarListaAsistencia(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('is-open')) cerrarListaAsistencia(); });
+})();
+</script>
+
 @endsection
 ```eof
