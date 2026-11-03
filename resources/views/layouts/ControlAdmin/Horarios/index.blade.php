@@ -28,9 +28,14 @@
                 @if ($modoEdicion)
                     @method('PUT') 
                 @endif
+                
+                {{-- AQUI TRADUCIMOS Y ESTILIZAMOS EL ERROR --}}
                 @error('franjas_json')
-                    <div class="alert alert-warning">{{ $message }}</div>
+                    <div class="alert alert-warning" style="background: #fee2e2; color: #991b1b; padding: 12px 15px; border-radius: 8px; border: 1px solid #f87171; margin-bottom: 20px; font-size: 14px; font-weight: 600;">
+                        ⚠️ Por favor, asigne al menos un día y una hora en la Vista Previa antes de guardar el horario.
+                    </div>
                 @enderror
+
                 <div class = "schedule-list-select">
                     <label for="clasificacion_select">Clasificación:</label>
                     <select id="clasificacion_select" name="clasificacion_id" @if ($modoEdicion) disabled @endif>
@@ -65,7 +70,8 @@
                 <div class = "schedule-list-select">
                     <label for="semestre_filter_select">Semestre</label>
                     <select id="semestre_filter_select" name="semestre_filter">
-                        <option value="">Todos los semestres</option>
+                        {{-- HOMOLOGAMOS EL PLACEHOLDER AQUI --}}
+                        <option value="">Seleccione un Semestre</option>
                     </select>
                     <label for = "materia_select" style="margin-top: 0.75rem;">Materia</label>
                     <select id="materia_select" name="materia_id" required>
@@ -351,7 +357,10 @@
                 semestreFilterSelect.innerHTML = '';
                 const optS0 = document.createElement('option');
                 optS0.value = '';
-                optS0.textContent = 'Todos los semestres';
+                
+                // HOMOLOGAMOS TAMBIÉN EL PLACEHOLDER DE JAVASCRIPT AQUI
+                optS0.textContent = 'Seleccione un Semestre';
+                
                 semestreFilterSelect.appendChild(optS0);
                 semestres.forEach(s => {
                     const opt = document.createElement('option');
