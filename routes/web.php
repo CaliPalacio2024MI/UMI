@@ -188,6 +188,8 @@ Route::middleware(['auth'])->group(function () {
         // Lista de participantes del período (botón gris, igual que en Horarios)
         // JSON del panel "Asignar Usuarios" (la URL /usuarios la ocupa también la vista usersIndex de abajo y chocaban)
         Route::get('/{period}/asignar-usuarios', [CoursePeriodsController::class, 'users'])->name('users.panel');
+        // Lista de asistencia del período (ventana del botón gris)
+        Route::get('/{period}/asistencia-lista', [CoursePeriodsController::class, 'periodAttendanceList'])->name('attendance.list');
         Route::get('/{period}/participantes-catalogo', [CoursePeriodsController::class, 'participantsCatalog'])->name('participants.catalog');
         Route::post('/{period}/participantes', [CoursePeriodsController::class, 'storeParticipants'])->name('participants.store');
 

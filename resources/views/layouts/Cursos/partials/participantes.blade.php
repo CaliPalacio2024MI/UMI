@@ -276,11 +276,22 @@
             el.min.value = saved?.min_participants ?? '';
             el.max.value = saved?.max_participants ?? '';
         }
+        // Varias propiedades: la propiedad activa ya viene marcada si no hay nada guardado
+        if (!(sameUnitAsSaved && saved.selections && Object.keys(saved.selections).length)) {
+            Object.entries(catalog.preselect || {}).forEach(([k, ids]) => (ids || []).forEach((id) => selected[k]?.add(Number(id))));
+        }
         if (sameUnitAsSaved) {
             catalog.levels.forEach((lv) => (saved.selections?.[lv.key] || []).forEach((id) => selected[lv.key].add(Number(id))));
             (saved.participants || []).forEach((id) => selected.people.add(Number(id)));
         }
+        // Listas guardadas antes de elegir varias propiedades: deducir la propiedad de cada departamento
+        if (catalog.multi_unit && selected.institutions && !selected.institutions.size && selected.departments?.size) {
+            const deptLv = catalog.levels.find((lv) => lv.key === 'departments');
+            (deptLv?.items || []).forEach((d) => { if (selected.departments.has(Number(d.id))) selected.institutions.add(Number(d.parent)); });
+        }
 
+        // Con varias propiedades se eligen en la primera columna; el selector de arriba se oculta
+        el.property.closest('.umi-gm-row').style.display = catalog.multi_unit ? 'none' : '';
         el.propertyLabel.textContent = catalog.unit_label || 'Propiedad';
         el.property.innerHTML = '';
         if (!catalog.properties.length) el.property.add(new Option('No tienes unidades asignadas', ''));
@@ -369,11 +380,12 @@
             setList(lv.key, listHtml(rows, lv.key, emptyText));
         });
 
-        // Personas: las nuevas aparecen marcadas (nivel completo); se puede desmarcar a quien no vaya
+        // Personas: aparecen sin marcar; se palomea a quien sí va
         const people = visiblePeople();
         const anyLevelSelected = catalog.levels.some((lv) => selected[lv.key].size);
         const shown = anyLevelSelected ? people : [];
-        shown.forEach((p) => { if (!seenPeople.has(p.id)) { seenPeople.add(p.id); selected.people.add(p.id); } });
+        // Las personas aparecen sin palomear: se eligen una por una (o con "Todos")
+        shown.forEach((p) => { if (!seenPeople.has(p.id)) seenPeople.add(p.id); });
         const shownIds = new Set(shown.map((p) => p.id));
         [...selected.people].forEach((id) => { if (!shownIds.has(id)) selected.people.delete(id); });
 
@@ -402,6 +414,8 @@
 
     // Marcar/desmarcar en cascada: un elemento arrastra a todos sus descendientes
     function cascade(levelIndex, ids, checked) {
+        // Al marcar algo solo se muestran sus opciones de abajo; cada quien palomea lo que necesite
+        if (checked) return;
         for (let i = levelIndex + 1; i < catalog.levels.length && ids.length; i++) {
             const lv = catalog.levels[i];
             const children = lv.items.filter((it) => ids.includes(Number(it.parent))).map((it) => Number(it.id));

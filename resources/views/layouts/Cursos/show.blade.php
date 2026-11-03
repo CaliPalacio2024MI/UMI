@@ -99,6 +99,11 @@
     .hybrid-course-link:hover { background: #32459a; color: #fff; border-color: #32459a; }
     .course-empty-note { padding: 14px; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b; font-size: .92rem; text-align: center; }
     .course-empty-note a { display: block; margin-top: 6px; font-weight: 600; color: #1e40af; }
+    .period-box { margin-top: 16px; }
+    .period-item.is-selected { border-color: #2f4b7c !important; box-shadow: 0 0 0 2px rgba(47,75,124,.25); }
+    .period-table-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin: 6px 0 14px; color:#1e293b; }
+    .period-table-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .period-table-actions .btn-presencial-action { text-decoration:none; }
 </style>
 <div class="course-layout">
 
@@ -177,6 +182,32 @@
         @can('update', $course)
             <a href="{{ route('course.topic.create', $course) }}">Agregar temas</a>
         @endcan
+    </div>
+@endif
+
+{{-- VIRTUAL: períodos del curso (solo quien gestiona cursos), igual que los horarios en presencial --}}
+@if($course->modality === 'virtual' && ($canManageAttendance ?? false))
+    <div class="course-sessions-box period-box">
+        <div class="hybrid-courses-title">Períodos</div>
+        @forelse($periodLists as $pid => $pl)
+            @php
+                $pp = $pl['period'];
+                $hoy = \Carbon\Carbon::today();
+                $estadoPeriodo = $hoy->lt($pp->start_date) ? 'No iniciado' : ($hoy->gt($pp->end_date) ? 'Finalizado' : 'Activo');
+            @endphp
+            <div class="course-session-item period-item" data-period-id="{{ $pid }}" onclick="mostrarPeriodo('{{ $pid }}')">
+                <div class="course-session-info">
+                    <div class="course-session-date">📅 {{ $pp->start_date->format('d/m/Y') }} - {{ $pp->end_date->format('d/m/Y') }}</div>
+                    <div class="course-session-time">👥 {{ $pl['total'] }} inscrito(s)</div>
+                </div>
+                <span class="session-status {{ $estadoPeriodo === 'Activo' ? 'active' : 'inactive' }}">{{ $estadoPeriodo }}</span>
+            </div>
+        @empty
+            <div class="course-empty-note">
+                Este curso aún no tiene períodos registrados.
+                <a href="{{ route('courses.periods.index', $course) }}">Registrar períodos</a>
+            </div>
+        @endforelse
     </div>
 @endif
 
@@ -478,6 +509,61 @@
     </div>
 @endif
 
+
+    {{-- VIRTUAL: lista de participantes del período elegido (igual que la de presencial) --}}
+    @if($course->modality === 'virtual' && ($canManageAttendance ?? false))
+        <div id="period-table-container" class="presencial-table-viewer" style="display:none;">
+            <div class="period-table-head">
+                <strong id="period-table-title"></strong>
+                <div class="period-table-actions">
+                    <a id="period-pdf" href="#" class="btn-presencial-action"><i class="fa-solid fa-download"></i> Descargar PDF</a>
+                    <button type="button" class="btn-presencial-action period-back" onclick="ocultarPeriodo(true)"><i class="fa-solid fa-book-open"></i> Volver al contenido</button>
+                </div>
+            </div>
+            <div id="period-table-body"></div>
+        </div>
+
+        @foreach($periodLists as $pid => $pl)
+            <div id="period-table-data-{{ $pid }}" style="display:none;"
+                 data-title="Participantes del período {{ $pl['period']->start_date->format('d/m/Y') }} - {{ $pl['period']->end_date->format('d/m/Y') }} · {{ $pl['completados'] }} completado(s) de {{ $pl['total'] }}"
+                 data-pdf="{{ $pl['pdf_url'] }}" data-total="{{ $pl['total'] }}">
+                @if($pl['total'])
+                    <table class="selected-users-table presencial-users-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre completo</th>
+                                <th>RFC</th>
+                                <th>{{ $pl['universidad'] ? 'Carrera' : 'Departamento' }}</th>
+                                @unless($pl['universidad'])<th>Puesto</th>@endunless
+                                <th>Progreso</th>
+                                <th>Calificación</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($pl['rows'] as $i => $r)
+                                <tr class="{{ $r['estado'] === 'Completado' ? 'attendance-row-present' : '' }}">
+                                    <td>{{ $i + 1 }}</td>
+                                    <td>{{ $r['nombre'] }}</td>
+                                    <td>{{ $r['rfc'] }}</td>
+                                    <td>{{ $r['area'] }}</td>
+                                    @unless($pl['universidad'])<td>{{ $r['puesto'] }}</td>@endunless
+                                    <td>{{ $r['progreso'] }}%</td>
+                                    <td>{{ $r['calificacion'] ?? '—' }}</td>
+                                    <td>
+                                        <span class="attendance-badge {{ $r['estado'] === 'Completado' ? 'present' : 'pending' }}">{{ $r['estado'] }}</span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @else
+                    <p class="empty">No hay usuarios asignados a este período.</p>
+                @endif
+            </div>
+        @endforeach
+    @endif
 
         <div class="course-progress">
             <div class="course-progress-bar"></div>
@@ -4339,5 +4425,41 @@ function openGuide(url) {
 function showNoGuideMessage() {
     alert("Este curso no cuenta con una guía disponible 📭");
 }
+</script>
+
+<script>
+// VIRTUAL: mostrar la lista de participantes de un período (como los horarios de presencial)
+function mostrarPeriodo(periodId) {
+    const src = document.getElementById('period-table-data-' + periodId);
+    const box = document.getElementById('period-table-container');
+    if (!src || !box) return;
+    document.querySelectorAll('.content-panel').forEach((p) => p.style.display = 'none');
+    document.getElementById('period-table-title').textContent = src.dataset.title || '';
+    document.getElementById('period-table-body').innerHTML = src.innerHTML;
+    const pdf = document.getElementById('period-pdf');
+    if (pdf) {
+        pdf.href = src.dataset.pdf;
+        pdf.style.display = Number(src.dataset.total) ? 'inline-flex' : 'none';
+    }
+    box.style.display = 'block';
+    document.querySelectorAll('.period-item').forEach((el) => el.classList.toggle('is-selected', el.dataset.periodId === String(periodId)));
+}
+
+// Regresar al contenido del curso (temas)
+function ocultarPeriodo(irAlTema) {
+    const box = document.getElementById('period-table-container');
+    if (!box || box.style.display === 'none') return;
+    box.style.display = 'none';
+    document.querySelectorAll('.period-item').forEach((el) => el.classList.remove('is-selected'));
+    if (irAlTema) {
+        const link = document.querySelector('.syllabus-link.active') || document.querySelector('.syllabus-link');
+        if (link) link.click();
+    }
+}
+
+// Al usar el temario o los botones Anterior / Autoplay / Siguiente se oculta la lista
+document.addEventListener('click', (e) => {
+    if (e.target.closest('.syllabus-link, #btnPrev, #btnNext, #btnAutoplay')) ocultarPeriodo(false);
+}, true);
 </script>
 @endsection

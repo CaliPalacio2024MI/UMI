@@ -176,7 +176,7 @@ class CourseSessionController extends Controller
         $institutionId = (int) ($data['institution_id'] ?? session('active_institution_id'));
 
         $selections = collect($data['selections'] ?? [])
-            ->only(['departments', 'workstations', 'classifications', 'careers', 'materias'])
+            ->only(['institutions', 'departments', 'workstations', 'classifications', 'careers', 'materias'])
             ->map(fn ($ids) => array_values(array_unique(array_map('intval', $ids))))
             ->all();
 
@@ -273,11 +273,16 @@ class CourseSessionController extends Controller
             $institutionId = $units->first()->id;
         }
 
+        // Propiedades: si tiene acceso a varias, se eligen una o varias como primer nivel
+        $multiUnit = ! $universityMode && $units->count() > 1;
+
         [$levels, $people, $peopleTitle] = $universityMode
             ? $this->universityCatalog($institutionId)
-            : $this->propertyCatalog($institutionId);
+            : ($multiUnit ? $this->multiPropertyCatalog($units) : $this->propertyCatalog($institutionId));
 
         return [
+            'multi_unit'     => $multiUnit,
+            'preselect'      => $multiUnit ? ['institutions' => [$institutionId]] : [],
             'mode'           => $universityMode ? 'university' : 'property',
             'unit_label'     => $universityMode ? 'Universidad' : 'Propiedad',
             'people_title'   => $peopleTitle,
@@ -286,6 +291,49 @@ class CourseSessionController extends Controller
             'levels'         => $levels,
             'people'         => $people,
         ];
+    }
+
+    /**
+     * Varias propiedades: Propiedades → Departamentos (agrupados por propiedad) → Puestos → Anfitriones.
+     * Junta el catálogo de cada propiedad a la que el usuario tiene acceso.
+     */
+    private function multiPropertyCatalog($units): array
+    {
+        $deptItems = []; $wsItems = []; $hosts = [];
+        $seenDept = []; $seenWs = []; $seenHost = [];
+
+        foreach ($units as $unit) {
+            [$levels, $people] = $this->propertyCatalog($unit->id);
+
+            foreach ($levels[0]['items'] as $d) {
+                if (isset($seenDept[$d['id']])) continue;          // un depto compartido se queda en la primera propiedad
+                $seenDept[$d['id']] = $unit->id;
+                $deptItems[] = ['id' => $d['id'], 'name' => $d['name'], 'parent' => $unit->id];
+            }
+            foreach ($levels[1]['items'] as $w) {
+                if (isset($seenWs[$w['id']])) continue;
+                $seenWs[$w['id']] = true;
+                $wsItems[] = $w;
+            }
+            foreach ($people as $h) {
+                if (isset($seenHost[$h['id']])) continue;
+                $seenHost[$h['id']] = true;
+                $deptId = $h['links']['departments'][0] ?? null;
+                $h['links']['institutions'] = [$seenDept[$deptId] ?? $unit->id];
+                $hosts[] = $h;
+            }
+        }
+
+        $levels = [
+            ['key' => 'institutions', 'title' => 'Propiedades', 'empty' => 'No tienes propiedades asignadas.',
+             'items' => $units->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'parent' => null])->values()],
+            ['key' => 'departments', 'title' => 'Departamentos', 'empty' => 'Las propiedades elegidas no tienen departamentos registrados (Ajustes → Departamentos).',
+             'items' => $deptItems],
+            ['key' => 'workstations', 'title' => 'Puestos', 'empty' => 'Los departamentos elegidos no tienen puestos registrados.',
+             'items' => $wsItems],
+        ];
+
+        return [$levels, collect($hosts)->values(), 'Anfitriones'];
     }
 
     /** Propiedad: departamentos creados en ella → sus puestos → anfitriones con esos puestos (sin Master). */

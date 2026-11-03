@@ -442,8 +442,20 @@ public function store(StoreCourseRequest $request): RedirectResponse
 
         $periods = $course->periods;
 
+        // VIRTUAL: lista de participantes por período (solo quien gestiona cursos), igual que en presencial
+        $canManageAttendance = in_array(strtolower((string) session('active_role_name')), ['master', 'gerente_capacitacion', 'docente'], true);
+        $periodLists = [];
+        if ($course->modality === 'virtual' && $canManageAttendance) {
+            $builder = app(\App\Http\Controllers\Cursos\CoursePeriodsController::class);
+            foreach ($course->periods()->orderBy('start_date')->get() as $pp) {
+                $periodLists[$pp->id] = ['period' => $pp] + $builder->periodAttendanceData($course, $pp);
+            }
+        }
+
         // Retornar vista con TODAS las variables
         return view('layouts.Cursos.show', compact(
+            'canManageAttendance',
+            'periodLists',
             'departments',
             'course',
             'topics',

@@ -405,4 +405,84 @@ public function usersStore(Request $request)
         ->with('success', 'Usuarios asignados correctamente.');
 }
 
+/**
+ * Datos de la lista de asistencia de un período (virtual).
+ * Lo usan la ventana del botón gris en Periodos y la vista del curso por dentro.
+ * Estado: Completado (100% o terminado), En progreso (ya empezó) o Sin iniciar.
+ */
+public function periodAttendanceData(Course $course, CoursePeriod $period): array
+{
+    $sessions = app(CourseSessionController::class);
+    $esUniversidad = $sessions->isUniversity(\App\Models\Users\Institution::find((int) session('active_institution_id')));
+
+    $users = DB::table('period_user')
+        ->join('users', 'users.id', '=', 'period_user.user_id')
+        ->leftJoin('departments', 'departments.id', '=', 'users.department_id')
+        ->leftJoin('workstations', 'workstations.id', '=', 'users.workstation_id')
+        ->leftJoin('course_user', function ($j) use ($course) {
+            $j->on('course_user.user_id', '=', 'users.id')->where('course_user.course_id', '=', $course->id);
+        })
+        ->where('period_user.course_id', $course->id)
+        ->where('period_user.period_id', $period->id)
+        ->select(
+            'users.id', 'users.nombre', 'users.apellido_paterno', 'users.apellido_materno', 'users.RFC',
+            'departments.name as department_name', 'workstations.name as workstation_name',
+            'course_user.progress', 'course_user.started_at', 'course_user.completed_at'
+        )
+        ->orderBy('users.nombre')
+        ->get()
+        ->unique('id');
+
+    $carreraDe = $esUniversidad
+        ? DB::table('academic_profiles')
+            ->join('careers', 'careers.id', '=', 'academic_profiles.career_id')
+            ->whereIn('academic_profiles.user_id', $users->pluck('id'))
+            ->pluck('careers.name', 'academic_profiles.user_id')
+        : collect();
+
+    // Calificación del examen final (si el curso tiene)
+    $finalExam = $course->finalExam;
+    $scores = $finalExam
+        ? DB::table('completions')
+            ->where('completable_type', \App\Models\Cursos\Activities::class)
+            ->where('completable_id', $finalExam->id)
+            ->whereIn('user_id', $users->pluck('id'))
+            ->pluck('score', 'user_id')
+        : collect();
+
+    $rows = $users->map(function ($u) use ($esUniversidad, $carreraDe, $scores) {
+        $progreso = (int) ($u->progress ?? 0);
+        $estado = ($progreso >= 100 || $u->completed_at) ? 'Completado' : (($progreso > 0 || $u->started_at) ? 'En progreso' : 'Sin iniciar');
+        return [
+            'nombre'       => trim("{$u->nombre} {$u->apellido_paterno} {$u->apellido_materno}"),
+            'rfc'          => $u->RFC ?: 'Sin RFC',
+            'area'         => $esUniversidad ? ($carreraDe[$u->id] ?? 'Sin carrera') : ($u->department_name ?? 'Sin departamento'),
+            'puesto'       => $esUniversidad ? null : ($u->workstation_name ?? 'Sin puesto'),
+            'progreso'     => min(100, $progreso),
+            'calificacion' => isset($scores[$u->id]) ? round((float) $scores[$u->id], 1) : null,
+            'estado'       => $estado,
+        ];
+    })
+    // Primero completados, luego en progreso, luego sin iniciar
+    ->sortBy(fn ($r) => ['Completado' => 0, 'En progreso' => 1, 'Sin iniciar' => 2][$r['estado']] . mb_strtolower($r['nombre']))
+    ->values();
+
+    return [
+        'universidad' => $esUniversidad,
+        'total'       => $rows->count(),
+        'completados' => $rows->where('estado', 'Completado')->count(),
+        'en_progreso' => $rows->where('estado', 'En progreso')->count(),
+        'rows'        => $rows,
+        'pdf_url'     => route('courses.attendance.virtual.pdf', $course) . '?period=' . $period->id,
+    ];
+}
+
+/** JSON para la ventana "Lista de asistencia" del botón gris en Periodos. */
+public function periodAttendanceList($courseId, $periodId)
+{
+    $course = Course::findOrFail($courseId);
+    $period = CoursePeriod::where('course_id', $course->id)->findOrFail($periodId);
+
+    return response()->json($this->periodAttendanceData($course, $period));
+}
 }
