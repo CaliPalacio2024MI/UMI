@@ -185,31 +185,6 @@
     </div>
 @endif
 
-{{-- VIRTUAL: períodos del curso (solo quien gestiona cursos), igual que los horarios en presencial --}}
-@if($course->modality === 'virtual' && ($canManageAttendance ?? false))
-    <div class="course-sessions-box period-box">
-        <div class="hybrid-courses-title">Períodos</div>
-        @forelse($periodLists as $pid => $pl)
-            @php
-                $pp = $pl['period'];
-                $hoy = \Carbon\Carbon::today();
-                $estadoPeriodo = $hoy->lt($pp->start_date) ? 'No iniciado' : ($hoy->gt($pp->end_date) ? 'Finalizado' : 'Activo');
-            @endphp
-            <div class="course-session-item period-item" data-period-id="{{ $pid }}" onclick="mostrarPeriodo('{{ $pid }}')">
-                <div class="course-session-info">
-                    <div class="course-session-date">📅 {{ $pp->start_date->format('d/m/Y') }} - {{ $pp->end_date->format('d/m/Y') }}</div>
-                    <div class="course-session-time">👥 {{ $pl['total'] }} inscrito(s)</div>
-                </div>
-                <span class="session-status {{ $estadoPeriodo === 'Activo' ? 'active' : 'inactive' }}">{{ $estadoPeriodo }}</span>
-            </div>
-        @empty
-            <div class="course-empty-note">
-                Este curso aún no tiene períodos registrados.
-                <a href="{{ route('courses.periods.index', $course) }}">Registrar períodos</a>
-            </div>
-        @endforelse
-    </div>
-@endif
 
 {{-- HÍBRIDO: cursos que lo conforman --}}
 @if($course->modality === 'hibrida')

@@ -9,37 +9,40 @@
          COLUMNA IZQUIERDA: LISTA DE PERÍODOS 
     ========================================== --}}
     <div style="width: 320px; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); flex-shrink: 0;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
-            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1f2937;">{{ $course->title }}</h2>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1f2937;">Períodos del Curso</h2>
         </div>
         
         <div style="display: flex; flex-direction: column; gap: 12px;">
             
-            {{-- Ciclo de Períodos --}}
-            @foreach($periods as $period)
-            <div class="period-card" onclick="filterByPeriod('{{ $period->id }}', this)" style="padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    {{-- Fechas del Periodo --}}
-                    <div style="font-weight: 600; color: #374151; font-size: 0.95rem;" class="period-name">
-                        {{ \Carbon\Carbon::parse($period->start_date)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($period->end_date)->format('d/m/Y') }}
+            {{-- Ciclo de Períodos con el diseño estilizado --}}
+            @forelse($periods as $period)
+                @php
+                    $now = \Carbon\Carbon::now();
+                    $start = \Carbon\Carbon::parse($period->start_date);
+                    $end = \Carbon\Carbon::parse($period->end_date);
+                    $isActive = $now->between($start, $end);
+                    $estadoPeriodo = $now->lt($start) ? 'No iniciado' : ($now->gt($end) ? 'Finalizado' : 'Activo');
+                @endphp
+                <div class="period-card" onclick="filterByPeriod('{{ $period->id }}', this)" style="padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-weight: 600; color: #374151; font-size: 0.95rem;">
+                            📅 {{ $start->format('d/m/Y') }} - {{ $end->format('d/m/Y') }}
+                        </div>
+                        <div style="font-size: 0.82rem; color: #6b7280;">
+                            Gestión de asistencia
+                        </div>
                     </div>
                     
-                    {{-- Estado del Periodo --}}
-                    @php
-                        $now = \Carbon\Carbon::now();
-                        $start = \Carbon\Carbon::parse($period->start_date);
-                        $end = \Carbon\Carbon::parse($period->end_date);
-                        $isActive = $now->between($start, $end);
-                    @endphp
-                    
-                    @if($isActive)
-                        <span style="background: #d1fae5; color: #065f46; font-size: 0.75rem; padding: 4px 8px; border-radius: 9999px; font-weight: 600;">Activo</span>
-                    @else
-                        <span style="background: #fee2e2; color: #991b1b; font-size: 0.75rem; padding: 4px 8px; border-radius: 9999px; font-weight: 600;">Finalizado</span>
-                    @endif
+                    <span style="padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: {{ $isActive ? '#d1fae5' : '#fee2e2' }}; color: {{ $isActive ? '#065f46' : '#991b1b' }};">
+                        {{ $estadoPeriodo }}
+                    </span>
                 </div>
-            </div>
-            @endforeach
+            @empty
+                <div style="padding: 20px; text-align: center; color: #6b7280; font-size: 0.9rem;">
+                    Este curso aún no tiene períodos registrados.
+                </div>
+            @endforelse
         </div>
     </div>
 
@@ -102,7 +105,7 @@
                     <tr class="attendance-row" data-period-id="{{ $attendance['period_id'] ?? '' }}" style="border-bottom: 1px solid #e5e7eb;">
                         <td style="padding: 12px 16px; color: #6b7280;">{{ $index + 1 }}</td>
                         <td style="padding: 12px 16px; font-weight: 500; color: #111827;">{{ $attendance['nombre'] }}</td>
-                        <td style="padding: 12px 16px; color: #6b7280;">{{ $attendance['email'] }}</td>
+                        <td style="padding: 12px 16px; color: #6b7280;">{{ $attendance['email'] ?? $attendance['correo'] ?? 'N/A' }}</td>
                         <td style="padding: 12px 16px; color: #6b7280;">{{ $attendance['period_name'] ?? 'Sin período' }}</td>
                         
                         <td style="padding: 12px 16px; color: #374151;">
